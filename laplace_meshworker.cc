@@ -33,6 +33,193 @@
 
 using namespace dealii;
 
+template <int dim, int fe_degree, typename number>
+class LaplaceOperator : public Subscriptor
+{
+public:
+  LaplaceOperator (const Triangulation<dim>& triangulation_,
+		   const MappingQ1<dim>&  mapping_,
+		   const FE_DGQ<dim>&  fe_,
+		   const DoFHandler<dim>&  dof_handler_); 
+
+//   void clear();
+  void init_sparsity_pattern();
+  void vmult (Vector<number> &dst,
+              const Vector<number> &src) const;
+  void Tvmult (Vector<number> &dst,
+               const Vector<number> &src) const;
+  void vmult_add (Vector<number> &dst,
+                  const Vector<number> &src) const;
+  void Tvmult_add (Vector<number> &dst,
+                   const Vector<number> &src) const;
+
+//   unsigned int m () const;
+//   unsigned int n () const;
+//   void vmult (Vector<double> &dst,
+//               const Vector<double> &src) const;
+//   void Tvmult (Vector<double> &dst,
+//                const Vector<double> &src) const;
+//   void vmult_add (Vector<double> &dst,
+//                   const Vector<double> &src) const;
+//   void Tvmult_add (Vector<double> &dst,
+//                    const Vector<double> &src) const;
+//   number el (const unsigned int row,
+//              const unsigned int col) const;
+//   void set_diagonal (const Vector<number> &diagonal);
+//   std::size_t memory_consumption () const;
+ private:
+  const Triangulation<dim>& triangulation;
+  const MappingQ1<dim>&  mapping;
+  const FE_DGQ<dim>&  fe;
+  const DoFHandler<dim>&  dof_handler; 
+  SparsityPattern sparsity_pattern;
+
+  typedef MeshWorker::DoFInfo<dim> DoFInfo;
+  typedef MeshWorker::IntegrationInfo<dim> CellInfo;
+
+  static void integrate_cell_term (DoFInfo &dinfo,
+				   CellInfo &info);
+  static void integrate_boundary_term (DoFInfo &dinfo,
+				       CellInfo &info);
+  static void integrate_face_term (DoFInfo &dinfo1,
+				   DoFInfo &dinfo2,
+				   CellInfo &info1,
+				   CellInfo &info2);
+
+//   void local_apply (const MatrixFree<dim,number>    &data,
+//                     Vector<double>                      &dst,
+//                     const Vector<double>                &src,
+//                     const std::pair<unsigned int,unsigned int> &cell_range) const;
+//   void evaluate_coefficient(const Coefficient<dim> &function);
+//   MatrixFree<dim,number>      data;
+//   Table<2, VectorizedArray<number> > coefficient;
+//   Vector<number>  diagonal_values;
+//   bool            diagonal_is_available;
+};
+
+template<int dim, int fe_degree, typename number>
+LaplaceOperator<dim, fe_degree, number>::LaplaceOperator(const Triangulation<dim>& triangulation_,
+							 const MappingQ1<dim>&  mapping_,
+							 const FE_DGQ<dim>&  fe_,
+							 const DoFHandler<dim>&  dof_handler_) : 
+  triangulation(triangulation_),
+  mapping(mapping_),
+  fe(fe_),
+  dof_handler(dof_handler_)
+{
+}
+
+template <int dim, int fe_degree, typename number>
+void LaplaceOperator<dim,fe_degree,number>::init_sparsity_pattern()
+{
+  DynamicSparsityPattern dsp(dof_handler.n_dofs());
+  DoFTools::make_flux_sparsity_pattern (dof_handler, dsp);
+  sparsity_pattern.copy_from(dsp);
+}
+
+template <int dim, int fe_degree, typename number>
+void LaplaceOperator<dim,fe_degree,number>::vmult (Vector<number> &dst,
+	    const Vector<number> &src) const
+{
+  dst = 0;
+  vmult_add(dst, src);
+}
+template <int dim, int fe_degree, typename number>
+void LaplaceOperator<dim,fe_degree,number>::Tvmult (Vector<number> &dst,
+	     const Vector<number> &src) const
+{
+  dst = 0;
+  vmult_add(dst, src);
+}
+template <int dim, int fe_degree, typename number>
+void LaplaceOperator<dim,fe_degree,number>::vmult_add (Vector<number> &dst,
+		const Vector<number> &src) const
+{
+  SparseMatrix<number> system_matrix;
+
+  system_matrix.reinit (sparsity_pattern);
+
+  MeshWorker::IntegrationInfoBox<dim> info_box;
+
+  const unsigned int n_gauss_points = dof_handler.get_fe().degree+1;
+  info_box.initialize_gauss_quadrature(n_gauss_points,
+				       n_gauss_points,
+				       n_gauss_points);
+
+  info_box.initialize_update_flags();
+  UpdateFlags update_flags = update_quadrature_points |
+    update_values            |
+    update_gradients;
+  info_box.add_update_flags(update_flags, true, true, true, true);
+
+  info_box.initialize(fe, mapping);
+
+  MeshWorker::DoFInfo<dim> dof_info(dof_handler);
+
+  MeshWorker::Assembler::MatrixSimple<SparseMatrix<double> >
+    assembler;
+  assembler.initialize(system_matrix);
+
+  MeshWorker::loop<dim, dim, MeshWorker::DoFInfo<dim>, MeshWorker::IntegrationInfoBox<dim> >
+    (dof_handler.begin_active(), dof_handler.end(),
+     dof_info, info_box,
+     &LaplaceOperator<dim,fe_degree,number>::integrate_cell_term,
+     &LaplaceOperator<dim,fe_degree,number>::integrate_boundary_term,
+     &LaplaceOperator<dim,fe_degree,number>::integrate_face_term,
+     assembler);
+
+  system_matrix.vmult_add(dst, src);
+}
+template <int dim, int fe_degree, typename number>
+void LaplaceOperator<dim,fe_degree,number>::Tvmult_add (Vector<number> &dst,
+		 const Vector<number> &src) const
+{
+  vmult_add(dst, src);
+}
+
+template <int dim, int fe_degree, typename number>
+void LaplaceOperator<dim,fe_degree,number>::integrate_cell_term (DoFInfo &dinfo,
+ 						 CellInfo &info)
+{
+  const FEValuesBase<dim> &fe_v = info.fe_values();
+  FullMatrix<double> &local_matrix = dinfo.matrix(0).matrix;
+  LocalIntegrators::Laplace::cell_matrix(local_matrix,fe_v) ;
+}
+
+template <int dim, int fe_degree, typename number>
+void LaplaceOperator<dim,fe_degree,number>::integrate_face_term (DoFInfo &dinfo1,
+						 DoFInfo &dinfo2,
+						 CellInfo &info1,
+						 CellInfo &info2)
+{
+  const FEValuesBase<dim> &fe_v = info1.fe_values();
+  const FEValuesBase<dim> &fe_v_neighbor = info2.fe_values();
+
+  FullMatrix<double> &u1_v1_matrix = dinfo1.matrix(0,false).matrix;
+  FullMatrix<double> &u2_v1_matrix = dinfo1.matrix(0,true).matrix;
+  FullMatrix<double> &u1_v2_matrix = dinfo2.matrix(0,true).matrix;
+  FullMatrix<double> &u2_v2_matrix = dinfo2.matrix(0,false).matrix;
+
+  const unsigned int deg1 = info1.fe_values(0).get_fe().tensor_degree();
+  const unsigned int deg2 = info2.fe_values(0).get_fe().tensor_degree();
+
+  LocalIntegrators::Laplace::ip_matrix(u1_v1_matrix,u2_v1_matrix,u1_v2_matrix,u2_v2_matrix,fe_v,fe_v_neighbor,
+				       LocalIntegrators::Laplace::compute_penalty(dinfo1,dinfo2,deg1,deg2));
+
+}
+
+template <int dim, int fe_degree, typename number>
+void LaplaceOperator<dim,fe_degree,number>::integrate_boundary_term (DoFInfo &dinfo,
+						     CellInfo &info)
+{
+  const FEValuesBase<dim> &fe_v = info.fe_values();
+  FullMatrix<double> &local_matrix = dinfo.matrix(0).matrix;
+  const unsigned int deg = info.fe_values(0).get_fe().tensor_degree();
+  LocalIntegrators::Laplace::nitsche_matrix(local_matrix,fe_v,
+					    LocalIntegrators::Laplace::compute_penalty(dinfo,dinfo,deg,deg));
+}
+
+
 template <int dim>
 class RHSIntegrator : public MeshWorker::LocalIntegrator<dim>
 {
@@ -76,14 +263,15 @@ private:
   void solve (Vector<double> &solution);
   void output_results () const;
 
+  typedef LaplaceOperator<dim,1,double> SystemMatrixType;
+
   Triangulation<dim>   triangulation;
   const MappingQ1<dim> mapping;
 
   FE_DGQ<dim>          fe;
   DoFHandler<dim>      dof_handler;
 
-  SparsityPattern      sparsity_pattern;
-  SparseMatrix<double> system_matrix;
+  SystemMatrixType     system_matrix;
 
   Vector<double>       solution;
   Vector<double>       right_hand_side;
@@ -91,14 +279,14 @@ private:
   typedef MeshWorker::DoFInfo<dim> DoFInfo;
   typedef MeshWorker::IntegrationInfo<dim> CellInfo;
 
-  static void integrate_cell_term (DoFInfo &dinfo,
-				   CellInfo &info);
-  static void integrate_boundary_term (DoFInfo &dinfo,
-				       CellInfo &info);
-  static void integrate_face_term (DoFInfo &dinfo1,
-				   DoFInfo &dinfo2,
-				   CellInfo &info1,
-				   CellInfo &info2);
+  // static void integrate_cell_term (DoFInfo &dinfo,
+  // 				   CellInfo &info);
+  // static void integrate_boundary_term (DoFInfo &dinfo,
+  // 				       CellInfo &info);
+  // static void integrate_face_term (DoFInfo &dinfo1,
+  // 				   DoFInfo &dinfo2,
+  // 				   CellInfo &info1,
+  // 				   CellInfo &info2);
     
   RHSIntegrator<dim>    rhs_integrator ;
     
@@ -109,20 +297,22 @@ MyLaplace<dim>::MyLaplace ()
   :
   mapping (),
   fe (1),
-  dof_handler (triangulation)
-{}
+  dof_handler (triangulation),
+  system_matrix ( triangulation,
+		  mapping,
+		  fe,
+		  dof_handler) 
+{
+
+}
 
 
 template <int dim>
 void MyLaplace<dim>::setup_system ()
 {
   dof_handler.distribute_dofs (fe);
+  system_matrix.init_sparsity_pattern();
 
-  DynamicSparsityPattern dsp(dof_handler.n_dofs());
-  DoFTools::make_flux_sparsity_pattern (dof_handler, dsp);
-  sparsity_pattern.copy_from(dsp);
-
-  system_matrix.reinit (sparsity_pattern);
   solution.reinit (dof_handler.n_dofs());
   right_hand_side.reinit (dof_handler.n_dofs());
 }
@@ -139,8 +329,8 @@ void MyLaplace<dim>::assemble_system ()
 
   info_box.initialize_update_flags();
   UpdateFlags update_flags = update_quadrature_points |
-    update_values            |
-    update_gradients;
+    update_values;            
+    // update_gradients;
   info_box.add_update_flags(update_flags, true, true, true, true);
 
   info_box.initialize(fe, mapping);
@@ -158,60 +348,60 @@ void MyLaplace<dim>::assemble_system ()
 					 dof_info, info_box,
 					 rhs_integrator, rhs_assembler);
 
-  MeshWorker::Assembler::SystemSimple<SparseMatrix<double>, Vector<double> >
-    assembler;
-  assembler.initialize(system_matrix, right_hand_side);
+  // MeshWorker::Assembler::SystemSimple<SparseMatrix<double>, Vector<double> >
+  //   assembler;
+  // assembler.initialize(system_matrix, right_hand_side);
 
-  MeshWorker::loop<dim, dim, MeshWorker::DoFInfo<dim>, MeshWorker::IntegrationInfoBox<dim> >
-    (dof_handler.begin_active(), dof_handler.end(),
-     dof_info, info_box,
-     &MyLaplace<dim>::integrate_cell_term,
-     &MyLaplace<dim>::integrate_boundary_term,
-     &MyLaplace<dim>::integrate_face_term,
-     assembler);
+  // MeshWorker::loop<dim, dim, MeshWorker::DoFInfo<dim>, MeshWorker::IntegrationInfoBox<dim> >
+  //   (dof_handler.begin_active(), dof_handler.end(),
+  //    dof_info, info_box,
+  //    &MyLaplace<dim>::integrate_cell_term,
+  //    &MyLaplace<dim>::integrate_boundary_term,
+  //    &MyLaplace<dim>::integrate_face_term,
+  //    assembler);
 }
 
-template <int dim>
-void MyLaplace<dim>::integrate_cell_term (DoFInfo &dinfo,
-						 CellInfo &info)
-{
-  const FEValuesBase<dim> &fe_v = info.fe_values();
-  FullMatrix<double> &local_matrix = dinfo.matrix(0).matrix;
-  LocalIntegrators::Laplace::cell_matrix(local_matrix,fe_v) ;
-}
+// template <int dim>
+// void MyLaplace<dim>::integrate_cell_term (DoFInfo &dinfo,
+//  						 CellInfo &info)
+// {
+//   const FEValuesBase<dim> &fe_v = info.fe_values();
+//   FullMatrix<double> &local_matrix = dinfo.matrix(0).matrix;
+//   LocalIntegrators::Laplace::cell_matrix(local_matrix,fe_v) ;
+// }
 
-template <int dim>
-void MyLaplace<dim>::integrate_face_term (DoFInfo &dinfo1,
-						 DoFInfo &dinfo2,
-						 CellInfo &info1,
-						 CellInfo &info2)
-{
-  const FEValuesBase<dim> &fe_v = info1.fe_values();
-  const FEValuesBase<dim> &fe_v_neighbor = info2.fe_values();
+// template <int dim>
+// void MyLaplace<dim>::integrate_face_term (DoFInfo &dinfo1,
+// 						 DoFInfo &dinfo2,
+// 						 CellInfo &info1,
+// 						 CellInfo &info2)
+// {
+//   const FEValuesBase<dim> &fe_v = info1.fe_values();
+//   const FEValuesBase<dim> &fe_v_neighbor = info2.fe_values();
 
-  FullMatrix<double> &u1_v1_matrix = dinfo1.matrix(0,false).matrix;
-  FullMatrix<double> &u2_v1_matrix = dinfo1.matrix(0,true).matrix;
-  FullMatrix<double> &u1_v2_matrix = dinfo2.matrix(0,true).matrix;
-  FullMatrix<double> &u2_v2_matrix = dinfo2.matrix(0,false).matrix;
+//   FullMatrix<double> &u1_v1_matrix = dinfo1.matrix(0,false).matrix;
+//   FullMatrix<double> &u2_v1_matrix = dinfo1.matrix(0,true).matrix;
+//   FullMatrix<double> &u1_v2_matrix = dinfo2.matrix(0,true).matrix;
+//   FullMatrix<double> &u2_v2_matrix = dinfo2.matrix(0,false).matrix;
 
-  const unsigned int deg1 = info1.fe_values(0).get_fe().tensor_degree();
-  const unsigned int deg2 = info2.fe_values(0).get_fe().tensor_degree();
+//   const unsigned int deg1 = info1.fe_values(0).get_fe().tensor_degree();
+//   const unsigned int deg2 = info2.fe_values(0).get_fe().tensor_degree();
 
-  LocalIntegrators::Laplace::ip_matrix(u1_v1_matrix,u2_v1_matrix,u1_v2_matrix,u2_v2_matrix,fe_v,fe_v_neighbor,
-				       LocalIntegrators::Laplace::compute_penalty(dinfo1,dinfo2,deg1,deg2));
+//   LocalIntegrators::Laplace::ip_matrix(u1_v1_matrix,u2_v1_matrix,u1_v2_matrix,u2_v2_matrix,fe_v,fe_v_neighbor,
+// 				       LocalIntegrators::Laplace::compute_penalty(dinfo1,dinfo2,deg1,deg2));
 
-}
+// }
 
-template <int dim>
-void MyLaplace<dim>::integrate_boundary_term (DoFInfo &dinfo,
-						     CellInfo &info)
-{
-  const FEValuesBase<dim> &fe_v = info.fe_values();
-  FullMatrix<double> &local_matrix = dinfo.matrix(0).matrix;
-  const unsigned int deg = info.fe_values(0).get_fe().tensor_degree();
-  LocalIntegrators::Laplace::nitsche_matrix(local_matrix,fe_v,
-					    LocalIntegrators::Laplace::compute_penalty(dinfo,dinfo,deg,deg));
-}
+// template <int dim>
+// void MyLaplace<dim>::integrate_boundary_term (DoFInfo &dinfo,
+// 						     CellInfo &info)
+// {
+//   const FEValuesBase<dim> &fe_v = info.fe_values();
+//   FullMatrix<double> &local_matrix = dinfo.matrix(0).matrix;
+//   const unsigned int deg = info.fe_values(0).get_fe().tensor_degree();
+//   LocalIntegrators::Laplace::nitsche_matrix(local_matrix,fe_v,
+// 					    LocalIntegrators::Laplace::compute_penalty(dinfo,dinfo,deg,deg));
+// }
 
 
 
