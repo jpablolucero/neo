@@ -50,8 +50,9 @@ void MatrixIntegrator<dim>::cell(MeshWorker::DoFInfo<dim> &dinfo,
 				 typename MeshWorker::IntegrationInfo<dim> &info) const
 {
   const FEValuesBase<dim> &fe = info.fe_values() ;
-  FullMatrix<double> &M = dinfo.matrix(0).matrix ;
-  LocalIntegrators::Laplace::cell_matrix(M,fe) ;
+  Vector<double> &dst = dinfo.vector(0).block(0) ;
+  const std::vector<Tensor<1,dim> > &Dsrc = info.gradients[0][0];
+  LocalIntegrators::Laplace::cell_residual(dst,fe,Dsrc) ;
 }
   
 template <int dim>
@@ -63,16 +64,23 @@ void MatrixIntegrator<dim>::face(MeshWorker::DoFInfo<dim> &dinfo1,
   const FEValuesBase<dim> &fe1 = info1.fe_values();
   const FEValuesBase<dim> &fe2 = info2.fe_values();
 
-  FullMatrix<double> &M11 = dinfo1.matrix(0,false).matrix;
-  FullMatrix<double> &M21 = dinfo1.matrix(0,true).matrix;
-  FullMatrix<double> &M12 = dinfo2.matrix(0,true).matrix;
-  FullMatrix<double> &M22 = dinfo2.matrix(0,false).matrix;
-
   const unsigned int deg1 = info1.fe_values(0).get_fe().tensor_degree();
   const unsigned int deg2 = info2.fe_values(0).get_fe().tensor_degree();
 
-  LocalIntegrators::Laplace::ip_matrix(M11,M21,M12,M22,fe1,fe2,
-				       LocalIntegrators::Laplace::compute_penalty(dinfo1,dinfo2,deg1,deg2));
+  const std::vector<double> &src1 = info1.values[0][0];
+  const std::vector<Tensor<1,dim> > &Dsrc1 = info1.gradients[0][0];
+  Vector<double> &dst1 = dinfo1.vector(0).block(0) ;
+
+  const std::vector<double> &src2 = info2.values[0][0];
+  const std::vector<Tensor<1,dim> > &Dsrc2 = info2.gradients[0][0];
+  Vector<double> &dst2 = dinfo2.vector(0).block(0) ;
+
+  LocalIntegrators::Laplace::ip_residual(dst1,dst2,
+					 fe1,fe2,
+					 src1,Dsrc1,
+					 src2,Dsrc2,
+					 LocalIntegrators::Laplace::compute_penalty(dinfo1,dinfo2,deg1,deg2));
+
 }
 
 template <int dim>
@@ -80,10 +88,19 @@ void MatrixIntegrator<dim>::boundary(MeshWorker::DoFInfo<dim> &dinfo,
 				     typename MeshWorker::IntegrationInfo<dim> &info) const
 {
   const FEValuesBase<dim> &fe = info.fe_values();
-  FullMatrix<double> &M = dinfo.matrix(0).matrix;
   const unsigned int deg = info.fe_values(0).get_fe().tensor_degree();
-  LocalIntegrators::Laplace::nitsche_matrix(M,fe,
-					    LocalIntegrators::Laplace::compute_penalty(dinfo,dinfo,deg,deg));
+  const std::vector<double> &src = info.values[0][0];
+  const std::vector<double> data(src.size());
+  const std::vector<Tensor<1,dim> > &Dsrc = info.gradients[0][0];
+  Vector<double> &dst = dinfo.vector(0).block(0) ;
+
+  LocalIntegrators::Laplace::nitsche_residual(dst,
+					      fe,
+					      src,
+					      Dsrc,
+					      data,
+					      LocalIntegrators::Laplace::compute_penalty(dinfo,dinfo,deg,deg));
+
 }
 
 template <int dim, int fe_degree, typename number>
@@ -95,7 +112,6 @@ public:
 		   const FE_DGQ<dim>&  fe_,
 		   const DoFHandler<dim>&  dof_handler_); 
 
-  void init_sparsity_pattern();
   void vmult (Vector<number> &dst,
               const Vector<number> &src) const;
   void Tvmult (Vector<number> &dst,
@@ -110,8 +126,6 @@ public:
   const MappingQ1<dim>&  mapping;
   const FE_DGQ<dim>&  fe;
   const DoFHandler<dim>&  dof_handler; 
-  SparsityPattern sparsity_pattern;
-
 };
 
 template<int dim, int fe_degree, typename number>
@@ -124,14 +138,6 @@ LaplaceOperator<dim, fe_degree, number>::LaplaceOperator(const Triangulation<dim
   fe(fe_),
   dof_handler(dof_handler_)
 {}
-
-template <int dim, int fe_degree, typename number>
-void LaplaceOperator<dim,fe_degree,number>::init_sparsity_pattern()
-{
-  DynamicSparsityPattern dsp(dof_handler.n_dofs());
-  DoFTools::make_flux_sparsity_pattern (dof_handler, dsp);
-  sparsity_pattern.copy_from(dsp);
-}
 
 template <int dim, int fe_degree, typename number>
 void LaplaceOperator<dim,fe_degree,number>::vmult (Vector<number> &dst,
@@ -151,12 +157,8 @@ void LaplaceOperator<dim,fe_degree,number>::Tvmult (Vector<number> &dst,
 
 template <int dim, int fe_degree, typename number>
 void LaplaceOperator<dim,fe_degree,number>::vmult_add (Vector<number> &dst,
-		const Vector<number> &src) const
+						       const Vector<number> &src) const
 {
-  SparseMatrix<number> system_matrix;
-
-  system_matrix.reinit (sparsity_pattern);
-
   MeshWorker::IntegrationInfoBox<dim> info_box;
 
   const unsigned int n_gauss_points = dof_handler.get_fe().degree+1;
@@ -164,19 +166,28 @@ void LaplaceOperator<dim,fe_degree,number>::vmult_add (Vector<number> &dst,
 				       n_gauss_points,
 				       n_gauss_points);
 
+  AnyData src_data ;
+  src_data.add<const Vector<double>*>(&src,"src");
+
+  info_box.cell_selector.add("src", true, true, false);
+  info_box.boundary_selector.add("src", true, true, false);
+  info_box.face_selector.add("src", true, true, false);
+
+
   info_box.initialize_update_flags();
   UpdateFlags update_flags = update_quadrature_points |
     update_values            |
     update_gradients;
   info_box.add_update_flags(update_flags, true, true, true, true);
 
-  info_box.initialize(fe, mapping);
+  info_box.initialize(fe, mapping, src_data, src);
 
   MeshWorker::DoFInfo<dim> dof_info(dof_handler);
 
-  MeshWorker::Assembler::MatrixSimple<SparseMatrix<double> >
-    assembler;
-  assembler.initialize(system_matrix);
+  MeshWorker::Assembler::ResidualSimple<Vector<double> > assembler;
+  AnyData dst_data;
+  dst_data.add<Vector<double>*>(&dst, "dst");
+  assembler.initialize(dst_data);
 
   MatrixIntegrator<dim> matrix_integrator ;
 
@@ -186,7 +197,6 @@ void LaplaceOperator<dim,fe_degree,number>::vmult_add (Vector<number> &dst,
      matrix_integrator,
      assembler);
 
-  system_matrix.vmult_add(dst, src);
 }
 
 template <int dim, int fe_degree, typename number>
@@ -253,9 +263,6 @@ private:
   Vector<double>       solution;
   Vector<double>       right_hand_side;
 
-  typedef MeshWorker::DoFInfo<dim> DoFInfo;
-  typedef MeshWorker::IntegrationInfo<dim> CellInfo;
-
   RHSIntegrator<dim>    rhs_integrator ;
     
 };
@@ -277,8 +284,6 @@ template <int dim>
 void MyLaplace<dim>::setup_system ()
 {
   dof_handler.distribute_dofs (fe);
-  system_matrix.init_sparsity_pattern();
-
   solution.reinit (dof_handler.n_dofs());
   right_hand_side.reinit (dof_handler.n_dofs());
 }
@@ -322,7 +327,7 @@ void MyLaplace<dim>::solve (Vector<double> &solution)
   SolverCG<>              solver (solver_control);
 
   solver.solve (system_matrix, solution, right_hand_side,
-		PreconditionIdentity());
+  		PreconditionIdentity());
 }
 
 template <int dim>
