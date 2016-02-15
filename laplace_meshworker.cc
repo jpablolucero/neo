@@ -326,6 +326,7 @@ void MyLaplace<dim>::solve (Vector<double> &solution)
   SolverControl           solver_control (1000, 1e-12);
   SolverCG<>              solver (solver_control);
 
+  solver_control.log_history(true);
   solver.solve (system_matrix, solution, right_hand_side,
   		PreconditionIdentity());
 }
