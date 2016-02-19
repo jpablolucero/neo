@@ -52,7 +52,7 @@ void LaplaceOperator<dim,fe_degree,number>::vmult_add (dealii::Vector<number> &d
     dealii::update_gradients;
   info_box.add_update_flags(update_flags, true, true, true, true);
 
-  info_box.initialize(fe, mapping, src_data, src);
+  info_box.initialize(fe, mapping, src_data, dealii::Vector<double>{});
 
   dealii::MeshWorker::DoFInfo<dim> dof_info(dof_handler);
 
