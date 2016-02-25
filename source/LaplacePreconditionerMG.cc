@@ -19,9 +19,9 @@ void LaplacePreconditionerMG<dim,fe_degree,number>::clear ()
 
 template <int dim, int fe_degree, typename number>
 void LaplacePreconditionerMG<dim,fe_degree,number>::reinit (dealii::DoFHandler<dim> * dof_handler_,
-						      dealii::FE_DGQ<dim> * fe_,
-						      dealii::Triangulation<dim> * triangulation_,
-						      const dealii::MappingQ1<dim> * mapping_)
+							    dealii::FE_DGQ<dim> * fe_,
+							    dealii::Triangulation<dim> * triangulation_,
+							    const dealii::MappingQ1<dim> * mapping_)
 {
   dof_handler = dof_handler_ ;
   fe = fe_ ;
@@ -137,11 +137,14 @@ void LaplacePreconditionerMG<dim,fe_degree,number>::vmult_add (dealii::Vector<nu
   mg.set_edge_matrices(mgdown, mgup);
   mg.set_minlevel(mg_matrix.min_level());
 
-  dealii::PreconditionMG<dim, dealii::Vector<number>,
-                         dealii::MGTransferPrebuilt<dealii::Vector<number> > >
-    preconditioner(*dof_handler, mg, mg_transfer);
-  dst = 0 ;
-  preconditioner.vmult(dst,src) ;
+  mg_transfer.copy_to_mg(*dof_handler,
+			 mg.defect,
+			 src);
+  mg.cycle();
+  mg_transfer.copy_from_mg_add(*dof_handler,
+			       dst,
+			       mg.solution);
+
 }
 
 template <int dim, int fe_degree, typename number>
