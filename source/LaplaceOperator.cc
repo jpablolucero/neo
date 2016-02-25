@@ -11,9 +11,9 @@ LaplaceOperator<dim, fe_degree, number>::LaplaceOperator(const dealii::Triangula
   dof_handler(dof_handler_)
 {}
 
-template <int dim, int fe_degree, typename number>
+template<int dim, int fe_degree, typename number>
 void LaplaceOperator<dim,fe_degree,number>::vmult (dealii::Vector<number> &dst,
-	    const dealii::Vector<number> &src) const
+								    const dealii::Vector<number> &src) const
 {
   dst = 0;
   vmult_add(dst, src);
@@ -21,7 +21,7 @@ void LaplaceOperator<dim,fe_degree,number>::vmult (dealii::Vector<number> &dst,
 
 template <int dim, int fe_degree, typename number>
 void LaplaceOperator<dim,fe_degree,number>::Tvmult (dealii::Vector<number> &dst,
-	     const dealii::Vector<number> &src) const
+						    const dealii::Vector<number> &src) const
 {
   dst = 0;
   vmult_add(dst, src);

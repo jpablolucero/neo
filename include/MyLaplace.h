@@ -14,10 +14,13 @@
 #include <deal.II/lac/solver_control.h>
 #include <deal.II/lac/precondition.h>
 #include <deal.II/lac/vector.h>
+#include <deal.II/lac/full_matrix.h>
 #include <deal.II/numerics/data_out.h>
 #include <deal.II/grid/grid_generator.h>
+#include <deal.II/base/mg_level_object.h>
 
 #include <LaplaceOperator.h>
+#include <LaplacePreconditionerMG.h>
 #include <RHSIntegrator.h>
 #include <MatrixIntegrator.h>
 
@@ -38,14 +41,19 @@ private:
   void output_results () const;
 
   typedef LaplaceOperator<dim,1,double> SystemMatrixType;
+  typedef LaplacePreconditionerMG<dim,1,double> SystemMGMatrixType;
 
   dealii::Triangulation<dim>   triangulation;
   const dealii::MappingQ1<dim> mapping;
-
   dealii::FE_DGQ<dim>          fe;
   dealii::DoFHandler<dim>      dof_handler;
 
-  SystemMatrixType     system_matrix;
+  SystemMatrixType              system_matrix;
+
+  SystemMGMatrixType                         system_mg_matrix;
+
+  dealii::MGLevelObject<SystemMGMatrixType>  mg_matrices;
+  dealii::FullMatrix<double>                 coarse_matrix;
 
   dealii::Vector<double>       solution;
   dealii::Vector<double>       right_hand_side;

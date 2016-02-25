@@ -9,14 +9,18 @@ MyLaplace<dim>::MyLaplace ()
   system_matrix ( triangulation,
 		  mapping,
 		  fe,
-		  dof_handler) 
+		  dof_handler)
 {}
-
 
 template <int dim>
 void MyLaplace<dim>::setup_system ()
 {
   dof_handler.distribute_dofs (fe);
+  dof_handler.distribute_mg_dofs(fe);
+  dof_handler.initialize_local_block_info();
+
+  system_mg_matrix.reinit (&dof_handler,&fe,&triangulation,&mapping) ;
+
   solution.reinit (dof_handler.n_dofs());
   right_hand_side.reinit (dof_handler.n_dofs());
 }
@@ -61,7 +65,7 @@ void MyLaplace<dim>::solve (dealii::Vector<double> &solution)
 
   solver_control.log_history(true);
   solver.solve (system_matrix, solution, right_hand_side,
-  		dealii::PreconditionIdentity());
+  		system_mg_matrix);
 }
 
 template <int dim>

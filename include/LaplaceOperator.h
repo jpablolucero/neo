@@ -21,13 +21,13 @@ public:
 		   const dealii::DoFHandler<dim>&  dof_handler_); 
 
   void vmult (dealii::Vector<number> &dst,
-              const dealii::Vector<number> &src) const;
+	      const dealii::Vector<number> &src) const ;
   void Tvmult (dealii::Vector<number> &dst,
-               const dealii::Vector<number> &src) const;
+	       const dealii::Vector<number> &src) const ;
   void vmult_add (dealii::Vector<number> &dst,
-                  const dealii::Vector<number> &src) const;
+		  const dealii::Vector<number> &src) const ;
   void Tvmult_add (dealii::Vector<number> &dst,
-                   const dealii::Vector<number> &src) const;
+		   const dealii::Vector<number> &src) const ;
 
  private:
   const dealii::Triangulation<dim>& triangulation;
