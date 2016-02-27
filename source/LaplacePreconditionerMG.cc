@@ -107,7 +107,7 @@ void LaplacePreconditionerMG<dim,fe_degree,number>::Tvmult (dealii::Vector<numbe
 
 template <int dim, int fe_degree, typename number>
 void LaplacePreconditionerMG<dim,fe_degree,number>::vmult_add (dealii::Vector<number> & dst,
-							 const dealii::Vector<number> & src) const
+							       const dealii::Vector<number> & src) const
 {
   dealii::mg::Matrix<dealii::Vector<number> > mgmatrix(mg_matrix);
   dealii::mg::Matrix<dealii::Vector<number> > mgdown(mg_matrix_down);
@@ -118,7 +118,7 @@ void LaplacePreconditionerMG<dim,fe_degree,number>::vmult_add (dealii::Vector<nu
 				 dealii::Vector<double> > mg_smoother;
 
   typename dealii::PreconditionBlockJacobi<dealii::SparseMatrix<number> >::AdditionalData 
-    smoother_data(dof_handler->block_info().local().block_size(0));
+    smoother_data(dof_handler->block_info().local().block_size(0),1.0,true,true);
 
   mg_smoother.initialize(mg_matrix, smoother_data);
 
