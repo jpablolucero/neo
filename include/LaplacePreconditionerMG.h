@@ -6,8 +6,6 @@
 #include <deal.II/fe/fe_dgq.h>
 #include <deal.II/dofs/dof_handler.h>
 #include <deal.II/lac/vector.h>
-#include <deal.II/lac/relaxation_block.h>
-#include <deal.II/lac/precondition.h>
 #include <deal.II/lac/precondition_block.h>
 #include <deal.II/meshworker/simple.h>
 #include <deal.II/meshworker/loop.h>
