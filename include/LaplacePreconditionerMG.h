@@ -6,9 +6,11 @@
 #include <deal.II/fe/fe_dgq.h>
 #include <deal.II/dofs/dof_handler.h>
 #include <deal.II/lac/vector.h>
+#include <deal.II/lac/relaxation_block.h>
+#include <deal.II/lac/precondition.h>
+#include <deal.II/lac/precondition_block.h>
 #include <deal.II/meshworker/simple.h>
 #include <deal.II/meshworker/loop.h>
-#include <deal.II/lac/relaxation_block.h>
 #include <deal.II/multigrid/mg_transfer.h>
 #include <deal.II/multigrid/mg_smoother.h>
 #include <deal.II/multigrid/mg_coarse.h>
@@ -51,11 +53,8 @@ private:
   dealii::MGLevelObject<dealii::SparseMatrix<number> > mg_matrix_up;
   dealii::MGLevelObject<dealii::SparseMatrix<number> > mg_matrix_down;
   dealii::MGTransferPrebuilt<dealii::Vector<number> > mg_transfer;
-  dealii::MGLevelObject<dealii::RelaxationBlockJacobi<dealii::SparseMatrix<double> >::AdditionalData > smoother_data;
   dealii::FullMatrix<number> coarse_matrix;
   dealii::MGCoarseGridSVD<number, dealii::Vector<number> > mg_coarse;
-  dealii::mg::SmootherRelaxation<dealii::RelaxationBlockJacobi<dealii::SparseMatrix<number> >,
-                                 dealii::Vector<number> > mg_smoother;
 
 };
 

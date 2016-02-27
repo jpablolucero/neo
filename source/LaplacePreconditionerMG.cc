@@ -38,10 +38,6 @@ void LaplacePreconditionerMG<dim,fe_degree,number>::reinit (dealii::DoFHandler<d
 
   const unsigned int n_levels = triangulation->n_levels();
 
-  mg_smoother.clear();
-
-  smoother_data.resize(0, n_levels-1);
-
   mg_sparsity.resize(0, n_levels-1);
 
   mg_matrix.resize(0, n_levels-1);
@@ -90,19 +86,6 @@ void LaplacePreconditionerMG<dim,fe_degree,number>::reinit (dealii::DoFHandler<d
   coarse_matrix.reinit(0,0);
   coarse_matrix.copy_from (mg_matrix[mg_matrix.min_level()]);
   mg_coarse.initialize(coarse_matrix, 1.e-15);
-
-  for (unsigned int l=smoother_data.min_level()+1;l<=smoother_data.max_level();++l)
-    {
-      smoother_data[l].block_list.reinit(triangulation->n_cells(l),dof_handler->n_dofs(l), fe->dofs_per_cell);
-      dealii::DoFTools::make_cell_patches(smoother_data[l].block_list, *dof_handler, l);
-      smoother_data[l].block_list.compress();
-      smoother_data[l].relaxation = 1.0 ;
-      smoother_data[l].inversion = dealii::PreconditionBlockBase<number>::svd;
-      smoother_data[l].threshold = 1.e-12;
-    }
-  mg_smoother.initialize(mg_matrix, smoother_data);
-  mg_smoother.set_steps(1);
-  mg_smoother.set_variable(false);
 }
 
 
@@ -130,6 +113,15 @@ void LaplacePreconditionerMG<dim,fe_degree,number>::vmult_add (dealii::Vector<nu
   dealii::mg::Matrix<dealii::Vector<number> > mgdown(mg_matrix_down);
   dealii::mg::Matrix<dealii::Vector<number> > mgup(mg_matrix_up);
 
+  dealii::MGSmootherPrecondition<dealii::SparseMatrix<number>,
+				 dealii::PreconditionBlockJacobi<dealii::SparseMatrix<number> >,
+				 dealii::Vector<double> > mg_smoother;
+
+  typename dealii::PreconditionBlockJacobi<dealii::SparseMatrix<number> >::AdditionalData 
+    smoother_data(dof_handler->block_info().local().block_size(0));
+
+  mg_smoother.initialize(mg_matrix, smoother_data);
+
   dealii::Multigrid<dealii::Vector<number> > mg(*dof_handler, mgmatrix,
                                                 mg_coarse, mg_transfer,
                                                 mg_smoother, mg_smoother);
@@ -137,14 +129,11 @@ void LaplacePreconditionerMG<dim,fe_degree,number>::vmult_add (dealii::Vector<nu
   mg.set_edge_matrices(mgdown, mgup);
   mg.set_minlevel(mg_matrix.min_level());
 
-  mg_transfer.copy_to_mg(*dof_handler,
-			 mg.defect,
-			 src);
-  mg.cycle();
-  mg_transfer.copy_from_mg_add(*dof_handler,
-			       dst,
-			       mg.solution);
+  dealii::PreconditionMG<dim, dealii::Vector<number>,
+			 dealii::MGTransferPrebuilt<dealii::Vector<number> > >
+    preconditioner(*dof_handler, mg, mg_transfer);
 
+  preconditioner.vmult(dst,src) ;
 }
 
 template <int dim, int fe_degree, typename number>
