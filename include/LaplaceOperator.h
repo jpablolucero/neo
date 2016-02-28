@@ -15,10 +15,14 @@ template <int dim, int fe_degree, typename number>
 class LaplaceOperator : public dealii::Subscriptor
 {
 public:
-  LaplaceOperator (const dealii::Triangulation<dim>& triangulation_,
-		   const dealii::MappingQ1<dim>&  mapping_,
-		   const dealii::FE_DGQ<dim>&  fe_,
-		   const dealii::DoFHandler<dim>&  dof_handler_); 
+  LaplaceOperator () ; 
+
+  ~LaplaceOperator () ;
+  
+  void reinit (dealii::DoFHandler<dim> * dof_handler_,
+	       dealii::FE_DGQ<dim> * fe_,
+	       dealii::Triangulation<dim> * triangulation_,
+	       const dealii::MappingQ1<dim> * mapping_);
 
   void vmult (dealii::Vector<number> &dst,
 	      const dealii::Vector<number> &src) const ;
@@ -30,10 +34,12 @@ public:
 		   const dealii::Vector<number> &src) const ;
 
  private:
-  const dealii::Triangulation<dim>& triangulation;
-  const dealii::MappingQ1<dim>&  mapping;
-  const dealii::FE_DGQ<dim>&  fe;
-  const dealii::DoFHandler<dim>&  dof_handler; 
+  dealii::DoFHandler<dim> * dof_handler; 
+  dealii::FE_DGQ<dim> * fe;
+  dealii::Triangulation<dim> * triangulation;
+  const dealii::MappingQ1<dim> *  mapping;
+  mutable dealii::MeshWorker::IntegrationInfoBox<dim> info_box;
+  MatrixIntegrator<dim> matrix_integrator ;
 };
 
 #endif // LAPLACEOPERATOR_H

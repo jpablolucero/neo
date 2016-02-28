@@ -22,9 +22,8 @@ class LaplacePreconditionerMG : public dealii::Subscriptor
 {
 public:
   LaplacePreconditionerMG (); 
-  ~LaplacePreconditionerMG (); 
 
-  void clear () ;
+  ~LaplacePreconditionerMG (); 
 
   void reinit (dealii::DoFHandler<dim> * dof_handler_,
 	       dealii::FE_DGQ<dim> * fe_,
@@ -45,14 +44,18 @@ private:
   dealii::FE_DGQ<dim> * fe;
   dealii::Triangulation<dim> * triangulation;
   const dealii::MappingQ1<dim> * mapping;
+  MatrixIntegratorMG<dim> matrix_integrator ;
 
   dealii::MGLevelObject<dealii::SparsityPattern> mg_sparsity;
   dealii::MGLevelObject<dealii::SparseMatrix<number> > mg_matrix;
-  dealii::MGLevelObject<dealii::SparseMatrix<number> > mg_matrix_up;
-  dealii::MGLevelObject<dealii::SparseMatrix<number> > mg_matrix_down;
   dealii::MGTransferPrebuilt<dealii::Vector<number> > mg_transfer;
   dealii::FullMatrix<number> coarse_matrix;
   dealii::MGCoarseGridSVD<number, dealii::Vector<number> > mg_coarse;
+  dealii::MeshWorker::IntegrationInfoBox<dim> info_box;
+  dealii::MGSmootherPrecondition<dealii::SparseMatrix<number>,
+				 dealii::PreconditionBlockJacobi<dealii::SparseMatrix<number> >,
+				 dealii::Vector<double> > mg_smoother;
+  dealii::mg::Matrix<dealii::Vector<number> > mgmatrix;
 
 };
 

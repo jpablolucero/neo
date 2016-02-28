@@ -36,8 +36,7 @@ public:
 
 private:
   void setup_system ();
-  void assemble_system ();
-  void solve (dealii::Vector<double> &solution);
+  void solve ();
   void output_results () const;
 
   typedef LaplaceOperator<dim,1,double> SystemMatrixType;
@@ -48,9 +47,8 @@ private:
   dealii::FE_DGQ<dim>          fe;
   dealii::DoFHandler<dim>      dof_handler;
 
-  SystemMatrixType              system_matrix;
-
-  SystemMGMatrixType                         system_mg_matrix;
+  SystemMatrixType             system_matrix;
+  SystemMGMatrixType           system_mg_matrix;
 
   dealii::MGLevelObject<SystemMGMatrixType>  mg_matrices;
   dealii::FullMatrix<double>                 coarse_matrix;
@@ -58,8 +56,7 @@ private:
   dealii::Vector<double>       solution;
   dealii::Vector<double>       right_hand_side;
 
-  RHSIntegrator<dim>    rhs_integrator ;
-    
+  RHSIntegrator<dim>    rhs_integrator ;    
 };
 
 #endif // MYLAPLACE_H
