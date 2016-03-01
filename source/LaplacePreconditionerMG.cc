@@ -59,12 +59,15 @@ void LaplacePreconditionerMG<dim,fe_degree,number>::reinit (dealii::DoFHandler<d
 
   dealii::deallog << "Assemble MG matrices" << std::endl;
 
-  dealii::MeshWorker::Assembler::MGMatrixSimple<dealii::SparseMatrix<number> > assembler;
-  assembler.initialize(mg_matrix);
-
-  dealii::MeshWorker::integration_loop<dim, dim> (dof_handler->begin_mg(),dof_handler->end_mg(),
-                                                  dof_info, info_box, matrix_integrator, assembler);
-
+  for (unsigned int l=0;l<triangulation->n_levels();++l)
+    {
+      dealii::MeshWorker::Assembler::MatrixSimple<dealii::SparseMatrix<number> > assembler;
+      assembler.initialize(mg_matrix[l]);
+      dealii::MeshWorker::integration_loop<dim, dim> (dof_handler->begin_mg(l),
+						      dof_handler->end_mg(l),
+						      dof_info, info_box, matrix_integrator, assembler);
+    }
+  
   coarse_matrix.reinit(0,0);
   coarse_matrix.copy_from (mg_matrix[mg_matrix.min_level()]);
   mg_coarse.initialize(coarse_matrix, 1.e-15);

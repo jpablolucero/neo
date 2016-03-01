@@ -47,7 +47,7 @@ template <int dim>
 void MyLaplace<dim>::run ()
 {
   dealii::GridGenerator::hyper_cube (triangulation,-1.,1.);
-  triangulation.refine_global (10);
+  triangulation.refine_global (5);
   dealii::deallog << "Number of active cells: " << triangulation.n_active_cells() << std::endl;
   setup_system ();
   solve ();
