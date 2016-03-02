@@ -22,7 +22,9 @@ public:
   void reinit (dealii::DoFHandler<dim> * dof_handler_,
 	       dealii::FE_DGQ<dim> * fe_,
 	       dealii::Triangulation<dim> * triangulation_,
-	       const dealii::MappingQ1<dim> * mapping_);
+	       const dealii::MappingQ1<dim> * mapping_,
+	       unsigned int level_=0,
+	       bool multigrid_=false);
 
   void vmult (dealii::Vector<number> &dst,
 	      const dealii::Vector<number> &src) const ;
@@ -34,6 +36,8 @@ public:
 		   const dealii::Vector<number> &src) const ;
 
  private:
+  unsigned int level ;
+  bool multigrid ;
   dealii::DoFHandler<dim> * dof_handler; 
   dealii::FE_DGQ<dim> * fe;
   dealii::Triangulation<dim> * triangulation;

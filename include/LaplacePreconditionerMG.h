@@ -15,6 +15,7 @@
 #include <deal.II/multigrid/mg_matrix.h>
 #include <deal.II/multigrid/multigrid.h>
 
+#include <LaplaceOperator.h>
 #include <MatrixIntegratorMG.h>
 
 template <int dim, int fe_degree, typename number>
