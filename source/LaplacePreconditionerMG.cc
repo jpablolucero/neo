@@ -47,10 +47,8 @@ void LaplacePreconditionerMG<dim,fe_degree,number>::reinit (dealii::DoFHandler<d
   const unsigned int n_levels = triangulation->n_levels();
   mg_sparsity.resize(0, n_levels-1);
   mg_matrix.resize(0, n_levels-1);
+  mg_matrix_laplace.resize(0, n_levels-1);
   
-  dealii::deallog << 0 << " " << n_levels << std::endl ;
-  dealii::deallog << mg_sparsity.min_level() << " " << mg_sparsity.max_level() << std::endl ;
-
   for (unsigned int level=mg_sparsity.min_level();
        level<=mg_sparsity.max_level();++level)
     {
@@ -58,19 +56,16 @@ void LaplacePreconditionerMG<dim,fe_degree,number>::reinit (dealii::DoFHandler<d
       dealii::MGTools::make_flux_sparsity_pattern(*dof_handler, c_sparsity, level);
       mg_sparsity[level].copy_from(c_sparsity);
       mg_matrix[level].reinit(mg_sparsity[level]);
+      mg_matrix_laplace[level].reinit(dof_handler,fe,triangulation,mapping,level,true);
     }
 
   dealii::deallog << "Assemble MG matrices" << std::endl;
 
-  for (unsigned int l=0;l<triangulation->n_levels();++l)
-    {
-      dealii::MeshWorker::Assembler::MatrixSimple<dealii::SparseMatrix<number> > assembler;
-      assembler.initialize(mg_matrix[l]);
-      dealii::MeshWorker::integration_loop<dim, dim> (dof_handler->begin_mg(l),
-						      dof_handler->end_mg(l),
-						      dof_info, info_box, matrix_integrator, assembler);
-    }
-  
+  dealii::MeshWorker::Assembler::MGMatrixSimple<dealii::SparseMatrix<number> > assembler;
+  assembler.initialize(mg_matrix);
+  dealii::MeshWorker::integration_loop<dim, dim> (dof_handler->begin_mg(),
+						  dof_handler->end_mg(),
+						  dof_info, info_box, matrix_integrator, assembler);
   coarse_matrix.reinit(0,0);
   coarse_matrix.copy_from (mg_matrix[mg_matrix.min_level()]);
   mg_coarse.initialize(coarse_matrix, 1.e-15);
@@ -102,13 +97,6 @@ template <int dim, int fe_degree, typename number>
 void LaplacePreconditionerMG<dim,fe_degree,number>::vmult_add (dealii::Vector<number> & dst,
 							       const dealii::Vector<number> & src) const
 {
-  dealii::MGLevelObject<LaplaceOperator<dim,fe_degree,number> > mg_matrix_laplace ;
-  const unsigned int n_levels = triangulation->n_levels();
-  mg_matrix_laplace.resize(0, n_levels-1);
-
-  for (unsigned int level=0;level<n_levels;++level)
-    mg_matrix_laplace[level].reinit(dof_handler,fe,triangulation,mapping,level,true);
-
   dealii::mg::Matrix<dealii::Vector<number> > mgmatrixlaplace;
   mgmatrixlaplace.initialize(mg_matrix_laplace);
   dealii::Multigrid<dealii::Vector<number> > mglaplace(*dof_handler, mgmatrixlaplace,
@@ -120,18 +108,6 @@ void LaplacePreconditionerMG<dim,fe_degree,number>::vmult_add (dealii::Vector<nu
 			 dealii::MGTransferPrebuilt<dealii::Vector<number> > >
     preconditionerlaplace(*dof_handler, mglaplace, mg_transfer);
   preconditionerlaplace.vmult_add(dst,src) ;
-
-  // dealii::Multigrid<dealii::Vector<number> > mg(*dof_handler, mgmatrix,
-  //                                               mg_coarse, mg_transfer,
-  //                                               mg_smoother, mg_smoother);
-  // mg.set_minlevel(mg_matrix.min_level());
-  // mg.set_maxlevel(mg_matrix.max_level());
-
-  // dealii::PreconditionMG<dim, dealii::Vector<number>,
-  // 			 dealii::MGTransferPrebuilt<dealii::Vector<number> > >
-  //   preconditioner(*dof_handler, mg, mg_transfer);
-
-  // preconditioner.vmult_add(dst,src) ;
 }
 
 template <int dim, int fe_degree, typename number>

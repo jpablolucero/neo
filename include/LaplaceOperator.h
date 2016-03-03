@@ -42,6 +42,7 @@ public:
   dealii::FE_DGQ<dim> * fe;
   dealii::Triangulation<dim> * triangulation;
   const dealii::MappingQ1<dim> *  mapping;
+  dealii::MeshWorker::DoFInfo<dim> * dof_info;
   mutable dealii::MeshWorker::IntegrationInfoBox<dim> info_box;
   MatrixIntegrator<dim> matrix_integrator ;
 };

@@ -49,6 +49,7 @@ private:
 
   dealii::MGLevelObject<dealii::SparsityPattern> mg_sparsity;
   dealii::MGLevelObject<dealii::SparseMatrix<number> > mg_matrix;
+  dealii::MGLevelObject<LaplaceOperator<dim,fe_degree,number> > mg_matrix_laplace ;
   dealii::MGTransferPrebuilt<dealii::Vector<number> > mg_transfer;
   dealii::FullMatrix<number> coarse_matrix;
   dealii::MGCoarseGridSVD<number, dealii::Vector<number> > mg_coarse;
