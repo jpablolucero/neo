@@ -7,6 +7,7 @@
 #include <deal.II/dofs/dof_handler.h>
 #include <deal.II/lac/vector.h>
 #include <deal.II/lac/precondition_block.h>
+#include <deal.II/lac/precondition_block.templates.h>
 #include <deal.II/meshworker/simple.h>
 #include <deal.II/meshworker/loop.h>
 #include <deal.II/multigrid/mg_transfer.h>
@@ -47,18 +48,16 @@ private:
   const dealii::MappingQ1<dim> * mapping;
   MatrixIntegratorMG<dim> matrix_integrator ;
 
-  dealii::MGLevelObject<dealii::SparsityPattern> mg_sparsity;
-  dealii::MGLevelObject<dealii::SparseMatrix<number> > mg_matrix;
   dealii::MGLevelObject<LaplaceOperator<dim,fe_degree,number> > mg_matrix_laplace ;
+  dealii::MGLevelObject<LaplaceOperator<dim,fe_degree,number> > mg_matrix_preconditioner ;
   dealii::MGTransferPrebuilt<dealii::Vector<number> > mg_transfer;
   dealii::FullMatrix<number> coarse_matrix;
   dealii::MGCoarseGridSVD<number, dealii::Vector<number> > mg_coarse;
   dealii::MeshWorker::IntegrationInfoBox<dim> info_box;
-  dealii::MGSmootherPrecondition<dealii::SparseMatrix<number>,
-				 dealii::PreconditionBlockJacobi<dealii::SparseMatrix<number> >,
+  mutable dealii::mg::Matrix<dealii::Vector<number> > mgmatrixlaplace;
+  dealii::MGSmootherPrecondition<LaplaceOperator<dim,fe_degree,number>,
+				 dealii::PreconditionBlockJacobi<LaplaceOperator<dim,fe_degree,number> >,
 				 dealii::Vector<double> > mg_smoother;
-  dealii::mg::Matrix<dealii::Vector<number> > mgmatrix;
-
 };
 
 #endif // LAPLACEPRECONDITIONERMG_H
