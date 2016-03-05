@@ -6,6 +6,7 @@
 #include <deal.II/fe/fe_dgq.h>
 #include <deal.II/dofs/dof_handler.h>
 #include <deal.II/lac/vector.h>
+#include <deal.II/lac/full_matrix.h>
 #include <deal.II/meshworker/simple.h>
 #include <deal.II/meshworker/loop.h>
 
@@ -41,8 +42,8 @@ public:
   typedef number value_type ;
   unsigned int m() const {return dof_handler->n_dofs(level);};
   unsigned int n() const {return dof_handler->n_dofs(level);};
-  typedef typename dealii::SparseMatrix<number>::const_iterator const_iterator ;
-  typedef typename dealii::SparseMatrix<number>::size_type size_type ;
+  typedef typename dealii::FullMatrix<number>::const_iterator const_iterator ;
+  typedef typename dealii::FullMatrix<number>::size_type size_type ;
   const_iterator begin () const {return matrix.begin() ;};
   const_iterator end () const {return matrix.end() ;};
   const_iterator begin (const size_type r) const {return matrix.begin(r) ;};
@@ -58,8 +59,7 @@ public:
   const dealii::MappingQ1<dim> *  mapping;
   dealii::MeshWorker::DoFInfo<dim> * dof_info;
   mutable dealii::MeshWorker::IntegrationInfoBox<dim> info_box;
-  dealii::SparsityPattern sparsity;
-  dealii::SparseMatrix<number> matrix ;
+  dealii::FullMatrix<number> matrix ;
   MatrixIntegrator<dim> matrix_integrator ;
   MatrixIntegratorMG<dim> matrix_integrator_mg ;
 };

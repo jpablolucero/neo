@@ -57,7 +57,7 @@ private:
   mutable dealii::mg::Matrix<dealii::Vector<number> > mgmatrixlaplace;
   dealii::MGSmootherPrecondition<LaplaceOperator<dim,fe_degree,number>,
 				 dealii::PreconditionBlockJacobi<LaplaceOperator<dim,fe_degree,number> >,
-				 dealii::Vector<double> > mg_smoother;
+				 dealii::Vector<number> > mg_smoother;
 };
 
 #endif // LAPLACEPRECONDITIONERMG_H

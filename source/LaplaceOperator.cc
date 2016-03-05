@@ -50,15 +50,15 @@ template <int dim, int fe_degree, typename number>
 void LaplaceOperator<dim,fe_degree,number>::build_matrix ()
 {  
   info_box.initialize(*fe, *mapping);
-  dealii::DynamicSparsityPattern c_sparsity(dof_handler->n_dofs(level));
-  dealii::MGTools::make_flux_sparsity_pattern(*dof_handler, c_sparsity, level);
-  sparsity.copy_from(c_sparsity);
-  matrix.reinit(sparsity);
-  dealii::MeshWorker::Assembler::MatrixSimple<dealii::SparseMatrix<number> > assembler;
-  assembler.initialize(matrix);
-  dealii::MeshWorker::integration_loop<dim, dim> (dof_handler->begin_mg(level),
-						  ++dof_handler->begin_mg(level),
+  dealii::MGLevelObject<dealii::FullMatrix<number> > mg_matrix ;
+  mg_matrix.resize(0,0);
+  mg_matrix[0].reinit(dof_handler->n_dofs(0),dof_handler->n_dofs(0));
+  dealii::MeshWorker::Assembler::MGMatrixSimple<dealii::FullMatrix<number> > assembler;
+  assembler.initialize(mg_matrix);
+  dealii::MeshWorker::integration_loop<dim, dim> (dof_handler->begin_mg(0),
+						  dof_handler->end_mg(0),
 						  *dof_info, info_box, matrix_integrator_mg, assembler);
+  matrix.copy_from(mg_matrix[0]);
 }
 
 template<int dim, int fe_degree, typename number>
@@ -82,8 +82,8 @@ void LaplaceOperator<dim,fe_degree,number>::vmult_add (dealii::Vector<number> &d
 						       const dealii::Vector<number> &src) const 
 {
   dealii::AnyData dst_data;
-  dst_data.add<dealii::Vector<double>*>(&dst, "dst");
-  dealii::MeshWorker::Assembler::ResidualSimple<dealii::Vector<double> > assembler;
+  dst_data.add<dealii::Vector<number>*>(&dst, "dst");
+  dealii::MeshWorker::Assembler::ResidualSimple<dealii::Vector<number> > assembler;
   assembler.initialize(dst_data);
   if (level_matrix)
     {
@@ -91,8 +91,8 @@ void LaplaceOperator<dim,fe_degree,number>::vmult_add (dealii::Vector<number> &d
       mg_src.resize(level,level) ;
       mg_src[level] = src ;
       dealii::AnyData src_data ;
-      src_data.add<const dealii::MGLevelObject<dealii::Vector<double> >*>(&mg_src,"src");
-      info_box.initialize(*fe, *mapping, src_data, dealii::MGLevelObject<dealii::Vector<double> >{});
+      src_data.add<const dealii::MGLevelObject<dealii::Vector<number> >*>(&mg_src,"src");
+      info_box.initialize(*fe, *mapping, src_data, dealii::MGLevelObject<dealii::Vector<number> >{});
       dealii::MeshWorker::integration_loop<dim, dim>
 	(dof_handler->begin_mg(level), dof_handler->end_mg(level),
 	 *dof_info, info_box,matrix_integrator,assembler);
@@ -100,8 +100,8 @@ void LaplaceOperator<dim,fe_degree,number>::vmult_add (dealii::Vector<number> &d
   else
     {
       dealii::AnyData src_data ;
-      src_data.add<const dealii::Vector<double>*>(&src,"src");
-      info_box.initialize(*fe, *mapping, src_data, dealii::Vector<double>{});
+      src_data.add<const dealii::Vector<number>*>(&src,"src");
+      info_box.initialize(*fe, *mapping, src_data, dealii::Vector<number>{});
       dealii::MeshWorker::integration_loop<dim, dim>
   	(dof_handler->begin_active(), dof_handler->end(),
   	 *dof_info, info_box,matrix_integrator,assembler);
@@ -110,7 +110,7 @@ void LaplaceOperator<dim,fe_degree,number>::vmult_add (dealii::Vector<number> &d
 
 template <int dim, int fe_degree, typename number>
 void LaplaceOperator<dim,fe_degree,number>::Tvmult_add (dealii::Vector<number> &dst,
-		 const dealii::Vector<number> &src) const
+							const dealii::Vector<number> &src) const
 {
   vmult_add(dst, src);
 }

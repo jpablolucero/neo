@@ -24,10 +24,10 @@ void MyLaplace<dim>::setup_system ()
 template <int dim>
 void MyLaplace<dim>::solve ()
 {
-  dealii::ReductionControl           solver_control (1000, 1.E-20, 1.E-10);
+  dealii::ReductionControl        solver_control (1000, 1.E-20, 1.E-10);
   dealii::SolverCG<>              solver (solver_control);
   solver_control.log_history(true);
-  solver.solve (system_matrix, solution, right_hand_side,system_mg_matrix);
+  solver.solve(system_matrix,solution,right_hand_side,system_mg_matrix);
 }
 
 template <int dim>
