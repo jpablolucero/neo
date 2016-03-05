@@ -57,7 +57,7 @@ void LaplaceOperator<dim,fe_degree,number>::build_matrix ()
   dealii::MeshWorker::Assembler::MatrixSimple<dealii::SparseMatrix<number> > assembler;
   assembler.initialize(matrix);
   dealii::MeshWorker::integration_loop<dim, dim> (dof_handler->begin_mg(level),
-						  dof_handler->end_mg(level),
+						  ++dof_handler->begin_mg(level),
 						  *dof_info, info_box, matrix_integrator_mg, assembler);
 }
 
