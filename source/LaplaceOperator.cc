@@ -42,19 +42,30 @@ void LaplaceOperator<dim,fe_degree>::reinit (dealii::DoFHandler<dim> * dof_handl
 }
 
 template <int dim, int fe_degree>
-void LaplaceOperator<dim,fe_degree>::build_matrix ()
+void LaplaceOperator<dim,fe_degree>::build_matrix (bool same_diagonal)
 {  
   info_box.initialize(*fe, *mapping);
-  dealii::MGLevelObject<dealii::FullMatrix<double> > mg_matrix ;
-  mg_matrix.resize(0,0);
-  mg_matrix[0].reinit(dof_handler->n_dofs(0),dof_handler->n_dofs(0));
-  dealii::MeshWorker::Assembler::MGMatrixSimple<dealii::FullMatrix<double> > assembler;
+  dealii::MGLevelObject<dealii::SparseMatrix<double> > mg_matrix ;
+  mg_matrix.resize(level,level);
+  const unsigned int block_size = dof_handler->block_info().local().block_size(0) ;
+  const unsigned int n_blocks = same_diagonal ? 1 : dof_handler->n_dofs(level) / block_size ;
+  sparsity.reinit(dof_handler->n_dofs(level),dof_handler->n_dofs(level),block_size); 
+  for (unsigned int b=0;b<n_blocks;++b)
+    for (unsigned int i=block_size*b;i<block_size+block_size*b;++i)
+      for (unsigned int j=block_size*b;j<block_size+block_size*b;++j)
+	sparsity.add(i,j);
+  sparsity.compress();
+  matrix.reinit(sparsity);
+  mg_matrix[level].reinit(sparsity);
+  dealii::MeshWorker::Assembler::MGMatrixSimple<dealii::SparseMatrix<double> > assembler;
   assembler.initialize(mg_matrix);
-  dealii::MeshWorker::integration_loop<dim, dim> (dof_handler->begin_mg(0),
-						  dof_handler->end_mg(0),
-						  *dof_info, info_box, 
-						  matrix_integrator_mg, assembler);
-  matrix.copy_from(mg_matrix[0]);
+  matrix_integrator_mg.same_diagonal = same_diagonal ;
+  dealii::MeshWorker::integration_loop<dim, dim> (dof_handler->begin_mg(level),
+  						  same_diagonal ? ++dof_handler->begin_mg(level) : 
+						  dof_handler->end_mg(level),
+  						  *dof_info, info_box, 
+  						  matrix_integrator_mg, assembler);
+  matrix.copy_from(mg_matrix[level]);
 }
 
 template<int dim, int fe_degree>

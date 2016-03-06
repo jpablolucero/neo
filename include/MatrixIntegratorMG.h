@@ -20,6 +20,7 @@ class MatrixIntegratorMG final : public dealii::MeshWorker::LocalIntegrator<dim>
 	    dealii::MeshWorker::DoFInfo<dim> &dinfo2,
 	    typename dealii::MeshWorker::IntegrationInfo<dim> &info1,
 	    typename dealii::MeshWorker::IntegrationInfo<dim> &info2) const override;
+  bool same_diagonal ;
 };
 
 #endif // MATRIXINTEGRATOR_H

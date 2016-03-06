@@ -31,17 +31,18 @@ void MyLaplace<dim>::setup_multigrid ()
   const unsigned int n_levels = triangulation.n_levels();
   mg_transfer.build_matrices(dof_handler);
   mg_matrix.resize(0, n_levels-1);  
+  bool same_diagonal = true;
   for (unsigned int level=0;level<n_levels;++level)
     {
       mg_matrix[level].reinit(&dof_handler,&fe,&mapping,level);
-      mg_matrix[level].build_matrix();
+      mg_matrix[level].build_matrix(same_diagonal);
     }
   mgmatrix.initialize(mg_matrix);
   coarse_matrix.reinit(dof_handler.n_dofs(0),dof_handler.n_dofs(0));
   coarse_matrix.copy_from(mg_matrix[0]) ;
   mg_coarse.initialize(coarse_matrix, 1.e-15);
   typename dealii::PreconditionBlockJacobi<SystemMatrixType >::AdditionalData 
-    smoother_data(dof_handler.block_info().local().block_size(0),1.0,true,true);
+    smoother_data(dof_handler.block_info().local().block_size(0),1.0,true,same_diagonal);
   mg_smoother.initialize(mg_matrix, smoother_data);
 }
 

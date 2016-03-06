@@ -26,7 +26,7 @@ public:
 	       const dealii::MappingQ1<dim> * mapping_,
 	       const unsigned int level_=dealii::numbers::invalid_unsigned_int);
   
-  void build_matrix () ;
+  void build_matrix (bool same_diagonal) ;
 
   void vmult (dealii::Vector<double> &dst,
 	      const dealii::Vector<double> &src) const ;
@@ -40,8 +40,8 @@ public:
   typedef double value_type ;
   unsigned int m() const {return dof_handler->n_dofs(level);};
   unsigned int n() const {return dof_handler->n_dofs(level);};
-  typedef typename dealii::FullMatrix<double>::const_iterator const_iterator ;
-  typedef typename dealii::FullMatrix<double>::size_type size_type ;
+  typedef typename dealii::SparseMatrix<double>::const_iterator const_iterator ;
+  typedef typename dealii::SparseMatrix<double>::size_type size_type ;
   const_iterator begin (const size_type r) const {return matrix.begin(r) ;};
   const_iterator end (const size_type r) const {return matrix.end(r) ;};
   double operator()(const size_type i,const size_type j) const
@@ -53,7 +53,8 @@ public:
   const dealii::MappingQ1<dim> *  mapping;
   dealii::MeshWorker::DoFInfo<dim> * dof_info;
   mutable dealii::MeshWorker::IntegrationInfoBox<dim> info_box;
-  dealii::FullMatrix<double> matrix ;
+  dealii::SparsityPattern sparsity ;
+  dealii::SparseMatrix<double> matrix ;
   MatrixIntegrator<dim> matrix_integrator ;
   MatrixIntegratorMG<dim> matrix_integrator_mg ;
 };
