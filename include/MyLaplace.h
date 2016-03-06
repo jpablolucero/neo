@@ -18,9 +18,15 @@
 #include <deal.II/numerics/data_out.h>
 #include <deal.II/grid/grid_generator.h>
 #include <deal.II/base/mg_level_object.h>
+#include <deal.II/lac/precondition_block.h>
+#include <deal.II/lac/precondition_block.templates.h>
+#include <deal.II/multigrid/mg_transfer.h>
+#include <deal.II/multigrid/mg_smoother.h>
+#include <deal.II/multigrid/mg_coarse.h>
+#include <deal.II/multigrid/mg_matrix.h>
+#include <deal.II/multigrid/multigrid.h>
 
 #include <LaplaceOperator.h>
-#include <LaplacePreconditionerMG.h>
 #include <RHSIntegrator.h>
 #include <MatrixIntegrator.h>
 
@@ -32,15 +38,16 @@ class MyLaplace
 {
 public:
   MyLaplace ();
+  ~MyLaplace ();
   void run ();
 
 private:
   void setup_system ();
+  void setup_multigrid ();
   void solve ();
   void output_results () const;
 
   typedef LaplaceOperator<dim,1,double> SystemMatrixType;
-  typedef LaplacePreconditionerMG<dim,1,double> SystemMGMatrixType;
 
   dealii::Triangulation<dim>   triangulation;
   const dealii::MappingQ1<dim> mapping;
@@ -48,15 +55,21 @@ private:
   dealii::DoFHandler<dim>      dof_handler;
 
   SystemMatrixType             system_matrix;
-  SystemMGMatrixType           system_mg_matrix;
-
-  dealii::MGLevelObject<SystemMGMatrixType>  mg_matrices;
-  dealii::FullMatrix<double>                 coarse_matrix;
 
   dealii::Vector<double>       solution;
   dealii::Vector<double>       right_hand_side;
 
-  RHSIntegrator<dim>    rhs_integrator ;    
+  RHSIntegrator<dim>    rhs_integrator ;
+
+  dealii::MGLevelObject<SystemMatrixType > mg_matrix_laplace ;
+  dealii::MGLevelObject<SystemMatrixType > mg_matrix_preconditioner ;
+  dealii::MGTransferPrebuilt<dealii::Vector<double> > mg_transfer;
+  dealii::FullMatrix<double> coarse_matrix;
+  dealii::MGCoarseGridSVD<double, dealii::Vector<double> > mg_coarse;
+  dealii::mg::Matrix<dealii::Vector<double> > mgmatrixlaplace;
+  dealii::MGSmootherPrecondition<SystemMatrixType,
+				 dealii::PreconditionBlockJacobi<SystemMatrixType >,
+				 dealii::Vector<double> > mg_smoother;
 };
 
 #endif // MYLAPLACE_H
