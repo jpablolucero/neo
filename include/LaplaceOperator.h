@@ -11,7 +11,6 @@
 #include <deal.II/meshworker/loop.h>
 
 #include <MatrixIntegrator.h>
-#include <MatrixIntegratorMG.h>
 
 template <int dim, int fe_degree>
 class LaplaceOperator : public dealii::Subscriptor
@@ -55,8 +54,8 @@ public:
   mutable dealii::MeshWorker::IntegrationInfoBox<dim> info_box;
   dealii::SparsityPattern sparsity ;
   dealii::SparseMatrix<double> matrix ;
-  MatrixIntegrator<dim> matrix_integrator ;
-  MatrixIntegratorMG<dim> matrix_integrator_mg ;
+  MatrixIntegrator<dim,false> matrix_integrator ;
+  MatrixIntegrator<dim,true> residual_integrator ;
 };
 
 #endif // LAPLACEOPERATOR_H

@@ -59,12 +59,12 @@ void LaplaceOperator<dim,fe_degree>::build_matrix (bool same_diagonal)
   mg_matrix[level].reinit(sparsity);
   dealii::MeshWorker::Assembler::MGMatrixSimple<dealii::SparseMatrix<double> > assembler;
   assembler.initialize(mg_matrix);
-  matrix_integrator_mg.same_diagonal = same_diagonal ;
+  matrix_integrator.same_diagonal = same_diagonal ;
   dealii::MeshWorker::integration_loop<dim, dim> (dof_handler->begin_mg(level),
   						  same_diagonal ? ++dof_handler->begin_mg(level) : 
 						  dof_handler->end_mg(level),
   						  *dof_info, info_box, 
-  						  matrix_integrator_mg, assembler);
+  						  matrix_integrator, assembler);
   matrix.copy_from(mg_matrix[level]);
 }
 
@@ -102,7 +102,7 @@ void LaplaceOperator<dim,fe_degree>::vmult_add (dealii::Vector<double> &dst,
   assembler.initialize(dst_data);
   dealii::MeshWorker::integration_loop<dim, dim>
     (dof_handler->begin_mg(level), dof_handler->end_mg(level),
-     *dof_info,info_box,matrix_integrator,assembler);
+     *dof_info,info_box,residual_integrator,assembler);
 }
 
 template <int dim, int fe_degree>
