@@ -9,7 +9,6 @@ LaplaceOperator<dim, fe_degree>::~LaplaceOperator()
 {
   dof_handler = NULL ;
   fe = NULL ;
-  triangulation = NULL ;
   mapping = NULL ;
   delete dof_info ;
   dof_info = NULL ;
@@ -18,17 +17,13 @@ LaplaceOperator<dim, fe_degree>::~LaplaceOperator()
 template <int dim, int fe_degree>
 void LaplaceOperator<dim,fe_degree>::reinit (dealii::DoFHandler<dim> * dof_handler_,
 					     dealii::FE_DGQ<dim> * fe_,
-					     dealii::Triangulation<dim> * triangulation_,
 					     const dealii::MappingQ1<dim> * mapping_,
-					     unsigned int level_,
-					     bool level_matrix_)
+					     const unsigned int level_)
 {
   dof_handler = dof_handler_ ;
   fe = fe_ ;
-  triangulation = triangulation_ ;
   mapping = mapping_ ;
   level=level_;
-  level_matrix=level_matrix_;
   dof_info = new dealii::MeshWorker::DoFInfo<dim>{*dof_handler};
   const unsigned int n_gauss_points = dof_handler->get_fe().degree+1;
   info_box.initialize_gauss_quadrature(n_gauss_points,
@@ -57,7 +52,8 @@ void LaplaceOperator<dim,fe_degree>::build_matrix ()
   assembler.initialize(mg_matrix);
   dealii::MeshWorker::integration_loop<dim, dim> (dof_handler->begin_mg(0),
 						  dof_handler->end_mg(0),
-						  *dof_info, info_box, matrix_integrator_mg, assembler);
+						  *dof_info, info_box, 
+						  matrix_integrator_mg, assembler);
   matrix.copy_from(mg_matrix[0]);
 }
 
@@ -81,37 +77,28 @@ template <int dim, int fe_degree>
 void LaplaceOperator<dim,fe_degree>::vmult_add (dealii::Vector<double> &dst,
 						const dealii::Vector<double> &src) const 
 {
+  dst = 0;
   dealii::AnyData dst_data;
   dst_data.add<dealii::Vector<double>*>(&dst, "dst");
+  dealii::MGLevelObject<dealii::Vector<double> > mg_src ;
+  mg_src.resize(level,level) ;
+  mg_src[level]= std::move(src) ;
+  dealii::AnyData src_data ;
+  src_data.add<const dealii::MGLevelObject<dealii::Vector<double> >*>(&mg_src,"src");
+  info_box.initialize(*fe, *mapping, src_data, 
+		      dealii::MGLevelObject<dealii::Vector<double> >{});
   dealii::MeshWorker::Assembler::ResidualSimple<dealii::Vector<double> > assembler;
   assembler.initialize(dst_data);
-  if (level_matrix)
-    {
-      dealii::MGLevelObject<dealii::Vector<double> > mg_src ;
-      mg_src.resize(level,level) ;
-      mg_src[level] = src ;
-      dealii::AnyData src_data ;
-      src_data.add<const dealii::MGLevelObject<dealii::Vector<double> >*>(&mg_src,"src");
-      info_box.initialize(*fe, *mapping, src_data, dealii::MGLevelObject<dealii::Vector<double> >{});
-      dealii::MeshWorker::integration_loop<dim, dim>
-	(dof_handler->begin_mg(level), dof_handler->end_mg(level),
-	 *dof_info, info_box,matrix_integrator,assembler);
-    }
-  else
-    {
-      dealii::AnyData src_data ;
-      src_data.add<const dealii::Vector<double>*>(&src,"src");
-      info_box.initialize(*fe, *mapping, src_data, dealii::Vector<double>{});
-      dealii::MeshWorker::integration_loop<dim, dim>
-  	(dof_handler->begin_active(), dof_handler->end(),
-  	 *dof_info, info_box,matrix_integrator,assembler);
-    }
+  dealii::MeshWorker::integration_loop<dim, dim>
+    (dof_handler->begin_mg(level), dof_handler->end_mg(level),
+     *dof_info,info_box,matrix_integrator,assembler);
 }
 
 template <int dim, int fe_degree>
 void LaplaceOperator<dim,fe_degree>::Tvmult_add (dealii::Vector<double> &dst,
 						 const dealii::Vector<double> &src) const
 {
+  dst = 0;
   vmult_add(dst, src);
 }
 

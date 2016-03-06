@@ -23,11 +23,10 @@ public:
   
   void reinit (dealii::DoFHandler<dim> * dof_handler_,
 	       dealii::FE_DGQ<dim> * fe_,
-	       dealii::Triangulation<dim> * triangulation_,
+	       // dealii::Triangulation<dim> * triangulation_,
 	       const dealii::MappingQ1<dim> * mapping_,
-	       unsigned int level_=0,
-	       bool level_matrix_=false);
-
+	       const unsigned int level_=dealii::numbers::invalid_unsigned_int);
+  
   void build_matrix () ;
 
   void vmult (dealii::Vector<double> &dst,
@@ -50,10 +49,8 @@ public:
   { return matrix(i,j);};
  private:
   unsigned int level ;
-  bool level_matrix ;
   dealii::DoFHandler<dim> * dof_handler; 
   dealii::FE_DGQ<dim> * fe;
-  dealii::Triangulation<dim> * triangulation;
   const dealii::MappingQ1<dim> *  mapping;
   dealii::MeshWorker::DoFInfo<dim> * dof_info;
   mutable dealii::MeshWorker::IntegrationInfoBox<dim> info_box;

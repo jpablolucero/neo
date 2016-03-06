@@ -53,21 +53,19 @@ private:
   const dealii::MappingQ1<dim> mapping;
   dealii::FE_DGQ<dim>          fe;
   dealii::DoFHandler<dim>      dof_handler;
+  RHSIntegrator<dim>           rhs_integrator ;
 
   SystemMatrixType             system_matrix;
 
   dealii::Vector<double>       solution;
   dealii::Vector<double>       right_hand_side;
 
-  RHSIntegrator<dim>    rhs_integrator ;
-
-  dealii::MGLevelObject<SystemMatrixType > mg_matrix_laplace ;
-  dealii::MGLevelObject<SystemMatrixType > mg_matrix_preconditioner ;
+  dealii::MGLevelObject<SystemMatrixType >            mg_matrix ;
   dealii::MGTransferPrebuilt<dealii::Vector<double> > mg_transfer;
-  dealii::FullMatrix<double> coarse_matrix;
+  dealii::FullMatrix<double>                          coarse_matrix ;
   dealii::MGCoarseGridSVD<double, 
-			  dealii::Vector<double> > mg_coarse;
-  dealii::mg::Matrix<dealii::Vector<double> > mgmatrixlaplace;
+			  dealii::Vector<double> >    mg_coarse;
+  dealii::mg::Matrix<dealii::Vector<double> >         mgmatrix;
   dealii::MGSmootherPrecondition<SystemMatrixType,
 				 dealii::PreconditionBlockJacobi<SystemMatrixType >,
 				 dealii::Vector<double> > mg_smoother;
