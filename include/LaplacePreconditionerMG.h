@@ -58,6 +58,9 @@ private:
   dealii::MGSmootherPrecondition<LaplaceOperator<dim,fe_degree,number>,
 				 dealii::PreconditionBlockJacobi<LaplaceOperator<dim,fe_degree,number> >,
 				 dealii::Vector<number> > mg_smoother;
+  dealii::Multigrid<dealii::Vector<number> > * mglaplace ;
+  dealii::PreconditionMG<dim, dealii::Vector<number>,
+			 dealii::MGTransferPrebuilt<dealii::Vector<number> > > * preconditionerlaplace ;
 };
 
 #endif // LAPLACEPRECONDITIONERMG_H

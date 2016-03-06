@@ -7,6 +7,11 @@ LaplacePreconditionerMG<dim, fe_degree, number>::LaplacePreconditionerMG()
 template<int dim, int fe_degree, typename number>
 LaplacePreconditionerMG<dim, fe_degree, number>::~LaplacePreconditionerMG()
 {
+  delete preconditionerlaplace ;
+  preconditionerlaplace = NULL ;
+  delete mglaplace ;
+  mglaplace = NULL ;
+
   dof_handler = NULL ;
   fe = NULL ;
   triangulation = NULL ;
@@ -39,6 +44,15 @@ void LaplacePreconditionerMG<dim,fe_degree,number>::reinit (dealii::DoFHandler<d
   typename dealii::PreconditionBlockJacobi<LaplaceOperator<dim,fe_degree,number> >::AdditionalData 
     smoother_data(dof_handler->block_info().local().block_size(0),1.0,true,true);
   mg_smoother.initialize(mg_matrix_preconditioner, smoother_data);
+  mgmatrixlaplace.initialize(mg_matrix_laplace);
+  mglaplace = new dealii::Multigrid<dealii::Vector<number> > (*dof_handler, mgmatrixlaplace,
+							      mg_coarse, mg_transfer,
+							      mg_smoother, mg_smoother);
+  mglaplace->set_minlevel(mg_matrix_laplace.min_level());
+  mglaplace->set_maxlevel(mg_matrix_laplace.max_level());
+  preconditionerlaplace = new dealii::PreconditionMG<dim, dealii::Vector<number>,
+						     dealii::MGTransferPrebuilt<dealii::Vector<number> > >
+    (*dof_handler, *mglaplace, mg_transfer);
 }
 
 
@@ -62,22 +76,15 @@ template <int dim, int fe_degree, typename number>
 void LaplacePreconditionerMG<dim,fe_degree,number>::vmult_add (dealii::Vector<number> & dst,
 							       const dealii::Vector<number> & src) const
 {
-  mgmatrixlaplace.initialize(mg_matrix_laplace);
-  dealii::Multigrid<dealii::Vector<number> > mglaplace(*dof_handler, mgmatrixlaplace,
-						       mg_coarse, mg_transfer,
-						       mg_smoother, mg_smoother);
-  mglaplace.set_minlevel(mg_matrix_laplace.min_level());
-  mglaplace.set_maxlevel(mg_matrix_laplace.max_level());
-  dealii::PreconditionMG<dim, dealii::Vector<number>,
-			 dealii::MGTransferPrebuilt<dealii::Vector<number> > >
-    preconditionerlaplace(*dof_handler, mglaplace, mg_transfer);
-  preconditionerlaplace.vmult_add(dst,src) ;
+  dst = 0;
+  preconditionerlaplace->vmult_add(dst,src) ;
 }
 
 template <int dim, int fe_degree, typename number>
 void LaplacePreconditionerMG<dim,fe_degree,number>::Tvmult_add (dealii::Vector<number> & dst,
 							  const dealii::Vector<number> &src) const
 {
+  dst = 0;
   vmult_add(dst, src);
 }
 
