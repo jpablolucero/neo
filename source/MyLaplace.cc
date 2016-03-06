@@ -83,6 +83,10 @@ void MyLaplace<dim>::run ()
   dealii::deallog << "Number of active cells: " << 
     triangulation.n_active_cells() << std::endl;
   setup_system ();
+  dealii::deallog << "DoFHandler levels: ";
+  for (unsigned int l=0;l<triangulation.n_levels();++l)
+    dealii::deallog << ' ' << dof_handler.n_dofs(l);
+  dealii::deallog << std::endl;
   setup_multigrid ();
   solve ();
   output_results ();

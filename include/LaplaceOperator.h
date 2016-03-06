@@ -23,7 +23,6 @@ public:
   
   void reinit (dealii::DoFHandler<dim> * dof_handler_,
 	       dealii::FE_DGQ<dim> * fe_,
-	       // dealii::Triangulation<dim> * triangulation_,
 	       const dealii::MappingQ1<dim> * mapping_,
 	       const unsigned int level_=dealii::numbers::invalid_unsigned_int);
   
