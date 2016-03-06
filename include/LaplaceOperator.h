@@ -13,7 +13,7 @@
 #include <MatrixIntegrator.h>
 #include <MatrixIntegratorMG.h>
 
-template <int dim, int fe_degree, typename number>
+template <int dim, int fe_degree>
 class LaplaceOperator : public dealii::Subscriptor
 {
 public:
@@ -30,25 +30,23 @@ public:
 
   void build_matrix () ;
 
-  void vmult (dealii::Vector<number> &dst,
-	      const dealii::Vector<number> &src) const ;
-  void Tvmult (dealii::Vector<number> &dst,
-	       const dealii::Vector<number> &src) const ;
-  void vmult_add (dealii::Vector<number> &dst,
-		  const dealii::Vector<number> &src) const ;
-  void Tvmult_add (dealii::Vector<number> &dst,
-		   const dealii::Vector<number> &src) const ;
+  void vmult (dealii::Vector<double> &dst,
+	      const dealii::Vector<double> &src) const ;
+  void Tvmult (dealii::Vector<double> &dst,
+	       const dealii::Vector<double> &src) const ;
+  void vmult_add (dealii::Vector<double> &dst,
+		  const dealii::Vector<double> &src) const ;
+  void Tvmult_add (dealii::Vector<double> &dst,
+		   const dealii::Vector<double> &src) const ;
 
-  typedef number value_type ;
+  typedef double value_type ;
   unsigned int m() const {return dof_handler->n_dofs(level);};
   unsigned int n() const {return dof_handler->n_dofs(level);};
-  typedef typename dealii::FullMatrix<number>::const_iterator const_iterator ;
-  typedef typename dealii::FullMatrix<number>::size_type size_type ;
-  const_iterator begin () const {return matrix.begin() ;};
-  const_iterator end () const {return matrix.end() ;};
+  typedef typename dealii::FullMatrix<double>::const_iterator const_iterator ;
+  typedef typename dealii::FullMatrix<double>::size_type size_type ;
   const_iterator begin (const size_type r) const {return matrix.begin(r) ;};
   const_iterator end (const size_type r) const {return matrix.end(r) ;};
-  number operator()(const size_type i,const size_type j) const
+  double operator()(const size_type i,const size_type j) const
   { return matrix(i,j);};
  private:
   unsigned int level ;
@@ -59,7 +57,7 @@ public:
   const dealii::MappingQ1<dim> *  mapping;
   dealii::MeshWorker::DoFInfo<dim> * dof_info;
   mutable dealii::MeshWorker::IntegrationInfoBox<dim> info_box;
-  dealii::FullMatrix<number> matrix ;
+  dealii::FullMatrix<double> matrix ;
   MatrixIntegrator<dim> matrix_integrator ;
   MatrixIntegratorMG<dim> matrix_integrator_mg ;
 };

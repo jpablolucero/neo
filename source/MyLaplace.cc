@@ -49,19 +49,19 @@ void MyLaplace<dim>::setup_multigrid ()
 template <int dim>
 void MyLaplace<dim>::solve ()
 {
-  dealii::Multigrid<dealii::Vector<double> > mglaplace(dof_handler, mgmatrixlaplace,
-						       mg_coarse, mg_transfer,
-						       mg_smoother, mg_smoother);
+  dealii::Multigrid<dealii::Vector<typename SystemMatrixType::value_type> > mglaplace(dof_handler, mgmatrixlaplace,
+										     mg_coarse, mg_transfer,
+										     mg_smoother, mg_smoother);
   mglaplace.set_minlevel(mg_matrix_laplace.min_level());
   mglaplace.set_maxlevel(mg_matrix_laplace.max_level());
-  dealii::PreconditionMG<dim, dealii::Vector<double>,
-			 dealii::MGTransferPrebuilt<dealii::Vector<double> > >
-    preconditionerlaplace(dof_handler, mglaplace, mg_transfer);
+  dealii::PreconditionMG<dim, dealii::Vector<typename SystemMatrixType::value_type>,
+			 dealii::MGTransferPrebuilt<dealii::Vector<typename SystemMatrixType::value_type> > >
+  preconditioner(dof_handler, mglaplace, mg_transfer);
   
   dealii::ReductionControl        solver_control (1000, 1.E-20, 1.E-10);
   dealii::SolverCG<>              solver (solver_control);
   solver_control.log_history(true);
-  solver.solve(system_matrix,solution,right_hand_side,preconditionerlaplace);
+  solver.solve(system_matrix,solution,right_hand_side,preconditioner);
 }
 
 template <int dim>
@@ -90,4 +90,6 @@ void MyLaplace<dim>::run ()
 }
 
 template class MyLaplace<2>;
-template class dealii::PreconditionBlockJacobi<LaplaceOperator<2,1,double>,double >;
+template class MyLaplace<3>;
+template class dealii::PreconditionBlockJacobi<LaplaceOperator<2,1>,double >;
+template class dealii::PreconditionBlockJacobi<LaplaceOperator<3,1>,double >;

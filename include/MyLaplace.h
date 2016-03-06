@@ -47,7 +47,7 @@ private:
   void solve ();
   void output_results () const;
 
-  typedef LaplaceOperator<dim,1,double> SystemMatrixType;
+  typedef LaplaceOperator<dim,1> SystemMatrixType;
 
   dealii::Triangulation<dim>   triangulation;
   const dealii::MappingQ1<dim> mapping;
@@ -65,7 +65,8 @@ private:
   dealii::MGLevelObject<SystemMatrixType > mg_matrix_preconditioner ;
   dealii::MGTransferPrebuilt<dealii::Vector<double> > mg_transfer;
   dealii::FullMatrix<double> coarse_matrix;
-  dealii::MGCoarseGridSVD<double, dealii::Vector<double> > mg_coarse;
+  dealii::MGCoarseGridSVD<double, 
+			  dealii::Vector<double> > mg_coarse;
   dealii::mg::Matrix<dealii::Vector<double> > mgmatrixlaplace;
   dealii::MGSmootherPrecondition<SystemMatrixType,
 				 dealii::PreconditionBlockJacobi<SystemMatrixType >,

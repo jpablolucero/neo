@@ -49,3 +49,4 @@ void MatrixIntegratorMG<dim>::boundary(dealii::MeshWorker::DoFInfo<dim> &dinfo,
 }
 
 template class MatrixIntegratorMG<2>;
+template class MatrixIntegratorMG<3>;

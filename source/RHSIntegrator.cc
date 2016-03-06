@@ -20,3 +20,4 @@ void RHSIntegrator<dim>::face(dealii::MeshWorker::DoFInfo<dim> &,
 {}
 
 template class RHSIntegrator<2>;
+template class RHSIntegrator<3>;
