@@ -27,9 +27,9 @@ void LaplaceOperator<dim, fe_degree, same_diagonal>::clear()
 
 template <int dim, int fe_degree, bool same_diagonal>
 void LaplaceOperator<dim, fe_degree, same_diagonal>::reinit (dealii::DoFHandler<dim> * dof_handler_,
-					     dealii::FE_DGQ<dim> * fe_,
-					     const dealii::MappingQ1<dim> * mapping_,
-					     const unsigned int level_)
+							     dealii::FE_DGQ<dim> * fe_,
+							     const dealii::MappingQ1<dim> * mapping_,
+							     const unsigned int level_)
 {
   global_timer.enter_subsection("LaplaceOperator::reinit");
   dof_handler = dof_handler_ ;
@@ -73,7 +73,6 @@ void LaplaceOperator<dim, fe_degree, same_diagonal>::build_matrix ()
   mg_matrix[level].reinit(sparsity);
   dealii::MeshWorker::Assembler::MGMatrixSimple<dealii::SparseMatrix<double> > assembler;
   assembler.initialize(mg_matrix);
-  matrix_integrator.same_diagonal = same_diagonal ;
   dealii::MeshWorker::integration_loop<dim, dim> (dof_handler->begin_mg(level),
   						  same_diagonal ? ++dof_handler->begin_mg(level) : 
 						  dof_handler->end_mg(level),
@@ -85,7 +84,7 @@ void LaplaceOperator<dim, fe_degree, same_diagonal>::build_matrix ()
 
 template <int dim, int fe_degree, bool same_diagonal>
 void LaplaceOperator<dim, fe_degree, same_diagonal>::vmult (dealii::Vector<double> &dst,
-					    const dealii::Vector<double> &src) const
+							    const dealii::Vector<double> &src) const
 {
   dst = 0;
   vmult_add(dst, src);
@@ -93,7 +92,7 @@ void LaplaceOperator<dim, fe_degree, same_diagonal>::vmult (dealii::Vector<doubl
 
 template <int dim, int fe_degree, bool same_diagonal>
 void LaplaceOperator<dim, fe_degree, same_diagonal>::Tvmult (dealii::Vector<double> &dst,
-					     const dealii::Vector<double> &src) const
+							     const dealii::Vector<double> &src) const
 {
   dst = 0;
   vmult_add(dst, src);
@@ -101,7 +100,7 @@ void LaplaceOperator<dim, fe_degree, same_diagonal>::Tvmult (dealii::Vector<doub
 
 template <int dim, int fe_degree, bool same_diagonal>
 void LaplaceOperator<dim, fe_degree, same_diagonal>::vmult_add (dealii::Vector<double> &dst,
-						const dealii::Vector<double> &src) const 
+								const dealii::Vector<double> &src) const 
 {
   global_timer.enter_subsection("LaplaceOperator::vmult_add");
   dst = 0;
@@ -124,7 +123,7 @@ void LaplaceOperator<dim, fe_degree, same_diagonal>::vmult_add (dealii::Vector<d
 
 template <int dim, int fe_degree, bool same_diagonal>
 void LaplaceOperator<dim, fe_degree, same_diagonal>::Tvmult_add (dealii::Vector<double> &dst,
-						 const dealii::Vector<double> &src) const
+								 const dealii::Vector<double> &src) const
 {
   dst = 0;
   vmult_add(dst, src);

@@ -27,18 +27,14 @@
 #include <deal.II/multigrid/multigrid.h>
 
 #include <LaplaceOperator.h>
-#include <RHSIntegrator.h>
-#include <MatrixIntegrator.h>
 
 #include <string>
 #include <fstream>
 
-template <int dim>
+template <int dim,bool same_diagonal = true>
 class MyLaplace
 {
 public:
-  static const bool same_diagonal = true;
-
   MyLaplace ();
   ~MyLaplace ();
   void run ();
@@ -55,7 +51,6 @@ private:
   const dealii::MappingQ1<dim> mapping;
   dealii::FE_DGQ<dim>          fe;
   dealii::DoFHandler<dim>      dof_handler;
-  RHSIntegrator<dim>           rhs_integrator ;
 
   SystemMatrixType             system_matrix;
 

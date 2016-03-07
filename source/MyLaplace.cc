@@ -1,20 +1,20 @@
 #include <MyLaplace.h>
 #include <GlobalTimer.h>
 
-template <int dim>
-MyLaplace<dim>::MyLaplace ()
+template <int dim,bool same_diagonal>
+MyLaplace<dim,same_diagonal>::MyLaplace ()
   :
   mapping (),
   fe (1),
   dof_handler (triangulation)
 {}
 
-template <int dim>
-MyLaplace<dim>::~MyLaplace ()
+template <int dim,bool same_diagonal>
+MyLaplace<dim,same_diagonal>::~MyLaplace ()
 {}
 
-template <int dim>
-void MyLaplace<dim>::setup_system ()
+template <int dim,bool same_diagonal>
+void MyLaplace<dim,same_diagonal>::setup_system ()
 {
   dof_handler.distribute_dofs (fe);
   dof_handler.distribute_mg_dofs(fe);
@@ -26,8 +26,8 @@ void MyLaplace<dim>::setup_system ()
   right_hand_side = 1.0/triangulation.n_active_cells() ;
 }
 
-template <int dim>
-void MyLaplace<dim>::setup_multigrid ()
+template <int dim,bool same_diagonal>
+void MyLaplace<dim,same_diagonal>::setup_multigrid ()
 {
   const unsigned int n_levels = triangulation.n_levels();
   mg_matrix.resize(0, n_levels-1);  
@@ -40,8 +40,8 @@ void MyLaplace<dim>::setup_multigrid ()
   coarse_matrix.copy_from(mg_matrix[0]) ;
 }
 
-template <int dim>
-void MyLaplace<dim>::solve ()
+template <int dim,bool same_diagonal>
+void MyLaplace<dim,same_diagonal>::solve ()
 {
   global_timer.enter_subsection("solve::mg_initialization");
   dealii::MGTransferPrebuilt<dealii::Vector<double> > mg_transfer;
@@ -75,8 +75,8 @@ void MyLaplace<dim>::solve ()
   global_timer.leave_subsection();
 }
 
-template <int dim>
-void MyLaplace<dim>::output_results () const
+template <int dim,bool same_diagonal>
+void MyLaplace<dim,same_diagonal>::output_results () const
 {
   std::string filename = "solution.vtu";
   std::ofstream vtu_output (filename.c_str());
@@ -88,8 +88,8 @@ void MyLaplace<dim>::output_results () const
 }
 
 
-template <int dim>
-void MyLaplace<dim>::run ()
+template <int dim,bool same_diagonal>
+void MyLaplace<dim,same_diagonal>::run ()
 {
   for (unsigned int cycle=0; cycle<9-dim; ++cycle)
     {
@@ -126,8 +126,10 @@ void MyLaplace<dim>::run ()
     }
 }
 
-template class MyLaplace<2>;
-template class MyLaplace<3>;
+template class MyLaplace<2,true>;
+template class MyLaplace<3,true>;
+template class MyLaplace<2,false>;
+template class MyLaplace<3,false>;
 template class dealii::PreconditionBlockJacobi<LaplaceOperator<2, 1, true>,double >;
 template class dealii::PreconditionBlockJacobi<LaplaceOperator<2, 1, false>,double >;
 template class dealii::PreconditionBlockJacobi<LaplaceOperator<3, 1, true>,double >;
