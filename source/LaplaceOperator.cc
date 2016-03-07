@@ -1,12 +1,12 @@
 #include <LaplaceOperator.h>
 #include <GlobalTimer.h>
 
-template<int dim, int fe_degree>
-LaplaceOperator<dim, fe_degree>::LaplaceOperator()
+template <int dim, int fe_degree, bool same_diagonal>
+LaplaceOperator<dim, fe_degree, same_diagonal>::LaplaceOperator()
 {}
 
-template<int dim, int fe_degree>
-LaplaceOperator<dim, fe_degree>::~LaplaceOperator()
+template <int dim, int fe_degree, bool same_diagonal>
+LaplaceOperator<dim, fe_degree, same_diagonal>::~LaplaceOperator()
 {
   dof_handler = NULL ;
   fe = NULL ;
@@ -15,8 +15,8 @@ LaplaceOperator<dim, fe_degree>::~LaplaceOperator()
   dof_info = NULL ;
 }
 
-template<int dim, int fe_degree>
-void LaplaceOperator<dim, fe_degree>::clear()
+template <int dim, int fe_degree, bool same_diagonal>
+void LaplaceOperator<dim, fe_degree, same_diagonal>::clear()
 {
   dof_handler = NULL ;
   fe = NULL ;
@@ -25,8 +25,8 @@ void LaplaceOperator<dim, fe_degree>::clear()
   dof_info = NULL ;
 }
 
-template <int dim, int fe_degree>
-void LaplaceOperator<dim,fe_degree>::reinit (dealii::DoFHandler<dim> * dof_handler_,
+template <int dim, int fe_degree, bool same_diagonal>
+void LaplaceOperator<dim, fe_degree, same_diagonal>::reinit (dealii::DoFHandler<dim> * dof_handler_,
 					     dealii::FE_DGQ<dim> * fe_,
 					     const dealii::MappingQ1<dim> * mapping_,
 					     const unsigned int level_)
@@ -54,8 +54,8 @@ void LaplaceOperator<dim,fe_degree>::reinit (dealii::DoFHandler<dim> * dof_handl
   global_timer.leave_subsection();
 }
 
-template <int dim, int fe_degree>
-void LaplaceOperator<dim,fe_degree>::build_matrix (bool same_diagonal)
+template <int dim, int fe_degree, bool same_diagonal>
+void LaplaceOperator<dim, fe_degree, same_diagonal>::build_matrix ()
 {  
   global_timer.enter_subsection("LaplaceOperator::build_matrix");
   info_box.initialize(*fe, *mapping);
@@ -83,24 +83,24 @@ void LaplaceOperator<dim,fe_degree>::build_matrix (bool same_diagonal)
   global_timer.leave_subsection();
 }
 
-template<int dim, int fe_degree>
-void LaplaceOperator<dim,fe_degree>::vmult (dealii::Vector<double> &dst,
+template <int dim, int fe_degree, bool same_diagonal>
+void LaplaceOperator<dim, fe_degree, same_diagonal>::vmult (dealii::Vector<double> &dst,
 					    const dealii::Vector<double> &src) const
 {
   dst = 0;
   vmult_add(dst, src);
 }
 
-template <int dim, int fe_degree>
-void LaplaceOperator<dim,fe_degree>::Tvmult (dealii::Vector<double> &dst,
+template <int dim, int fe_degree, bool same_diagonal>
+void LaplaceOperator<dim, fe_degree, same_diagonal>::Tvmult (dealii::Vector<double> &dst,
 					     const dealii::Vector<double> &src) const
 {
   dst = 0;
   vmult_add(dst, src);
 }
 
-template <int dim, int fe_degree>
-void LaplaceOperator<dim,fe_degree>::vmult_add (dealii::Vector<double> &dst,
+template <int dim, int fe_degree, bool same_diagonal>
+void LaplaceOperator<dim, fe_degree, same_diagonal>::vmult_add (dealii::Vector<double> &dst,
 						const dealii::Vector<double> &src) const 
 {
   global_timer.enter_subsection("LaplaceOperator::vmult_add");
@@ -122,13 +122,15 @@ void LaplaceOperator<dim,fe_degree>::vmult_add (dealii::Vector<double> &dst,
   global_timer.leave_subsection();
 }
 
-template <int dim, int fe_degree>
-void LaplaceOperator<dim,fe_degree>::Tvmult_add (dealii::Vector<double> &dst,
+template <int dim, int fe_degree, bool same_diagonal>
+void LaplaceOperator<dim, fe_degree, same_diagonal>::Tvmult_add (dealii::Vector<double> &dst,
 						 const dealii::Vector<double> &src) const
 {
   dst = 0;
   vmult_add(dst, src);
 }
 
-template class LaplaceOperator<2,1>;
-template class LaplaceOperator<3,1>;
+template class LaplaceOperator<2, 1, true>;
+template class LaplaceOperator<2, 1, false>;
+template class LaplaceOperator<3, 1, true>;
+template class LaplaceOperator<3, 1, false>;

@@ -37,6 +37,8 @@ template <int dim>
 class MyLaplace
 {
 public:
+  static const bool same_diagonal = true;
+
   MyLaplace ();
   ~MyLaplace ();
   void run ();
@@ -47,7 +49,7 @@ private:
   void solve ();
   void output_results () const;
 
-  typedef LaplaceOperator<dim,1> SystemMatrixType;
+  typedef LaplaceOperator<dim, 1, same_diagonal> SystemMatrixType;
 
   dealii::Triangulation<dim>   triangulation;
   const dealii::MappingQ1<dim> mapping;

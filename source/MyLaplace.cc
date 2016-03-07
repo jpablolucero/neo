@@ -34,7 +34,7 @@ void MyLaplace<dim>::setup_multigrid ()
   for (unsigned int level=0;level<n_levels;++level)
     {
       mg_matrix[level].reinit(&dof_handler,&fe,&mapping,level);
-      mg_matrix[level].build_matrix(true);
+      mg_matrix[level].build_matrix();
     }
   coarse_matrix.reinit(dof_handler.n_dofs(0),dof_handler.n_dofs(0));
   coarse_matrix.copy_from(mg_matrix[0]) ;
@@ -50,7 +50,8 @@ void MyLaplace<dim>::solve ()
 			  dealii::Vector<double> >    mg_coarse;
   mg_coarse.initialize(coarse_matrix, 1.e-15);
   typename dealii::PreconditionBlockJacobi<SystemMatrixType >::AdditionalData 
-    smoother_data(dof_handler.block_info().local().block_size(0),1.0,true,true);
+    smoother_data(dof_handler.block_info().local().block_size(0),
+                  1.0, true, same_diagonal);
   dealii::MGSmootherPrecondition<SystemMatrixType,
 				 dealii::PreconditionBlockJacobi<SystemMatrixType >,
 				 dealii::Vector<double> > mg_smoother;
@@ -127,5 +128,7 @@ void MyLaplace<dim>::run ()
 
 template class MyLaplace<2>;
 template class MyLaplace<3>;
-template class dealii::PreconditionBlockJacobi<LaplaceOperator<2,1>,double >;
-template class dealii::PreconditionBlockJacobi<LaplaceOperator<3,1>,double >;
+template class dealii::PreconditionBlockJacobi<LaplaceOperator<2, 1, true>,double >;
+template class dealii::PreconditionBlockJacobi<LaplaceOperator<2, 1, false>,double >;
+template class dealii::PreconditionBlockJacobi<LaplaceOperator<3, 1, true>,double >;
+template class dealii::PreconditionBlockJacobi<LaplaceOperator<3, 1, false>,double >;
