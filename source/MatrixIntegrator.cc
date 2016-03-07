@@ -6,8 +6,8 @@ MatrixIntegrator<dim,residual>::MatrixIntegrator():
 {}
 
 template <int dim,bool residual>
-void MatrixIntegrator<dim,residual>::cell(dealii::MeshWorker::DoFInfo<dim> &dinfo, 
-					  typename dealii::MeshWorker::IntegrationInfo<dim> &info) const
+void MatrixIntegrator<dim,residual>::cell(dealii::MeshWorker::DoFInfo<dim> &dinfo,
+                                          typename dealii::MeshWorker::IntegrationInfo<dim> &info) const
 {
   if (residual)
     {
@@ -23,12 +23,12 @@ void MatrixIntegrator<dim,residual>::cell(dealii::MeshWorker::DoFInfo<dim> &dinf
       dealii::LocalIntegrators::Laplace::cell_matrix(M,fe) ;
     }
 }
-  
+
 template <int dim,bool residual>
 void MatrixIntegrator<dim,residual>::face(dealii::MeshWorker::DoFInfo<dim> &dinfo1,
-					  dealii::MeshWorker::DoFInfo<dim> &dinfo2,
-					  typename dealii::MeshWorker::IntegrationInfo<dim> &info1,
-					  typename dealii::MeshWorker::IntegrationInfo<dim> &info2) const
+                                          dealii::MeshWorker::DoFInfo<dim> &dinfo2,
+                                          typename dealii::MeshWorker::IntegrationInfo<dim> &info1,
+                                          typename dealii::MeshWorker::IntegrationInfo<dim> &info2) const
 {
   if (residual)
     {
@@ -47,10 +47,10 @@ void MatrixIntegrator<dim,residual>::face(dealii::MeshWorker::DoFInfo<dim> &dinf
       dealii::Vector<double> &dst2 = dinfo2.vector(0).block(0) ;
 
       dealii::LocalIntegrators::Laplace::ip_residual(dst1,dst2,
-						     fe1,fe2,
-						     src1,Dsrc1,
-						     src2,Dsrc2,
-						     dealii::LocalIntegrators::Laplace::compute_penalty(dinfo1,dinfo2,deg1,deg2));
+                                                     fe1,fe2,
+                                                     src1,Dsrc1,
+                                                     src2,Dsrc2,
+                                                     dealii::LocalIntegrators::Laplace::compute_penalty(dinfo1,dinfo2,deg1,deg2));
     }
   else
     {
@@ -66,13 +66,13 @@ void MatrixIntegrator<dim,residual>::face(dealii::MeshWorker::DoFInfo<dim> &dinf
       const unsigned int deg2 = info2.fe_values(0).get_fe().tensor_degree();
 
       dealii::LocalIntegrators::Laplace::ip_matrix(M11,M21,M12,M22,fe1,fe2,
-						   dealii::LocalIntegrators::Laplace::compute_penalty(dinfo1,dinfo2,deg1,deg2));
+                                                   dealii::LocalIntegrators::Laplace::compute_penalty(dinfo1,dinfo2,deg1,deg2));
     }
 }
 
 template <int dim,bool residual>
-void MatrixIntegrator<dim,residual>::boundary(dealii::MeshWorker::DoFInfo<dim> &dinfo, 
-					      typename dealii::MeshWorker::IntegrationInfo<dim> &info) const
+void MatrixIntegrator<dim,residual>::boundary(dealii::MeshWorker::DoFInfo<dim> &dinfo,
+                                              typename dealii::MeshWorker::IntegrationInfo<dim> &info) const
 {
   if (residual)
     {
@@ -84,21 +84,21 @@ void MatrixIntegrator<dim,residual>::boundary(dealii::MeshWorker::DoFInfo<dim> &
       dealii::Vector<double> &dst = dinfo.vector(0).block(0) ;
 
       dealii::LocalIntegrators::Laplace::nitsche_residual(dst,
-							  fe,
-							  src,
-							  Dsrc,
-							  data,
-							  dealii::LocalIntegrators::Laplace::compute_penalty(dinfo,dinfo,deg,deg));
+                                                          fe,
+                                                          src,
+                                                          Dsrc,
+                                                          data,
+                                                          dealii::LocalIntegrators::Laplace::compute_penalty(dinfo,dinfo,deg,deg));
     }
   else
     {
       const dealii::FEValuesBase<dim> &fe = info.fe_values();
       dealii::FullMatrix<double> &M = dinfo.matrix(0).matrix;
       const unsigned int deg = info.fe_values(0).get_fe().tensor_degree();
-   
+
       dealii::LocalIntegrators::Laplace::nitsche_matrix(M,fe,
-							dealii::LocalIntegrators::Laplace::compute_penalty(dinfo,dinfo,deg,deg));
-    } 
+                                                        dealii::LocalIntegrators::Laplace::compute_penalty(dinfo,dinfo,deg,deg));
+    }
 }
 
 template class MatrixIntegrator<2,false>;

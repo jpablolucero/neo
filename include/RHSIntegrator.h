@@ -15,9 +15,9 @@ public:
   void cell(dealii::MeshWorker::DoFInfo<dim> &dinfo, typename dealii::MeshWorker::IntegrationInfo<dim> &info) const;
   void boundary(dealii::MeshWorker::DoFInfo<dim> &dinfo, typename dealii::MeshWorker::IntegrationInfo<dim> &info) const;
   void face(dealii::MeshWorker::DoFInfo<dim> &dinfo1,
-	    dealii::MeshWorker::DoFInfo<dim> &dinfo2,
-	    typename dealii::MeshWorker::IntegrationInfo<dim> &info1,
-	    typename dealii::MeshWorker::IntegrationInfo<dim> &info2) const;
+            dealii::MeshWorker::DoFInfo<dim> &dinfo2,
+            typename dealii::MeshWorker::IntegrationInfo<dim> &info1,
+            typename dealii::MeshWorker::IntegrationInfo<dim> &info2) const;
 };
 
 #endif // RHSINTEGRATOR_H
