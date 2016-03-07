@@ -67,8 +67,6 @@ void MatrixIntegrator<dim,residual>::face(dealii::MeshWorker::DoFInfo<dim> &dinf
 
       dealii::LocalIntegrators::Laplace::ip_matrix(M11,M21,M12,M22,fe1,fe2,
 						   dealii::LocalIntegrators::Laplace::compute_penalty(dinfo1,dinfo2,deg1,deg2));
-      M21.equ(0.0,M21);
-      M12.equ(0.0,M12);
     }
 }
 
