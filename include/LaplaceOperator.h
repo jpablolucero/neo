@@ -27,6 +27,8 @@ public:
   
   void build_matrix (bool same_diagonal) ;
 
+  void clear () ;
+
   void vmult (dealii::Vector<double> &dst,
 	      const dealii::Vector<double> &src) const ;
   void Tvmult (dealii::Vector<double> &dst,

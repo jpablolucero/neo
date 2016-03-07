@@ -61,14 +61,7 @@ private:
   dealii::Vector<double>       right_hand_side;
 
   dealii::MGLevelObject<SystemMatrixType >            mg_matrix ;
-  dealii::MGTransferPrebuilt<dealii::Vector<double> > mg_transfer;
   dealii::FullMatrix<double>                          coarse_matrix ;
-  dealii::MGCoarseGridSVD<double, 
-			  dealii::Vector<double> >    mg_coarse;
-  dealii::mg::Matrix<dealii::Vector<double> >         mgmatrix;
-  dealii::MGSmootherPrecondition<SystemMatrixType,
-				 dealii::PreconditionBlockJacobi<SystemMatrixType >,
-				 dealii::Vector<double> > mg_smoother;
 };
 
 #endif // MYLAPLACE_H

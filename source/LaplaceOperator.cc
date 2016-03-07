@@ -14,6 +14,16 @@ LaplaceOperator<dim, fe_degree>::~LaplaceOperator()
   dof_info = NULL ;
 }
 
+template<int dim, int fe_degree>
+void LaplaceOperator<dim, fe_degree>::clear()
+{
+  dof_handler = NULL ;
+  fe = NULL ;
+  mapping = NULL ;
+  delete dof_info ;
+  dof_info = NULL ;
+}
+
 template <int dim, int fe_degree>
 void LaplaceOperator<dim,fe_degree>::reinit (dealii::DoFHandler<dim> * dof_handler_,
 					     dealii::FE_DGQ<dim> * fe_,
