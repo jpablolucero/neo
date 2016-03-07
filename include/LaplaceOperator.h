@@ -12,7 +12,7 @@
 
 #include <MatrixIntegrator.h>
 
-template <int dim, int fe_degree>
+template <int dim, int fe_degree, bool same_diagonal>
 class LaplaceOperator : public dealii::Subscriptor
 {
 public:
@@ -25,7 +25,7 @@ public:
 	       const dealii::MappingQ1<dim> * mapping_,
 	       const unsigned int level_=dealii::numbers::invalid_unsigned_int);
   
-  void build_matrix (bool same_diagonal) ;
+  void build_matrix () ;
 
   void clear () ;
 
