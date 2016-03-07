@@ -16,57 +16,43 @@ template <int dim, int fe_degree>
 class LaplaceOperator : public dealii::Subscriptor
 {
 public:
-  LaplaceOperator () ;
+  LaplaceOperator () ; 
 
   ~LaplaceOperator () ;
-
-  void reinit (dealii::DoFHandler<dim> *dof_handler_,
-               dealii::FE_DGQ<dim> *fe_,
-               const dealii::MappingQ1<dim> *mapping_,
-               const unsigned int level_=dealii::numbers::invalid_unsigned_int);
-
+  
+  void reinit (dealii::DoFHandler<dim> * dof_handler_,
+	       dealii::FE_DGQ<dim> * fe_,
+	       const dealii::MappingQ1<dim> * mapping_,
+	       const unsigned int level_=dealii::numbers::invalid_unsigned_int);
+  
   void build_matrix (bool same_diagonal) ;
 
   void clear () ;
 
   void vmult (dealii::Vector<double> &dst,
-              const dealii::Vector<double> &src) const ;
+	      const dealii::Vector<double> &src) const ;
   void Tvmult (dealii::Vector<double> &dst,
-               const dealii::Vector<double> &src) const ;
+	       const dealii::Vector<double> &src) const ;
   void vmult_add (dealii::Vector<double> &dst,
-                  const dealii::Vector<double> &src) const ;
+		  const dealii::Vector<double> &src) const ;
   void Tvmult_add (dealii::Vector<double> &dst,
-                   const dealii::Vector<double> &src) const ;
+		   const dealii::Vector<double> &src) const ;
 
   typedef double value_type ;
-  unsigned int m() const
-  {
-    return dof_handler->n_dofs(level);
-  }
-  unsigned int n() const
-  {
-    return dof_handler->n_dofs(level);
-  }
+  unsigned int m() const {return dof_handler->n_dofs(level);};
+  unsigned int n() const {return dof_handler->n_dofs(level);};
   typedef typename dealii::SparseMatrix<double>::const_iterator const_iterator ;
   typedef typename dealii::SparseMatrix<double>::size_type size_type ;
-  const_iterator begin (const size_type r) const
-  {
-    return matrix.begin(r) ;
-  }
-  const_iterator end (const size_type r) const
-  {
-    return matrix.end(r) ;
-  }
+  const_iterator begin (const size_type r) const {return matrix.begin(r) ;};
+  const_iterator end (const size_type r) const {return matrix.end(r) ;};
   double operator()(const size_type i,const size_type j) const
-  {
-    return matrix(i,j);
-  }
-private:
+  { return matrix(i,j);};
+ private:
   unsigned int level ;
-  dealii::DoFHandler<dim> *dof_handler;
-  dealii::FE_DGQ<dim> *fe;
-  const dealii::MappingQ1<dim>   *mapping;
-  dealii::MeshWorker::DoFInfo<dim> *dof_info;
+  dealii::DoFHandler<dim> * dof_handler; 
+  dealii::FE_DGQ<dim> * fe;
+  const dealii::MappingQ1<dim> *  mapping;
+  dealii::MeshWorker::DoFInfo<dim> * dof_info;
   mutable dealii::MeshWorker::IntegrationInfoBox<dim> info_box;
   dealii::SparsityPattern sparsity ;
   dealii::SparseMatrix<double> matrix ;
