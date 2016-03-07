@@ -1,4 +1,5 @@
 #include <LaplaceOperator.h>
+#include <GlobalTimer.h>
 
 template<int dim, int fe_degree>
 LaplaceOperator<dim, fe_degree>::LaplaceOperator()
@@ -30,6 +31,7 @@ void LaplaceOperator<dim,fe_degree>::reinit (dealii::DoFHandler<dim> * dof_handl
 					     const dealii::MappingQ1<dim> * mapping_,
 					     const unsigned int level_)
 {
+  global_timer.enter_subsection("LaplaceOperator::reinit");
   dof_handler = dof_handler_ ;
   fe = fe_ ;
   mapping = mapping_ ;
@@ -49,11 +51,13 @@ void LaplaceOperator<dim,fe_degree>::reinit (dealii::DoFHandler<dim> * dof_handl
   info_box.cell_selector.add("src", true, true, false);
   info_box.boundary_selector.add("src", true, true, false);
   info_box.face_selector.add("src", true, true, false);
+  global_timer.leave_subsection();
 }
 
 template <int dim, int fe_degree>
 void LaplaceOperator<dim,fe_degree>::build_matrix (bool same_diagonal)
 {  
+  global_timer.enter_subsection("LaplaceOperator::build_matrix");
   info_box.initialize(*fe, *mapping);
   dealii::MGLevelObject<dealii::SparseMatrix<double> > mg_matrix ;
   mg_matrix.resize(level,level);
@@ -76,6 +80,7 @@ void LaplaceOperator<dim,fe_degree>::build_matrix (bool same_diagonal)
   						  *dof_info, info_box, 
   						  matrix_integrator, assembler);
   matrix.copy_from(mg_matrix[level]);
+  global_timer.leave_subsection();
 }
 
 template<int dim, int fe_degree>
@@ -98,6 +103,7 @@ template <int dim, int fe_degree>
 void LaplaceOperator<dim,fe_degree>::vmult_add (dealii::Vector<double> &dst,
 						const dealii::Vector<double> &src) const 
 {
+  global_timer.enter_subsection("LaplaceOperator::vmult_add");
   dst = 0;
   dealii::AnyData dst_data;
   dst_data.add<dealii::Vector<double>*>(&dst, "dst");
@@ -113,6 +119,7 @@ void LaplaceOperator<dim,fe_degree>::vmult_add (dealii::Vector<double> &dst,
   dealii::MeshWorker::integration_loop<dim, dim>
     (dof_handler->begin_mg(level), dof_handler->end_mg(level),
      *dof_info,info_box,residual_integrator,assembler);
+  global_timer.leave_subsection();
 }
 
 template <int dim, int fe_degree>
