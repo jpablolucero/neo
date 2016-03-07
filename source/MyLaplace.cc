@@ -1,4 +1,5 @@
 #include <MyLaplace.h>
+#include <GlobalTimer.h>
 
 template <int dim>
 MyLaplace<dim>::MyLaplace ()
@@ -42,6 +43,7 @@ void MyLaplace<dim>::setup_multigrid ()
 template <int dim>
 void MyLaplace<dim>::solve ()
 {
+  global_timer.enter_subsection("solve::mg_initialization");
   dealii::MGTransferPrebuilt<dealii::Vector<double> > mg_transfer;
   mg_transfer.build_matrices(dof_handler);
   dealii::MGCoarseGridSVD<double, 
@@ -66,7 +68,10 @@ void MyLaplace<dim>::solve ()
   preconditioner(dof_handler, mg, mg_transfer);  
   dealii::ReductionControl        solver_control (1000, 1.E-20, 1.E-10);
   dealii::SolverCG<>              solver (solver_control);
+  global_timer.leave_subsection();
+  global_timer.enter_subsection("solve::solve");
   solver.solve(system_matrix,solution,right_hand_side,preconditioner);
+  global_timer.leave_subsection();
 }
 
 template <int dim>
@@ -93,17 +98,29 @@ void MyLaplace<dim>::run ()
 	  dealii::GridGenerator::hyper_cube (triangulation,-1.,1.);
 	  triangulation.refine_global (3-dim);
 	}
+      global_timer.reset();
+      global_timer.enter_subsection("refine_global");
       triangulation.refine_global (1);
+      global_timer.leave_subsection();
       dealii::deallog << "Number of active cells: " << 
 	triangulation.n_active_cells() << std::endl;
+      global_timer.enter_subsection("setup_system");
       setup_system ();
+      global_timer.leave_subsection();
       dealii::deallog << "DoFHandler levels: ";
       for (unsigned int l=0;l<triangulation.n_levels();++l)
 	dealii::deallog << ' ' << dof_handler.n_dofs(l);
       dealii::deallog << std::endl;
+      global_timer.enter_subsection("setup_multigrid");
       setup_multigrid ();
+      global_timer.leave_subsection();
+      global_timer.enter_subsection("solve");
       solve ();
+      global_timer.leave_subsection();
+      global_timer.enter_subsection("output");
       output_results ();
+      global_timer.leave_subsection();
+      global_timer.print_summary();
       dealii::deallog << std::endl;
     }
 }
