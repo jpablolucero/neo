@@ -56,7 +56,7 @@ public:
   mutable dealii::MeshWorker::IntegrationInfoBox<dim> info_box;
   dealii::SparsityPattern sparsity ;
   dealii::SparseMatrix<double> matrix ;
-  MatrixIntegrator<dim,false> matrix_integrator ;
+  MatrixIntegrator<dim,same_diagonal> matrix_integrator ;
   ResidualIntegrator<dim> residual_integrator ;
 };
 

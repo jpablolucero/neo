@@ -22,16 +22,25 @@ void MatrixIntegrator<dim,same_diagonal>::face(dealii::MeshWorker::DoFInfo<dim> 
   const dealii::FEValuesBase<dim> &fe1 = info1.fe_values();
   const dealii::FEValuesBase<dim> &fe2 = info2.fe_values();
 
-  dealii::FullMatrix<double> &M11 = dinfo1.matrix(0,false).matrix;
-  dealii::FullMatrix<double> &M21 = dinfo1.matrix(0,true).matrix;
-  dealii::FullMatrix<double> &M12 = dinfo2.matrix(0,!same_diagonal).matrix;
-  dealii::FullMatrix<double> &M22 = dinfo2.matrix(0,false).matrix;
+  dealii::FullMatrix<double> &RM11 = dinfo1.matrix(0,false).matrix;
+  dealii::FullMatrix<double> &RM22 = dinfo2.matrix(0,false).matrix;
+  dealii::FullMatrix<double> M21 = dinfo1.matrix(0,true).matrix;
+  dealii::FullMatrix<double> M12 = dinfo2.matrix(0,true).matrix;
+  dealii::FullMatrix<double> M22 = dinfo2.matrix(0,false).matrix;
 
   const unsigned int deg1 = info1.fe_values(0).get_fe().tensor_degree();
   const unsigned int deg2 = info2.fe_values(0).get_fe().tensor_degree();
 
-  dealii::LocalIntegrators::Laplace::ip_matrix(M11,M21,M12,M22,fe1,fe2,
-					       dealii::LocalIntegrators::Laplace::compute_penalty(dinfo1,dinfo2,deg1,deg2));
+  if (same_diagonal)
+    {
+      dealii::LocalIntegrators::Laplace::ip_matrix(RM11,M21,M12,M22,fe1,fe2,
+						   dealii::LocalIntegrators::Laplace::compute_penalty(dinfo1,dinfo2,deg1,deg2));
+    }
+  else
+    {
+      dealii::LocalIntegrators::Laplace::ip_matrix(RM11,M21,M12,RM22,fe1,fe2,
+						   dealii::LocalIntegrators::Laplace::compute_penalty(dinfo1,dinfo2,deg1,deg2));
+    }
 }
 
 template <int dim,bool same_diagonal>

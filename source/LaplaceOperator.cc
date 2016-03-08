@@ -71,7 +71,7 @@ void LaplaceOperator<dim, fe_degree, same_diagonal>::build_matrix ()
   sparsity.compress();
   matrix.reinit(sparsity);
   mg_matrix[level].reinit(sparsity);
-  dealii::MeshWorker::Assembler::MGMatrixSimple<dealii::SparseMatrix<double> > assembler;
+  dealii::MeshWorker::Assembler::MGMatrixSimple<dealii::SparseMatrix<double> > assembler ;
   assembler.initialize(mg_matrix);
   dealii::MeshWorker::integration_loop<dim, dim> (dof_handler->begin_mg(level),
   						  same_diagonal ? ++dof_handler->begin_mg(level) : 
