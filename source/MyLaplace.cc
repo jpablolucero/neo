@@ -19,8 +19,7 @@ void MyLaplace<dim,same_diagonal>::setup_system ()
   dof_handler.distribute_dofs (fe);
   dof_handler.distribute_mg_dofs(fe);
   dof_handler.initialize_local_block_info();
-  system_matrix.reinit (&dof_handler,&fe,&mapping,
-			triangulation.n_levels()-1) ;
+  system_matrix.reinit (&dof_handler, &mapping, triangulation.n_levels() - 1);
   solution.reinit (dof_handler.n_dofs());
   right_hand_side.reinit (dof_handler.n_dofs());
   right_hand_side = 1.0/triangulation.n_active_cells() ;
@@ -33,7 +32,7 @@ void MyLaplace<dim,same_diagonal>::setup_multigrid ()
   mg_matrix.resize(0, n_levels-1);  
   for (unsigned int level=0;level<n_levels;++level)
     {
-      mg_matrix[level].reinit(&dof_handler,&fe,&mapping,level);
+      mg_matrix[level].reinit(&dof_handler,&mapping,level);
       mg_matrix[level].build_matrix();
     }
   coarse_matrix.reinit(dof_handler.n_dofs(0),dof_handler.n_dofs(0));

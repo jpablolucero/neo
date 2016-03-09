@@ -20,10 +20,11 @@ public:
 
   ~LaplaceOperator () ;
   
-  void reinit (dealii::DoFHandler<dim> * dof_handler_,
-	       dealii::FE_DGQ<dim> * fe_,
-	       const dealii::MappingQ1<dim> * mapping_,
-	       const unsigned int level_=dealii::numbers::invalid_unsigned_int);
+  void reinit (
+      dealii::DoFHandler<dim>* dof_handler_,
+      const dealii::MappingQ1<dim>* mapping_ =
+      dealii::StaticMappingQ1<dim>::mapping,
+      const unsigned int level_ = dealii::numbers::invalid_unsigned_int);
   
   void build_matrix () ;
 
@@ -50,7 +51,6 @@ public:
  private:
   unsigned int level ;
   dealii::DoFHandler<dim> * dof_handler; 
-  dealii::FE_DGQ<dim> * fe;
   const dealii::MappingQ1<dim> *  mapping;
   dealii::MeshWorker::DoFInfo<dim> * dof_info;
   mutable dealii::MeshWorker::IntegrationInfoBox<dim> info_box;
