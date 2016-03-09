@@ -111,8 +111,12 @@ void LaplaceOperator<dim, fe_degree, same_diagonal>::vmult_add (dealii::Vector<d
   mg_src[level]= std::move(src) ;
   dealii::AnyData src_data ;
   src_data.add<const dealii::MGLevelObject<dealii::Vector<double> >*>(&mg_src,"src");
+  // dealii::deallog << "BEFORE info_box.initialize::" << std::endl;
+  // dealii::deallog << "number of vectors for PHIvalues in cell_selector: " << info_box.cell_selector.n_values() << std::endl;
   info_box.initialize(*fe, *mapping, src_data, 
 		      dealii::MGLevelObject<dealii::Vector<double> >{});
+  // dealii::deallog << "AFTER info_box.initialize::" << std::endl;
+  // dealii::deallog << "number of vectors for PHIvalues in cell_selector: " << info_box.cell_selector.n_values() << std::endl;
   dealii::MeshWorker::Assembler::ResidualSimple<dealii::Vector<double> > assembler;
   assembler.initialize(dst_data);
   dealii::MeshWorker::integration_loop<dim, dim>
