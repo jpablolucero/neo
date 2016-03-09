@@ -1,7 +1,8 @@
 #include <MyLaplace.h>
+#include <GlobalTimer.h>
 
-template <int dim>
-MyLaplace<dim>::MyLaplace ()
+template <int dim,bool same_diagonal>
+MyLaplace<dim,same_diagonal>::MyLaplace ()
   :
   mpi_communicator(MPI_COMM_WORLD),
   triangulation(mpi_communicator,dealii::Triangulation<dim>::
@@ -39,12 +40,12 @@ MyLaplace<dim>::MyLaplace ()
   triangulation.add_periodicity(periodic_faces);
 }
 
-template <int dim>
-MyLaplace<dim>::~MyLaplace ()
+template <int dim,bool same_diagonal>
+MyLaplace<dim,same_diagonal>::~MyLaplace ()
 {}
 
-template <int dim>
-void MyLaplace<dim>::setup_system ()
+template <int dim,bool same_diagonal>
+void MyLaplace<dim,same_diagonal>::setup_system ()
 {
   dof_handler.distribute_dofs (fe);
   dof_handler.distribute_mg_dofs(fe);
@@ -99,8 +100,8 @@ void MyLaplace<dim>::setup_system ()
  }
 
 
-template <int dim>
-void MyLaplace<dim>::assemble_system ()
+template <int dim, bool same_diagonal>
+void MyLaplace<dim, same_diagonal>::assemble_system ()
 {
   dealii::MeshWorker::IntegrationInfoBox<dim> info_box;
 
@@ -135,23 +136,24 @@ void MyLaplace<dim>::assemble_system ()
   right_hand_side.compress(dealii::VectorOperation::add);
 }
 
-template <int dim>
-void MyLaplace<dim>::setup_multigrid ()
+template <int dim,bool same_diagonal>
+void MyLaplace<dim,same_diagonal>::setup_multigrid ()
 {
   const unsigned int n_levels = triangulation.n_levels();
   mg_matrix.resize(0, n_levels-1);  
   for (unsigned int level=0;level<n_levels;++level)
     {
       mg_matrix[level].reinit(&dof_handler,&mapping,&constraints, mpi_communicator, level);
-      mg_matrix[level].build_matrix(true);
+      mg_matrix[level].build_matrix();
     }
 //  coarse_matrix.reinit(dof_handler.n_dofs(0),dof_handler.n_dofs(0));
 //  coarse_matrix.copy_from(mg_matrix[0]) ;
 }
 
-template <int dim>
-void MyLaplace<dim>::solve ()
+template <int dim,bool same_diagonal>
+void MyLaplace<dim,same_diagonal>::solve ()
 {
+  global_timer.enter_subsection("solve::mg_initialization");
   const LA::MPI::SparseMatrix &coarse_matrix = mg_matrix[0].get_coarse_matrix();
   dealii::MGTransferPrebuilt<LA::MPI::Vector > mg_transfer;
   mg_transfer.build_matrices(dof_handler);
@@ -197,13 +199,16 @@ void MyLaplace<dim>::solve ()
   dealii::SolverCG<LA::MPI::Vector> solver (solver_control);
   solution_tmp=0.;
   constraints.set_zero(solution_tmp);
+  global_timer.leave_subsection();
+  global_timer.enter_subsection("solve::solve");
   solver.solve(system_matrix,solution,right_hand_side,preconditioner);
   constraints.distribute(solution_tmp);
   solution = solution_tmp;
+  global_timer.leave_subsection();
 }
 
-template <int dim>
-void MyLaplace<dim>::compute_error () const
+template <int dim,bool same_diagonal>
+void MyLaplace<dim, same_diagonal>::compute_error () const
 {
   dealii::QGauss<dim> quadrature (fe.degree+2);
   dealii::Vector<double> local_errors;
@@ -221,8 +226,8 @@ void MyLaplace<dim>::compute_error () const
   pcout << "L2 error: " << L2_error << std::endl;
 }
 
-template <int dim>
-void MyLaplace<dim>::output_results (const unsigned int cycle) const
+template <int dim, bool same_diagonal>
+void MyLaplace<dim,same_diagonal>::output_results (const unsigned int cycle) const
 {
     std::string filename = "solution-"+dealii::Utilities::int_to_string(cycle,2);
 
@@ -264,38 +269,44 @@ void MyLaplace<dim>::output_results (const unsigned int cycle) const
 }
 
 
-template <int dim>
-void MyLaplace<dim>::run ()
+template <int dim,bool same_diagonal>
+void MyLaplace<dim,same_diagonal>::run ()
 {
   for (unsigned int cycle=0; cycle<9-dim; ++cycle)
     {
       std::cout << "Cycle " << cycle << std::endl;
+      global_timer.reset();
+      global_timer.enter_subsection("refine_global");
       triangulation.refine_global (1);
+      global_timer.leave_subsection();
       dealii::deallog << "Number of active cells: " << 
       triangulation.n_active_cells() << std::endl;
+      global_timer.enter_subsection("setup_system");
       setup_system ();
+      global_timer.leave_subsection();
       dealii::deallog << "DoFHandler levels: ";
       for (unsigned int l=0;l<triangulation.n_levels();++l)
       dealii::deallog << ' ' << dof_handler.n_dofs(l);
       dealii::deallog << std::endl;
+      global_timer.enter_subsection("setup_multigrid");
       setup_multigrid ();
+      global_timer.leave_subsection();
+      global_timer.enter_subsection("solve");
       solve ();
+      global_timer.leave_subsection();
+      global_timer.enter_subsection("output");
       output_results (cycle);
+      global_timer.leave_subsection();
+      global_timer.print_summary();
       dealii::deallog << std::endl;
     }
 }
 
-//template void dealii::VectorTools::integrate_difference<2, LA::MPI::Vector, LA::MPI::Vector , 2>
-//(const Mapping< 2, 2> &mapping, const DoFHandler< 2, 2> &dof,
-// const LA::MPI::Vector &fe_function, const Function<2, double > &exact_solution,
-// LA::MPI::Vector &difference, const Quadrature<2> &q, const NormType &norm,
-// const Function< 2, double > *weight=0, const double exponent=2.);
-//template void dealii::VectorTools::integrate_difference<3, LA::MPI::Vector, LA::MPI::Vector , 3>
-//(const Mapping< 3, 3> &mapping, const DoFHandler< 3, 3> &dof,
-// const LA::MPI::Vector &fe_function, const Function<3, double > &exact_solution,
-// LA::MPI::Vector &difference, const Quadrature<3> &q, const NormType &norm,
-// const Function< 3, double > *weight=0, const double exponent=2.);
-template class MyLaplace<2>;
-template class MyLaplace<3>;
-//template class LA::PreconditionBlockJacobi<LaplaceOperator<2,1>,double >;
-//template class LA::PreconditionBlockJacobi<LaplaceOperator<3,1>,double >;
+template class MyLaplace<2,true>;
+template class MyLaplace<3,true>;
+template class MyLaplace<2,false>;
+template class MyLaplace<3,false>;
+//template class dealii::PreconditionBlockJacobi<LaplaceOperator<2, 1, true>,double >;
+//template class dealii::PreconditionBlockJacobi<LaplaceOperator<2, 1, false>,double >;
+//template class dealii::PreconditionBlockJacobi<LaplaceOperator<3, 1, true>,double >;
+//template class dealii::PreconditionBlockJacobi<LaplaceOperator<3, 1, false>,double >;

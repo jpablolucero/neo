@@ -35,13 +35,13 @@
 #include <deal.II/numerics/vector_tools.templates.h>
 
 #include <LaplaceOperator.h>
+#include <referencefunction.h>
 #include <RHSIntegrator.h>
-#include <MatrixIntegrator.h>
 
 #include <string>
 #include <fstream>
 
-template <int dim>
+template <int dim,bool same_diagonal = true>
 class MyLaplace
 {
 public:
@@ -57,7 +57,7 @@ private:
   void compute_error () const;
   void output_results (const unsigned int cycle) const;
 
-  typedef LaplaceOperator<dim,1> SystemMatrixType;
+  typedef LaplaceOperator<dim, 1, same_diagonal> SystemMatrixType;
 
   dealii::IndexSet           locally_owned_dofs;
   dealii::IndexSet           locally_relevant_dofs;
@@ -74,7 +74,6 @@ private:
   dealii::FE_DGQ<dim>          fe;
 #endif
   dealii::DoFHandler<dim>      dof_handler;
-  RHSIntegrator<dim>           rhs_integrator ;
 
   SystemMatrixType             system_matrix;
 
@@ -84,7 +83,6 @@ private:
 
   dealii::MGLevelObject<SystemMatrixType >            mg_matrix ;
   LA::MPI::SparseMatrix                               coarse_matrix ;
-//  dealii::FullMatrix<double>                          coarse_matrix ;
 
   dealii::ConditionalOStream pcout;
 };

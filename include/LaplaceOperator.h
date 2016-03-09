@@ -11,10 +11,10 @@
 #include <deal.II/meshworker/loop.h>
 
 #include "generic_linear_algebra.h"
+#include <Integrators.h>
 
-#include <MatrixIntegrator.h>
 
-template <int dim, int fe_degree>
+template <int dim, int fe_degree, bool same_diagonal>
 class LaplaceOperator : public dealii::Subscriptor
 {
 public:
@@ -28,7 +28,7 @@ public:
            const MPI_Comm &mpi_communicator_,
 	       const unsigned int level_=dealii::numbers::invalid_unsigned_int);
   
-  void build_matrix (bool same_diagonal) ;
+  void build_matrix () ;
 
   void clear () ;
 
@@ -76,8 +76,8 @@ public:
   mutable dealii::MeshWorker::IntegrationInfoBox<dim> info_box;
   dealii::SparsityPattern sparsity ;
   LA::MPI::SparseMatrix matrix ;
-  MatrixIntegrator<dim,false> matrix_integrator ;
-  MatrixIntegrator<dim,true> residual_integrator ;
+  MatrixIntegrator<dim,same_diagonal> matrix_integrator ;
+  ResidualIntegrator<dim> residual_integrator ;
   mutable LA::MPI::Vector ghosted_vector;
 };
 
