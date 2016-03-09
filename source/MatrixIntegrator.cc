@@ -30,6 +30,7 @@ void MatrixIntegrator<dim,residual>::face(dealii::MeshWorker::DoFInfo<dim> &dinf
 					  typename dealii::MeshWorker::IntegrationInfo<dim> &info1,
 					  typename dealii::MeshWorker::IntegrationInfo<dim> &info2) const
 {
+#ifndef CG
   if (residual)
     {
       const dealii::FEValuesBase<dim> &fe1 = info1.fe_values();
@@ -68,12 +69,14 @@ void MatrixIntegrator<dim,residual>::face(dealii::MeshWorker::DoFInfo<dim> &dinf
       dealii::LocalIntegrators::Laplace::ip_matrix(M11,M21,M12,M22,fe1,fe2,
 						   dealii::LocalIntegrators::Laplace::compute_penalty(dinfo1,dinfo2,deg1,deg2));
     }
+#endif
 }
 
 template <int dim,bool residual>
 void MatrixIntegrator<dim,residual>::boundary(dealii::MeshWorker::DoFInfo<dim> &dinfo, 
 					      typename dealii::MeshWorker::IntegrationInfo<dim> &info) const
 {
+#ifndef CG
   if (residual)
     {
       const dealii::FEValuesBase<dim> &fe = info.fe_values();
@@ -99,6 +102,7 @@ void MatrixIntegrator<dim,residual>::boundary(dealii::MeshWorker::DoFInfo<dim> &
       dealii::LocalIntegrators::Laplace::nitsche_matrix(M,fe,
 							dealii::LocalIntegrators::Laplace::compute_penalty(dinfo,dinfo,deg,deg));
     } 
+#endif
 }
 
 template class MatrixIntegrator<2,false>;
