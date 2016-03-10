@@ -23,7 +23,7 @@ void MyLaplace<dim,same_diagonal>::setup_system ()
 			triangulation.n_levels()-1) ;
   solution.reinit (dof_handler.n_dofs());
   right_hand_side.reinit (dof_handler.n_dofs());
-  right_hand_side = 1.0/triangulation.n_active_cells() ;
+  right_hand_side = 1.0/triangulation.n_active_cells();
 }
 
 template <int dim,bool same_diagonal>
@@ -91,7 +91,7 @@ void MyLaplace<dim,same_diagonal>::output_results () const
 template <int dim,bool same_diagonal>
 void MyLaplace<dim,same_diagonal>::run ()
 {
-  for (unsigned int cycle=0; cycle<9-dim; ++cycle)
+  for (unsigned int cycle=0; cycle<7-dim; ++cycle)
     {
       std::cout << "Cycle " << cycle << std::endl;
       if (cycle == 0)

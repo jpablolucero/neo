@@ -6,7 +6,6 @@ int main ()
   dealii::deallog.attach(logfile);
   dealii::deallog.depth_console (2);
 
-  // stupid change!!!!!
   // Coefficient<2> coeff;
   // dealii::Point<2> p1(0.5,0.5);
   // dealii::Point<2> p2(1.0,1.0);

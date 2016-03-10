@@ -5,6 +5,10 @@
 #include <deal.II/meshworker/integration_info.h>
 #include <deal.II/integrators/laplace.h>
 #include <deal.II/meshworker/local_integrator.h>
+#include <deal.II/base/function.h>
+
+#include <Diffusion.h>
+#include <EquationData.h>
 
 template <int dim,bool same_diagonal=true>
 class MatrixIntegrator : public dealii::MeshWorker::LocalIntegrator<dim>
@@ -30,6 +34,8 @@ public:
 	  dealii::MeshWorker::DoFInfo<dim> &dinfo2,
 	  typename dealii::MeshWorker::IntegrationInfo<dim> &info1,
 	  typename dealii::MeshWorker::IntegrationInfo<dim> &info2) const;
+private:
+  const Coefficient<dim> coefficient_function;
 };
 
 #endif // INTEGRATORS_H

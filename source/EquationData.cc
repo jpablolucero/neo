@@ -5,7 +5,8 @@ template <int dim>
 double Coefficient<dim>::value (const dealii::Point<dim> &p,
                                 const unsigned int) const
 {
-  return 1. / (0.05 + 2.*p.square());
+  return 0.27 + 0.0*p.square();
+  // step-37 coefficient:  return 1. / (0.05 + 2.*p.square());
 }
 
 template <int dim>
@@ -23,3 +24,4 @@ void Coefficient<dim>::value_list (const std::vector<dealii::Point<dim> > &point
 }
 
 template class Coefficient<2>;
+template class Coefficient<3>;
