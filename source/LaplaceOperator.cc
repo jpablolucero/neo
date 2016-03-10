@@ -9,7 +9,6 @@ template <int dim, int fe_degree, bool same_diagonal>
 LaplaceOperator<dim, fe_degree, same_diagonal>::~LaplaceOperator()
 {
   dof_handler = NULL ;
-  fe = NULL ;
   mapping = NULL ;
   delete dof_info ;
   dof_info = NULL ;
@@ -19,21 +18,19 @@ template <int dim, int fe_degree, bool same_diagonal>
 void LaplaceOperator<dim, fe_degree, same_diagonal>::clear()
 {
   dof_handler = NULL ;
-  fe = NULL ;
   mapping = NULL ;
   delete dof_info ;
   dof_info = NULL ;
 }
 
 template <int dim, int fe_degree, bool same_diagonal>
-void LaplaceOperator<dim, fe_degree, same_diagonal>::reinit (dealii::DoFHandler<dim> * dof_handler_,
-							     dealii::FE_DGQ<dim> * fe_,
-							     const dealii::MappingQ1<dim> * mapping_,
-							     const unsigned int level_)
+void LaplaceOperator<dim, fe_degree, same_diagonal>::reinit (
+    dealii::DoFHandler<dim>* dof_handler_,
+    const dealii::MappingQ1<dim>* mapping_,
+    const unsigned int level_)
 {
   global_timer.enter_subsection("LaplaceOperator::reinit");
   dof_handler = dof_handler_ ;
-  fe = fe_ ;
   mapping = mapping_ ;
   level=level_;
   dof_info = new dealii::MeshWorker::DoFInfo<dim>{*dof_handler};
@@ -57,8 +54,9 @@ void LaplaceOperator<dim, fe_degree, same_diagonal>::reinit (dealii::DoFHandler<
 template <int dim, int fe_degree, bool same_diagonal>
 void LaplaceOperator<dim, fe_degree, same_diagonal>::build_matrix ()
 {  
+  assert(dof_handler != 0);
   global_timer.enter_subsection("LaplaceOperator::build_matrix");
-  info_box.initialize(*fe, *mapping);
+  info_box.initialize(dof_handler->get_fe(), *mapping);
   dealii::MGLevelObject<dealii::SparseMatrix<double> > mg_matrix ;
   mg_matrix.resize(level,level);
   const unsigned int block_size = dof_handler->block_info().local().block_size(0) ;
@@ -111,12 +109,8 @@ void LaplaceOperator<dim, fe_degree, same_diagonal>::vmult_add (dealii::Vector<d
   mg_src[level]= std::move(src) ;
   dealii::AnyData src_data ;
   src_data.add<const dealii::MGLevelObject<dealii::Vector<double> >*>(&mg_src,"src");
-  // dealii::deallog << "BEFORE info_box.initialize::" << std::endl;
-  // dealii::deallog << "number of vectors for PHIvalues in cell_selector: " << info_box.cell_selector.n_values() << std::endl;
-  info_box.initialize(*fe, *mapping, src_data, 
+  info_box.initialize(dof_handler->get_fe(), *mapping, src_data,
 		      dealii::MGLevelObject<dealii::Vector<double> >{});
-  // dealii::deallog << "AFTER info_box.initialize::" << std::endl;
-  // dealii::deallog << "number of vectors for PHIvalues in cell_selector: " << info_box.cell_selector.n_values() << std::endl;
   dealii::MeshWorker::Assembler::ResidualSimple<dealii::Vector<double> > assembler;
   assembler.initialize(dst_data);
   dealii::MeshWorker::integration_loop<dim, dim>
