@@ -10,7 +10,7 @@ void MatrixIntegrator<dim, same_diagonal>::cell(dealii::MeshWorker::DoFInfo<dim>
 {
   const dealii::FEValuesBase<dim> &fe = info.fe_values() ;
   dealii::FullMatrix<double> &M = dinfo.matrix(0).matrix;
-  dealii::LocalIntegrators::Laplace::cell_matrix(M,fe) ;
+  dealii::LocalIntegrators::Laplace::cell_matrix(M,fe,0.27) ;
 }
 
 template <int dim,bool same_diagonal>
@@ -34,12 +34,14 @@ void MatrixIntegrator<dim,same_diagonal>::face(dealii::MeshWorker::DoFInfo<dim> 
   if (same_diagonal)
     {
       dealii::LocalIntegrators::Laplace::ip_matrix(RM11,M21,M12,M22,fe1,fe2,
-                                                   dealii::LocalIntegrators::Laplace::compute_penalty(dinfo1,dinfo2,deg1,deg2));
+						   dealii::LocalIntegrators::Laplace::compute_penalty(dinfo1,dinfo2,deg1,deg2),
+						   0.27);
     }
   else
     {
       dealii::LocalIntegrators::Laplace::ip_matrix(RM11,M21,M12,RM22,fe1,fe2,
-                                                   dealii::LocalIntegrators::Laplace::compute_penalty(dinfo1,dinfo2,deg1,deg2));
+						   dealii::LocalIntegrators::Laplace::compute_penalty(dinfo1,dinfo2,deg1,deg2),
+						   0.27);
     }
 }
 
@@ -52,7 +54,8 @@ void MatrixIntegrator<dim,same_diagonal>::boundary(dealii::MeshWorker::DoFInfo<d
   const unsigned int deg = info.fe_values(0).get_fe().tensor_degree();
 
   dealii::LocalIntegrators::Laplace::nitsche_matrix(M,fe,
-                                                    dealii::LocalIntegrators::Laplace::compute_penalty(dinfo,dinfo,deg,deg));
+						    dealii::LocalIntegrators::Laplace::compute_penalty(dinfo,dinfo,deg,deg),
+						    0.27);
 }
 
 template <int dim>
@@ -66,7 +69,7 @@ void ResidualIntegrator<dim>::cell(dealii::MeshWorker::DoFInfo<dim> &dinfo,
   const dealii::FEValuesBase<dim> &fe = info.fe_values() ;
   dealii::Vector<double> &dst = dinfo.vector(0).block(0) ;
   const std::vector<dealii::Tensor<1,dim> > &Dsrc = info.gradients[0][0];
-  dealii::LocalIntegrators::Laplace::cell_residual(dst,fe,Dsrc) ;
+  LocalIntegrators::Diffusion::cell_residual(dst, fe, Dsrc, coefficient_function) ;
 }
 
 template <int dim>
@@ -89,11 +92,12 @@ void ResidualIntegrator<dim>::face(dealii::MeshWorker::DoFInfo<dim> &dinfo1,
   const std::vector<dealii::Tensor<1,dim> > &Dsrc2 = info2.gradients[0][0];
   dealii::Vector<double> &dst2 = dinfo2.vector(0).block(0) ;
 
-  dealii::LocalIntegrators::Laplace::ip_residual(dst1,dst2,
-                                                 fe1,fe2,
-                                                 src1,Dsrc1,
-                                                 src2,Dsrc2,
-                                                 dealii::LocalIntegrators::Laplace::compute_penalty(dinfo1,dinfo2,deg1,deg2));
+  LocalIntegrators::Diffusion::ip_residual(dst1,dst2,
+					   fe1,fe2,
+					   src1,Dsrc1,
+					   src2,Dsrc2,
+					   coefficient_function,					   
+					   dealii::LocalIntegrators::Laplace::compute_penalty(dinfo1,dinfo2,deg1,deg2));
 }
 
 template <int dim>
@@ -112,7 +116,8 @@ void ResidualIntegrator<dim>::boundary(dealii::MeshWorker::DoFInfo<dim> &dinfo,
                                                       src,
                                                       Dsrc,
                                                       data,
-                                                      dealii::LocalIntegrators::Laplace::compute_penalty(dinfo,dinfo,deg,deg));
+						      dealii::LocalIntegrators::Laplace::compute_penalty(dinfo,dinfo,deg,deg),
+						      0.27);
 }
 
 template class MatrixIntegrator<2,false>;

@@ -2,7 +2,6 @@
 #define LAPLACEMESHWORKER_H
 
 #include <MyLaplace.h>
-#include <EquationData.h>
 
 #include <fstream>
 
