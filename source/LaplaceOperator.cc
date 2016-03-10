@@ -8,7 +8,6 @@ template <int dim, int fe_degree, bool same_diagonal>
 LaplaceOperator<dim, fe_degree, same_diagonal>::~LaplaceOperator()
 {
   dof_handler = NULL ;
-  fe = NULL ;
   mapping = NULL ;
 }
 
@@ -16,7 +15,6 @@ template <int dim, int fe_degree, bool same_diagonal>
 void LaplaceOperator<dim, fe_degree, same_diagonal>::clear()
 {
   dof_handler = NULL ;
-  fe = NULL ;
   mapping = NULL ;
 }
 
