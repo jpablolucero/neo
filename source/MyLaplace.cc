@@ -22,7 +22,8 @@ void MyLaplace<dim,same_diagonal>::setup_system ()
   system_matrix.reinit (&dof_handler, &mapping, triangulation.n_levels() - 1);
   solution.reinit (dof_handler.n_dofs());
   right_hand_side.reinit (dof_handler.n_dofs());
-  right_hand_side = 1.0/triangulation.n_active_cells() ;
+  right_hand_side = 1.0*static_cast<double>(1<<dim)/
+    static_cast<double>(dof_handler.n_dofs());
 }
 
 template <int dim,bool same_diagonal>
