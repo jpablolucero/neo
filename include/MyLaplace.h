@@ -46,7 +46,7 @@ class MyLaplace
 {
 public:
   MyLaplace ();
-  ~MyLaplace ();  
+  ~MyLaplace ();
   void run ();
 
 private:

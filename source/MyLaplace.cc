@@ -51,6 +51,9 @@ void MyLaplace<dim,same_diagonal>::setup_system ()
   dof_handler.distribute_mg_dofs(fe);
   dof_handler.initialize_local_block_info();
 
+  dealii::MGTransferPrebuilt<LA::MPI::Vector > mg_transfer;
+  mg_transfer.build_matrices(dof_handler);
+
   locally_owned_dofs = dof_handler.locally_owned_dofs();
   std::cout << "locally owned dofs on process "
             << dealii::Utilities::MPI::this_mpi_process(mpi_communicator) << " ";
@@ -80,7 +83,7 @@ void MyLaplace<dim,same_diagonal>::setup_system ()
   constraints.reinit(locally_relevant_dofs);
 #ifdef CG
   dealii::DoFTools::make_periodicity_constraints<dealii::DoFHandler<dim> >
-    (periodic_faces, constraints);
+  (periodic_faces, constraints);
 
   dealii::DoFTools::make_hanging_node_constraints
   (dof_handler, constraints);
@@ -93,11 +96,12 @@ void MyLaplace<dim,same_diagonal>::setup_system ()
   constraints.close();
 
   solution.reinit (locally_owned_dofs, locally_relevant_dofs, mpi_communicator);
+  solution_tmp.reinit (locally_owned_dofs, mpi_communicator);
   right_hand_side.reinit (locally_owned_dofs, mpi_communicator);
 
   system_matrix.reinit (&dof_handler,&mapping, &constraints, mpi_communicator, triangulation.n_levels()-1) ;
 
- }
+}
 
 
 template <int dim, bool same_diagonal>
@@ -140,8 +144,8 @@ template <int dim,bool same_diagonal>
 void MyLaplace<dim,same_diagonal>::setup_multigrid ()
 {
   const unsigned int n_levels = triangulation.n_levels();
-  mg_matrix.resize(0, n_levels-1);  
-  for (unsigned int level=0;level<n_levels;++level)
+  mg_matrix.resize(0, n_levels-1);
+  for (unsigned int level=0; level<n_levels; ++level)
     {
       mg_matrix[level].reinit(&dof_handler,&mapping,&constraints, mpi_communicator, level);
       mg_matrix[level].build_matrix();
@@ -179,30 +183,32 @@ void MyLaplace<dim,same_diagonal>::solve ()
 //    smoother_data(dof_handler.block_info().local().block_size(0),"linear",1.,0,1);
 
   dealii::MGSmootherPrecondition<SystemMatrixType,
-                         LA::PreconditionIdentity,
+         dealii::PreconditionIdentity,
 //                 LA::PreconditionBlockJacobi,
 //           dealii::PreconditionBlockJacobi<SystemMatrixType >,
-                 LA::MPI::Vector> mg_smoother;
-  //mg_smoother.initialize(mg_matrix, smoother_data);
+         LA::MPI::Vector> mg_smoother;
+  mg_smoother.initialize(mg_matrix/*, smoother_data*/);
   mg_smoother.set_steps(1);
   dealii::mg::Matrix<LA::MPI::Vector >         mgmatrix;
   mgmatrix.initialize(mg_matrix);
   dealii::Multigrid<LA::MPI::Vector > mg(dof_handler, mgmatrix,
-						mg_coarse, mg_transfer,
-						mg_smoother, mg_smoother);
+                                         mg_coarse, mg_transfer,
+                                         mg_smoother, mg_smoother);
   mg.set_minlevel(mg_matrix.min_level());
   mg.set_maxlevel(mg_matrix.max_level());
   dealii::PreconditionMG<dim, LA::MPI::Vector,
-             dealii::MGTransferPrebuilt<LA::MPI::Vector > >
-  preconditioner(dof_handler, mg, mg_transfer);  
+         dealii::MGTransferPrebuilt<LA::MPI::Vector > >
+         preconditioner(dof_handler, mg, mg_transfer);
   dealii::ReductionControl          solver_control (1000, 1.E-20, 1.E-10);
   dealii::SolverCG<LA::MPI::Vector> solver (solver_control);
   solution_tmp=0.;
   constraints.set_zero(solution_tmp);
   global_timer.leave_subsection();
   global_timer.enter_subsection("solve::solve");
-  solver.solve(system_matrix,solution,right_hand_side,preconditioner);
+  solver.solve(system_matrix,solution_tmp,right_hand_side,preconditioner);
+#ifdef CG
   constraints.distribute(solution_tmp);
+#endif
   solution = solution_tmp;
   global_timer.leave_subsection();
 }
@@ -229,43 +235,43 @@ void MyLaplace<dim, same_diagonal>::compute_error () const
 template <int dim, bool same_diagonal>
 void MyLaplace<dim,same_diagonal>::output_results (const unsigned int cycle) const
 {
-    std::string filename = "solution-"+dealii::Utilities::int_to_string(cycle,2);
+  std::string filename = "solution-"+dealii::Utilities::int_to_string(cycle,2);
 
-    dealii::DataOut<dim> data_out;
-    data_out.attach_dof_handler (dof_handler);
-    data_out.add_data_vector (solution, "u_free");
-    dealii::Vector<float> subdomain (triangulation.n_active_cells());
-    for (unsigned int i=0; i<subdomain.size(); ++i)
-      subdomain(i) = triangulation.locally_owned_subdomain();
-    data_out.add_data_vector (subdomain, "subdomain");
+  dealii::DataOut<dim> data_out;
+  data_out.attach_dof_handler (dof_handler);
+  data_out.add_data_vector (solution, "u");
+  dealii::Vector<float> subdomain (triangulation.n_active_cells());
+  for (unsigned int i=0; i<subdomain.size(); ++i)
+    subdomain(i) = triangulation.locally_owned_subdomain();
+  data_out.add_data_vector (subdomain, "subdomain");
 
-    data_out.build_patches (fe.degree);
+  data_out.build_patches (fe.degree);
 
-    const unsigned int n_proc = dealii::Utilities::MPI::n_mpi_processes(mpi_communicator);
-    if (n_proc >1)
-      {
-        const int n_digits = dealii::Utilities::needed_digits(n_proc);
-        std::ofstream output
-        ((filename + "."
-          + dealii::Utilities::int_to_string(triangulation.locally_owned_subdomain(),n_digits)
-          + ".vtu").c_str());
-        data_out.write_vtu (output);
+  const unsigned int n_proc = dealii::Utilities::MPI::n_mpi_processes(mpi_communicator);
+  if (n_proc >1)
+    {
+      const int n_digits = dealii::Utilities::needed_digits(n_proc);
+      std::ofstream output
+      ((filename + "."
+        + dealii::Utilities::int_to_string(triangulation.locally_owned_subdomain(),n_digits)
+        + ".vtu").c_str());
+      data_out.write_vtu (output);
 
-        if (dealii::Utilities::MPI::this_mpi_process(mpi_communicator) == 0)
-          {
-            std::vector<std::string> filenames;
-            for (unsigned int i=0; i<n_proc; i++)
-              filenames.push_back (filename + "."
-                                   + dealii::Utilities::int_to_string (i,n_digits) + ".vtu");
-            std::ofstream master_output ((filename + ".pvtu").c_str());
-            data_out.write_pvtu_record (master_output, filenames);
-          }
-      }
-    else
-      {
-        std::ofstream output ((filename + ".vtk").c_str());
-        data_out.write_vtk (output);
-      }
+      if (dealii::Utilities::MPI::this_mpi_process(mpi_communicator) == 0)
+        {
+          std::vector<std::string> filenames;
+          for (unsigned int i=0; i<n_proc; i++)
+            filenames.push_back (filename + "."
+                                 + dealii::Utilities::int_to_string (i,n_digits) + ".vtu");
+          std::ofstream master_output ((filename + ".pvtu").c_str());
+          data_out.write_pvtu_record (master_output, filenames);
+        }
+    }
+  else
+    {
+      std::ofstream output ((filename + ".vtk").c_str());
+      data_out.write_vtk (output);
+    }
 }
 
 
@@ -279,14 +285,15 @@ void MyLaplace<dim,same_diagonal>::run ()
       global_timer.enter_subsection("refine_global");
       triangulation.refine_global (1);
       global_timer.leave_subsection();
-      dealii::deallog << "Number of active cells: " << 
-      triangulation.n_active_cells() << std::endl;
+      dealii::deallog << "Number of active cells: " <<
+                      triangulation.n_active_cells() << std::endl;
       global_timer.enter_subsection("setup_system");
       setup_system ();
+      assemble_system();
       global_timer.leave_subsection();
       dealii::deallog << "DoFHandler levels: ";
-      for (unsigned int l=0;l<triangulation.n_levels();++l)
-      dealii::deallog << ' ' << dof_handler.n_dofs(l);
+      for (unsigned int l=0; l<triangulation.n_levels(); ++l)
+        dealii::deallog << ' ' << dof_handler.n_dofs(l);
       dealii::deallog << std::endl;
       global_timer.enter_subsection("setup_multigrid");
       setup_multigrid ();

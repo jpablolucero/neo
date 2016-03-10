@@ -8,17 +8,23 @@
 #include <deal.II/lac/sparse_matrix.h>
 #include <deal.II/lac/precondition.h>
 
-#ifndef PARALLEL_LA
+#if PARALLEL_LA==0
 namespace dealii
 {
   namespace LinearAlgebraDealII
   {
-    typedef parallel::distributed::Vector<double> Vector;
-    typedef parallel::distributed::BlockVector<double> BlockVector;
+    using namespace dealii;
+    namespace MPI
+    {
+      typedef parallel::distributed::Vector<double> Vector;
+      typedef parallel::distributed::BlockVector<double> BlockVector;
 
-    typedef SparseMatrix<double> SparseMatrix;
+      typedef SparseMatrix<double>                          SparseMatrix;
+      typedef typename SparseMatrix<double>::const_iterator SparseMatrixConstIterator;
+      typedef typename SparseMatrix<double>::size_type      SparseMatrixSizeType ;
 
-    typedef PreconditionSSOR<SparseMatrix > PreconditionSSOR;
+      typedef PreconditionSSOR<SparseMatrix > PreconditionSSOR;
+    }
   }
 }
 
@@ -64,6 +70,8 @@ namespace dealii
       typedef PETScWrappers::MPI::BlockSparseMatrix BlockSparseMatrix;
 
       typedef dealii::BlockDynamicSparsityPattern BlockSparsityPattern;
+
+      typedef PETScWrappers::SparseMatrix::size_type      SparseMatrixSizeType ;
     }
   }
 }
@@ -121,7 +129,7 @@ namespace dealii
 
 namespace LA
 {
-#ifndef PARALLEL_LA
+#if PARALLEL_LA == 0
   using namespace dealii::LinearAlgebraDealII;
 #elif PARALLEL_LA == 1
   using namespace dealii::LinearAlgebraPETSc;
