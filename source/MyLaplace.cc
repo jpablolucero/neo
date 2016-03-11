@@ -5,7 +5,7 @@ template <int dim,bool same_diagonal>
 MyLaplace<dim,same_diagonal>::MyLaplace ()
   :
   mapping (),
-  fe (1),
+  fe (2),
   dof_handler (triangulation)
 {}
 
@@ -22,7 +22,8 @@ void MyLaplace<dim,same_diagonal>::setup_system ()
   system_matrix.reinit (&dof_handler, &mapping, triangulation.n_levels() - 1);
   solution.reinit (dof_handler.n_dofs());
   right_hand_side.reinit (dof_handler.n_dofs());
-  right_hand_side = 1.0/triangulation.n_active_cells();
+  right_hand_side = 1.0/4.*static_cast<double>(1<<dim)/
+    static_cast<double>(dof_handler.n_dofs());
 }
 
 template <int dim,bool same_diagonal>
@@ -90,12 +91,12 @@ void MyLaplace<dim,same_diagonal>::output_results () const
 template <int dim,bool same_diagonal>
 void MyLaplace<dim,same_diagonal>::run ()
 {
-  for (unsigned int cycle=0; cycle<7-dim; ++cycle)
+  for (unsigned int cycle=0; cycle<9-dim; ++cycle)
     {
       std::cout << "Cycle " << cycle << std::endl;
       if (cycle == 0)
-	{  
-	  dealii::GridGenerator::hyper_cube (triangulation,-1.,1.);
+      	{  
+	  dealii::GridGenerator::hyper_cube (triangulation,0.,1.);
 	  triangulation.refine_global (3-dim);
 	}
       global_timer.reset();
