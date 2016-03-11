@@ -58,48 +58,47 @@ namespace LocalIntegrators
 	      const dealii::FEValuesBase<dim> &fe1,
 	      const dealii::FEValuesBase<dim> &fe2,
 	      double penalty,
-	      double int_factor = 1.,
-	      double ext_factor = -1.)
+	      double factor1 = 1.,
+	      double factor2 = -1.)
     {
-      const CoefficientTYPE scalar_coeff;
-      const unsigned int n_dofs = fe1.dofs_per_cell;
-      AssertDimension(M11.n(), n_dofs);
-      AssertDimension(M11.m(), n_dofs);
-      AssertDimension(M12.n(), n_dofs);
-      AssertDimension(M12.m(), n_dofs);
-      AssertDimension(M21.n(), n_dofs);
-      AssertDimension(M21.m(), n_dofs);
-      AssertDimension(M22.n(), n_dofs);
-      AssertDimension(M22.m(), n_dofs);
- 
-      const double nui = int_factor;
-      const double nue = (ext_factor < 0) ? int_factor : ext_factor;
-      const double nu = .5*(nui+nue);
- 
-      for (unsigned int k=0; k<fe1.n_quadrature_points; ++k)
-	{
-	  const dealii::Point<dim> quad_point = fe1.quadrature_point(k);
-	  const double dx = fe1.JxW(k) * scalar_coeff.value(quad_point);
-	  const dealii::Tensor<1,dim> n = fe1.normal_vector(k);
-	  for (unsigned int d=0; d<fe1.get_fe().n_components(); ++d)
-	    {
-	      for (unsigned int i=0; i<n_dofs; ++i)
-		{
-		  for (unsigned int j=0; j<n_dofs; ++j)
-		    {
-		      const double vi = fe1.shape_value_component(i,k,d);
-		      const double dnvi = n * fe1.shape_grad_component(i,k,d);
-		      const double ve = fe2.shape_value_component(i,k,d);
-		      const double dnve = n * fe2.shape_grad_component(i,k,d);
-		      const double ui = fe1.shape_value_component(j,k,d);
-		      const double dnui = n * fe1.shape_grad_component(j,k,d);
-		      const double ue = fe2.shape_value_component(j,k,d);
-		      const double dnue = n * fe2.shape_grad_component(j,k,d);
-		      M11(i,j) += dx*(-.5*nui*dnvi*ui-.5*nui*dnui*vi+nu*penalty*ui*vi);
-		      M12(i,j) += dx*( .5*nui*dnvi*ue-.5*nue*dnue*vi-nu*penalty*vi*ue);
-		      M21(i,j) += dx*(-.5*nue*dnve*ui+.5*nui*dnui*ve-nu*penalty*ui*ve);
-		      M22(i,j) += dx*( .5*nue*dnve*ue+.5*nue*dnue*ve+nu*penalty*ue*ve);
-		    }
+       CoefficientTYPE scalar_coeff;
+       const unsigned int n_dofs = fe1.dofs_per_cell;
+       AssertDimension(M11.n(), n_dofs);
+       AssertDimension(M11.m(), n_dofs);
+       AssertDimension(M12.n(), n_dofs);
+       AssertDimension(M12.m(), n_dofs);
+       AssertDimension(M21.n(), n_dofs);
+       AssertDimension(M21.m(), n_dofs);
+       AssertDimension(M22.n(), n_dofs);
+       AssertDimension(M22.m(), n_dofs);
+       
+       const double nui = factor1;
+       const double nue = (factor2 < 0) ? factor1 : factor2;
+       const double nu = .5*(nui+nue);
+       
+       for (unsigned int k=0; k<fe1.n_quadrature_points; ++k)
+         {
+	   const dealii::Point<dim> quad_point = fe1.quadrature_point(k);
+	   const double dx = fe1.JxW(k) * scalar_coeff.value(quad_point);
+	   const dealii::Tensor<1,dim> n = fe1.normal_vector(k);
+           for (unsigned int d=0; d<fe1.get_fe().n_components(); ++d)
+             {
+               for (unsigned int i=0; i<n_dofs; ++i)
+                 {
+                   for (unsigned int j=0; j<n_dofs; ++j)
+                     {
+                       const double vi = fe1.shape_value_component(i,k,d);
+                       const double dnvi = n * fe1.shape_grad_component(i,k,d);
+                       const double ve = fe2.shape_value_component(i,k,d);
+                       const double dnve = n * fe2.shape_grad_component(i,k,d);
+                       const double ui = fe1.shape_value_component(j,k,d);
+                       const double dnui = n * fe1.shape_grad_component(j,k,d);
+                       const double ue = fe2.shape_value_component(j,k,d);
+                       const double dnue = n * fe2.shape_grad_component(j,k,d);
+                       M11(i,j) += dx*(-.5*nui*dnvi*ui-.5*nui*dnui*vi+nu*penalty*ui*vi);
+                       M12(i,j) += dx*( .5*nui*dnvi*ue-.5*nue*dnue*vi-nu*penalty*vi*ue);
+                       M21(i,j) += dx*(-.5*nue*dnve*ui+.5*nui*dnui*ve-nu*penalty*ui*ve);
+                       M22(i,j) += dx*( .5*nue*dnve*ue+.5*nue*dnue*ve+nu*penalty*ue*ve);		    }
 		}
 	    }
 	}
@@ -166,7 +165,7 @@ namespace LocalIntegrators
     		     const std::vector<dealii::Tensor<1,dim> > &DinputINT,
     		     const std::vector<double> &inputEXT,
     		     const std::vector<dealii::Tensor<1,dim> > &DinputEXT,
-		     double pen,
+		     double penalty,
     		     double int_factor = 1.,
     		     double ext_factor = -1.)
     {
@@ -178,14 +177,14 @@ namespace LocalIntegrators
       const CoefficientTYPE scalar_coeff;
       const double nuINT = int_factor;
       const double nuEXT = (ext_factor < 0) ? int_factor : ext_factor;
-      const double penalty = .5 * pen  * (nuINT + nuEXT);
+      const double nupenalty = .5 * penalty  * (nuINT + nuEXT);
       const unsigned int n_dofs = feINT.dofs_per_cell;
  
       for (unsigned int q=0; q<feINT.n_quadrature_points; ++q)
     	{
-    	  const double dx = feINT.JxW(q);
-    	  const dealii::Tensor<1,dim> normal_vectorINT = feINT.normal_vector(q);
           const dealii::Point<dim> quad_point = feINT.quadrature_point(q);
+    	  const double dx = feINT.JxW(q) * scalar_coeff.value(quad_point);
+    	  const dealii::Tensor<1,dim> normal_vectorINT = feINT.normal_vector(q);
  
     	  for (unsigned int i=0; i<n_dofs; ++i)
     	    {
@@ -203,14 +202,10 @@ namespace LocalIntegrators
     	      const dealii::Tensor<1,dim> &DuEXT = DinputEXT[q];
     	      const double dnuEXT = DuEXT * normal_vectorINT;
  
-    	      resultINT(i) += dx*scalar_coeff.value(quad_point)*(penalty*uINT*vINT
-								 -.5*(nuINT*uINT*dnvINT+nuINT*dnuINT*vINT) );
-    	      resultINT(i) += dx*scalar_coeff.value(quad_point)*(-penalty*uEXT*vINT 
-								 +.5*(nuINT*uEXT*dnvINT-nuEXT*dnuEXT*vINT) );
-    	      resultEXT(i) += dx*scalar_coeff.value(quad_point)*(-penalty*uINT*vEXT
-								 -.5*(nuEXT*uINT*dnvEXT-nuINT*dnuINT*vEXT) );
-	      resultEXT(i) += dx*scalar_coeff.value(quad_point)*(penalty*uEXT*vEXT
-								 +.5*(nuEXT*uEXT*dnvEXT+nuEXT*dnuEXT*vEXT) );
+    	      resultINT(i) += dx*( nupenalty*uINT*vINT  - .5*(nuINT*uINT*dnvINT + nuINT*dnuINT*vINT) );
+    	      resultINT(i) += dx*( -nupenalty*uEXT*vINT + .5*(nuINT*uEXT*dnvINT - nuEXT*dnuEXT*vINT) );
+    	      resultEXT(i) += dx*( -nupenalty*uINT*vEXT - .5*(nuEXT*uINT*dnvEXT - nuINT*dnuINT*vEXT) );
+	      resultEXT(i) += dx*( nupenalty*uEXT*vEXT  + .5*(nuEXT*uEXT*dnvEXT + nuEXT*dnuEXT*vEXT) );
     	    }
     	}
     }
