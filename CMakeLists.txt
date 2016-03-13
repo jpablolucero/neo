@@ -22,6 +22,15 @@ if(CG)
   add_definitions(-DCG)
 endif()
 
+option(PERIODIC "Periodic boundary conditions?" OFF)
+if(PERIODIC)
+  add_definitions(-DPERIODIC)
+endif()
+
+option(MG "Multigrid Preconditioner?" ON)
+if (MG)
+  add_definitions(-DMG)
+endif()
 
 INCLUDE_DIRECTORIES(include)
 FILE(GLOB sources source/*.cc)

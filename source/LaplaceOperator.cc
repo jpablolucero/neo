@@ -62,6 +62,7 @@ void LaplaceOperator<dim, fe_degree, same_diagonal>::reinit (dealii::DoFHandler<
   dealii::DoFTools::extract_locally_relevant_dofs
   (*dof_handler, locally_relevant_dofs);
   ghosted_vector.reinit(locally_owned_dofs, locally_relevant_dofs, mpi_communicator_);
+
   global_timer.leave_subsection();
 }
 
@@ -89,7 +90,7 @@ void LaplaceOperator<dim, fe_degree, same_diagonal>::build_matrix ()
   dealii::MeshWorker::Assembler::MGMatrixSimple<LA::MPI::SparseMatrix> assembler;
   assembler.initialize(mg_matrix);
 #ifdef CG
-  assembler.initialize(constraints);
+  //assembler.initialize(constraints);
 #endif
   dealii::MeshWorker::integration_loop<dim, dim> (dof_handler->begin_mg(level),
                                                   same_diagonal ? ++dof_handler->begin_mg(level) :
@@ -106,6 +107,7 @@ void LaplaceOperator<dim,fe_degree,same_diagonal>::vmult (LA::MPI::Vector &dst,
 {
   dst = 0;
   vmult_add(dst, src);
+  dst.compress(dealii::VectorOperation::add);
 }
 
 template <int dim, int fe_degree, bool same_diagonal>
@@ -113,7 +115,8 @@ void LaplaceOperator<dim,fe_degree,same_diagonal>::Tvmult (LA::MPI::Vector &dst,
                                                            const LA::MPI::Vector &src) const
 {
   dst = 0;
-  vmult_add(dst, src);
+  Tvmult_add(dst, src);
+  dst.compress(dealii::VectorOperation::add);
 }
 
 template <int dim, int fe_degree, bool same_diagonal>
@@ -121,20 +124,27 @@ void LaplaceOperator<dim,fe_degree,same_diagonal>::vmult_add (LA::MPI::Vector &d
     const LA::MPI::Vector &src) const
 {
   global_timer.enter_subsection("LaplaceOperator::vmult_add");
-  ghosted_vector = src;
   dealii::AnyData dst_data;
   dst_data.add<LA::MPI::Vector *>(&dst, "dst");
+
+  dealii::IndexSet locally_owned_dofs = dof_handler->locally_owned_mg_dofs(level);
+  dealii::IndexSet locally_relevant_level_dofs;
+  dealii::DoFTools::extract_locally_relevant_level_dofs
+  (*dof_handler, level, locally_relevant_level_dofs);
+
   dealii::MGLevelObject<LA::MPI::Vector > mg_src ;
-  mg_src.resize(level,level) ;
-  mg_src[level]= std::move(src) ;
+  mg_src.resize(level,level);
+  mg_src[level].reinit(locally_owned_dofs, locally_relevant_level_dofs,
+                       mpi_communicator);
+  mg_src[level] = src;
   dealii::AnyData src_data ;
   src_data.add<const dealii::MGLevelObject<LA::MPI::Vector >*>(&mg_src,"src");
-  info_box.initialize(*fe, *mapping, src_data,
-                      dealii::MGLevelObject<LA::MPI::Vector > {});
+
+  info_box.initialize(*fe, *mapping, src_data, mg_src);
   dealii::MeshWorker::Assembler::ResidualSimple<LA::MPI::Vector > assembler;
   assembler.initialize(dst_data);
 #ifdef CG
-  assembler.initialize(constraints);
+//  assembler.initialize(constraints);
 #endif
   dealii::MeshWorker::integration_loop<dim, dim>
   (dof_handler->begin_mg(level), dof_handler->end_mg(level),

@@ -37,6 +37,7 @@
 #include <LaplaceOperator.h>
 #include <referencefunction.h>
 #include <RHSIntegrator.h>
+#include <ResidualSimpleConstraints.h>
 
 #include <string>
 #include <fstream>
@@ -45,7 +46,7 @@ template <int dim,bool same_diagonal = true>
 class MyLaplace
 {
 public:
-  MyLaplace ();
+  MyLaplace (const unsigned int degree = 1);
   ~MyLaplace ();
   void run ();
 
@@ -85,6 +86,7 @@ private:
   LA::MPI::SparseMatrix                               coarse_matrix ;
 
   dealii::ConditionalOStream pcout;
+  dealii::MGTransferPrebuilt<LA::MPI::Vector > mg_transfer;
 };
 
 #endif // MYLAPLACE_H

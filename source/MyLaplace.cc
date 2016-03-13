@@ -2,14 +2,14 @@
 #include <GlobalTimer.h>
 
 template <int dim,bool same_diagonal>
-MyLaplace<dim,same_diagonal>::MyLaplace ()
+MyLaplace<dim,same_diagonal>::MyLaplace (const unsigned int degree)
   :
   mpi_communicator(MPI_COMM_WORLD),
   triangulation(mpi_communicator,dealii::Triangulation<dim>::
                 limit_level_difference_at_vertices,
                 dealii::parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy),
   mapping (),
-  fe (1),
+  fe (degree),
   dof_handler (triangulation),
   pcout (std::cout,(dealii::Utilities::MPI::this_mpi_process(mpi_communicator)==0))
 {
@@ -28,6 +28,7 @@ MyLaplace<dim,same_diagonal>::MyLaplace ()
 
   dealii::GridGenerator::hyper_cube (triangulation,-1.,1., true);
 
+#ifdef PERIODIC
   //add periodicity
   typedef typename dealii::Triangulation<dim>::cell_iterator CellIteratorTria;
   std::vector<dealii::GridTools::PeriodicFacePair<CellIteratorTria> > periodic_faces;
@@ -38,6 +39,7 @@ MyLaplace<dim,same_diagonal>::MyLaplace ()
   dealii::GridTools::collect_periodic_faces (triangulation, b_id1, b_id2,
                                              direction, periodic_faces, dealii::Tensor<1,dim>());
   triangulation.add_periodicity(periodic_faces);
+#endif
 }
 
 template <int dim,bool same_diagonal>
@@ -51,13 +53,22 @@ void MyLaplace<dim,same_diagonal>::setup_system ()
   dof_handler.distribute_mg_dofs(fe);
   dof_handler.initialize_local_block_info();
 
-  dealii::MGTransferPrebuilt<LA::MPI::Vector > mg_transfer;
-  mg_transfer.build_matrices(dof_handler);
-
   locally_owned_dofs = dof_handler.locally_owned_dofs();
-  std::cout << "locally owned dofs on process "
-            << dealii::Utilities::MPI::this_mpi_process(mpi_communicator) << " ";
-  locally_owned_dofs.print(std::cout);
+
+  dealii::deallog << "locally owned dofs on process "
+                  << dealii::Utilities::MPI::this_mpi_process(mpi_communicator)
+                  << std::endl;
+  for (unsigned int l=0; l<triangulation.n_levels(); ++l)
+    {
+      dealii::deallog << "level: " << l << " n_elements(): "
+                      << dof_handler.locally_owned_mg_dofs(l).n_elements()
+                      << " index set: ";
+      dof_handler.locally_owned_mg_dofs(l).print(dealii::deallog);
+    }
+  dealii::deallog << "n_elements(): "
+                  << dof_handler.locally_owned_dofs().n_elements()
+                  <<std::endl;
+  dof_handler.locally_owned_dofs().print(dealii::deallog);
 
   dealii::DoFTools::extract_locally_relevant_dofs
   (dof_handler, locally_relevant_dofs);
@@ -65,33 +76,41 @@ void MyLaplace<dim,same_diagonal>::setup_system ()
             << dealii::Utilities::MPI::this_mpi_process(mpi_communicator) << " ";
   locally_relevant_dofs.print(std::cout);
 
+  //constraints
+  constraints.clear();
+  constraints.reinit(locally_relevant_dofs);
+#ifdef CG
+#ifdef PERIODIC
   //Periodic boundary conditions
   std::vector<dealii::GridTools::PeriodicFacePair
   <typename dealii::DoFHandler<dim>::cell_iterator> >
   periodic_faces;
 
-  const unsigned int b_id1 = 2;
-  const unsigned int b_id2 = 3;
-  const unsigned int direction = 1;
+  const unsigned int b_id1 = 2*dim-2;
+  const unsigned int b_id2 = 2*dim-1;
+  const unsigned int direction = dim-1;
 
   dealii::GridTools::collect_periodic_faces (dof_handler,
                                              b_id1, b_id2, direction,
                                              periodic_faces);
 
-  //constraints
-  constraints.clear();
-  constraints.reinit(locally_relevant_dofs);
-#ifdef CG
   dealii::DoFTools::make_periodicity_constraints<dealii::DoFHandler<dim> >
   (periodic_faces, constraints);
-
-  dealii::DoFTools::make_hanging_node_constraints
-  (dof_handler, constraints);
-
+  for (unsigned int i=0; i<2*dim-2; ++i)
+    dealii::VectorTools::interpolate_boundary_values(dof_handler, i,
+                                                     reference_function,
+                                                     constraints);
+#else
   for (unsigned int i=0; i<2*dim; ++i)
     dealii::VectorTools::interpolate_boundary_values(dof_handler, i,
                                                      reference_function,
                                                      constraints);
+#endif
+
+  dealii::DoFTools::make_hanging_node_constraints
+  (dof_handler, constraints);
+
+
 #endif
   constraints.close();
 
@@ -100,7 +119,6 @@ void MyLaplace<dim,same_diagonal>::setup_system ()
   right_hand_side.reinit (locally_owned_dofs, mpi_communicator);
 
   system_matrix.reinit (&dof_handler,&mapping, &constraints, mpi_communicator, triangulation.n_levels()-1) ;
-
 }
 
 
@@ -123,8 +141,8 @@ void MyLaplace<dim, same_diagonal>::assemble_system ()
 
   dealii::MeshWorker::DoFInfo<dim> dof_info(dof_handler);
 
-  dealii::MeshWorker::Assembler::ResidualSimple<LA::MPI::Vector > rhs_assembler;
-//  ResidualSimpleConstraints<LA::MPI::Vector > rhs_assembler;
+//  dealii::MeshWorker::Assembler::ResidualSimple<LA::MPI::Vector > rhs_assembler;
+  ResidualSimpleConstraints<LA::MPI::Vector > rhs_assembler;
   dealii::AnyData data;
   data.add<LA::MPI::Vector *>(&right_hand_side, "RHS");
   rhs_assembler.initialize(data);
@@ -151,18 +169,19 @@ void MyLaplace<dim,same_diagonal>::setup_multigrid ()
       mg_matrix[level].build_matrix();
     }
 //  coarse_matrix.reinit(dof_handler.n_dofs(0),dof_handler.n_dofs(0));
-//  coarse_matrix.copy_from(mg_matrix[0]) ;
+//  coarse_matrix.copy_from(mg_matrix[0]);
+
 }
 
 template <int dim,bool same_diagonal>
 void MyLaplace<dim,same_diagonal>::solve ()
 {
   global_timer.enter_subsection("solve::mg_initialization");
-  const LA::MPI::SparseMatrix &coarse_matrix = mg_matrix[0].get_coarse_matrix();
-  dealii::MGTransferPrebuilt<LA::MPI::Vector > mg_transfer;
+#ifdef MG
   mg_transfer.build_matrices(dof_handler);
+  const LA::MPI::SparseMatrix &coarse_matrix = mg_matrix[0].get_coarse_matrix();
 
-  dealii::SolverControl coarse_solver_control (1000, 1e-10, false, false);
+  dealii::SolverControl coarse_solver_control (dof_handler.n_dofs(0), 1e-10, false, false);
   dealii::SolverCG<LA::MPI::Vector> coarse_solver(coarse_solver_control);
   dealii::PreconditionIdentity id;
   dealii::MGCoarseGridLACIteration<dealii::SolverCG<LA::MPI::Vector>,LA::MPI::Vector> mg_coarse(coarse_solver,
@@ -182,6 +201,7 @@ void MyLaplace<dim,same_diagonal>::solve ()
 //  typename LA::PreconditionBlockJacobi::AdditionalData
 //    smoother_data(dof_handler.block_info().local().block_size(0),"linear",1.,0,1);
 
+
   dealii::MGSmootherPrecondition<SystemMatrixType,
          dealii::PreconditionIdentity,
 //                 LA::PreconditionBlockJacobi,
@@ -199,12 +219,16 @@ void MyLaplace<dim,same_diagonal>::solve ()
   dealii::PreconditionMG<dim, LA::MPI::Vector,
          dealii::MGTransferPrebuilt<LA::MPI::Vector > >
          preconditioner(dof_handler, mg, mg_transfer);
-  dealii::ReductionControl          solver_control (1000, 1.E-20, 1.E-10);
+#else
+  dealii::PreconditionIdentity preconditioner;
+#endif
+
+  dealii::ReductionControl          solver_control (dof_handler.n_dofs(), 1.e-20, 1.e-10);
   dealii::SolverCG<LA::MPI::Vector> solver (solver_control);
-  solution_tmp=0.;
-  constraints.set_zero(solution_tmp);
+
   global_timer.leave_subsection();
   global_timer.enter_subsection("solve::solve");
+  constraints.set_zero(solution_tmp);
   solver.solve(system_matrix,solution_tmp,right_hand_side,preconditioner);
 #ifdef CG
   constraints.distribute(solution_tmp);
@@ -278,30 +302,42 @@ void MyLaplace<dim,same_diagonal>::output_results (const unsigned int cycle) con
 template <int dim,bool same_diagonal>
 void MyLaplace<dim,same_diagonal>::run ()
 {
-  for (unsigned int cycle=0; cycle<9-dim; ++cycle)
+  triangulation.refine_global (1);
+  for (unsigned int cycle=0; cycle<6-dim; ++cycle)
     {
       std::cout << "Cycle " << cycle << std::endl;
       global_timer.reset();
+
       global_timer.enter_subsection("refine_global");
+      pcout << "Refine global" << std::endl;
       triangulation.refine_global (1);
       global_timer.leave_subsection();
+
       dealii::deallog << "Number of active cells: " <<
                       triangulation.n_active_cells() << std::endl;
       global_timer.enter_subsection("setup_system");
+      pcout << "Setup system" << std::endl;
       setup_system ();
+      pcout << "Assemble system" << std::endl;
       assemble_system();
       global_timer.leave_subsection();
       dealii::deallog << "DoFHandler levels: ";
       for (unsigned int l=0; l<triangulation.n_levels(); ++l)
         dealii::deallog << ' ' << dof_handler.n_dofs(l);
       dealii::deallog << std::endl;
+#ifdef MG
       global_timer.enter_subsection("setup_multigrid");
+      pcout << "Setup multigrid" << std::endl;
       setup_multigrid ();
       global_timer.leave_subsection();
+#endif
       global_timer.enter_subsection("solve");
+      pcout << "Solve" << std::endl;
       solve ();
       global_timer.leave_subsection();
       global_timer.enter_subsection("output");
+      pcout << "Ouput" << std::endl;
+      compute_error();
       output_results (cycle);
       global_timer.leave_subsection();
       global_timer.print_summary();

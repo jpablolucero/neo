@@ -7,6 +7,7 @@
 #include <deal.II/lac/vector.h>
 #include <deal.II/fe/fe_values.h>
 #include <deal.II/integrators/l2.h>
+#include <deal.II/integrators/laplace.h>
 #include <deal.II/base/function_lib.h>
 
 #include "referencefunction.h"
@@ -23,8 +24,8 @@ public:
             typename dealii::MeshWorker::IntegrationInfo<dim> &info2) const;
 
 private:
-  //ReferenceFunction<dim> exact_solution;
-  dealii::Functions::SlitSingularityFunction<dim> exact_solution;
+  ReferenceFunction<dim> exact_solution;
+  //dealii::Functions::SlitSingularityFunction<dim> exact_solution;
 };
 
 #endif // RHSINTEGRATOR_H
