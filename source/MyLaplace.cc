@@ -58,7 +58,7 @@ void MyLaplace<dim,same_diagonal>::setup_system ()
   dealii::deallog << "locally owned dofs on process "
                   << dealii::Utilities::MPI::this_mpi_process(mpi_communicator)
                   << std::endl;
-  for (unsigned int l=0; l<triangulation.n_levels(); ++l)
+  for (unsigned int l=0; l<triangulation.n_global_levels(); ++l)
     {
       dealii::deallog << "level: " << l << " n_elements(): "
                       << dof_handler.locally_owned_mg_dofs(l).n_elements()
@@ -118,7 +118,7 @@ void MyLaplace<dim,same_diagonal>::setup_system ()
   solution_tmp.reinit (locally_owned_dofs, mpi_communicator);
   right_hand_side.reinit (locally_owned_dofs, mpi_communicator);
 
-  system_matrix.reinit (&dof_handler,&mapping, &constraints, mpi_communicator, triangulation.n_levels()-1) ;
+  system_matrix.reinit (&dof_handler,&mapping, &constraints, mpi_communicator, triangulation.n_global_levels()-1) ;
 }
 
 
@@ -161,9 +161,9 @@ void MyLaplace<dim, same_diagonal>::assemble_system ()
 template <int dim,bool same_diagonal>
 void MyLaplace<dim,same_diagonal>::setup_multigrid ()
 {
-  const unsigned int n_levels = triangulation.n_levels();
-  mg_matrix.resize(0, n_levels-1);
-  for (unsigned int level=0; level<n_levels; ++level)
+  const unsigned int n_global_levels = triangulation.n_global_levels();
+  mg_matrix.resize(0, n_global_levels-1);
+  for (unsigned int level=0; level<n_global_levels; ++level)
     {
       mg_matrix[level].reinit(&dof_handler,&mapping,&constraints, mpi_communicator, level);
       mg_matrix[level].build_matrix();
@@ -314,7 +314,7 @@ void MyLaplace<dim,same_diagonal>::run ()
       global_timer.leave_subsection();
 
       dealii::deallog << "Number of active cells: " <<
-                      triangulation.n_active_cells() << std::endl;
+                      triangulation.n_global_active_cells() << std::endl;
       global_timer.enter_subsection("setup_system");
       pcout << "Setup system" << std::endl;
       setup_system ();
@@ -322,7 +322,7 @@ void MyLaplace<dim,same_diagonal>::run ()
       assemble_system();
       global_timer.leave_subsection();
       dealii::deallog << "DoFHandler levels: ";
-      for (unsigned int l=0; l<triangulation.n_levels(); ++l)
+      for (unsigned int l=0; l<triangulation.n_global_levels(); ++l)
         dealii::deallog << ' ' << dof_handler.n_dofs(l);
       dealii::deallog << std::endl;
 #ifdef MG

@@ -69,6 +69,9 @@ void LaplaceOperator<dim, fe_degree, same_diagonal>::reinit (dealii::DoFHandler<
 template <int dim, int fe_degree, bool same_diagonal>
 void LaplaceOperator<dim, fe_degree, same_diagonal>::build_matrix ()
 {
+  if (dof_handler->begin_mg(level) == dof_handler->end_mg(level))
+    return;
+
   global_timer.enter_subsection("LaplaceOperator::build_matrix");
   info_box.initialize(*fe, *mapping);
   dealii::MGLevelObject<LA::MPI::SparseMatrix> mg_matrix ;
