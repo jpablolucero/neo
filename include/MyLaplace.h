@@ -12,6 +12,7 @@
 #include <deal.II/dofs/dof_tools.h>
 #include <deal.II/fe/fe_dgq.h>
 #include <deal.II/fe/mapping_q1.h>
+#include <deal.II/fe/fe_system.h>
 #include <deal.II/grid/grid_generator.h>
 #include <deal.II/grid/grid_tools.h>
 #include <deal.II/grid/tria.h>
@@ -44,6 +45,7 @@
 #include <fstream>
 
 template <int dim=2,bool same_diagonal = true, unsigned int degree = 1>
+
 class MyLaplace
 {
 public:
@@ -70,11 +72,8 @@ private:
   dealii::ConstraintMatrix                            constraints;
   ReferenceFunction<dim>                              reference_function;
 
-#ifdef CG
-  dealii::FE_Q<dim>            fe;
-#else
-  dealii::FE_DGQ<dim>          fe;
-#endif
+  dealii::FESystem<dim>        fe;
+
   dealii::DoFHandler<dim>      dof_handler;
 
   SystemMatrixType             system_matrix;

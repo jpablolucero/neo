@@ -67,8 +67,9 @@ void ResidualIntegrator<dim>::cell(dealii::MeshWorker::DoFInfo<dim> &dinfo,
 {
   const dealii::FEValuesBase<dim> &fe = info.fe_values() ;
   dealii::Vector<double> &dst = dinfo.vector(0).block(0) ;
-  const std::vector<dealii::Tensor<1,dim> > &Dsrc = info.gradients[0][0];
-  LocalIntegrators::Diffusion::cell_residual<dim,Coefficient<dim> >(dst, fe, Dsrc) ;
+
+  const std::vector<std::vector<dealii::Tensor<1,dim> > > &Dsrc = info.gradients[0];  
+  LocalIntegrators::Diffusion::cell_residualvs<dim,Coefficient<dim> >(dst, fe, Dsrc) ;
 }
 
 template <int dim>
@@ -84,19 +85,19 @@ void ResidualIntegrator<dim>::face(dealii::MeshWorker::DoFInfo<dim> &dinfo1,
   const unsigned int deg1 = info1.fe_values(0).get_fe().tensor_degree();
   const unsigned int deg2 = info2.fe_values(0).get_fe().tensor_degree();
 
-  const std::vector<double> &src1 = info1.values[0][0];
-  const std::vector<dealii::Tensor<1,dim> > &Dsrc1 = info1.gradients[0][0];
   dealii::Vector<double> &dst1 = dinfo1.vector(0).block(0) ;
-
-  const std::vector<double> &src2 = info2.values[0][0];
-  const std::vector<dealii::Tensor<1,dim> > &Dsrc2 = info2.gradients[0][0];
   dealii::Vector<double> &dst2 = dinfo2.vector(0).block(0) ;
 
-  LocalIntegrators::Diffusion::ip_residual<dim,Coefficient<dim> >
+  const std::vector<std::vector<dealii::Tensor<1,dim> > > &Dsrc1_compvec = info1.gradients[0];
+  const std::vector<std::vector<dealii::Tensor<1,dim> > > &Dsrc2_compvec = info2.gradients[0];
+  const std::vector<std::vector<double> > &src1_compvec = info1.values[0];
+  const std::vector<std::vector<double> > &src2_compvec = info2.values[0];
+
+  LocalIntegrators::Diffusion::ip_residualvs<dim,Coefficient<dim> >
     (dst1,dst2,
      fe1,fe2,
-     src1,Dsrc1,
-     src2,Dsrc2,
+     src1_compvec,Dsrc1_compvec,
+     src2_compvec,Dsrc2_compvec,
      dealii::LocalIntegrators::Laplace::compute_penalty(dinfo1,dinfo2,deg1,deg2));
 }
 
@@ -106,18 +107,22 @@ void ResidualIntegrator<dim>::boundary(dealii::MeshWorker::DoFInfo<dim> &dinfo,
 {
   const dealii::FEValuesBase<dim> &fe = info.fe_values();
   const unsigned int deg = info.fe_values(0).get_fe().tensor_degree();
-  const std::vector<double> &src = info.values[0][0];
-  std::vector<double> data{};
-  data.resize(src.size());
-  const std::vector<dealii::Tensor<1,dim> > &Dsrc = info.gradients[0][0];
   dealii::Vector<double> &dst = dinfo.vector(0).block(0) ;
 
-  LocalIntegrators::Diffusion::nitsche_residual<dim,Coefficient<dim> >
+  const std::vector<std::vector<dealii::Tensor<1,dim> > > &Dsrc_compvec = info.gradients[0];
+  const std::vector<std::vector<double> > &src_compvec = info.values[0];
+
+  const unsigned int n_comps = fe.get_fe().n_components() ;
+  std::vector<double> data_comp{};
+  data_comp.resize(src_compvec[0].size());
+  const std::vector<std::vector<double> > data_compvec{n_comps,data_comp};
+
+  LocalIntegrators::Diffusion::nitsche_residualvs<dim,Coefficient<dim> >
     (dst, 
      fe,
-     src,
-     Dsrc,
-     data,
+     src_compvec,
+     Dsrc_compvec,
+     data_compvec,
      dealii::LocalIntegrators::Laplace::compute_penalty(dinfo,dinfo,deg,deg));
 }
 

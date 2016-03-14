@@ -10,7 +10,11 @@ MyLaplace<dim,same_diagonal,degree>::MyLaplace ()
                 limit_level_difference_at_vertices,
                 dealii::parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy),
   mapping (),
-  fe (degree),
+#ifdef CG
+  fe(dealii::FE_Q<dim>(degree),1),
+#else
+  fe(dealii::FE_DGQ<dim>(degree),1),
+#endif
   dof_handler (triangulation),
   pcout (std::cout,(dealii::Utilities::MPI::this_mpi_process(mpi_communicator)==0)),
   timer(mpi_communicator, pcout, dealii::TimerOutput::never,dealii::TimerOutput::wall_times)
