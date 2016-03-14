@@ -20,17 +20,24 @@ namespace LocalIntegrators
     {
       const CoefficientTYPE scalar_coeff;
       const unsigned int n_dofs = fe.dofs_per_cell;
-      const unsigned int n_components = fe.get_fe().n_components();
-      
+      const unsigned int n_comp = fe.get_fe().n_components();
+      const unsigned int n_quads = fe.n_quadrature_points;
+
+      std::vector<std::vector<double> > coeffs{n_comp};
+      coeffs[0].resize(n_quads);
+      coeffs[1].resize(n_quads);
+      scalar_coeff.value_list(fe.get_quadrature_points(), coeffs[0], 0);
+      scalar_coeff.value_list(fe.get_quadrature_points(), coeffs[1], 1);
+
       for (unsigned int q=0; q<fe.n_quadrature_points; ++q)
 	{
 	  const double dx = fe.JxW(q) * factor;
-          const dealii::Point<dim> quad_point = fe.quadrature_point(q);
+	  //          const dealii::Point<dim> quad_point = fe.quadrature_point(q);
 	  for (unsigned int i=0; i<n_dofs; ++i)
 	    {
 	      double Mii = 0.0;
-	      for (unsigned int d=0; d<n_components; ++d)
-		Mii += dx * scalar_coeff.value(quad_point) *
+	      for (unsigned int d=0; d<n_comp; ++d)
+		Mii += coeffs[d][q]*dx /* scalar_coeff.value(quad_point) */ *
 		  (fe.shape_grad_component(i,q,d) * fe.shape_grad_component(i,q,d));
 	      
 	      M(i,i) += Mii;
@@ -38,8 +45,8 @@ namespace LocalIntegrators
 	      for (unsigned int j=i+1; j<n_dofs; ++j)
 		{
 		  double Mij = 0.0;
-		  for (unsigned int d=0; d<n_components; ++d)
-		    Mij += dx * scalar_coeff.value(quad_point) *
+		  for (unsigned int d=0; d<n_comp; ++d)
+		    Mij += coeffs[d][q]*dx /* scalar_coeff.value(quad_point) */ *
 		      (fe.shape_grad_component(j,q,d) * fe.shape_grad_component(i,q,d));
 		  
 		  M(i,j) += Mij;
@@ -75,13 +82,22 @@ namespace LocalIntegrators
        const double nuINT = int_factor;
        const double nuEXT = (ext_factor < 0) ? int_factor : ext_factor;
        const double nupenalty = .5*(nuINT+nuEXT)*penalty;
+
+       const unsigned int n_comp = feINT.get_fe().n_components();
+       const unsigned int n_quads = feINT.n_quadrature_points;
+
+       std::vector<std::vector<double> > coeffs{n_comp};
+       coeffs[0].resize(n_quads);
+       coeffs[1].resize(n_quads);
+       scalar_coeff.value_list(feINT.get_quadrature_points(), coeffs[0], 0);
+       scalar_coeff.value_list(feINT.get_quadrature_points(), coeffs[1], 1);
        
-       for (unsigned int q=0; q<feINT.n_quadrature_points; ++q)
+       for (unsigned int q=0; q<n_quads; ++q)
          {
-	   const dealii::Point<dim> quad_point = feINT.quadrature_point(q);
-	   const double dx = feINT.JxW(q) * scalar_coeff.value(quad_point);
+	   //	   const dealii::Point<dim> quad_point = feINT.quadrature_point(q);
+	   const double dx = feINT.JxW(q) /* scalar_coeff.value(quad_point)*/;
 	   const dealii::Tensor<1,dim> n = feINT.normal_vector(q);
-           for (unsigned int d=0; d<feINT.get_fe().n_components(); ++d)
+           for (unsigned int d=0; d<n_comp; ++d)
              {
                for (unsigned int i=0; i<n_dofs; ++i)
                  {
@@ -95,10 +111,10 @@ namespace LocalIntegrators
                        const double dnuINT = n * feINT.shape_grad_component(j,q,d);
                        const double uEXT = feEXT.shape_value_component(j,q,d);
                        const double dnuEXT = n * feEXT.shape_grad_component(j,q,d);
-                       M_INT_INT(i,j) += dx*(-.5*nuINT*dnvINT*uINT-.5*nuINT*dnuINT*vINT+nupenalty*uINT*vINT);
-                       M_INT_EXT(i,j) += dx*( .5*nuINT*dnvINT*uEXT-.5*nuEXT*dnuEXT*vINT-nupenalty*vINT*uEXT);
-                       M_EXT_INT(i,j) += dx*(-.5*nuEXT*dnvEXT*uINT+.5*nuINT*dnuINT*vEXT-nupenalty*uINT*vEXT);
-                       M_EXT_EXT(i,j) += dx*( .5*nuEXT*dnvEXT*uEXT+.5*nuEXT*dnuEXT*vEXT+nupenalty*uEXT*vEXT);
+                       M_INT_INT(i,j) += coeffs[d][q]*dx*(-.5*nuINT*dnvINT*uINT-.5*nuINT*dnuINT*vINT+nupenalty*uINT*vINT);
+                       M_INT_EXT(i,j) += coeffs[d][q]*dx*( .5*nuINT*dnvINT*uEXT-.5*nuEXT*dnuEXT*vINT-nupenalty*vINT*uEXT);
+                       M_EXT_INT(i,j) += coeffs[d][q]*dx*(-.5*nuEXT*dnvEXT*uINT+.5*nuINT*dnuINT*vEXT-nupenalty*uINT*vEXT);
+                       M_EXT_EXT(i,j) += coeffs[d][q]*dx*( .5*nuEXT*dnvEXT*uEXT+.5*nuEXT*dnuEXT*vEXT+nupenalty*uEXT*vEXT);
 		     }
 		}
 	    }
@@ -115,19 +131,26 @@ namespace LocalIntegrators
       const CoefficientTYPE scalar_coeff;
       const unsigned int n_dofs = fe.dofs_per_cell;
       const unsigned int n_comp = fe.get_fe().n_components();
+      const unsigned int n_quads = fe.n_quadrature_points;
+
+      std::vector<std::vector<double> > coeffs{n_comp};
+      coeffs[0].resize(n_quads);
+      coeffs[1].resize(n_quads);
+      scalar_coeff.value_list(fe.get_quadrature_points(), coeffs[0], 0);
+      scalar_coeff.value_list(fe.get_quadrature_points(), coeffs[1], 1);
       
       Assert (M.m() == n_dofs, dealii::ExcDimensionMismatch(M.m(), n_dofs));
       Assert (M.n() == n_dofs, dealii::ExcDimensionMismatch(M.n(), n_dofs));
  
       for (unsigned int q=0; q<fe.n_quadrature_points; ++q)
 	{
-	  const dealii::Point<dim> quad_point = fe.quadrature_point(q);
-	  const double dx = fe.JxW(q) * scalar_coeff.value(quad_point) * factor;
+	  //	  const dealii::Point<dim> quad_point = fe.quadrature_point(q);
+	  const double dx = fe.JxW(q) * factor /* scalar_coeff.value(quad_point) */;
 	  const dealii::Tensor<1,dim> n = fe.normal_vector(q);
 	  for (unsigned int i=0; i<n_dofs; ++i)
 	    for (unsigned int j=0; j<n_dofs; ++j)
 	      for (unsigned int d=0; d<n_comp; ++d)
-		M(i,j) += dx * (2.*penalty * fe.shape_value_component(i,q,d) * fe.shape_value_component(j,q,d)
+		M(i,j) += coeffs[d][q]*dx * (2.*penalty * fe.shape_value_component(i,q,d) * fe.shape_value_component(j,q,d)
 				- (n * fe.shape_grad_component(i,q,d)) * fe.shape_value_component(j,q,d)
 				- (n * fe.shape_grad_component(j,q,d)) * fe.shape_value_component(i,q,d));
 	}
@@ -174,12 +197,12 @@ namespace LocalIntegrators
       std::vector<std::vector<double> > coeffs{n_comp};
       coeffs[0].resize(n_quads);
       coeffs[1].resize(n_quads);
-      scalar_coeff.value_list(fe.get_quadrature_points(), coeffs[0]);
-      scalar_coeff.value_list(fe.get_quadrature_points(), coeffs[1]);
+      scalar_coeff.value_list(fe.get_quadrature_points(), coeffs[0], 0);
+      scalar_coeff.value_list(fe.get_quadrature_points(), coeffs[1], 1);
 
       for (unsigned int q=0; q<n_quads; ++q)
 	{
-          const dealii::Point<dim> quad_point = fe.quadrature_point(q);
+	  //          const dealii::Point<dim> quad_point = fe.quadrature_point(q);
 	  const double dx = factor * fe.JxW(q);
 	  for (unsigned int i=0; i<n_dofs; ++i)
 	    for(unsigned int d=0; d<n_comp; ++d)
@@ -265,10 +288,16 @@ namespace LocalIntegrators
       const double nuEXT = (ext_factor < 0) ? int_factor : ext_factor;
       const double nupenalty = .5 * penalty  * (nuINT + nuEXT);
  
+      std::vector<std::vector<double> > coeffs{n_comp};
+      coeffs[0].resize(n_quads);
+      coeffs[1].resize(n_quads);
+      scalar_coeff.value_list(feINT.get_quadrature_points(), coeffs[0], 0);
+      scalar_coeff.value_list(feINT.get_quadrature_points(), coeffs[1], 1);
+
       for (unsigned int q=0; q<n_quads; ++q)
     	{
-          const dealii::Point<dim> quad_point = feINT.quadrature_point(q);
-    	  const double dx = feINT.JxW(q) * scalar_coeff.value(quad_point);
+	  //          const dealii::Point<dim> quad_point = feINT.quadrature_point(q);
+    	  const double dx = feINT.JxW(q) /* scalar_coeff.value(quad_point) */;
     	  const dealii::Tensor<1,dim> normal_vectorINT = feINT.normal_vector(q);
  
     	  for (unsigned int i=0; i<n_dofs; ++i)
@@ -282,10 +311,10 @@ namespace LocalIntegrators
 		const double dnuINT = DinputINT[d][q] * normal_vectorINT;
 		const double uEXT = inputEXT[d][q];
 		const double dnuEXT = DinputEXT[d][q] * normal_vectorINT;
-		resultINT(i) += dx*( nupenalty*vINT*uINT  - .5*(nuINT*dnvINT*uINT + nuINT*vINT*dnuINT) );
-		resultINT(i) += dx*( -nupenalty*vINT*uEXT + .5*(nuINT*dnvINT*uEXT - nuEXT*vINT*dnuEXT) );
-		resultEXT(i) += dx*( -nupenalty*vEXT*uINT - .5*(nuEXT*dnvEXT*uINT - nuINT*vEXT*dnuINT) );
-		resultEXT(i) += dx*( nupenalty*vEXT*uEXT  + .5*(nuEXT*dnvEXT*uEXT + nuEXT*vEXT*dnuEXT) );
+		resultINT(i) += coeffs[d][q]*dx*( nupenalty*vINT*uINT  - .5*(nuINT*dnvINT*uINT + nuINT*vINT*dnuINT) );
+		resultINT(i) += coeffs[d][q]*dx*( -nupenalty*vINT*uEXT + .5*(nuINT*dnvINT*uEXT - nuEXT*vINT*dnuEXT) );
+		resultEXT(i) += coeffs[d][q]*dx*( -nupenalty*vEXT*uINT - .5*(nuEXT*dnvEXT*uINT - nuINT*vEXT*dnuINT) );
+		resultEXT(i) += coeffs[d][q]*dx*( nupenalty*vEXT*uEXT  + .5*(nuEXT*dnvEXT*uEXT + nuEXT*vEXT*dnuEXT) );
 	      }
     	}
     }
@@ -338,14 +367,21 @@ namespace LocalIntegrators
        const CoefficientTYPE scalar_coeff;
        const unsigned int n_dofs = fe.dofs_per_cell;
        const unsigned int n_comp = fe.get_fe().n_components();       
-
+       const unsigned int n_quads = fe.n_quadrature_points;
+ 
        AssertVectorVectorDimension(input, n_comp, fe.n_quadrature_points);
        AssertVectorVectorDimension(Dinput, n_comp, fe.n_quadrature_points);
        AssertVectorVectorDimension(boundary_data, n_comp, fe.n_quadrature_points);       
 
+       std::vector<std::vector<double> > coeffs{n_comp};
+       coeffs[0].resize(n_quads);
+       coeffs[1].resize(n_quads);
+       scalar_coeff.value_list(fe.get_quadrature_points(), coeffs[0], 0);
+       scalar_coeff.value_list(fe.get_quadrature_points(), coeffs[1], 1);
+
        for (unsigned int q=0; q<fe.n_quadrature_points; ++q)
          {
-	   const dealii::Point<dim> quad_point = fe.quadrature_point(q);
+	   //	   const dealii::Point<dim> quad_point = fe.quadrature_point(q);
 	   const double dx = factor * fe.JxW(q);
 	   const dealii::Tensor<1,dim> n = fe.normal_vector(q);
 	   for (unsigned int i=0; i<n_dofs; ++i)
@@ -357,7 +393,7 @@ namespace LocalIntegrators
                const double dnu = Dinput[d][q] * n;
                const double v= fe.shape_value_component(i,q,d);
 	       
-               result(i) += dx*scalar_coeff.value(quad_point)*(2.*penalty*(u-g)*v - (u-g)*dnv - dnu*v);
+               result(i) += coeffs[d][q]*dx* /*scalar_coeff.value(quad_point)*/ (2.*penalty*(u-g)*v - (u-g)*dnv - dnu*v);
              }
          }
      }

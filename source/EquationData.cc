@@ -3,10 +3,12 @@
 
 template <int dim>
 double Coefficient<dim>::value (const dealii::Point<dim> &p,
-                                const unsigned int) const
+                                const unsigned int d) const
 {
-  //  return 1.;
-  return 1. / (0.05 + 2.*p.square());
+  if(d == 0)
+    return 1. / (0.05 + 2.*p.square());
+  else
+    return 1.;
 }
 
 template <int dim>
@@ -16,8 +18,8 @@ void Coefficient<dim>::value_list (const std::vector<dealii::Point<dim> > &point
 {
   Assert (values.size() == points.size(),
 		  dealii::ExcDimensionMismatch (values.size(), points.size()));
-  Assert (component == 0,
-		  dealii::ExcIndexRange (component, 0, 1));
+  // Assert (component == 0,
+  // 		  dealii::ExcIndexRange (component, 0, 1));
   const unsigned int n_points = points.size();
   for (unsigned int i=0; i<n_points; ++i)
     values[i] = value(points[i],component);
