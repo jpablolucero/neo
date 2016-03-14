@@ -31,6 +31,8 @@
 #include <string>
 #include <fstream>
 
+#include <deal.II/fe/fe_system.h>
+
 template <int dim,bool same_diagonal = true>
 class MyLaplace
 {
@@ -49,7 +51,7 @@ private:
 
   dealii::Triangulation<dim>   triangulation;
   const dealii::MappingQ1<dim> mapping;
-  dealii::FE_DGQ<dim>          fe;
+  dealii::FESystem<dim>        fe;
   dealii::DoFHandler<dim>      dof_handler;
 
   SystemMatrixType             system_matrix;

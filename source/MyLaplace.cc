@@ -5,7 +5,8 @@ template <int dim,bool same_diagonal>
 MyLaplace<dim,same_diagonal>::MyLaplace ()
   :
   mapping (),
-  fe (2),
+  //  fe1comp {1},
+  fe {dealii::FE_DGQ<dim>{2}, 2},
   dof_handler (triangulation)
 {}
 
