@@ -38,6 +38,7 @@
 
 #include <LaplaceOperator.h>
 #include <referencefunction.h>
+#include <Integrators.h>
 #include <RHSIntegrator.h>
 #include <ResidualSimpleConstraints.h>
 

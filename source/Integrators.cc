@@ -67,6 +67,7 @@ void ResidualIntegrator<dim>::cell(dealii::MeshWorker::DoFInfo<dim> &dinfo,
 {
   const dealii::FEValuesBase<dim> &fe = info.fe_values() ;
   dealii::Vector<double> &dst = dinfo.vector(0).block(0) ;
+  //  dealii::deallog << "result.size()" << dst.size() << std::endl;
 
   const std::vector<std::vector<dealii::Tensor<1,dim> > > &Dsrc = info.gradients[0];  
   LocalIntegrators::Diffusion::cell_residualvs<dim,Coefficient<dim> >(dst, fe, Dsrc) ;
@@ -114,7 +115,7 @@ void ResidualIntegrator<dim>::boundary(dealii::MeshWorker::DoFInfo<dim> &dinfo,
 
   const unsigned int n_comps = fe.get_fe().n_components() ;
   std::vector<double> data_comp{};
-  data_comp.resize(src_compvec[0].size());
+  data_comp.resize(src_compvec[0].size(),0.0);
   const std::vector<std::vector<double> > data_compvec{n_comps,data_comp};
 
   LocalIntegrators::Diffusion::nitsche_residualvs<dim,Coefficient<dim> >
@@ -133,10 +134,15 @@ RHSIntegrator<dim>::RHSIntegrator()
 template <int dim>
 void RHSIntegrator<dim>::cell(dealii::MeshWorker::DoFInfo<dim> &dinfo, typename dealii::MeshWorker::IntegrationInfo<dim> &info) const
 {
-  const dealii::FEValuesBase<dim> &fe_v = info.fe_values();
+  const dealii::FEValuesBase<dim> &fe = info.fe_values();
   dealii::Vector<double> &local_vector = dinfo.vector(0).block(0);
-  const std::vector<double> input_vector(local_vector.size(),1.);
-  dealii::LocalIntegrators::L2::L2(local_vector,fe_v,input_vector,1.);
+
+  const unsigned int n_comps = fe.get_fe().n_components();
+  const unsigned int size = local_vector.size()/n_comps ;
+  std::vector<std::vector<double> > rhs_values{n_comps};
+  for( unsigned int d=0; d<n_comps; ++d)
+    rhs_values[d].resize(size,1.0);
+  dealii::LocalIntegrators::L2::L2(local_vector,fe,rhs_values) ;
 }
 
 template <int dim>
