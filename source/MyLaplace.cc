@@ -23,8 +23,6 @@ void MyLaplace<dim,same_diagonal>::setup_system ()
   system_matrix.reinit (&dof_handler, &mapping, triangulation.n_levels() - 1);
   solution.reinit (dof_handler.n_dofs());
   right_hand_side.reinit (dof_handler.n_dofs());
-  right_hand_side = 1.0/4.*static_cast<double>(1<<dim)/
-    static_cast<double>(dof_handler.n_dofs());
 }
 
 template <int dim,bool same_diagonal>
@@ -39,6 +37,29 @@ void MyLaplace<dim,same_diagonal>::setup_multigrid ()
     }
   coarse_matrix.reinit(dof_handler.n_dofs(0),dof_handler.n_dofs(0));
   coarse_matrix.copy_from(mg_matrix[0]) ;
+}
+
+template <int dim,bool same_diagonal>
+void MyLaplace<dim,same_diagonal>::assemble_rhs ()
+{
+  dealii::UpdateFlags update_flags = dealii::update_JxW_values |
+    dealii::update_values |
+    dealii::update_quadrature_points ;
+
+  dealii::MeshWorker::IntegrationInfoBox<dim> info_box_rhs;
+  info_box_rhs.add_update_flags_all(update_flags);
+  info_box_rhs.initialize(fe, mapping);
+
+  dealii::MeshWorker::DoFInfo<dim> dof_info_rhs{dof_handler};
+
+  dealii::MeshWorker::Assembler::ResidualSimple<dealii::Vector<double> > rhs_assembler;
+  dealii::AnyData data;
+  data.add(&right_hand_side, "RHS");
+  rhs_assembler.initialize(data);
+
+  dealii::MeshWorker::integration_loop<dim, dim>(dof_handler.begin_active(), dof_handler.end(),
+                                                 dof_info_rhs, info_box_rhs,
+                                                 rhs_integrator, rhs_assembler);
 }
 
 template <int dim,bool same_diagonal>
@@ -115,6 +136,9 @@ void MyLaplace<dim,same_diagonal>::run ()
       dealii::deallog << std::endl;
       global_timer.enter_subsection("setup_multigrid");
       setup_multigrid ();
+      global_timer.leave_subsection();
+      global_timer.enter_subsection("assemble_rhs");
+      assemble_rhs ();
       global_timer.leave_subsection();
       global_timer.enter_subsection("solve");
       solve ();

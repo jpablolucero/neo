@@ -27,6 +27,7 @@
 #include <deal.II/multigrid/multigrid.h>
 
 #include <LaplaceOperator.h>
+#include <Integrators.h>
 
 #include <string>
 #include <fstream>
@@ -44,6 +45,7 @@ public:
 private:
   void setup_system ();
   void setup_multigrid ();
+  void assemble_rhs ();
   void solve ();
   void output_results () const;
 
@@ -61,6 +63,8 @@ private:
 
   dealii::MGLevelObject<SystemMatrixType >            mg_matrix ;
   dealii::FullMatrix<double>                          coarse_matrix ;
+
+  RHSIntegrator<dim> rhs_integrator;
 };
 
 #endif // MYLAPLACE_H
