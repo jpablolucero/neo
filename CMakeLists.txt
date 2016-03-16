@@ -13,7 +13,7 @@ ENDIF()
 DEAL_II_INITIALIZE_CACHED_VARIABLES()
 PROJECT(laplace_meshworker)
 
-INCLUDE_DIRECTORIES(include)
+INCLUDE_DIRECTORIES(include include/local_integrators)
 FILE(GLOB sources source/*.cc)
 
 ADD_EXECUTABLE(laplace_meshworker ${sources})

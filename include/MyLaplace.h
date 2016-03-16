@@ -27,12 +27,10 @@
 #include <deal.II/multigrid/multigrid.h>
 
 #include <LaplaceOperator.h>
-#include <Integrators.h>
+#include <RHSIntegrator.h>
 
 #include <string>
 #include <fstream>
-
-#include <deal.II/fe/fe_system.h>
 
 template <int dim,bool same_diagonal = true>
 class MyLaplace
@@ -47,13 +45,15 @@ private:
   void setup_multigrid ();
   void assemble_rhs ();
   void solve ();
+  void solve_psc ();
+  void solve_blockjacobi ();
   void output_results () const;
 
   typedef LaplaceOperator<dim, 1, same_diagonal> SystemMatrixType;
 
   dealii::Triangulation<dim>   triangulation;
   const dealii::MappingQ1<dim> mapping;
-  dealii::FESystem<dim>        fe;
+  dealii::FE_DGQ<dim>          fe;
   dealii::DoFHandler<dim>      dof_handler;
 
   SystemMatrixType             system_matrix;
@@ -64,7 +64,8 @@ private:
   dealii::MGLevelObject<SystemMatrixType >            mg_matrix ;
   dealii::FullMatrix<double>                          coarse_matrix ;
 
-  RHSIntegrator<dim> rhs_integrator;
+  RHSIntegrator<dim>           rhs_integrator;
+  const bool use_psc = true;
 };
 
 #endif // MYLAPLACE_H
