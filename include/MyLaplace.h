@@ -43,6 +43,8 @@ private:
   void setup_system ();
   void setup_multigrid ();
   void solve ();
+  void solve_psc ();
+  void solve_blockjacobi ();
   void output_results () const;
 
   typedef LaplaceOperator<dim, 1, same_diagonal> SystemMatrixType;
@@ -59,6 +61,8 @@ private:
 
   dealii::MGLevelObject<SystemMatrixType >            mg_matrix ;
   dealii::FullMatrix<double>                          coarse_matrix ;
+
+  const bool use_psc = true;
 };
 
 #endif // MYLAPLACE_H
