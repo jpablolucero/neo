@@ -60,10 +60,6 @@ void MyLaplace<dim,same_diagonal,degree>::setup_system ()
   dof_handler.distribute_dofs (fe);
   dof_handler.distribute_mg_dofs(fe);
   dof_handler.initialize_local_block_info();
-  // dealii::deallog << "n_comps=" << fe.n_components()
-  // 		  << " ,n_blocks="<< fe.n_blocks() << std::endl;
-  // for(unsigned int b=0; b<fe.n_blocks(); ++b)
-  //   dealii::deallog << " ,block(" << b << ").size=" << fe.block_indices().block_size(b) << std::endl; 
 
   locally_owned_dofs = dof_handler.locally_owned_dofs();
 
@@ -164,7 +160,7 @@ void MyLaplace<dim, same_diagonal, degree>::assemble_system ()
 
   dealii::MeshWorker::integration_loop<dim, dim>(dof_handler.begin_active(), dof_handler.end(),
                                                  dof_info, info_box,
-                                                 rhs_integrator, rhs_assembler);
+						 rhs_integrator, rhs_assembler);
   right_hand_side.compress(dealii::VectorOperation::add);
 }
 

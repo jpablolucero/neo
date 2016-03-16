@@ -38,7 +38,6 @@
 
 #include <LaplaceOperator.h>
 #include <referencefunction.h>
-#include <Integrators.h>
 #include <RHSIntegrator.h>
 #include <ResidualSimpleConstraints.h>
 
@@ -46,7 +45,6 @@
 #include <fstream>
 
 template <int dim=2,bool same_diagonal = true, unsigned int degree = 1>
-
 class MyLaplace
 {
 public:
@@ -73,7 +71,6 @@ private:
   dealii::ConstraintMatrix                            constraints;
   ReferenceFunction<dim>                              reference_function;
 
-  dealii::FESystem<dim>        fe;
 
   dealii::DoFHandler<dim>      dof_handler;
 

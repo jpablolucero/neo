@@ -38,7 +38,7 @@ endif()
 set(SMOOTHENINGSTEPS 10 CACHE FILEPATH "Number of smoothening steps")
 add_definitions(-DSMOOTHENINGSTEPS=${SMOOTHENINGSTEPS})
 
-INCLUDE_DIRECTORIES(include)
+INCLUDE_DIRECTORIES(include include/local_integrators)
 FILE(GLOB sources source/*.cc)
 
 IF(CMAKE_BUILD_TYPE MATCHES "Debug")
