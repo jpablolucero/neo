@@ -5,8 +5,7 @@ template <int dim,bool same_diagonal>
 MyLaplace<dim,same_diagonal>::MyLaplace ()
   :
   mapping (),
-  //  fe1comp {1},
-  fe {dealii::FE_DGQ<dim>{2}, 2},
+  fe {dealii::FE_DGQ<dim>{1}, 1/*, dealii::FE_DGQ<dim>{1}, 2*/},
   dof_handler (triangulation)
 {}
 
@@ -20,6 +19,10 @@ void MyLaplace<dim,same_diagonal>::setup_system ()
   dof_handler.distribute_dofs (fe);
   dof_handler.distribute_mg_dofs(fe);
   dof_handler.initialize_local_block_info();
+  // dealii::deallog << "n_comps=" << fe.n_components()
+  // 		  << " ,n_blocks="<< fe.n_blocks() << std::endl;
+  // for(unsigned int b=0; b<fe.n_blocks(); ++b)
+  //   dealii::deallog << " ,block(" << b << ").size=" << fe.block_indices().block_size(b) << std::endl; 
   system_matrix.reinit (&dof_handler, &mapping, triangulation.n_levels() - 1);
   solution.reinit (dof_handler.n_dofs());
   right_hand_side.reinit (dof_handler.n_dofs());
@@ -113,7 +116,7 @@ void MyLaplace<dim,same_diagonal>::output_results () const
 template <int dim,bool same_diagonal>
 void MyLaplace<dim,same_diagonal>::run ()
 {
-  for (unsigned int cycle=0; cycle<9-dim; ++cycle)
+  for (unsigned int cycle=0; cycle<6-dim; ++cycle)
     {
       std::cout << "Cycle " << cycle << std::endl;
       if (cycle == 0)

@@ -1,13 +1,14 @@
 #ifndef INTEGRATORS_H
 #define INTEGRATORS_H
 
+#include <deal.II/base/function.h>
+#include <deal.II/base/exceptions.h>
 #include <deal.II/meshworker/dof_info.h>
 #include <deal.II/meshworker/integration_info.h>
 #include <deal.II/integrators/laplace.h>
 #include <deal.II/integrators/l2.h>
 #include <deal.II/lac/vector.h>
 #include <deal.II/meshworker/local_integrator.h>
-#include <deal.II/base/function.h>
 
 #include <Diffusion.h>
 #include <EquationData.h>

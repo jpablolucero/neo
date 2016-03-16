@@ -18,8 +18,7 @@ void Coefficient<dim>::value_list (const std::vector<dealii::Point<dim> > &point
 {
   Assert (values.size() == points.size(),
 		  dealii::ExcDimensionMismatch (values.size(), points.size()));
-  // Assert (component == 0,
-  // 		  dealii::ExcIndexRange (component, 0, 1));
+
   const unsigned int n_points = points.size();
   for (unsigned int i=0; i<n_points; ++i)
     values[i] = value(points[i],component);
