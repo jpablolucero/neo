@@ -67,10 +67,9 @@ void ResidualIntegrator<dim>::cell(dealii::MeshWorker::DoFInfo<dim> &dinfo,
 {
   const dealii::FEValuesBase<dim> &fe = info.fe_values() ;
   dealii::Vector<double> &dst = dinfo.vector(0).block(0) ;
-  //  dealii::deallog << "result.size()" << dst.size() << std::endl;
 
   const std::vector<std::vector<dealii::Tensor<1,dim> > > &Dsrc = info.gradients[0];  
-  LocalIntegrators::Diffusion::cell_residualvs<dim,Coefficient<dim> >(dst, fe, Dsrc) ;
+  LocalIntegrators::Diffusion::cell_residual<dim,Coefficient<dim> >(dst, fe, Dsrc) ;
 }
 
 template <int dim>
@@ -94,7 +93,7 @@ void ResidualIntegrator<dim>::face(dealii::MeshWorker::DoFInfo<dim> &dinfo1,
   const std::vector<std::vector<double> > &src1_compvec = info1.values[0];
   const std::vector<std::vector<double> > &src2_compvec = info2.values[0];
 
-  LocalIntegrators::Diffusion::ip_residualvs<dim,Coefficient<dim> >
+  LocalIntegrators::Diffusion::ip_residual<dim,Coefficient<dim> >
     (dst1,dst2,
      fe1,fe2,
      src1_compvec,Dsrc1_compvec,
@@ -118,7 +117,7 @@ void ResidualIntegrator<dim>::boundary(dealii::MeshWorker::DoFInfo<dim> &dinfo,
   data_comp.resize(src_compvec[0].size(),0.0);
   const std::vector<std::vector<double> > data_compvec{n_comps,data_comp};
 
-  LocalIntegrators::Diffusion::nitsche_residualvs<dim,Coefficient<dim> >
+  LocalIntegrators::Diffusion::nitsche_residual<dim,Coefficient<dim> >
     (dst, 
      fe,
      src_compvec,
@@ -137,11 +136,12 @@ void RHSIntegrator<dim>::cell(dealii::MeshWorker::DoFInfo<dim> &dinfo, typename 
   const dealii::FEValuesBase<dim> &fe = info.fe_values();
   dealii::Vector<double> &local_vector = dinfo.vector(0).block(0);
 
-  const unsigned int n_comps = fe.get_fe().n_components();
-  const unsigned int size = local_vector.size()/n_comps ;
-  std::vector<std::vector<double> > rhs_values{n_comps};
-  for( unsigned int d=0; d<n_comps; ++d)
-    rhs_values[d].resize(size,1.0);
+  const unsigned int n_blocks = fe.get_fe().n_blocks();
+  Assert(n_blocks == fe.get_fe().n_components(), dealii::ExcDimensionMismatch(n_blocks, fe.get_fe().n_components()));
+
+  std::vector<std::vector<double> > rhs_values{n_blocks};
+  for(unsigned int b=0; b<n_blocks; ++b)
+    rhs_values[b].resize(fe.get_fe().block_indices().block_size(b),1.0);
   dealii::LocalIntegrators::L2::L2(local_vector,fe,rhs_values) ;
 }
 
