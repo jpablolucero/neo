@@ -71,7 +71,7 @@ void LaplaceOperator<dim, fe_degree, same_diagonal>::build_matrix ()
   Assert(dof_handler != 0, dealii::ExcInternalError());
 
   timer->enter_subsection("LO::build_matrix");
-  info_box.initialize(*fe, *mapping);
+  info_box.initialize(*fe, *mapping, &(dof_handler->block_info()));
   dealii::MGLevelObject<LA::MPI::SparseMatrix> mg_matrix ;
   mg_matrix.resize(level,level);
 
@@ -198,7 +198,7 @@ void LaplaceOperator<dim,fe_degree,same_diagonal>::vmult_add (LA::MPI::Vector &d
   timer->leave_subsection();
 
   timer->enter_subsection("LO::vmult_add::assembler_setup");
-  info_box.initialize(*fe, *mapping, src_data, ghosted_src);
+  info_box.initialize(*fe, *mapping, src_data, ghosted_src, &(dof_handler->block_info());
   dealii::MeshWorker::Assembler::ResidualSimple<LA::MPI::Vector > assembler;
   assembler.initialize(dst_data);
 #ifdef CG
@@ -217,6 +217,7 @@ template <int dim, int fe_degree, bool same_diagonal>
 void LaplaceOperator<dim,fe_degree, same_diagonal>::Tvmult_add (LA::MPI::Vector &dst,
     const LA::MPI::Vector &src) const
 {
+  dst = 0;
   vmult_add(dst, src);
 }
 

@@ -1,6 +1,7 @@
 #ifndef MYLAPLACE_H
 #define MYLAPLACE_H
 
+#include <deal.II/fe/fe_system.h>
 #include <deal.II/algorithms/any_data.h>
 #include <deal.II/base/conditional_ostream.h>
 #include <deal.II/base/mg_level_object.h>
@@ -38,6 +39,7 @@
 
 #include <LaplaceOperator.h>
 #include <referencefunction.h>
+#include <BlockIntegrators.h>
 #include <RHSIntegrator.h>
 #include <ResidualSimpleConstraints.h>
 
@@ -69,6 +71,7 @@ private:
   dealii::parallel::distributed::Triangulation<dim>   triangulation;
   const dealii::MappingQ1<dim>                        mapping;
   dealii::ConstraintMatrix                            constraints;
+  dealii::FESystem<dim>                               fe;
   ReferenceFunction<dim>                              reference_function;
 
 

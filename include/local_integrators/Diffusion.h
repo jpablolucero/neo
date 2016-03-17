@@ -6,8 +6,6 @@
 #include <deal.II/fe/fe_values.h>
 #include <deal.II/meshworker/dof_info.h>
 
-#include <EquationData.h>
-
 namespace LocalIntegrators
 {
   namespace Diffusion
