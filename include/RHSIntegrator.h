@@ -13,15 +13,16 @@
 #include "referencefunction.h"
 
 template <int dim>
-class RHSIntegrator : public dealii::MeshWorker::LocalIntegrator<dim>
+class RHSIntegrator final : public dealii::MeshWorker::LocalIntegrator<dim>
 {
-public:
-  void cell(dealii::MeshWorker::DoFInfo<dim> &dinfo, typename dealii::MeshWorker::IntegrationInfo<dim> &info) const;
-  void boundary(dealii::MeshWorker::DoFInfo<dim> &dinfo, typename dealii::MeshWorker::IntegrationInfo<dim> &info) const;
+ public:
+  RHSIntegrator() ;
+  void cell(dealii::MeshWorker::DoFInfo<dim> &dinfo, typename dealii::MeshWorker::IntegrationInfo<dim> &info) const override;
+  void boundary(dealii::MeshWorker::DoFInfo<dim> &dinfo, typename dealii::MeshWorker::IntegrationInfo<dim> &info) const override;
   void face(dealii::MeshWorker::DoFInfo<dim> &dinfo1,
             dealii::MeshWorker::DoFInfo<dim> &dinfo2,
             typename dealii::MeshWorker::IntegrationInfo<dim> &info1,
-            typename dealii::MeshWorker::IntegrationInfo<dim> &info2) const;
+            typename dealii::MeshWorker::IntegrationInfo<dim> &info2) const override;
 
 private:
   ReferenceFunction<dim> exact_solution;
