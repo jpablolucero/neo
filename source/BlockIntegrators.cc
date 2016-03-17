@@ -2,26 +2,39 @@
 
 // MATRIX INTEGRATOR
 template <int dim,bool same_diagonal>
-MatrixIntegrator<dim,same_diagonal>::MatrixIntegrator()
+BMatrixIntegrator<dim,same_diagonal>::BMatrixIntegrator()
 {}
 
 template <int dim,bool same_diagonal>
-void MatrixIntegrator<dim,same_diagonal>::cell(dealii::MeshWorker::DoFInfo<dim> &dinfo, 
+void BMatrixIntegrator<dim,same_diagonal>::cell(dealii::MeshWorker::DoFInfo<dim> &dinfo, 
 					       typename dealii::MeshWorker::IntegrationInfo<dim> &info) const
 {
-  const dealii::FEValuesBase<dim> &fe = info.fe_values() ;
+  const dealii::FEValuesBase<dim> &fe = info.fe_values(0) ;
+
+  //const unsigned int n_blocks = fe.get_fe().n_blocks();
+  //  dealii::deallog << "fe.n_blocks= " << n_blocks << std::endl;
   dealii::FullMatrix<double> &M = dinfo.matrix(0).matrix;
-LocalIntegrators::Diffusion::cell_matrix<dim, Coefficient<dim> >(M,fe) ;
+  LocalIntegrators::Diffusion::cell_matrix<dim, Coefficient<dim> >(M,fe) ;
 }
 
 template <int dim,bool same_diagonal>
-void MatrixIntegrator<dim,same_diagonal>::face(dealii::MeshWorker::DoFInfo<dim> &dinfo1,
+void BMatrixIntegrator<dim,same_diagonal>::face(dealii::MeshWorker::DoFInfo<dim> &dinfo1,
 					       dealii::MeshWorker::DoFInfo<dim> &dinfo2,
 					       typename dealii::MeshWorker::IntegrationInfo<dim> &info1,
 					       typename dealii::MeshWorker::IntegrationInfo<dim> &info2) const
 {
   const dealii::FEValuesBase<dim> &fe1 = info1.fe_values();
   const dealii::FEValuesBase<dim> &fe2 = info2.fe_values();
+
+  // dealii::deallog << "n_local_blockmatrices=" << dinfo1.n_matrices() << std::endl;
+  // dealii::deallog << "Matrix(0)::row=" << dinfo1.matrix(0).row << std::endl;
+  // dealii::deallog << "Matrix(0)::column=" << dinfo1.matrix(0).column << std::endl;
+  // // dealii::deallog << "Matrix(1)::row=" << dinfo1.matrix(1).row << std::endl;
+  // // dealii::deallog << "Matrix(1)::column=" << dinfo1.matrix(1).column << std::endl;
+  // dealii::deallog << "Matrix(0,external)::row=" << dinfo1.matrix(0,true).row << std::endl;
+  // dealii::deallog << "Matrix(0,external)::column=" << dinfo1.matrix(0,true).column << std::endl;
+  // // dealii::deallog << "Matrix(1,external)::row=" << dinfo1.matrix(1,true).row << std::endl;
+  // // dealii::deallog << "Matrix(1,external)::column=" << dinfo1.matrix(1,true).column << std::endl;
 
   dealii::FullMatrix<double> &RM11 = dinfo1.matrix(0,false).matrix;
   dealii::FullMatrix<double> &RM22 = dinfo2.matrix(0,false).matrix;
@@ -47,7 +60,7 @@ void MatrixIntegrator<dim,same_diagonal>::face(dealii::MeshWorker::DoFInfo<dim> 
 }
 
 template <int dim,bool same_diagonal>
-void MatrixIntegrator<dim,same_diagonal>::boundary(dealii::MeshWorker::DoFInfo<dim> &dinfo, 
+void BMatrixIntegrator<dim,same_diagonal>::boundary(dealii::MeshWorker::DoFInfo<dim> &dinfo, 
 						   typename dealii::MeshWorker::IntegrationInfo<dim> &info) const
 {
   const dealii::FEValuesBase<dim> &fe = info.fe_values();
@@ -62,11 +75,11 @@ void MatrixIntegrator<dim,same_diagonal>::boundary(dealii::MeshWorker::DoFInfo<d
 
 // RESIDUAL INTEGRATOR
 template <int dim>
-ResidualIntegrator<dim>::ResidualIntegrator()
+BResidualIntegrator<dim>::BResidualIntegrator()
 {}
 
 template <int dim>
-void ResidualIntegrator<dim>::cell(dealii::MeshWorker::DoFInfo<dim> &dinfo, 
+void BResidualIntegrator<dim>::cell(dealii::MeshWorker::DoFInfo<dim> &dinfo, 
 				   typename dealii::MeshWorker::IntegrationInfo<dim> &info) const
 {
   const dealii::FEValuesBase<dim> &fe = info.fe_values() ;
@@ -77,7 +90,7 @@ void ResidualIntegrator<dim>::cell(dealii::MeshWorker::DoFInfo<dim> &dinfo,
 }
   
 template <int dim>
-void ResidualIntegrator<dim>::face(dealii::MeshWorker::DoFInfo<dim> &dinfo1,
+void BResidualIntegrator<dim>::face(dealii::MeshWorker::DoFInfo<dim> &dinfo1,
 				   dealii::MeshWorker::DoFInfo<dim> &dinfo2,
 				   typename dealii::MeshWorker::IntegrationInfo<dim> &info1,
 				   typename dealii::MeshWorker::IntegrationInfo<dim> &info2) const
@@ -106,7 +119,7 @@ void ResidualIntegrator<dim>::face(dealii::MeshWorker::DoFInfo<dim> &dinfo1,
 }
 
 template <int dim>
-void ResidualIntegrator<dim>::boundary(dealii::MeshWorker::DoFInfo<dim> &dinfo, 
+void BResidualIntegrator<dim>::boundary(dealii::MeshWorker::DoFInfo<dim> &dinfo, 
 				       typename dealii::MeshWorker::IntegrationInfo<dim> &info) const
 {
   const dealii::FEValuesBase<dim> &fe = info.fe_values();
@@ -132,40 +145,49 @@ void ResidualIntegrator<dim>::boundary(dealii::MeshWorker::DoFInfo<dim> &dinfo,
 
 // RHS INTEGRATOR
 template <int dim>
-RHSIntegrator<dim>::RHSIntegrator()
+BRHSIntegrator<dim>::BRHSIntegrator()
 {}
 
 template <int dim>
-void RHSIntegrator<dim>::cell(dealii::MeshWorker::DoFInfo<dim> &dinfo, typename dealii::MeshWorker::IntegrationInfo<dim> &info) const
+void BRHSIntegrator<dim>::cell(dealii::MeshWorker::DoFInfo<dim> &dinfo, typename dealii::MeshWorker::IntegrationInfo<dim> &info) const
 {
-  const dealii::FEValuesBase<dim> &fe = info.fe_values();
-  dealii::Vector<double> &local_vector = dinfo.vector(0).block(0);
+  const dealii::FEValuesBase<dim> &fev = info.fe_values(0);
+  dealii::BlockVector<double> &result = dinfo.vector(0);
+  const unsigned int n_blocks = result.n_blocks();
 
-  const unsigned int n_blocks = fe.get_fe().n_blocks();
-  Assert(n_blocks == fe.get_fe().n_components(), dealii::ExcDimensionMismatch(n_blocks, fe.get_fe().n_components()));
+  // dealii::deallog << "result.n_blocks" << n_blocks << std::endl;
+  // dealii::deallog << "result(0).size" << result.block(0).size() << std::endl;
+  // // dealii::deallog << "result(1).size" << result.block(1).size() << std::endl;
+  // dealii::deallog << "dinfo.n_blocks=" << dinfo.block_info->global().size() << std::endl;
 
-  std::vector<std::vector<double> > rhs_values{n_blocks};
-  for(unsigned int b=0; b<n_blocks; ++b)
-    rhs_values[b].resize(fe.get_fe().block_indices().block_size(b),1.0);
-  dealii::LocalIntegrators::L2::L2(local_vector,fe,rhs_values) ;
+  AssertDimension(result.block(0).size(), fev.dofs_per_cell);
+  AssertDimension(n_blocks, dinfo.block_info->global().size());
+
+  std::vector<std::vector<double> > rhsvalues{n_blocks};
+  rhsvalues[0].resize(result.block(0).size(),1.0);
+  //  rhsvalues[1].resize(result.block(1).size(),1.0);
+
+  for( unsigned int b=0; b<n_blocks; ++b)
+    dealii::LocalIntegrators::L2::L2(result.block(b),fev,rhsvalues[b]);
+
 }
 
 template <int dim>
-void RHSIntegrator<dim>::boundary(dealii::MeshWorker::DoFInfo<dim> &, typename dealii::MeshWorker::IntegrationInfo<dim> &) const
+void BRHSIntegrator<dim>::boundary(dealii::MeshWorker::DoFInfo<dim> &, typename dealii::MeshWorker::IntegrationInfo<dim> &) const
 {}
 
 template <int dim>
-void RHSIntegrator<dim>::face(dealii::MeshWorker::DoFInfo<dim> &,
+void BRHSIntegrator<dim>::face(dealii::MeshWorker::DoFInfo<dim> &,
                               dealii::MeshWorker::DoFInfo<dim> &,
                               typename dealii::MeshWorker::IntegrationInfo<dim> &,
                               typename dealii::MeshWorker::IntegrationInfo<dim> &) const
 {}
 
-template class MatrixIntegrator<2,false>;
-template class MatrixIntegrator<3,false>;
-template class MatrixIntegrator<2,true>;
-template class MatrixIntegrator<3,true>;
-template class ResidualIntegrator<2>;
-template class ResidualIntegrator<3>;
-template class RHSIntegrator<2>;
-template class RHSIntegrator<3>;
+template class BMatrixIntegrator<2,false>;
+template class BMatrixIntegrator<3,false>;
+template class BMatrixIntegrator<2,true>;
+template class BMatrixIntegrator<3,true>;
+template class BResidualIntegrator<2>;
+template class BResidualIntegrator<3>;
+template class BRHSIntegrator<2>;
+template class BRHSIntegrator<3>;

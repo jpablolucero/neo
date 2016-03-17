@@ -5,7 +5,7 @@ template <int dim>
 double Coefficient<dim>::value (const dealii::Point<dim> &p,
                                 const unsigned int d) const
 {
-  if(d == 0)
+  if(d == 1)
     return 1. / (0.05 + 2.*p.square());
   else
     return 1.;

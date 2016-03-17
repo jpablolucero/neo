@@ -7,7 +7,7 @@ template <int dim,bool same_diagonal>
 MyLaplace<dim,same_diagonal>::MyLaplace ()
   :
   mapping (),
-  fe (1),
+  fe {dealii::FE_DGQ<dim>{1}, 1},
   dof_handler (triangulation)
 {}
 
@@ -49,9 +49,9 @@ void MyLaplace<dim,same_diagonal>::assemble_rhs()
 
   dealii::MeshWorker::IntegrationInfoBox<dim> info_box_rhs;
   info_box_rhs.add_update_flags_all(update_flags);
-  info_box_rhs.initialize(fe, mapping);
+  info_box_rhs.initialize(fe, mapping, &(dof_handler.block_info()));
 
-  dealii::MeshWorker::DoFInfo<dim> dof_info_rhs(dof_handler);
+  dealii::MeshWorker::DoFInfo<dim> dof_info_rhs(dof_handler.block_info());
 
   dealii::MeshWorker::Assembler::ResidualSimple<dealii::Vector<double> > rhs_assembler;
   dealii::AnyData data;
@@ -207,7 +207,7 @@ void MyLaplace<dim,same_diagonal>::run ()
       std::cout << "Cycle " << cycle << std::endl;
       if (cycle == 0)
 	{  
-	  dealii::GridGenerator::hyper_cube (triangulation,-1.,1.);
+	  dealii::GridGenerator::hyper_cube (triangulation,0.,1.);
 	  triangulation.refine_global (3-dim);
 	}
       global_timer.reset();
