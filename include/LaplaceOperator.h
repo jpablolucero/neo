@@ -10,7 +10,7 @@
 #include <deal.II/meshworker/simple.h>
 #include <deal.II/meshworker/loop.h>
 
-#include <Integrators.h>
+#include <BlockIntegrators.h>
 
 template <int dim, int fe_degree, bool same_diagonal>
 class LaplaceOperator : public dealii::Subscriptor
@@ -56,8 +56,8 @@ public:
   mutable dealii::MeshWorker::IntegrationInfoBox<dim> info_box;
   dealii::SparsityPattern sparsity ;
   dealii::SparseMatrix<double> matrix ;
-  MatrixIntegrator<dim,same_diagonal> matrix_integrator ;
-  ResidualIntegrator<dim> residual_integrator ;
+  BMatrixIntegrator<dim,same_diagonal> matrix_integrator ;
+  BResidualIntegrator<dim> residual_integrator ;
 };
 
 #endif // LAPLACEOPERATOR_H
