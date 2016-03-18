@@ -169,7 +169,7 @@ namespace LocalIntegrators
       Assert(input.size() == n_quads, dealii::ExcDimensionMismatch(input.size(), n_quads));
       Assert(result.size() == n_dofs, dealii::ExcDimensionMismatch(result.size(), n_dofs));
 
-      std::vector<double> coeff_values{n_quads};
+      std::vector<double> coeff_values(n_quads);
       coefficient.value_list(fe.get_quadrature_points(), coeff_values, 0);
 
       for (unsigned int q=0; q<n_quads; ++q)

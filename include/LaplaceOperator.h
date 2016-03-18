@@ -12,7 +12,7 @@
 #include <deal.II/meshworker/loop.h>
 
 #include <generic_linear_algebra.h>
-#include <Integrators.h>
+#include <BlockIntegrators.h>
 
 
 template <int dim, int fe_degree, bool same_diagonal>
@@ -84,8 +84,8 @@ private:
   std::unique_ptr<dealii::MeshWorker::DoFInfo<dim> > dof_info;
   mutable dealii::MeshWorker::IntegrationInfoBox<dim> info_box;
   LA::MPI::SparseMatrix matrix;
-  MatrixIntegrator<dim,same_diagonal> matrix_integrator;
-  ResidualIntegrator<dim> residual_integrator;
+  BMatrixIntegrator<dim,same_diagonal> matrix_integrator ;
+  BResidualIntegrator<dim> residual_integrator ;
   mutable dealii::MGLevelObject<LA::MPI::Vector> ghosted_src;
   MPI_Comm mpi_communicator;
 };
