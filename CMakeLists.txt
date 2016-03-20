@@ -13,8 +13,52 @@ ENDIF()
 DEAL_II_INITIALIZE_CACHED_VARIABLES()
 PROJECT(laplace_meshworker)
 
+
+set(PARALLEL_LA 0 CACHE FILEPATH "Use deal.II (0) PETSc(1) or Trilinos(2)?")
+add_definitions(-DPARALLEL_LA=${PARALLEL_LA})
+
+option(CG "Use FE_Q?" OFF)
+if(CG)
+  add_definitions(-DCG)
+endif()
+
+option(PERIODIC "Periodic boundary conditions?" OFF)
+if(PERIODIC)
+  add_definitions(-DPERIODIC)
+endif()
+
+option(MG "Multigrid Preconditioner?" ON)
+if (MG)
+  add_definitions(-DMG)
+endif()
+
 INCLUDE_DIRECTORIES(include)
 FILE(GLOB sources source/*.cc)
 
-ADD_EXECUTABLE(laplace_meshworker ${sources})
-DEAL_II_SETUP_TARGET(laplace_meshworker)
+IF(CMAKE_BUILD_TYPE MATCHES "Debug")
+  ADD_EXECUTABLE(laplace_meshworker.g ${sources})
+  DEAL_II_SETUP_TARGET(laplace_meshworker.g)
+ELSEIF(CMAKE_BUILD_TYPE MATCHES "Release")
+  ADD_EXECUTABLE(laplace_meshworker ${sources})
+  DEAL_II_SETUP_TARGET(laplace_meshworker)
+ELSE()
+  MESSAGE(FATAL_ERROR
+    "CMAKE_BUILD_TYPE does neither match Release nor Debug!"
+    )
+ENDIF()
+
+ADD_CUSTOM_TARGET(debug
+  COMMAND ${CMAKE_COMMAND} -DCMAKE_BUILD_TYPE=Debug ${CMAKE_SOURCE_DIR}
+  COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target all
+  COMMENT "Switch CMAKE_BUILD_TYPE to Debug"
+  )
+
+ADD_CUSTOM_TARGET(release
+  COMMAND ${CMAKE_COMMAND} -DCMAKE_BUILD_TYPE=Release ${CMAKE_SOURCE_DIR}
+  COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target all
+  COMMENT "Switch CMAKE_BUILD_TYPE to Release"
+  )
+
+ADD_CUSTOM_TARGET(both)
+ADD_DEPENDENCIES(both debug release)
+
