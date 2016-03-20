@@ -85,7 +85,6 @@ private:
   LA::MPI::Vector       right_hand_side;
 
   dealii::MGLevelObject<SystemMatrixType >            mg_matrix ;
-  LA::MPI::SparseMatrix                               coarse_matrix ;
 
   const bool use_psc = true;
   dealii::ConditionalOStream pcout;

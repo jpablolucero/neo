@@ -191,6 +191,8 @@ void MyLaplace<dim,same_diagonal>::solve_psc ()
 {
   global_timer.enter_subsection("solve::mg_initialization");
 #ifdef MG
+  const LA::MPI::SparseMatrix &coarse_matrix = mg_matrix[0].get_coarse_matrix();
+
   dealii::SolverControl coarse_solver_control (dof_handler.n_dofs(0), 1e-10, false, false);
   dealii::SolverCG<LA::MPI::Vector> coarse_solver(coarse_solver_control);
   dealii::PreconditionIdentity id;
@@ -264,7 +266,7 @@ void MyLaplace<dim,same_diagonal>::solve_psc ()
          dealii::MGTransferPrebuilt<LA::MPI::Vector> >
          preconditioner(dof_handler, mg, mg_transfer);
 #else
-  dealii::SolverCG<LA::MPI::Vector>              solver (solver_control);
+  dealii::PreconditionIdentity preconditioner;
 #endif
 
   dealii::ReductionControl          solver_control (dof_handler.n_dofs(), 1.e-20, 1.e-10);
