@@ -1,5 +1,7 @@
 #include <MyLaplace.h>
 #include <GlobalTimer.h>
+#include <DDHandler.h>
+#include <PSCPreconditioner.h>
 
 template <int dim,bool same_diagonal>
 MyLaplace<dim,same_diagonal>::MyLaplace (const unsigned int degree)
@@ -110,7 +112,6 @@ void MyLaplace<dim,same_diagonal>::setup_system ()
   dealii::DoFTools::make_hanging_node_constraints
   (dof_handler, constraints);
 
-
 #endif
   constraints.close();
 
@@ -169,16 +170,122 @@ void MyLaplace<dim,same_diagonal>::setup_multigrid ()
       mg_matrix[level].build_matrix();
     }
 //  coarse_matrix.reinit(dof_handler.n_dofs(0),dof_handler.n_dofs(0));
-//  coarse_matrix.copy_from(mg_matrix[0]);
-
+//  coarse_matrix.copy_from(mg_matrix[0]) ;
 }
 
 template <int dim,bool same_diagonal>
 void MyLaplace<dim,same_diagonal>::solve ()
 {
+  if (use_psc)
+    {
+      solve_psc();
+    }
+  else
+    {
+      solve_blockjacobi();
+    }
+}
+
+template <int dim,bool same_diagonal>
+void MyLaplace<dim,same_diagonal>::solve_psc ()
+{
   global_timer.enter_subsection("solve::mg_initialization");
 #ifdef MG
+  dealii::SolverControl coarse_solver_control (dof_handler.n_dofs(0), 1e-10, false, false);
+  dealii::SolverCG<LA::MPI::Vector> coarse_solver(coarse_solver_control);
+  dealii::PreconditionIdentity id;
+  dealii::MGCoarseGridLACIteration<dealii::SolverCG<LA::MPI::Vector>,LA::MPI::Vector> mg_coarse(coarse_solver,
+      coarse_matrix,
+      id);
+
+  // Smoother setup
+  typedef PSCPreconditioner<dim, LA::MPI::Vector, double> Smoother;
+
+  dealii::MGLevelObject<dealii::FullMatrix<double> > local_level_inverse;
+  local_level_inverse.resize(mg_matrix.min_level(), mg_matrix.max_level());
+  dealii::MGLevelObject<DGDDHandler<dim> > level_ddh;
+  level_ddh.resize(mg_matrix.min_level(), mg_matrix.max_level());
+  dealii::MGLevelObject<typename Smoother::AdditionalData> smoother_data;
+  smoother_data.resize(mg_matrix.min_level(), mg_matrix.max_level());
+
+  for (unsigned int level = mg_matrix.min_level();
+       level <= mg_matrix.max_level();
+       ++level)
+    {
+      // init ddhandler
+      level_ddh[level].initialize(dof_handler, level);
+
+      // init local inverse with first local level matrix
+      const unsigned int n = dof_handler.get_fe().n_dofs_per_cell();
+      typename dealii::DoFHandler<dim>::cell_iterator cell = dof_handler.begin_active(level);
+      while (!cell->level_subdomain_id()==triangulation.locally_owned_subdomain())
+        ++cell;
+      std::vector<dealii::types::global_dof_index> first_level_dof_indices (n);
+      cell->get_mg_dof_indices (first_level_dof_indices);
+      dealii::FullMatrix<double> local_matrix(n, n);
+      for (unsigned int i = 0; i < n; ++i)
+        for (unsigned int j = 0; j < n; ++j)
+          {
+            const dealii::types::global_dof_index i1 = first_level_dof_indices [i];
+            const dealii::types::global_dof_index i2 = first_level_dof_indices [j];
+
+            local_matrix(i, j) = mg_matrix[level](i1, i2);
+          }
+
+      local_level_inverse[level].reinit(n, n);
+      local_level_inverse[level].invert(local_matrix);
+
+      // setup smoother data
+      smoother_data[level].ddh = &(level_ddh[level]);
+      smoother_data[level].local_inverses =
+        std::vector<const dealii::FullMatrix<double>* >(
+          level_ddh[level].size(),
+          &(local_level_inverse[level]));
+      smoother_data[level].weight = 1.0;
+    }
+  // /SmootherSetup
+
+  dealii::MGSmootherPrecondition<
+  SystemMatrixType,
+  Smoother,
+  LA::MPI::Vector> mg_smoother;
+  mg_smoother.initialize(mg_matrix, smoother_data);
+  mg_smoother.set_steps(6);
+  dealii::mg::Matrix<LA::MPI::Vector>         mgmatrix;
+  mgmatrix.initialize(mg_matrix);
+  dealii::MGTransferPrebuilt<LA::MPI::Vector> mg_transfer;
   mg_transfer.build_matrices(dof_handler);
+  dealii::Multigrid<LA::MPI::Vector> mg(dof_handler, mgmatrix,
+                                        mg_coarse, mg_transfer,
+                                        mg_smoother, mg_smoother);
+  mg.set_minlevel(mg_matrix.min_level());
+  mg.set_maxlevel(mg_matrix.max_level());
+  dealii::PreconditionMG<dim, LA::MPI::Vector,
+         dealii::MGTransferPrebuilt<LA::MPI::Vector> >
+         preconditioner(dof_handler, mg, mg_transfer);
+#else
+  dealii::SolverCG<LA::MPI::Vector>              solver (solver_control);
+#endif
+
+  dealii::ReductionControl          solver_control (dof_handler.n_dofs(), 1.e-20, 1.e-10);
+  dealii::SolverCG<LA::MPI::Vector> solver (solver_control);
+
+  global_timer.leave_subsection();
+  global_timer.enter_subsection("solve::solve");
+  constraints.set_zero(solution_tmp);
+  solver.solve(system_matrix,solution_tmp,right_hand_side,preconditioner);
+#ifdef CG
+  constraints.distribute(solution_tmp);
+#endif
+  solution = solution_tmp;
+  global_timer.leave_subsection();
+}
+
+template <int dim,bool same_diagonal>
+void MyLaplace<dim,same_diagonal>::solve_blockjacobi ()
+{
+  global_timer.enter_subsection("solve::mg_initialization");
+#ifdef MG
   const LA::MPI::SparseMatrix &coarse_matrix = mg_matrix[0].get_coarse_matrix();
 
   dealii::SolverControl coarse_solver_control (dof_handler.n_dofs(0), 1e-10, false, false);
@@ -201,16 +308,17 @@ void MyLaplace<dim,same_diagonal>::solve ()
 //  typename LA::PreconditionBlockJacobi::AdditionalData
 //    smoother_data(dof_handler.block_info().local().block_size(0),"linear",1.,0,1);
 
-
   dealii::MGSmootherPrecondition<SystemMatrixType,
          dealii::PreconditionIdentity,
 //                 LA::PreconditionBlockJacobi,
 //           dealii::PreconditionBlockJacobi<SystemMatrixType >,
          LA::MPI::Vector> mg_smoother;
-  mg_smoother.initialize(mg_matrix/*, smoother_data*/);
+  //mg_smoother.initialize(mg_matrix, smoother_data);
   mg_smoother.set_steps(1);
   dealii::mg::Matrix<LA::MPI::Vector >         mgmatrix;
   mgmatrix.initialize(mg_matrix);
+  dealii::MGTransferPrebuilt<LA::MPI::Vector> mg_transfer;
+  mg_transfer.build_matrices(dof_handler);
   dealii::Multigrid<LA::MPI::Vector > mg(dof_handler, mgmatrix,
                                          mg_coarse, mg_transfer,
                                          mg_smoother, mg_smoother);
@@ -225,7 +333,6 @@ void MyLaplace<dim,same_diagonal>::solve ()
 
   dealii::ReductionControl          solver_control (dof_handler.n_dofs(), 1.e-20, 1.e-10);
   dealii::SolverCG<LA::MPI::Vector> solver (solver_control);
-
   global_timer.leave_subsection();
   global_timer.enter_subsection("solve::solve");
   constraints.set_zero(solution_tmp);
@@ -257,7 +364,7 @@ void MyLaplace<dim, same_diagonal>::compute_error () const
 }
 
 template <int dim, bool same_diagonal>
-void MyLaplace<dim,same_diagonal>::output_results (const unsigned int cycle) const
+void MyLaplace<dim, same_diagonal>::output_results (const unsigned int cycle) const
 {
   std::string filename = "solution-"+dealii::Utilities::int_to_string(cycle,2);
 
@@ -338,7 +445,7 @@ void MyLaplace<dim,same_diagonal>::run ()
       global_timer.enter_subsection("output");
       pcout << "Ouput" << std::endl;
       compute_error();
-      output_results (cycle);
+      output_results(cycle);
       global_timer.leave_subsection();
       global_timer.print_summary();
       dealii::deallog << std::endl;

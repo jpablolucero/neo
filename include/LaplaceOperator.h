@@ -10,7 +10,7 @@
 #include <deal.II/meshworker/simple.h>
 #include <deal.II/meshworker/loop.h>
 
-#include "generic_linear_algebra.h"
+#include <generic_linear_algebra.h>
 #include <Integrators.h>
 
 
@@ -26,7 +26,7 @@ public:
                const dealii::MappingQ1<dim> *mapping_,
                const dealii::ConstraintMatrix *constraints,
                const MPI_Comm &mpi_communicator_,
-               const unsigned int level_=dealii::numbers::invalid_unsigned_int);
+               const unsigned int level_ = dealii::numbers::invalid_unsigned_int);
 
   void build_matrix () ;
 

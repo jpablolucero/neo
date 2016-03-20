@@ -62,13 +62,13 @@ void LaplaceOperator<dim, fe_degree, same_diagonal>::reinit (dealii::DoFHandler<
   dealii::DoFTools::extract_locally_relevant_dofs
   (*dof_handler, locally_relevant_dofs);
   ghosted_vector.reinit(locally_owned_dofs, locally_relevant_dofs, mpi_communicator_);
-
   global_timer.leave_subsection();
 }
 
 template <int dim, int fe_degree, bool same_diagonal>
 void LaplaceOperator<dim, fe_degree, same_diagonal>::build_matrix ()
 {
+  Assert(dof_handler != 0, dealii::ExcInternalError());
   if (dof_handler->begin_mg(level) == dof_handler->end_mg(level))
     return;
 
@@ -156,7 +156,7 @@ void LaplaceOperator<dim,fe_degree,same_diagonal>::vmult_add (LA::MPI::Vector &d
 }
 
 template <int dim, int fe_degree, bool same_diagonal>
-void LaplaceOperator<dim,fe_degree,same_diagonal>::Tvmult_add (LA::MPI::Vector &dst,
+void LaplaceOperator<dim,fe_degree, same_diagonal>::Tvmult_add (LA::MPI::Vector &dst,
     const LA::MPI::Vector &src) const
 {
   vmult_add(dst, src);
