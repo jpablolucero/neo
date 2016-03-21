@@ -215,19 +215,24 @@ void DDHandlerBase<dim>::initialize_max_n_overlaps()
 template <int dim>
 void DGDDHandler<dim>::initialize_subdomain_to_global_map()
 {
-  const unsigned int n_subdomains = this->get_dofh().get_triangulation().n_cells(
-                                      this->get_level());
-  const unsigned int n_subdomain_dofs = this->get_dofh().get_fe().dofs_per_cell;
-  this->subdomain_to_global_map.assign(n_subdomains,
-                                       std::vector<dealii::types::global_dof_index>(n_subdomain_dofs));
+  const dealii::DoFHandler<dim> &dof_handler      = this->get_dofh();
+  const dealii::Triangulation<dim> &triangulation = dof_handler.get_triangulation();
+  const unsigned int n_subdomains         = triangulation.n_cells(this->get_level());
+  const unsigned int n_subdomain_dofs     = dof_handler.get_fe().dofs_per_cell;
+  this->subdomain_to_global_map.reserve(n_subdomains);
+
+  //just store information for locally owned cells
   unsigned int subdomain_idx = 0;
-  for (auto cell = this->get_dofh().begin_mg(this->get_level());
-       cell != this->get_dofh().end_mg(this->get_level());
-       ++cell, ++subdomain_idx)
-    {
-      cell->get_active_or_mg_dof_indices(
-        this->subdomain_to_global_map[subdomain_idx]);
-    }
+  for (auto cell = dof_handler.begin_mg(this->get_level());
+       cell != dof_handler.end_mg(this->get_level());
+       ++cell)
+    if (cell->level_subdomain_id()==triangulation.locally_owned_subdomain())
+      {
+        this->subdomain_to_global_map.push_back(std::vector<dealii::types::global_dof_index>(n_subdomain_dofs));
+        cell->get_active_or_mg_dof_indices(this->subdomain_to_global_map[subdomain_idx]);
+        ++subdomain_idx;
+      }
+  std::cout << "On level: " << this->get_level() << " n_locally_owned_cells: " << subdomain_idx << std::endl;
 }
 
 template <int dim>

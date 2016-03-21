@@ -50,8 +50,9 @@ template <class GlobalOperatorType>
 void PSCPreconditioner<dim, VectorType, number>::initialize(const GlobalOperatorType & /*global_operator*/,
                                                             const AdditionalData &data)
 {
-  assert(data.ddh != 0);
-  assert(data.local_inverses.size() == data.ddh->size());
+  Assert(data.ddh != 0, dealii::ExcInternalError());
+  Assert(data.local_inverses.size() == data.ddh->size(),
+         dealii::ExcDimensionMismatch(data.local_inverses.size(),data.ddh->size()));
   this->data = data;
 }
 
