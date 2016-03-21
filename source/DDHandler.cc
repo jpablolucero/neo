@@ -235,6 +235,7 @@ void DGDDHandler<dim>::initialize_subdomain_to_global_map()
         cell->get_active_or_mg_dof_indices(this->subdomain_to_global_map[subdomain_idx]);
         ++subdomain_idx;
       }
+  std::cout << "On level: " << this->get_level() << " n_locally_owned_cells: " << subdomain_idx << std::endl;
 }
 
 template <int dim>

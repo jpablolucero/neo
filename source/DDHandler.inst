@@ -1,6 +1,5 @@
 #ifndef DDHANDLER_INST
 #define DDHANDLER_INST
-#include <generic_linear_algebra.h>
 
 template class DDHandlerBase<2>;
 template void DDHandlerBase<2>::reinit(dealii::Vector<double>& vec,
@@ -8,13 +7,7 @@ template void DDHandlerBase<2>::reinit(dealii::Vector<double>& vec,
 template void DDHandlerBase<2>::restrict_add(dealii::Vector<double>& dst,
                                              const dealii::Vector<double>& src,
                                              const unsigned int subdomain_idx) const;
-template void DDHandlerBase<2>::restrict_add(dealii::Vector<double>& dst,
-                                             const LA::MPI::Vector & src,
-                                             const unsigned int subdomain_idx) const;
 template void DDHandlerBase<2>::prolongate_add(dealii::Vector<double> & dst,
-                                               const dealii::Vector<double>& src,
-                                               const unsigned int subdomain_idx) const;
-template void DDHandlerBase<2>::prolongate_add(LA::MPI::Vector & dst,
                                                const dealii::Vector<double>& src,
                                                const unsigned int subdomain_idx) const;
 template void DDHandlerBase<2>::reinit(dealii::Vector<float>& vec,
@@ -22,13 +15,7 @@ template void DDHandlerBase<2>::reinit(dealii::Vector<float>& vec,
 template void DDHandlerBase<2>::restrict_add(dealii::Vector<float>& dst,
                                              const dealii::Vector<double>& src,
                                              const unsigned int subdomain_idx) const;
-template void DDHandlerBase<2>::restrict_add(dealii::Vector<float>& dst,
-                                             const LA::MPI::Vector & src,
-                                             const unsigned int subdomain_idx) const;
 template void DDHandlerBase<2>::prolongate_add(dealii::Vector<double> & dst,
-                                               const dealii::Vector<float>& src,
-                                               const unsigned int subdomain_idx) const;
-template void DDHandlerBase<2>::prolongate_add(LA::MPI::Vector & dst,
                                                const dealii::Vector<float>& src,
                                                const unsigned int subdomain_idx) const;
 
@@ -38,13 +25,7 @@ template void DDHandlerBase<3>::reinit(dealii::Vector<double>& vec,
 template void DDHandlerBase<3>::restrict_add(dealii::Vector<double>& dst,
                                              const dealii::Vector<double>& src,
                                              const unsigned int subdomain_idx) const;
-template void DDHandlerBase<3>::restrict_add(dealii::Vector<double>& dst,
-                                             const LA::MPI::Vector & src,
-                                             const unsigned int subdomain_idx) const;
 template void DDHandlerBase<3>::prolongate_add(dealii::Vector<double> & dst,
-                                               const dealii::Vector<double>& src,
-                                               const unsigned int subdomain_idx) const;
-template void DDHandlerBase<3>::prolongate_add(LA::MPI::Vector & dst,
                                                const dealii::Vector<double>& src,
                                                const unsigned int subdomain_idx) const;
 template void DDHandlerBase<3>::reinit(dealii::Vector<float>& vec,
@@ -52,13 +33,7 @@ template void DDHandlerBase<3>::reinit(dealii::Vector<float>& vec,
 template void DDHandlerBase<3>::restrict_add(dealii::Vector<float>& dst,
                                              const dealii::Vector<double>& src,
                                              const unsigned int subdomain_idx) const;
-template void DDHandlerBase<3>::restrict_add(dealii::Vector<float>& dst,
-                                             const LA::MPI::Vector & src,
-                                             const unsigned int subdomain_idx) const;
 template void DDHandlerBase<3>::prolongate_add(dealii::Vector<double> & dst,
-                                               const dealii::Vector<float>& src,
-                                               const unsigned int subdomain_idx) const;
-template void DDHandlerBase<3>::prolongate_add(LA::MPI::Vector & dst,
                                                const dealii::Vector<float>& src,
                                                const unsigned int subdomain_idx) const;
 
