@@ -1,6 +1,6 @@
 #ifndef DDHANDLER_INST
 #define DDHANDLER_INST
-
+#include <generic_linear_algebra.h>
 
 template class DDHandlerBase<2>;
 template void DDHandlerBase<2>::reinit(dealii::Vector<double>& vec,

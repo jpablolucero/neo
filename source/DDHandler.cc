@@ -1,4 +1,3 @@
-#include <generic_linear_algebra.h>
 #include <DDHandler.h>
 
 #include <deal.II/dofs/dof_accessor.h>
@@ -44,8 +43,9 @@ void DDHandlerBase<dim>::initialize(const dealii::DoFHandler<dim> &dofh,
 {
   if (level == dealii::numbers::invalid_unsigned_int)
     {
-      assert(dofh.get_triangulation().n_levels() > 0);
-      level = dofh.get_triangulation().n_levels() - 1;
+      Assert(dofh.get_triangulation().n_global_levels() > 0,
+             dealii::ExcInternalError());
+      level = dofh.get_triangulation().n_global_levels() - 1;
     }
   this->level = level;
   this->dofh = &dofh;
@@ -138,10 +138,12 @@ void DDHandlerBase<dim>::prolongate_add(VectorType &dst,
                                         const unsigned int subdomain_idx)
 const
 {
-  assert(dst.size() == dofh->n_dofs(level));
+  Assert(dst.size() == dofh->n_dofs(level),
+         dealii::ExcDimensionMismatch(dst.size(), dofh->n_dofs(level)));
   unsigned int n_block_dofs = n_subdomain_dofs(subdomain_idx);
-  assert(n_block_dofs > 0);
-  assert(src.size() == n_block_dofs);
+  Assert(n_block_dofs > 0, dealii::ExcInternalError());
+  Assert(src.size() == n_block_dofs,
+         dealii::ExcDimensionMismatch(src.size(), n_block_dofs));
   for (unsigned int i = 0; i < n_block_dofs; ++i)
     {
       dst[subdomain_to_global_map[subdomain_idx][i]] += src[i];
@@ -193,8 +195,7 @@ void DDHandlerBase<dim>::initialize_max_n_overlaps()
               it = std::set_intersection(dofs_i.begin(), dofs_i.end(),
                                          dofs_j.begin(), dofs_j.end(),
                                          intersection.begin());
-              unsigned int overlapping_dofs = std::distance(intersection.begin(),
-                                                            it);
+              unsigned int overlapping_dofs = std::distance(intersection.begin(), it);
               if (overlapping_dofs > 0)
                 {
                   overlaps[i] += 1;
@@ -230,6 +231,9 @@ void DGDDHandler<dim>::initialize_subdomain_to_global_map()
       {
         this->subdomain_to_global_map.push_back(std::vector<dealii::types::global_dof_index>(n_subdomain_dofs));
         cell->get_active_or_mg_dof_indices(this->subdomain_to_global_map[subdomain_idx]);
+        std::cout << "Level: " << this->get_level()
+                  << " Cell: " << subdomain_idx
+                  << " Center: " <<cell->center() << std::endl;
         ++subdomain_idx;
       }
   std::cout << "On level: " << this->get_level() << " n_locally_owned_cells: " << subdomain_idx << std::endl;

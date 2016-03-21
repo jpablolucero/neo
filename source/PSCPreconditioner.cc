@@ -1,4 +1,3 @@
-#include <generic_linear_algebra.h>
 #include <PSCPreconditioner.h>
 
 #include <deal.II/base/work_stream.h>
