@@ -1,0 +1,10 @@
+#ifndef PSCPRECONDITIONER_INST
+#define PSCPRECONDITIONER_INST
+
+template class PSCPreconditioner<2, dealii::Vector<double> , double>;
+template class PSCPreconditioner<2, dealii::Vector<double> , float>;
+
+template class PSCPreconditioner<3, dealii::Vector<double>, double>;
+template class PSCPreconditioner<3, dealii::Vector<double>, float>;
+
+#endif // PSCPRECONDITIONER_INST
