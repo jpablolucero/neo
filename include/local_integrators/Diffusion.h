@@ -21,7 +21,7 @@ namespace LocalIntegrators
       const unsigned int n_comps = fe.get_fe().n_components();
       const unsigned int n_quads = fe.n_quadrature_points;
 
-      std::vector<std::vector<double> > coeff_values{n_comps};
+      std::vector<std::vector<double> > coeff_values(n_comps);
       for(unsigned int d=0; d<n_comps; ++d)
 	{
 	  coeff_values[d].resize(n_quads);
@@ -83,7 +83,7 @@ namespace LocalIntegrators
       AssertDimension(M_EXT_EXT.n(), n_dofs);
       AssertDimension(M_EXT_EXT.m(), n_dofs);
 
-      std::vector<std::vector<double> > coeff_values{n_comps};
+      std::vector<std::vector<double> > coeff_values(n_comps);
       for(unsigned int d=0; d<n_comps; ++d)
 	{
 	  coeff_values[d].resize(n_quads);
@@ -133,7 +133,7 @@ namespace LocalIntegrators
       Assert (M.m() == n_dofs, dealii::ExcDimensionMismatch(M.m(), n_dofs));
       Assert (M.n() == n_dofs, dealii::ExcDimensionMismatch(M.n(), n_dofs));
 
-      std::vector<std::vector<double> > coeff_values{n_comps};
+      std::vector<std::vector<double> > coeff_values(n_comps);
       for(unsigned int d=0; d<n_comps; ++d)
 	{
 	  coeff_values[d].resize(n_quads);
@@ -195,7 +195,7 @@ namespace LocalIntegrators
       AssertVectorVectorDimension(input, n_comps, n_quads);
       Assert(result.size() == n_dofs, dealii::ExcDimensionMismatch(result.size(), n_dofs));
 
-      std::vector<std::vector<double> > coeff_values{n_comps};
+      std::vector<std::vector<double> > coeff_values(n_comps);
       for(unsigned int d=0; d<n_comps; ++d)
 	{
 	  coeff_values[d].resize(n_quads);
@@ -237,7 +237,7 @@ namespace LocalIntegrators
       Assert(feEXT.get_fe().n_components() == 1,
     	     dealii::ExcDimensionMismatch(feEXT.get_fe().n_components(), 1));
  
-      std::vector<double> coeff_values{n_quads};
+      std::vector<double> coeff_values(n_quads);
       coefficient.value_list(feINT.get_quadrature_points(), coeff_values, 0);
  
       for (unsigned int q=0; q<feINT.n_quadrature_points; ++q)
@@ -291,7 +291,7 @@ namespace LocalIntegrators
       AssertVectorVectorDimension(inputEXT, n_comps, n_quads);
       AssertVectorVectorDimension(DinputEXT, n_comps, n_quads);
 
-      std::vector<std::vector<double> > coeff_values{n_comps};
+      std::vector<std::vector<double> > coeff_values(n_comps);
       for(unsigned int d=0; d<n_comps; ++d)
 	{
 	  coeff_values[d].resize(n_quads);
@@ -340,7 +340,7 @@ namespace LocalIntegrators
       AssertDimension(Dinput.size(), fe.n_quadrature_points);
       AssertDimension(boundary_data.size(), fe.n_quadrature_points);
 
-      std::vector<double> coeff_values{n_quads};
+      std::vector<double> coeff_values(n_quads);
       coefficient.value_list(fe.get_quadrature_points(), coeff_values, 0);
       
       for (unsigned int q=0; q<fe.n_quadrature_points; ++q)
@@ -379,7 +379,7 @@ namespace LocalIntegrators
       AssertVectorVectorDimension(Dinput, n_comps, n_quads);
       AssertVectorVectorDimension(boundary_data, n_comps, n_quads);       
 
-      std::vector<std::vector<double> > coeff_values{n_comps};
+      std::vector<std::vector<double> > coeff_values(n_comps);
       for(unsigned int d=0; d<n_comps; ++d)
 	{
 	  coeff_values[d].resize(n_quads);
