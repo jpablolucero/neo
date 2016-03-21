@@ -76,16 +76,18 @@ public:
   static dealii::TimerOutput *timer;
 
 private:
-  unsigned int level ;
-  dealii::DoFHandler<dim> *dof_handler;
+  unsigned int                                        level;
+  dealii::DoFHandler<dim> *                           dof_handler; 
   const dealii::FiniteElement<dim> *fe;
-  const dealii::MappingQ1<dim>   *mapping;
+  const dealii::MappingQ1<dim> *                      mapping;
   const dealii::ConstraintMatrix *constraints;
-  std::unique_ptr<dealii::MeshWorker::DoFInfo<dim> > dof_info;
+  std::unique_ptr<dealii::MeshWorker::DoFInfo<dim> >  dof_info;
   mutable dealii::MeshWorker::IntegrationInfoBox<dim> info_box;
-  LA::MPI::SparseMatrix matrix;
-  BMatrixIntegrator<dim,same_diagonal> matrix_integrator ;
-  BResidualIntegrator<dim> residual_integrator ;
+  LA::MPI::SparseMatrix                               matrix;
+  dealii::ConstraintMatrix                            constraint_matrix;
+//  dealii::MGConstrainedDoFs                           mg_constraints;
+  BMatrixIntegrator<dim,same_diagonal>                matrix_integrator;
+  BResidualIntegrator<dim>                            residual_integrator;
   mutable dealii::MGLevelObject<LA::MPI::Vector> ghosted_src;
   MPI_Comm mpi_communicator;
 };

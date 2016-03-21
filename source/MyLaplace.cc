@@ -1,6 +1,7 @@
 #include <MyLaplace.h>
 #include <DDHandler.h>
 #include <PSCPreconditioner.h>
+#include <deal.II/dofs/dof_renumbering.h>
 
 template <int dim,bool same_diagonal,unsigned int degree>
 MyLaplace<dim,same_diagonal,degree>::MyLaplace ()
@@ -138,7 +139,6 @@ void MyLaplace<dim, same_diagonal, degree>::assemble_system ()
   info_box.initialize_gauss_quadrature(n_gauss_points,
                                        n_gauss_points,
                                        n_gauss_points);
-
   info_box.initialize_update_flags();
   dealii::UpdateFlags update_flags = dealii::update_quadrature_points |
                                      dealii::update_values;
@@ -152,9 +152,7 @@ void MyLaplace<dim, same_diagonal, degree>::assemble_system ()
   dealii::AnyData data;
   data.add<LA::MPI::Vector *>(&right_hand_side, "RHS");
   rhs_assembler.initialize(data);
-#ifdef CG
   rhs_assembler.initialize(constraints);
-#endif
 
   RHSIntegrator<dim> rhs_integrator;
 
@@ -162,6 +160,9 @@ void MyLaplace<dim, same_diagonal, degree>::assemble_system ()
                                                  dof_info, info_box,
 						 rhs_integrator, rhs_assembler);
   right_hand_side.compress(dealii::VectorOperation::add);
+  // dof_handler.block_info().print(dealii::deallog);
+  // for( unsigned int c=0; c<dof_handler.n_dofs(); ++c)
+  //   dealii::deallog << "AFTER::rhs[" << c << "]=" << right_hand_side[c] << std::endl;  
 }
 
 template <int dim,bool same_diagonal,unsigned int degree>
@@ -383,7 +384,7 @@ void MyLaplace<dim,same_diagonal,degree>::run ()
       pcout << "Refine global" << std::endl;
       triangulation.refine_global (1);
       timer.leave_subsection();
-
+      dealii::deallog << "Finite element: " << fe.get_name() << std::endl;
       pcout << "Number of active cells: "
             << triangulation.n_global_active_cells()
             << std::endl;
