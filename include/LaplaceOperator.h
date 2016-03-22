@@ -84,7 +84,7 @@ private:
   std::unique_ptr<dealii::MeshWorker::DoFInfo<dim> >  dof_info;
   mutable dealii::MeshWorker::IntegrationInfoBox<dim> info_box;
   LA::MPI::SparseMatrix                               matrix;
-  dealii::ConstraintMatrix                            constraint_matrix;
+  dealii::ConstraintMatrix                            cmatrix_dummy;
 //  dealii::MGConstrainedDoFs                           mg_constraints;
   BMatrixIntegrator<dim,same_diagonal>                matrix_integrator;
   BResidualIntegrator<dim>                            residual_integrator;

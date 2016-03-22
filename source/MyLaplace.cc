@@ -134,7 +134,7 @@ template <int dim, bool same_diagonal, unsigned int degree>
 void MyLaplace<dim, same_diagonal, degree>::assemble_system ()
 {
   dealii::MeshWorker::IntegrationInfoBox<dim> info_box;
-
+  
   const unsigned int n_gauss_points = dof_handler.get_fe().degree+1;
   info_box.initialize_gauss_quadrature(n_gauss_points,
                                        n_gauss_points,
@@ -143,7 +143,7 @@ void MyLaplace<dim, same_diagonal, degree>::assemble_system ()
   dealii::UpdateFlags update_flags = dealii::update_quadrature_points |
                                      dealii::update_values;
   info_box.add_update_flags(update_flags, true, true, true, true);
-
+  
   info_box.initialize(fe, mapping, &(dof_handler.block_info()));
 
   dealii::MeshWorker::DoFInfo<dim> dof_info(dof_handler.block_info());

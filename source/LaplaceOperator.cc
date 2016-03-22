@@ -52,8 +52,6 @@ void LaplaceOperator<dim, fe_degree, same_diagonal>::reinit
   info_box.cell_selector.add("src", true, true, false);
   info_box.boundary_selector.add("src", true, true, false);
   info_box.face_selector.add("src", true, true, false);
-
-  // mg_constraints.initialize(*dof_handler);
   dealii::IndexSet locally_owned_level_dofs = dof_handler->locally_owned_mg_dofs(level);
   dealii::IndexSet locally_relevant_level_dofs;
   dealii::DoFTools::extract_locally_relevant_level_dofs
@@ -147,7 +145,6 @@ void LaplaceOperator<dim, fe_degree, same_diagonal>::build_matrix ()
       dealii::MeshWorker::Assembler::MGMatrixSimple<LA::MPI::SparseMatrix> assembler;
       assembler.initialize(mg_matrix);
 #ifdef CG
-  //  assembler.initialize(mg_constraints);
       //assembler.initialize(constraints);
 #endif
 

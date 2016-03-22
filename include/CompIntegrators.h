@@ -1,5 +1,5 @@
-#ifndef BLOCKINTEGRATORS_H
-#define BLOCKINTEGRATORS_H
+#ifndef COMPINTEGRATORS_H
+#define COMPINTEGRATORS_H
 
 #include <deal.II/fe/fe_values.h>
 #include <deal.II/integrators/l2.h>
@@ -14,10 +14,10 @@
 #include <EquationData.h>
 
 template <int dim,bool same_diagonal=true>
-class BMatrixIntegrator final : public dealii::MeshWorker::LocalIntegrator<dim>
+class CMatrixIntegrator final : public dealii::MeshWorker::LocalIntegrator<dim>
 {
  public:
-  BMatrixIntegrator();
+  CMatrixIntegrator();
   void cell(dealii::MeshWorker::DoFInfo<dim> &dinfo, typename dealii::MeshWorker::IntegrationInfo<dim> &info) const override;
   void boundary(dealii::MeshWorker::DoFInfo<dim> &dinfo, typename dealii::MeshWorker::IntegrationInfo<dim> &info) const override;
   void face(dealii::MeshWorker::DoFInfo<dim> &dinfo1,
@@ -29,10 +29,10 @@ class BMatrixIntegrator final : public dealii::MeshWorker::LocalIntegrator<dim>
 };
 
 template <int dim>
-class BResidualIntegrator final : public dealii::MeshWorker::LocalIntegrator<dim>
+class CResidualIntegrator final : public dealii::MeshWorker::LocalIntegrator<dim>
 {
 public:
-  BResidualIntegrator();
+  CResidualIntegrator();
   void cell(dealii::MeshWorker::DoFInfo<dim> &dinfo, typename dealii::MeshWorker::IntegrationInfo<dim> &info) const override;
   void boundary(dealii::MeshWorker::DoFInfo<dim> &dinfo, typename dealii::MeshWorker::IntegrationInfo<dim> &info) const override;
   void face(dealii::MeshWorker::DoFInfo<dim> &dinfo1,
@@ -44,10 +44,10 @@ public:
 };
 
 template <int dim>
-class BRHSIntegrator final : public dealii::MeshWorker::LocalIntegrator<dim>
+class CRHSIntegrator final : public dealii::MeshWorker::LocalIntegrator<dim>
 {
  public:
-  BRHSIntegrator() ;
+  CRHSIntegrator() ;
   void cell(dealii::MeshWorker::DoFInfo<dim> &dinfo, typename dealii::MeshWorker::IntegrationInfo<dim> &info) const override;
   void boundary(dealii::MeshWorker::DoFInfo<dim> &dinfo, typename dealii::MeshWorker::IntegrationInfo<dim> &info) const override;
   void face(dealii::MeshWorker::DoFInfo<dim> &dinfo1,
@@ -56,4 +56,4 @@ class BRHSIntegrator final : public dealii::MeshWorker::LocalIntegrator<dim>
             typename dealii::MeshWorker::IntegrationInfo<dim> &info2) const override;
 };
 
-#endif // BLOCKINTEGRATORS_H
+#endif // COMPINTEGRATORS_H
