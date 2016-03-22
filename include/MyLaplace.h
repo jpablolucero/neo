@@ -65,7 +65,6 @@ private:
   dealii::MGLevelObject<SystemMatrixType >            mg_matrix ;
   dealii::FullMatrix<double>                          coarse_matrix ;
 
-  dealii::ConstraintMatrix      constraint_matrix;
   BRHSIntegrator<dim>           rhs_integrator;
   const bool use_psc = false;
 };

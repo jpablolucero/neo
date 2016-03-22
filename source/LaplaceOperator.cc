@@ -48,8 +48,6 @@ void LaplaceOperator<dim, fe_degree, same_diagonal>::reinit (
   info_box.cell_selector.add("src", true, true, false);
   info_box.boundary_selector.add("src", true, true, false);
   info_box.face_selector.add("src", true, true, false);
-
-  // mg_constraints.initialize(*dof_handler);
   global_timer.leave_subsection();
 }
 
@@ -73,7 +71,6 @@ void LaplaceOperator<dim, fe_degree, same_diagonal>::build_matrix ()
   mg_matrix[level].reinit(sparsity);
   dealii::MeshWorker::Assembler::MGMatrixSimple<dealii::SparseMatrix<double> > assembler ;
   assembler.initialize(mg_matrix);
-  //  assembler.initialize(mg_constraints);
   dealii::MeshWorker::integration_loop<dim, dim> (dof_handler->begin_mg(level),
   						  same_diagonal ? ++dof_handler->begin_mg(level) : 
 						  dof_handler->end_mg(level),
@@ -117,7 +114,7 @@ void LaplaceOperator<dim, fe_degree, same_diagonal>::vmult_add (dealii::Vector<d
 		      &(dof_handler->block_info()));
   dealii::MeshWorker::Assembler::ResidualSimple<dealii::Vector<double> > assembler;
   assembler.initialize(dst_data);
-  assembler.initialize(constraint_matrix);
+  assembler.initialize(cmatrix_dummy);
   dealii::MeshWorker::integration_loop<dim, dim>
     (dof_handler->begin_mg(level), dof_handler->end_mg(level),
      *dof_info,info_box,residual_integrator,assembler);

@@ -8,7 +8,7 @@ template <int dim,bool same_diagonal>
 MyLaplace<dim,same_diagonal>::MyLaplace ()
   :
   mapping (),
-  fe {dealii::FE_DGQ<dim>{1}, 2},
+  fe {dealii::FE_DGQ<dim>{1}, 3},
   dof_handler (triangulation)
 {}
 
@@ -47,17 +47,18 @@ void MyLaplace<dim,same_diagonal>::assemble_rhs()
   dealii::UpdateFlags update_flags = dealii::update_JxW_values |
     dealii::update_values |
     dealii::update_quadrature_points ;
-
+  
   dealii::MeshWorker::IntegrationInfoBox<dim> info_box_rhs;
   info_box_rhs.add_update_flags_all(update_flags);
   info_box_rhs.initialize(fe, mapping, &dof_handler.block_info());
   dealii::MeshWorker::DoFInfo<dim> dof_info_rhs(dof_handler.block_info());
-
+  
+  dealii::ConstraintMatrix cmatrix_dummy;
   dealii::MeshWorker::Assembler::ResidualSimple<dealii::Vector<double> > rhs_assembler;
   dealii::AnyData data;
   data.add(&right_hand_side, "RHS");
   rhs_assembler.initialize(data);
-  rhs_assembler.initialize(constraint_matrix);
+  rhs_assembler.initialize(cmatrix_dummy);
 
   dealii::MeshWorker::integration_loop<dim, dim>(dof_handler.begin_active(), dof_handler.end(),
 						 dof_info_rhs, info_box_rhs,

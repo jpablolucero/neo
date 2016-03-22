@@ -56,8 +56,7 @@ public:
   mutable dealii::MeshWorker::IntegrationInfoBox<dim> info_box;
   dealii::SparsityPattern                             sparsity;
   dealii::SparseMatrix<double>                        matrix;
-  dealii::ConstraintMatrix                            constraint_matrix;
-  //  dealii::MGConstrainedDoFs                          mg_constraints;
+  dealii::ConstraintMatrix                            cmatrix_dummy;
   BMatrixIntegrator<dim,same_diagonal>                matrix_integrator;
   BResidualIntegrator<dim>                            residual_integrator;
 };
