@@ -16,12 +16,6 @@ public:
   void value_list (const std::vector<dealii::Point<dim> > &points,
                            std::vector<double>                    &values,
                            const unsigned int                     component = 0) const override;
-  // void blockvalue (const dealii::Point<dim>  &p,
-  // 		   std::vector<double>       value,
-  // 		   const unsigned int        block = 0) const;
-  // void blockvalue_list (const std::vector<dealii::Point<dim> > &points,
-  // 			std::vector<std::vector<double> >      &values,
-  // 			const unsigned int                     block = 0) const;
 };
 
 #endif // EQUATIONDATA_H

@@ -1,14 +1,10 @@
 #include <MyLaplace.h>
-#include <GlobalTimer.h>
-#include <DDHandler.h>
-#include <PSCPreconditioner.h>
-#include <deal.II/dofs/dof_renumbering.h>
 
 template <int dim,bool same_diagonal>
 MyLaplace<dim,same_diagonal>::MyLaplace ()
   :
   mapping (),
-  fe {dealii::FE_DGQ<dim>{1}, 3},
+  fe {dealii::FE_DGQ<dim>{2}, 1},
   dof_handler (triangulation)
 {}
 
@@ -63,10 +59,6 @@ void MyLaplace<dim,same_diagonal>::assemble_rhs()
   dealii::MeshWorker::integration_loop<dim, dim>(dof_handler.begin_active(), dof_handler.end(),
 						 dof_info_rhs, info_box_rhs,
 						 rhs_integrator, rhs_assembler);
-
-  // dof_handler.block_info().print(dealii::deallog);
-  // for( unsigned int c=0; c<dof_handler.n_dofs(); ++c)
-  //   dealii::deallog << "AFTER::rhs[" << c << "]=" << right_hand_side[c] << std::endl;  
 }
 
 template <int dim,bool same_diagonal>
@@ -208,7 +200,7 @@ void MyLaplace<dim,same_diagonal>::output_results () const
 template <int dim,bool same_diagonal>
 void MyLaplace<dim,same_diagonal>::run ()
 {
-  for (unsigned int cycle=0; cycle<6-dim; ++cycle)
+  for (unsigned int cycle=0; cycle<9-dim; ++cycle)
     {
       std::cout << "Cycle " << cycle << std::endl;
       if (cycle == 0)

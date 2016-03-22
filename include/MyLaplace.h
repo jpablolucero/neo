@@ -28,7 +28,10 @@
 #include <deal.II/multigrid/multigrid.h>
 
 #include <LaplaceOperator.h>
-#include <BlockIntegrators.h>
+#include <Integrators.h>
+#include <GlobalTimer.h>
+#include <DDHandler.h>
+#include <PSCPreconditioner.h>
 
 #include <string>
 #include <fstream>
@@ -54,18 +57,17 @@ private:
 
   dealii::Triangulation<dim>   triangulation;
   const dealii::MappingQ1<dim> mapping;
-  dealii::FESystem<dim>          fe;
+  dealii::FESystem<dim>        fe;
   dealii::DoFHandler<dim>      dof_handler;
 
   SystemMatrixType             system_matrix;
-
   dealii::Vector<double>       solution;
   dealii::Vector<double>       right_hand_side;
 
   dealii::MGLevelObject<SystemMatrixType >            mg_matrix ;
   dealii::FullMatrix<double>                          coarse_matrix ;
 
-  BRHSIntegrator<dim>           rhs_integrator;
+  RHSIntegrator<dim>           rhs_integrator;
   const bool use_psc = false;
 };
 

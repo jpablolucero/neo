@@ -20,26 +20,5 @@ void Coefficient<dim>::value_list (const std::vector<dealii::Point<dim> > &point
     values[i] = value(points[i],component);
 }
 
-// template <int dim>
-// void Coefficient<dim>::blockvalue (const dealii::Point<dim>  &p,
-// 				   std::vector<double>       value,
-// 				   const unsigned int        b) const
-// {
-//   value[;
-// }
-
-// template <int dim>
-// void Coefficient<dim>::blockvalue_list (const std::vector<dealii::Point<dim> > &points,
-// 					std::vector<std::vector<double> >      &values,
-// 					const unsigned int                     b) const
-// {
-//   Assert (values.size() == points.size(),
-// 	  dealii::ExcDimensionMismatch (values.size(), points.size()));
-  
-//   const unsigned int n_points = points.size();
-//   for (unsigned int i=0; i<n_points; ++i)
-//     values[i] = blockvalue(points[i],b);  
-// }
-
 template class Coefficient<2>;
 template class Coefficient<3>;
