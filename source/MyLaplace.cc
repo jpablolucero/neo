@@ -1,7 +1,4 @@
 #include <MyLaplace.h>
-#include <DDHandler.h>
-#include <PSCPreconditioner.h>
-#include <deal.II/dofs/dof_renumbering.h>
 
 template <int dim,bool same_diagonal,unsigned int degree>
 MyLaplace<dim,same_diagonal,degree>::MyLaplace ()
@@ -160,9 +157,6 @@ void MyLaplace<dim, same_diagonal, degree>::assemble_system ()
                                                  dof_info, info_box,
 						 rhs_integrator, rhs_assembler);
   right_hand_side.compress(dealii::VectorOperation::add);
-  // dof_handler.block_info().print(dealii::deallog);
-  // for( unsigned int c=0; c<dof_handler.n_dofs(); ++c)
-  //   dealii::deallog << "AFTER::rhs[" << c << "]=" << right_hand_side[c] << std::endl;  
 }
 
 template <int dim,bool same_diagonal,unsigned int degree>

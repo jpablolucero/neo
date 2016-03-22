@@ -39,9 +39,12 @@
 
 #include <LaplaceOperator.h>
 #include <referencefunction.h>
-#include <BlockIntegrators.h>
+#include <Integrators.h>
+#include <GlobalTimer.h>
 #include <RHSIntegrator.h>
 #include <ResidualSimpleConstraints.h>
+#include <DDHandler.h>
+#include <PSCPreconditioner.h>
 
 #include <string>
 #include <fstream>
@@ -78,7 +81,6 @@ private:
   dealii::DoFHandler<dim>      dof_handler;
 
   SystemMatrixType             system_matrix;
-
   LA::MPI::Vector       solution;
   LA::MPI::Vector       solution_tmp;
   LA::MPI::Vector       right_hand_side;
