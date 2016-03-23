@@ -218,6 +218,8 @@ void DGDDHandler<dim>::initialize_subdomain_to_global_map()
 {
   const dealii::DoFHandler<dim> &dof_handler      = this->get_dofh();
   const dealii::Triangulation<dim> &triangulation = dof_handler.get_triangulation();
+  if (this->get_level() >= triangulation.n_levels())
+    return;
   const unsigned int n_subdomains         = triangulation.n_cells(this->get_level());
   const unsigned int n_subdomain_dofs     = dof_handler.get_fe().dofs_per_cell;
   this->subdomain_to_global_map.reserve(n_subdomains);
@@ -231,9 +233,9 @@ void DGDDHandler<dim>::initialize_subdomain_to_global_map()
       {
         this->subdomain_to_global_map.push_back(std::vector<dealii::types::global_dof_index>(n_subdomain_dofs));
         cell->get_active_or_mg_dof_indices(this->subdomain_to_global_map[subdomain_idx]);
-        std::cout << "Level: " << this->get_level()
-                  << " Cell: " << subdomain_idx
-                  << " Center: " <<cell->center() << std::endl;
+//        std::cout << "Level: " << this->get_level()
+//                  << " Cell: " << subdomain_idx
+//                  << " Center: " <<cell->center() << std::endl;
         ++subdomain_idx;
       }
   std::cout << "On level: " << this->get_level() << " n_locally_owned_cells: " << subdomain_idx << std::endl;

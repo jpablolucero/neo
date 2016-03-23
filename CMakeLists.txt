@@ -32,6 +32,11 @@ if (MG)
   add_definitions(-DMG)
 endif()
 
+option(SAME "Use only one local matrix on each level for smoothening?" ON)
+if(SAME)
+  add_definitions(-DSAME)
+endif()
+
 INCLUDE_DIRECTORIES(include)
 FILE(GLOB sources source/*.cc)
 

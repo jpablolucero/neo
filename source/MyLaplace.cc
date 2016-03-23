@@ -182,6 +182,7 @@ void MyLaplace<dim,same_diagonal>::solve ()
     }
   else
     {
+      AssertThrow(false, dealii::ExcMessage("deal.II BlockJacobi is not available!"))
       solve_blockjacobi();
     }
 }
@@ -203,7 +204,7 @@ void MyLaplace<dim,same_diagonal>::solve_psc ()
   // Smoother setup
   typedef PSCPreconditioner<dim, LA::MPI::Vector, double> Smoother;
 
-  dealii::MGLevelObject<dealii::FullMatrix<double> > local_level_inverse;
+  dealii::MGLevelObject<std::vector<dealii::FullMatrix<double> > > local_level_inverse;
   local_level_inverse.resize(mg_matrix.min_level(), mg_matrix.max_level());
   dealii::MGLevelObject<DGDDHandler<dim> > level_ddh;
   level_ddh.resize(mg_matrix.min_level(), mg_matrix.max_level());
@@ -218,15 +219,17 @@ void MyLaplace<dim,same_diagonal>::solve_psc ()
     {
       // init ddhandler
       level_ddh[level].initialize(dof_handler, level);
+      smoother_data[level].local_inverses.resize(level_ddh[level].size());
+
       // setup smoother data
       smoother_data[level].ddh = &(level_ddh[level]);
       smoother_data[level].weight = 1.0;
-
+#ifdef SAME
       // init local inverse with first local level matrix
-
+      local_level_inverse[level].resize(1, dealii::FullMatrix<double>(n));
       typename dealii::DoFHandler<dim>::level_cell_iterator cell = dof_handler.begin_mg(level);
-      while (cell->level_subdomain_id()!=triangulation.locally_owned_subdomain()
-             && cell!=dof_handler.end_mg(level))
+      while (cell!=dof_handler.end_mg(level)
+             && cell->level_subdomain_id()!=triangulation.locally_owned_subdomain())
         ++cell;
 
       if (cell!=dof_handler.end_mg(level))
@@ -246,13 +249,43 @@ void MyLaplace<dim,same_diagonal>::solve_psc ()
                 local_matrix(i, j) = mg_matrix[level](i1, i2);
               }
 
-          local_level_inverse[level].reinit(n, n);
-          local_level_inverse[level].invert(local_matrix);
+          local_level_inverse[level][0].invert(local_matrix);
 
-          smoother_data[level].local_inverses
-            = std::vector<const dealii::FullMatrix<double>* >(level_ddh[level].size(),
-                                                              &(local_level_inverse[level]));
+          for (unsigned int i=0; i<level_ddh[level].size(); ++i)
+            smoother_data[level].local_inverses[i]=&(local_level_inverse[level][0]);
         }
+#else
+      //just store information for locally owned cells
+      local_level_inverse[level].resize(level_ddh[level].size(), dealii::FullMatrix<double>(n));
+      unsigned int subdomain_idx = 0;
+      for (auto cell = dof_handler.begin_mg(level);
+           cell != dof_handler.end_mg(level);
+           ++cell)
+        if (cell->level_subdomain_id()==triangulation.locally_owned_subdomain())
+          {
+            std::vector<dealii::types::global_dof_index> first_level_dof_indices (n);
+            cell->get_active_or_mg_dof_indices (first_level_dof_indices);
+
+            dealii::FullMatrix<double> local_matrix(n, n);
+            for (unsigned int i = 0; i < n; ++i)
+              for (unsigned int j = 0; j < n; ++j)
+                {
+                  const dealii::types::global_dof_index i1 = first_level_dof_indices [i];
+                  const dealii::types::global_dof_index i2 = first_level_dof_indices [j];
+                  local_matrix(i, j) = mg_matrix[level](i1, i2);
+                }
+
+            local_level_inverse[level][subdomain_idx].invert(local_matrix);
+
+            smoother_data[level].local_inverses[subdomain_idx]
+              =&(local_level_inverse[level][subdomain_idx]);
+            //std::cout<<"subdomain_idx: " << subdomain_idx << std::endl;
+            smoother_data[level].local_inverses[subdomain_idx]->print(std::cout);
+            ++subdomain_idx;
+          }
+      AssertThrow(level_ddh[level].size()==subdomain_idx,
+                  dealii::ExcDimensionMismatch(level_ddh[level].size(), subdomain_idx));
+#endif
     }
 
   // SmootherSetup
