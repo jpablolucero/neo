@@ -26,12 +26,10 @@ namespace LocalIntegrators
 	  for (unsigned int i=0; i<n_dofs; ++i)
 	    {
 	      M(i,i) += dx * fe.shape_grad(i,q) * fe.shape_grad(i,q);
-	      
 	      for (unsigned int j=i+1; j<n_dofs; ++j)
 		{
 		  double Mij = 0.0;
 		  Mij += dx * fe.shape_grad(j,q) * fe.shape_grad(i,q);
-		  
 		  M(i,j) += Mij;
 		  M(j,i) += Mij;
 		}
@@ -55,20 +53,16 @@ namespace LocalIntegrators
 	  const double dx = fe.JxW(q) * factor;
 	  for (unsigned int i=0; i<n_dofs; ++i)
 	    {
-	      double Mii = 0.0;
 	      for (unsigned int d=0; d<n_comps; ++d)
-		Mii += coeff_values[d][q] * dx *
+		M(i,i) += coeff_values[d][q] * dx *
 		  (fe.shape_grad_component(i,q,d) * fe.shape_grad_component(i,q,d));
-	      
-	      M(i,i) += Mii;
-	      
+
 	      for (unsigned int j=i+1; j<n_dofs; ++j)
 		{
 		  double Mij = 0.0;
 		  for (unsigned int d=0; d<n_comps; ++d)
 		    Mij += coeff_values[d][q] * dx *
 		      (fe.shape_grad_component(j,q,d) * fe.shape_grad_component(i,q,d));
-		  
 		  M(i,j) += Mij;
 		  M(j,i) += Mij;
 		}
@@ -207,8 +201,8 @@ namespace LocalIntegrators
     	  for (unsigned int i=0; i<n_dofs; ++i)
     	    for (unsigned int j=0; j<n_dofs; ++j)
 	      M(i,j) += dx * (2.*penalty * fe.shape_value(i,q) * fe.shape_value(j,q)
-					      - (n * fe.shape_grad(i,q)) * fe.shape_value(j,q)
-					      - (n * fe.shape_grad(j,q)) * fe.shape_value(i,q)      );
+			      - (n * fe.shape_grad(i,q)) * fe.shape_value(j,q)
+			      - (n * fe.shape_grad(j,q)) * fe.shape_value(i,q)      );
     	}
     }
 
@@ -274,10 +268,10 @@ namespace LocalIntegrators
       const unsigned int n_quads = fe.n_quadrature_points;
       const unsigned int n_dofs = fe.dofs_per_cell;
       const unsigned int n_comps = fe.get_fe().n_components();
-
+      
       AssertVectorVectorDimension(input, n_comps, n_quads);
       Assert(result.size() == n_dofs, dealii::ExcDimensionMismatch(result.size(), n_dofs));
-
+      
       for (unsigned int q=0; q<n_quads; ++q)
     	{
     	  const double dx = factor * fe.JxW(q);
@@ -307,7 +301,7 @@ namespace LocalIntegrators
       const double nuINT = int_factor;
       const double nuEXT = (ext_factor < 0) ? int_factor : ext_factor;
       const double nupenalty = .5 * penalty  * (nuINT + nuEXT);
-
+      
       Assert(feINT.get_fe().n_components() == 1,
     	     dealii::ExcDimensionMismatch(feINT.get_fe().n_components(), 1));
       Assert(feEXT.get_fe().n_components() == 1,
@@ -336,7 +330,6 @@ namespace LocalIntegrators
     	}
     }
 
-
     template <int dim>
     inline void
     ip_residual(dealii::Vector<double> &resultINT,
@@ -358,17 +351,17 @@ namespace LocalIntegrators
       const double nuINT = int_factor;
       const double nuEXT = (ext_factor < 0) ? int_factor : ext_factor;
       const double nupenalty = .5 * penalty  * (nuINT + nuEXT);
-
+      
       AssertVectorVectorDimension(inputINT, n_comps, n_quads);
       AssertVectorVectorDimension(DinputINT, n_comps, n_quads);
       AssertVectorVectorDimension(inputEXT, n_comps, n_quads);
       AssertVectorVectorDimension(DinputEXT, n_comps, n_quads);
-
+      
       for (unsigned int q=0; q<n_quads; ++q)
     	{
     	  const double dx = feINT.JxW(q) ;
     	  const dealii::Tensor<1,dim> normal_vectorINT = feINT.normal_vector(q);
- 
+	  
     	  for (unsigned int i=0; i<n_dofs; ++i)
     	    for (unsigned int d=0; d<n_comps; ++d)
     	      {
@@ -401,7 +394,7 @@ namespace LocalIntegrators
     {
       const unsigned int n_dofs = fe.dofs_per_cell;
       const unsigned int n_quads = fe.n_quadrature_points;
-            
+      
       AssertDimension(input.size(), fe.n_quadrature_points);
       AssertDimension(Dinput.size(), fe.n_quadrature_points);
       AssertDimension(boundary_data.size(), fe.n_quadrature_points);
@@ -417,7 +410,7 @@ namespace LocalIntegrators
     	      const double dnv = fe.shape_grad(i,q) * n;
     	      const double dnu = Dinput[q] * n;
     	      const double v= fe.shape_value(i,q);
-	       
+	      
     	      result(i) += dx * (2.*penalty*(u-g)*v - (u-g)*dnv - dnu*v);
     	    }
     	}
@@ -441,7 +434,7 @@ namespace LocalIntegrators
       AssertVectorVectorDimension(input, n_comps, n_quads);
       AssertVectorVectorDimension(Dinput, n_comps, n_quads);
       AssertVectorVectorDimension(boundary_data, n_comps, n_quads);       
-
+      
       for (unsigned int q=0; q<n_quads; ++q)
     	{
     	  const double dx = factor * fe.JxW(q);
@@ -449,11 +442,11 @@ namespace LocalIntegrators
     	  for (unsigned int i=0; i<n_dofs; ++i)
     	    for (unsigned int d=0; d<n_comps; ++d)
     	      {
-    		const double u= input[d][q];
-    		const double g= boundary_data[d][q];
+    		const double u = input[d][q];
+    		const double g = boundary_data[d][q];
     		const double dnv = fe.shape_grad_component(i,q,d) * n;
     		const double dnu = Dinput[d][q] * n;
-    		const double v= fe.shape_value_component(i,q,d);
+    		const double v = fe.shape_value_component(i,q,d);
     		result(i) += coeff_values[d][q] * dx * (2.*penalty*(u-g)*v - (u-g)*dnv - dnu*v);
     	      }
     	}
