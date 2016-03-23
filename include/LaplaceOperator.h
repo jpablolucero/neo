@@ -49,15 +49,16 @@ public:
   double operator()(const size_type i,const size_type j) const
   { return matrix(i,j);};
  private:
-  unsigned int level ;
-  dealii::DoFHandler<dim> * dof_handler; 
-  const dealii::MappingQ1<dim> *  mapping;
-  dealii::MeshWorker::DoFInfo<dim> * dof_info;
+  unsigned int                                        level;
+  dealii::DoFHandler<dim> *                           dof_handler; 
+  const dealii::MappingQ1<dim> *                      mapping;
+  dealii::MeshWorker::DoFInfo<dim> *                  dof_info;
   mutable dealii::MeshWorker::IntegrationInfoBox<dim> info_box;
-  dealii::SparsityPattern sparsity ;
-  dealii::SparseMatrix<double> matrix ;
-  MatrixIntegrator<dim,same_diagonal> matrix_integrator ;
-  ResidualIntegrator<dim> residual_integrator ;
+  dealii::SparsityPattern                             sparsity;
+  dealii::SparseMatrix<double>                        matrix;
+  dealii::ConstraintMatrix                            cmatrix_dummy;
+  MatrixIntegrator<dim,same_diagonal>                 matrix_integrator;
+  ResidualIntegrator<dim>                             residual_integrator;
 };
 
 #endif // LAPLACEOPERATOR_H

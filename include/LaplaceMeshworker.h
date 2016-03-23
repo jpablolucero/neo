@@ -5,5 +5,4 @@
 
 #include <fstream>
 
-
 #endif // LAPLACEMESHWORKER_H

@@ -4,6 +4,7 @@
 #include <deal.II/grid/tria.h>
 #include <deal.II/fe/mapping_q1.h>
 #include <deal.II/fe/fe_dgq.h>
+#include <deal.II/fe/fe_system.h>
 #include <deal.II/dofs/dof_handler.h>
 #include <deal.II/meshworker/dof_info.h>
 #include <deal.II/meshworker/integration_info.h>
@@ -27,6 +28,10 @@
 #include <deal.II/multigrid/multigrid.h>
 
 #include <LaplaceOperator.h>
+#include <Integrators.h>
+#include <GlobalTimer.h>
+#include <DDHandler.h>
+#include <PSCPreconditioner.h>
 
 #include <string>
 #include <fstream>
@@ -42,6 +47,7 @@ public:
 private:
   void setup_system ();
   void setup_multigrid ();
+  void assemble_rhs ();
   void solve ();
   void solve_psc ();
   void solve_blockjacobi ();
@@ -51,18 +57,18 @@ private:
 
   dealii::Triangulation<dim>   triangulation;
   const dealii::MappingQ1<dim> mapping;
-  dealii::FE_DGQ<dim>          fe;
+  dealii::FESystem<dim>        fe;
   dealii::DoFHandler<dim>      dof_handler;
 
   SystemMatrixType             system_matrix;
-
   dealii::Vector<double>       solution;
   dealii::Vector<double>       right_hand_side;
 
   dealii::MGLevelObject<SystemMatrixType >            mg_matrix ;
   dealii::FullMatrix<double>                          coarse_matrix ;
 
-  const bool use_psc = true;
+  RHSIntegrator<dim>           rhs_integrator;
+  const bool use_psc = false;
 };
 
 #endif // MYLAPLACE_H

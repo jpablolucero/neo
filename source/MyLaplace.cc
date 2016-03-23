@@ -1,13 +1,10 @@
 #include <MyLaplace.h>
-#include <GlobalTimer.h>
-#include <DDHandler.h>
-#include <PSCPreconditioner.h>
 
 template <int dim,bool same_diagonal>
 MyLaplace<dim,same_diagonal>::MyLaplace ()
   :
   mapping (),
-  fe (1),
+  fe {dealii::FE_DGQ<dim>{2}, 1},
   dof_handler (triangulation)
 {}
 
@@ -24,8 +21,6 @@ void MyLaplace<dim,same_diagonal>::setup_system ()
   system_matrix.reinit (&dof_handler, &mapping, triangulation.n_levels() - 1);
   solution.reinit (dof_handler.n_dofs());
   right_hand_side.reinit (dof_handler.n_dofs());
-  right_hand_side = 1.0*static_cast<double>(1<<dim)/
-    static_cast<double>(dof_handler.n_dofs());
 }
 
 template <int dim,bool same_diagonal>
@@ -40,6 +35,30 @@ void MyLaplace<dim,same_diagonal>::setup_multigrid ()
     }
   coarse_matrix.reinit(dof_handler.n_dofs(0),dof_handler.n_dofs(0));
   coarse_matrix.copy_from(mg_matrix[0]) ;
+}
+
+template <int dim,bool same_diagonal>
+void MyLaplace<dim,same_diagonal>::assemble_rhs()
+{
+  dealii::UpdateFlags update_flags = dealii::update_JxW_values |
+    dealii::update_values |
+    dealii::update_quadrature_points ;
+  
+  dealii::MeshWorker::IntegrationInfoBox<dim> info_box_rhs;
+  info_box_rhs.add_update_flags_all(update_flags);
+  info_box_rhs.initialize(fe, mapping, &dof_handler.block_info());
+  dealii::MeshWorker::DoFInfo<dim> dof_info_rhs(dof_handler.block_info());
+  
+  dealii::ConstraintMatrix cmatrix_dummy;
+  dealii::MeshWorker::Assembler::ResidualSimple<dealii::Vector<double> > rhs_assembler;
+  dealii::AnyData data;
+  data.add(&right_hand_side, "RHS");
+  rhs_assembler.initialize(data);
+  rhs_assembler.initialize(cmatrix_dummy);
+
+  dealii::MeshWorker::integration_loop<dim, dim>(dof_handler.begin_active(), dof_handler.end(),
+						 dof_info_rhs, info_box_rhs,
+						 rhs_integrator, rhs_assembler);
 }
 
 template <int dim,bool same_diagonal>
@@ -186,13 +205,14 @@ void MyLaplace<dim,same_diagonal>::run ()
       std::cout << "Cycle " << cycle << std::endl;
       if (cycle == 0)
 	{  
-	  dealii::GridGenerator::hyper_cube (triangulation,-1.,1.);
+	  dealii::GridGenerator::hyper_cube (triangulation,0.,1.);
 	  triangulation.refine_global (3-dim);
 	}
       global_timer.reset();
       global_timer.enter_subsection("refine_global");
       triangulation.refine_global (1);
       global_timer.leave_subsection();
+      dealii::deallog << "Finite element: " << fe.get_name() << std::endl;
       dealii::deallog << "Number of active cells: " << 
 	triangulation.n_active_cells() << std::endl;
       global_timer.enter_subsection("setup_system");
@@ -205,6 +225,9 @@ void MyLaplace<dim,same_diagonal>::run ()
       global_timer.enter_subsection("setup_multigrid");
       setup_multigrid ();
       global_timer.leave_subsection();
+      global_timer.enter_subsection("assemble_rhs");
+      assemble_rhs ();
+      global_timer.leave_subsection();
       global_timer.enter_subsection("solve");
       solve ();
       global_timer.leave_subsection();
@@ -213,6 +236,7 @@ void MyLaplace<dim,same_diagonal>::run ()
       global_timer.leave_subsection();
       global_timer.print_summary();
       dealii::deallog << std::endl;
+      system_matrix.clear();
     }
 }
 

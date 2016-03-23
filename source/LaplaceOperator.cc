@@ -33,7 +33,7 @@ void LaplaceOperator<dim, fe_degree, same_diagonal>::reinit (
   dof_handler = dof_handler_ ;
   mapping = mapping_ ;
   level=level_;
-  dof_info = new dealii::MeshWorker::DoFInfo<dim>{*dof_handler};
+  dof_info = new dealii::MeshWorker::DoFInfo<dim>{dof_handler->block_info()};
   const unsigned int n_gauss_points = dof_handler->get_fe().degree+1;
   info_box.initialize_gauss_quadrature(n_gauss_points,
 				       n_gauss_points,
@@ -56,7 +56,7 @@ void LaplaceOperator<dim, fe_degree, same_diagonal>::build_matrix ()
 {  
   assert(dof_handler != 0);
   global_timer.enter_subsection("LaplaceOperator::build_matrix");
-  info_box.initialize(dof_handler->get_fe(), *mapping);
+  info_box.initialize(dof_handler->get_fe(), *mapping, &(dof_handler->block_info()));
   dealii::MGLevelObject<dealii::SparseMatrix<double> > mg_matrix ;
   mg_matrix.resize(level,level);
   const unsigned int block_size = dof_handler->block_info().local().block_size(0) ;
@@ -110,9 +110,11 @@ void LaplaceOperator<dim, fe_degree, same_diagonal>::vmult_add (dealii::Vector<d
   dealii::AnyData src_data ;
   src_data.add<const dealii::MGLevelObject<dealii::Vector<double> >*>(&mg_src,"src");
   info_box.initialize(dof_handler->get_fe(), *mapping, src_data,
-		      dealii::MGLevelObject<dealii::Vector<double> >{});
+		      dealii::MGLevelObject<dealii::Vector<double> >{},
+		      &(dof_handler->block_info()));
   dealii::MeshWorker::Assembler::ResidualSimple<dealii::Vector<double> > assembler;
   assembler.initialize(dst_data);
+  assembler.initialize(cmatrix_dummy);
   dealii::MeshWorker::integration_loop<dim, dim>
     (dof_handler->begin_mg(level), dof_handler->end_mg(level),
      *dof_info,info_box,residual_integrator,assembler);
