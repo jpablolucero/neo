@@ -146,7 +146,7 @@ void DDHandlerBase<dim, number>::prolongate_add(dealii::Vector<number>& dst,
 
 
 template <int dim, class number>
-std::vector<unsigned int> DDHandlerBase<dim, number>::global_dofs_on_subdomain(
+std::vector<dealii::types::global_dof_index> DDHandlerBase<dim, number>::global_dofs_on_subdomain(
     const unsigned int subdomain_idx) const
 {
   return subdomain_to_global_map[subdomain_idx];
@@ -212,7 +212,7 @@ void DGDDHandler<dim, number>::initialize_subdomain_to_global_map()
       this->get_level());
   if (this->get_level() >= triangulation.n_levels())
     return;
-                                       std::vector<unsigned int>(n_subdomain_dofs));
+                                       std::vector<dealii::types::global_dof_index>(n_subdomain_dofs));
   unsigned int subdomain_idx = 0;
   for(auto cell = this->get_dofh().begin_mg(this->get_level());
       cell != this->get_dofh().end_mg(this->get_level());
