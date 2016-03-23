@@ -21,8 +21,8 @@ class MatrixIntegrator final : public dealii::MeshWorker::LocalIntegrator<dim>
   void cell(dealii::MeshWorker::DoFInfo<dim> &dinfo, typename dealii::MeshWorker::IntegrationInfo<dim> &info) const override;
   void boundary(dealii::MeshWorker::DoFInfo<dim> &dinfo, typename dealii::MeshWorker::IntegrationInfo<dim> &info) const override;
   void face(dealii::MeshWorker::DoFInfo<dim> &dinfo1,
-            dealii::MeshWorker::DoFInfo<dim> &dinfo2,
-            typename dealii::MeshWorker::IntegrationInfo<dim> &info1,
+	    dealii::MeshWorker::DoFInfo<dim> &dinfo2,
+	    typename dealii::MeshWorker::IntegrationInfo<dim> &info1,
             typename dealii::MeshWorker::IntegrationInfo<dim> &info2) const override;
  private:
   Coefficient<dim> diffcoeff;
@@ -36,8 +36,8 @@ public:
   void cell(dealii::MeshWorker::DoFInfo<dim> &dinfo, typename dealii::MeshWorker::IntegrationInfo<dim> &info) const override;
   void boundary(dealii::MeshWorker::DoFInfo<dim> &dinfo, typename dealii::MeshWorker::IntegrationInfo<dim> &info) const override;
   void face(dealii::MeshWorker::DoFInfo<dim> &dinfo1,
-            dealii::MeshWorker::DoFInfo<dim> &dinfo2,
-            typename dealii::MeshWorker::IntegrationInfo<dim> &info1,
+	  dealii::MeshWorker::DoFInfo<dim> &dinfo2,
+	  typename dealii::MeshWorker::IntegrationInfo<dim> &info1,
             typename dealii::MeshWorker::IntegrationInfo<dim> &info2) const override;
  private:
   Coefficient<dim> diffcoeff;
