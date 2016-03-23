@@ -65,11 +65,11 @@ void MyLaplace<dim,same_diagonal>::solve_psc ()
   mg_coarse.initialize(coarse_matrix, 1.e-15);
 
   // Smoother setup
-  typedef PSCPreconditioner<dim, dealii::Vector<double>, double> Smoother;
+  typedef PSCPreconditioner<dim, double> Smoother;
 
   dealii::MGLevelObject<dealii::FullMatrix<double> > local_level_inverse;
   local_level_inverse.resize(mg_matrix.min_level(), mg_matrix.max_level());
-  dealii::MGLevelObject<DGDDHandler<dim> > level_ddh;
+  dealii::MGLevelObject<DGDDHandler<dim, double> > level_ddh;
   level_ddh.resize(mg_matrix.min_level(), mg_matrix.max_level());
   dealii::MGLevelObject<typename Smoother::AdditionalData> smoother_data;
   smoother_data.resize(mg_matrix.min_level(), mg_matrix.max_level());
