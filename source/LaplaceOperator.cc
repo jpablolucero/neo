@@ -76,31 +76,86 @@ void LaplaceOperator<dim, fe_degree, same_diagonal>::build_matrix ()
   info_box.initialize(*fe, *mapping);
   dealii::MGLevelObject<LA::MPI::SparseMatrix> mg_matrix ;
   mg_matrix.resize(level,level);
-  const unsigned int block_size = dof_handler->block_info().local().block_size(0) ;
-  const unsigned int n_blocks = same_diagonal ? 1 : dof_handler->n_dofs(level) / block_size ;
-  sparsity.reinit(dof_handler->n_dofs(level),dof_handler->n_dofs(level),block_size);
-  for (unsigned int b=0; b<n_blocks; ++b)
-    for (unsigned int i=block_size*b; i<block_size+block_size*b; ++i)
-      for (unsigned int j=block_size*b; j<block_size+block_size*b; ++j)
-        sparsity.add(i,j);
-  sparsity.compress();
-  matrix.reinit(dof_handler->locally_owned_mg_dofs(level),
-                dof_handler->locally_owned_mg_dofs(level),
-                sparsity,mpi_communicator);
+
+  const unsigned int n = dof_handler->get_fe().n_dofs_per_cell();
+  std::vector<dealii::types::global_dof_index> level_dof_indices (n);
+  dealii::IndexSet locally_relevant_level_dofs;
+  dealii::DoFTools::extract_locally_relevant_level_dofs(*dof_handler,level,locally_relevant_level_dofs);
+  dealii::DynamicSparsityPattern dsp(locally_relevant_level_dofs);
+
+  dealii::MGTools::make_flux_sparsity_pattern(*dof_handler,dsp,level);
+
+  /*bool first_cell_found = false;
+  typename dealii::DoFHandler<dim>::level_cell_iterator first_cell;
+
+  for (auto cell = dof_handler->begin_mg(level); cell != dof_handler->end_mg(level); ++cell)
+    if (cell->level_subdomain_id() == dof_handler->get_triangulation().locally_owned_subdomain())
+    {
+      if (!first_cell_found)
+      {
+        first_cell_found=true;
+        first_cell=cell;
+      }
+
+      cell->get_active_or_mg_dof_indices (level_dof_indices);
+      for (unsigned int i = 0; i < n; ++i)
+        for (unsigned int j = 0; j < n; ++j)
+        {
+          const dealii::types::global_dof_index i1 = level_dof_indices [i];
+          const dealii::types::global_dof_index i2 = level_dof_indices [j];
+          dsp.add(i1, i2);
+        }
+  #ifdef SAME
+      //if we use just one cell, we only need to allow for storing one cell
+      break;
+  #else
+      // Loop over all interior neighbors
+      for (unsigned int face = 0; face < dealii::GeometryInfo<dim>::faces_per_cell; ++face)
+      {
+        if ( (! cell->at_boundary(face)) &&
+            (static_cast<unsigned int>(cell->neighbor_level(face)) == level) )
+        {
+          const typename dealii::DoFHandler<dim>::level_cell_iterator neighbor = cell->neighbor(face);
+          neighbor->get_active_or_mg_dof_indices (level_dof_indices);
+          if (neighbor->is_locally_owned_on_level() == false)
+            for (unsigned int i=0; i<n; ++i)
+              for (unsigned int j=0; j<n; ++j)
+                dsp.add (level_dof_indices[i], level_dof_indices[j]);
+        }
+      }
+  #endif
+    }
+  AssertThrow(first_cell_found || dof_handler->locally_owned_mg_dofs(level).n_elements()==0,
+              dealii::ExcInternalError());*/
+
+  //dealii::SparsityTools::distribute_sparsity_pattern();
+
   mg_matrix[level].reinit(dof_handler->locally_owned_mg_dofs(level),
                           dof_handler->locally_owned_mg_dofs(level),
-                          sparsity,mpi_communicator);
+                          dsp,mpi_communicator, true);
+//  if (first_cell_found)
+//  {
   dealii::MeshWorker::Assembler::MGMatrixSimple<LA::MPI::SparseMatrix> assembler;
   assembler.initialize(mg_matrix);
 #ifdef CG
   //assembler.initialize(constraints);
 #endif
-  dealii::MeshWorker::integration_loop<dim, dim> (dof_handler->begin_mg(level),
-                                                  same_diagonal ? ++dof_handler->begin_mg(level) :
-                                                  dof_handler->end_mg(level),
-                                                  *dof_info, info_box,
-                                                  matrix_integrator, assembler);
+
+  dealii::MeshWorker::integration_loop<dim, dim> (
+    /*first_cell,
+    #ifdef SAME
+                                        ++first_cell,
+    #else
+                                        dof_handler->end_mg(level),
+    #endif
+    */
+    dof_handler->begin_mg(level),
+    dof_handler->end_mg(level),
+    *dof_info, info_box,
+    matrix_integrator, assembler);
+
   matrix.copy_from(mg_matrix[level]);
+//  }
   global_timer.leave_subsection();
 }
 

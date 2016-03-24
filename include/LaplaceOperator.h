@@ -80,7 +80,6 @@ private:
   const dealii::ConstraintMatrix *constraints;
   dealii::MeshWorker::DoFInfo<dim> *dof_info;
   mutable dealii::MeshWorker::IntegrationInfoBox<dim> info_box;
-  dealii::SparsityPattern sparsity ;
   LA::MPI::SparseMatrix matrix ;
   MatrixIntegrator<dim,same_diagonal> matrix_integrator ;
   ResidualIntegrator<dim> residual_integrator ;

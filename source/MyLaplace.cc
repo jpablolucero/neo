@@ -212,6 +212,8 @@ void MyLaplace<dim,same_diagonal>::solve_psc ()
   smoother_data.resize(mg_matrix.min_level(), mg_matrix.max_level());
 
   const unsigned int n = dof_handler.get_fe().n_dofs_per_cell();
+  std::vector<dealii::types::global_dof_index> first_level_dof_indices (n);
+  dealii::FullMatrix<double> local_matrix(n, n);
 
   for (unsigned int level = mg_matrix.min_level();
        level <= mg_matrix.max_level();
@@ -224,6 +226,7 @@ void MyLaplace<dim,same_diagonal>::solve_psc ()
       // setup smoother data
       smoother_data[level].ddh = &(level_ddh[level]);
       smoother_data[level].weight = 1.0;
+
 #ifdef SAME
       // init local inverse with first local level matrix
       local_level_inverse[level].resize(1, dealii::FullMatrix<double>(n));
@@ -234,13 +237,8 @@ void MyLaplace<dim,same_diagonal>::solve_psc ()
 
       if (cell!=dof_handler.end_mg(level))
         {
-          std::cout << "level: " << level
-                    << " cell_center: " << cell->center()
-                    << " cell->level_subdomain_id(): "<< cell->level_subdomain_id() << std::endl;
-          std::vector<dealii::types::global_dof_index> first_level_dof_indices (n);
           cell->get_active_or_mg_dof_indices (first_level_dof_indices);
-
-          dealii::FullMatrix<double> local_matrix(n, n);
+          local_matrix=0.;
           for (unsigned int i = 0; i < n; ++i)
             for (unsigned int j = 0; j < n; ++j)
               {
@@ -253,6 +251,8 @@ void MyLaplace<dim,same_diagonal>::solve_psc ()
 
           for (unsigned int i=0; i<level_ddh[level].size(); ++i)
             smoother_data[level].local_inverses[i]=&(local_level_inverse[level][0]);
+
+          smoother_data[level].local_inverses[0]->print(std::cout);
         }
 #else
       //just store information for locally owned cells
@@ -263,10 +263,8 @@ void MyLaplace<dim,same_diagonal>::solve_psc ()
            ++cell)
         if (cell->level_subdomain_id()==triangulation.locally_owned_subdomain())
           {
-            std::vector<dealii::types::global_dof_index> first_level_dof_indices (n);
             cell->get_active_or_mg_dof_indices (first_level_dof_indices);
-
-            dealii::FullMatrix<double> local_matrix(n, n);
+            local_matrix = 0.;
             for (unsigned int i = 0; i < n; ++i)
               for (unsigned int j = 0; j < n; ++j)
                 {
@@ -279,7 +277,7 @@ void MyLaplace<dim,same_diagonal>::solve_psc ()
 
             smoother_data[level].local_inverses[subdomain_idx]
               =&(local_level_inverse[level][subdomain_idx]);
-            //std::cout<<"subdomain_idx: " << subdomain_idx << std::endl;
+            std::cout<<"subdomain_idx: " << subdomain_idx << std::endl;
             smoother_data[level].local_inverses[subdomain_idx]->print(std::cout);
             ++subdomain_idx;
           }
@@ -291,7 +289,7 @@ void MyLaplace<dim,same_diagonal>::solve_psc ()
   // SmootherSetup
   dealii::MGSmootherPrecondition<SystemMatrixType, Smoother, LA::MPI::Vector> mg_smoother;
   mg_smoother.initialize(mg_matrix, smoother_data);
-  mg_smoother.set_steps(6);
+  mg_smoother.set_steps(1);
   dealii::mg::Matrix<LA::MPI::Vector>         mgmatrix;
   mgmatrix.initialize(mg_matrix);
   dealii::MGTransferPrebuilt<LA::MPI::Vector> mg_transfer;
@@ -451,7 +449,7 @@ template <int dim,bool same_diagonal>
 void MyLaplace<dim,same_diagonal>::run ()
 {
   triangulation.refine_global (1);
-  for (unsigned int cycle=0; cycle<6-dim; ++cycle)
+  for (unsigned int cycle=0; cycle<1; ++cycle)
     {
       std::cout << "Cycle " << cycle << std::endl;
       global_timer.reset();
@@ -484,7 +482,7 @@ void MyLaplace<dim,same_diagonal>::run ()
       solve ();
       global_timer.leave_subsection();
       global_timer.enter_subsection("output");
-      pcout << "Ouput" << std::endl;
+      pcout << "Output" << std::endl;
       compute_error();
       output_results(cycle);
       global_timer.leave_subsection();
