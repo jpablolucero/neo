@@ -11,8 +11,6 @@ void MatrixIntegrator<dim, same_diagonal>::cell(dealii::MeshWorker::DoFInfo<dim>
   const dealii::FEValuesBase<dim> &fe = info.fe_values() ;
   dealii::FullMatrix<double> &M = dinfo.matrix(0).matrix;
   dealii::LocalIntegrators::Laplace::cell_matrix(M,fe) ;
-  std::cout << "Cell: Cell center: " << dinfo.cell->center() << std::endl;
-  M.print(std::cout);
 }
 
 template <int dim,bool same_diagonal>
@@ -43,10 +41,6 @@ void MatrixIntegrator<dim,same_diagonal>::face(dealii::MeshWorker::DoFInfo<dim> 
       dealii::LocalIntegrators::Laplace::ip_matrix(RM11,M21,M12,RM22,fe1,fe2,
                                                    dealii::LocalIntegrators::Laplace::compute_penalty(dinfo1,dinfo2,deg1,deg2));
     }
-  std::cout << "Face: Cell center: " << dinfo1.cell->center() << std::endl;
-  RM11.print(std::cout);
-  std::cout << "Face: Cell center: " << dinfo2.cell->center() << std::endl;
-  RM22.print(std::cout);
 }
 
 template <int dim,bool same_diagonal>
@@ -59,8 +53,6 @@ void MatrixIntegrator<dim,same_diagonal>::boundary(dealii::MeshWorker::DoFInfo<d
 
   dealii::LocalIntegrators::Laplace::nitsche_matrix(M,fe,
                                                     dealii::LocalIntegrators::Laplace::compute_penalty(dinfo,dinfo,deg,deg));
-  std::cout << "Boundary: Cell center: " << dinfo.cell->center() << std::endl;
-  M.print(std::cout);
 }
 
 template <int dim>

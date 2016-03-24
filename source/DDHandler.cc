@@ -233,12 +233,8 @@ void DGDDHandler<dim>::initialize_subdomain_to_global_map()
       {
         this->subdomain_to_global_map.push_back(std::vector<dealii::types::global_dof_index>(n_subdomain_dofs));
         cell->get_active_or_mg_dof_indices(this->subdomain_to_global_map[subdomain_idx]);
-        std::cout << "Level: " << this->get_level()
-                  << " Cell: " << subdomain_idx
-                  << " Center: " <<cell->center() << std::endl;
         ++subdomain_idx;
       }
-  std::cout << "On level: " << this->get_level() << " n_locally_owned_cells: " << subdomain_idx << std::endl;
 }
 
 template <int dim>

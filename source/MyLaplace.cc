@@ -251,8 +251,6 @@ void MyLaplace<dim,same_diagonal>::solve_psc ()
 
           for (unsigned int i=0; i<level_ddh[level].size(); ++i)
             smoother_data[level].local_inverses[i]=&(local_level_inverse[level][0]);
-
-          smoother_data[level].local_inverses[0]->print(std::cout);
         }
 #else
       //just store information for locally owned cells
@@ -277,8 +275,6 @@ void MyLaplace<dim,same_diagonal>::solve_psc ()
 
             smoother_data[level].local_inverses[subdomain_idx]
               =&(local_level_inverse[level][subdomain_idx]);
-            std::cout<<"subdomain_idx: " << subdomain_idx << std::endl;
-            smoother_data[level].local_inverses[subdomain_idx]->print(std::cout);
             ++subdomain_idx;
           }
       AssertThrow(level_ddh[level].size()==subdomain_idx,
@@ -451,7 +447,7 @@ void MyLaplace<dim,same_diagonal>::run ()
   triangulation.refine_global (1);
   for (unsigned int cycle=0; cycle<1; ++cycle)
     {
-      std::cout << "Cycle " << cycle << std::endl;
+      pcout << "Cycle " << cycle << std::endl;
       global_timer.reset();
 
       global_timer.enter_subsection("refine_global");
