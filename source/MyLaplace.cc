@@ -368,8 +368,7 @@ void MyLaplace<dim, same_diagonal>::output_results (const unsigned int cycle) co
 template <int dim,bool same_diagonal>
 void MyLaplace<dim,same_diagonal>::run ()
 {
-//  triangulation.refine_global (1);
-  for (unsigned int cycle=0; cycle<1; ++cycle)
+  for (unsigned int cycle=0; cycle<4; ++cycle)
     {
       pcout << "Cycle " << cycle << std::endl;
       global_timer.reset();

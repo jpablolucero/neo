@@ -1,5 +1,5 @@
 #include <GlobalTimer.h>
 
-dealii::TimerOutput global_timer(
-  std::cout, dealii::TimerOutput::never,
-  dealii::TimerOutput::wall_times);
+dealii::TimerOutput global_timer(MPI_COMM_WORLD,
+                                 std::cout, dealii::TimerOutput::never,
+                                 dealii::TimerOutput::cpu_and_wall_times);

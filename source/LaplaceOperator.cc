@@ -69,8 +69,6 @@ template <int dim, int fe_degree, bool same_diagonal>
 void LaplaceOperator<dim, fe_degree, same_diagonal>::build_matrix ()
 {
   Assert(dof_handler != 0, dealii::ExcInternalError());
-  if (dof_handler->begin_mg(level) == dof_handler->end_mg(level))
-    return;
 
   global_timer.enter_subsection("LaplaceOperator::build_matrix");
   info_box.initialize(*fe, *mapping);
