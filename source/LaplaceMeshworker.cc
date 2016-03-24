@@ -12,11 +12,7 @@ int main (int argc, char *argv[])
       std::ofstream logfile("deallog");
       dealii::deallog.attach(logfile);
       dealii::deallog.depth_console (2);
-#if SAME
       MyLaplace<2,true> dgmethod;
-#else
-      MyLaplace<2,false> dgmethod;
-#endif
       dgmethod.run ();
     }
   catch (std::exception &exc)

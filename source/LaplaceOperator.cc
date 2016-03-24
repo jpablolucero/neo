@@ -111,25 +111,28 @@ void LaplaceOperator<dim, fe_degree, same_diagonal>::build_matrix ()
                   const dealii::types::global_dof_index i2 = level_dof_indices [j];
                   dsp.add(i1, i2);
                 }
-#ifdef SAME
-            //if we use just one cell, we only need to allow for storing one cell
-            break;
-#else
-            // Loop over all interior neighbors
-            for (unsigned int face = 0; face < dealii::GeometryInfo<dim>::faces_per_cell; ++face)
+            if (same_diagonal)
               {
-                if ( (! cell->at_boundary(face)) &&
-                     (static_cast<unsigned int>(cell->neighbor_level(face)) == level) )
+                //if we use just one cell, we only need to allow for storing one cell
+                break;
+              }
+            else
+              {
+                // Loop over all interior neighbors
+                for (unsigned int face = 0; face < dealii::GeometryInfo<dim>::faces_per_cell; ++face)
                   {
-                    const typename dealii::DoFHandler<dim>::level_cell_iterator neighbor = cell->neighbor(face);
-                    neighbor->get_active_or_mg_dof_indices (level_dof_indices);
-                    if (neighbor->is_locally_owned_on_level() == false)
-                      for (unsigned int i=0; i<n; ++i)
-                        for (unsigned int j=0; j<n; ++j)
-                          dsp.add (level_dof_indices[i], level_dof_indices[j]);
+                    if ( (! cell->at_boundary(face)) &&
+                         (static_cast<unsigned int>(cell->neighbor_level(face)) == level) )
+                      {
+                        const typename dealii::DoFHandler<dim>::level_cell_iterator neighbor = cell->neighbor(face);
+                        neighbor->get_active_or_mg_dof_indices (level_dof_indices);
+                        if (neighbor->is_locally_owned_on_level() == false)
+                          for (unsigned int i=0; i<n; ++i)
+                            for (unsigned int j=0; j<n; ++j)
+                              dsp.add (level_dof_indices[i], level_dof_indices[j]);
+                      }
                   }
               }
-#endif
           }
     }
   AssertThrow(first_cell_found || dof_handler->locally_owned_mg_dofs(level).n_elements()==0,
@@ -147,11 +150,7 @@ void LaplaceOperator<dim, fe_degree, same_diagonal>::build_matrix ()
 #endif
 
       dealii::MeshWorker::integration_loop<dim, dim> (first_cell,
-#ifdef SAME
-                                                      ++first_cell,
-#else
-                                                      dof_handler->end_mg(level),
-#endif
+                                                      same_diagonal?++first_cell:dof_handler->end_mg(level),
                                                       *dof_info, info_box,
                                                       matrix_integrator, assembler);
     }
