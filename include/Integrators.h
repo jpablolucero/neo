@@ -25,7 +25,9 @@ class MatrixIntegrator final : public dealii::MeshWorker::LocalIntegrator<dim>
 	    typename dealii::MeshWorker::IntegrationInfo<dim> &info1,
 	    typename dealii::MeshWorker::IntegrationInfo<dim> &info2) const override;
  private:
-  Coefficient<dim> diffcoeff;
+  DiffCoefficient<dim> diffcoeff;
+  TotalCoefficient<dim> totalcoeff;
+  ReacCoefficient<dim> reaccoeff;
 };
 
 template <int dim>
@@ -40,8 +42,9 @@ public:
 	  typename dealii::MeshWorker::IntegrationInfo<dim> &info1,
 	  typename dealii::MeshWorker::IntegrationInfo<dim> &info2) const override;
  private:
-  Coefficient<dim> diffcoeff;
-};
+  DiffCoefficient<dim> diffcoeff;
+  TotalCoefficient<dim> totalcoeff;
+  ReacCoefficient<dim> reaccoeff;};
 
 template <int dim>
 class RHSIntegrator final : public dealii::MeshWorker::LocalIntegrator<dim>
