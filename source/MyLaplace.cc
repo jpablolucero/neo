@@ -176,20 +176,6 @@ void MyLaplace<dim,same_diagonal>::setup_multigrid ()
 template <int dim,bool same_diagonal>
 void MyLaplace<dim,same_diagonal>::solve ()
 {
-  if (use_psc)
-    {
-      solve_psc();
-    }
-  else
-    {
-      AssertThrow(false, dealii::ExcMessage("deal.II BlockJacobi is not available!"))
-      solve_blockjacobi();
-    }
-}
-
-template <int dim,bool same_diagonal>
-void MyLaplace<dim,same_diagonal>::solve_psc ()
-{
   global_timer.enter_subsection("solve::mg_initialization");
 #ifdef MG
   const LA::MPI::SparseMatrix &coarse_matrix = mg_matrix[0].get_coarse_matrix();
@@ -316,68 +302,6 @@ void MyLaplace<dim,same_diagonal>::solve_psc ()
   global_timer.leave_subsection();
 }
 
-template <int dim,bool same_diagonal>
-void MyLaplace<dim,same_diagonal>::solve_blockjacobi ()
-{
-  global_timer.enter_subsection("solve::mg_initialization");
-#ifdef MG
-  const LA::MPI::SparseMatrix &coarse_matrix = mg_matrix[0].get_coarse_matrix();
-
-  dealii::SolverControl coarse_solver_control (dof_handler.n_dofs(0), 1e-10, false, false);
-  dealii::SolverCG<LA::MPI::Vector> coarse_solver(coarse_solver_control);
-  dealii::PreconditionIdentity id;
-  dealii::MGCoarseGridLACIteration<dealii::SolverCG<LA::MPI::Vector>,LA::MPI::Vector> mg_coarse(coarse_solver,
-      coarse_matrix,
-      id);
-
-
-//  dealii::MGCoarseGridSVD<float, LA::MPI::Vector >    mg_coarse;
-//  dealii::MGCoarseGridHouseholder<float, LA::MPI::Vector> mg_coarse;
-//  typename dealii::PreconditionBlockJacobi<SystemMatrixType >::AdditionalData
-//      smoother_data(dof_handler.block_info().local().block_size(0),1.0,true,true);
-
-//  mg_coarse.initialize(coarse_matrix);
-//  dealii::MGCoarseGridLACIteration<double,
-//              LA::MPI::Vector >    mg_coarse;
-//  mg_coarse.initialize(coarse_matrix, 1.e-15);
-//  typename LA::PreconditionBlockJacobi::AdditionalData
-//    smoother_data(dof_handler.block_info().local().block_size(0),"linear",1.,0,1);
-
-  dealii::MGSmootherPrecondition<SystemMatrixType,
-         dealii::PreconditionIdentity,
-//                 LA::PreconditionBlockJacobi,
-//           dealii::PreconditionBlockJacobi<SystemMatrixType >,
-         LA::MPI::Vector> mg_smoother;
-  //mg_smoother.initialize(mg_matrix, smoother_data);
-  mg_smoother.set_steps(1);
-  dealii::mg::Matrix<LA::MPI::Vector >         mgmatrix;
-  mgmatrix.initialize(mg_matrix);
-  dealii::MGTransferPrebuilt<LA::MPI::Vector> mg_transfer;
-  mg_transfer.build_matrices(dof_handler);
-  dealii::Multigrid<LA::MPI::Vector > mg(dof_handler, mgmatrix,
-                                         mg_coarse, mg_transfer,
-                                         mg_smoother, mg_smoother);
-  mg.set_minlevel(mg_matrix.min_level());
-  mg.set_maxlevel(mg_matrix.max_level());
-  dealii::PreconditionMG<dim, LA::MPI::Vector,
-         dealii::MGTransferPrebuilt<LA::MPI::Vector > >
-         preconditioner(dof_handler, mg, mg_transfer);
-#else
-  dealii::PreconditionIdentity preconditioner;
-#endif
-
-  dealii::ReductionControl          solver_control (dof_handler.n_dofs(), 1.e-20, 1.e-10);
-  dealii::SolverCG<LA::MPI::Vector> solver (solver_control);
-  global_timer.leave_subsection();
-  global_timer.enter_subsection("solve::solve");
-  constraints.set_zero(solution_tmp);
-  solver.solve(system_matrix,solution_tmp,right_hand_side,preconditioner);
-#ifdef CG
-  constraints.distribute(solution_tmp);
-#endif
-  solution = solution_tmp;
-  global_timer.leave_subsection();
-}
 
 template <int dim,bool same_diagonal>
 void MyLaplace<dim, same_diagonal>::compute_error () const
@@ -444,7 +368,7 @@ void MyLaplace<dim, same_diagonal>::output_results (const unsigned int cycle) co
 template <int dim,bool same_diagonal>
 void MyLaplace<dim,same_diagonal>::run ()
 {
-  triangulation.refine_global (1);
+//  triangulation.refine_global (1);
   for (unsigned int cycle=0; cycle<1; ++cycle)
     {
       pcout << "Cycle " << cycle << std::endl;

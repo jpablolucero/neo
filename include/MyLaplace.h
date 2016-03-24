@@ -55,8 +55,6 @@ private:
   void setup_multigrid ();
   void assemble_system ();
   void solve ();
-  void solve_psc ();
-  void solve_blockjacobi ();
   void compute_error () const;
   void output_results (const unsigned int cycle) const;
 
@@ -86,7 +84,6 @@ private:
 
   dealii::MGLevelObject<SystemMatrixType >            mg_matrix ;
 
-  const bool use_psc = true;
   dealii::ConditionalOStream pcout;
 };
 
