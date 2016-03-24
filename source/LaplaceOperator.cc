@@ -149,8 +149,16 @@ void LaplaceOperator<dim, fe_degree, same_diagonal>::build_matrix ()
       //assembler.initialize(constraints);
 #endif
 
+      typename dealii::DoFHandler<dim>::level_cell_iterator end_cell;
+      if (!same_diagonal || level==0)
+        end_cell = dof_handler->end_mg(level);
+      else
+        {
+          end_cell = first_cell;
+          ++end_cell;
+        }
       dealii::MeshWorker::integration_loop<dim, dim> (first_cell,
-                                                      same_diagonal?++first_cell:dof_handler->end_mg(level),
+                                                      end_cell,
                                                       *dof_info, info_box,
                                                       matrix_integrator, assembler);
     }
