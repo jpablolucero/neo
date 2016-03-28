@@ -12,8 +12,54 @@ int main (int argc, char *argv[])
       std::ofstream logfile("deallog");
       dealii::deallog.attach(logfile);
       dealii::deallog.depth_console (2);
-      MyLaplace<2,true> dgmethod;
-      dgmethod.run ();
+      {
+        MyLaplace<2,true,3> dgmethod;
+        dgmethod.run ();
+      }
+      {
+        MyLaplace<2,true,2> dgmethod;
+        dgmethod.run ();
+      }
+      {
+        MyLaplace<2,true,1> dgmethod;
+        dgmethod.run ();
+      }
+      {
+        MyLaplace<2,false,3> dgmethod;
+        dgmethod.run ();
+      }
+      {
+        MyLaplace<2,false,2> dgmethod;
+        dgmethod.run ();
+      }
+      {
+        MyLaplace<2,false,1> dgmethod;
+        dgmethod.run ();
+      }
+      {
+        MyLaplace<3,true,3> dgmethod;
+        dgmethod.run ();
+      }
+      {
+        MyLaplace<3,true,2> dgmethod;
+        dgmethod.run ();
+      }
+      {
+        MyLaplace<3,true,1> dgmethod;
+        dgmethod.run ();
+      }
+      {
+        MyLaplace<3,false,3> dgmethod;
+        dgmethod.run ();
+      }
+      {
+        MyLaplace<3,false,2> dgmethod;
+        dgmethod.run ();
+      }
+      {
+        MyLaplace<3,false,1> dgmethod;
+        dgmethod.run ();
+      }
     }
   catch (std::exception &exc)
     {

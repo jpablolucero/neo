@@ -3,8 +3,8 @@
 #include <DDHandler.h>
 #include <PSCPreconditioner.h>
 
-template <int dim,bool same_diagonal>
-MyLaplace<dim,same_diagonal>::MyLaplace (const unsigned int degree)
+template <int dim,bool same_diagonal,unsigned int degree>
+MyLaplace<dim,same_diagonal,degree>::MyLaplace ()
   :
   mpi_communicator(MPI_COMM_WORLD),
   triangulation(mpi_communicator,dealii::Triangulation<dim>::
@@ -44,12 +44,12 @@ MyLaplace<dim,same_diagonal>::MyLaplace (const unsigned int degree)
 #endif
 }
 
-template <int dim,bool same_diagonal>
-MyLaplace<dim,same_diagonal>::~MyLaplace ()
+template <int dim,bool same_diagonal,unsigned int degree>
+MyLaplace<dim,same_diagonal,degree>::~MyLaplace ()
 {}
 
-template <int dim,bool same_diagonal>
-void MyLaplace<dim,same_diagonal>::setup_system ()
+template <int dim,bool same_diagonal,unsigned int degree>
+void MyLaplace<dim,same_diagonal,degree>::setup_system ()
 {
   dof_handler.distribute_dofs (fe);
   dof_handler.distribute_mg_dofs(fe);
@@ -123,8 +123,8 @@ void MyLaplace<dim,same_diagonal>::setup_system ()
 }
 
 
-template <int dim, bool same_diagonal>
-void MyLaplace<dim, same_diagonal>::assemble_system ()
+template <int dim, bool same_diagonal, unsigned int degree>
+void MyLaplace<dim, same_diagonal, degree>::assemble_system ()
 {
   dealii::MeshWorker::IntegrationInfoBox<dim> info_box;
 
@@ -159,8 +159,8 @@ void MyLaplace<dim, same_diagonal>::assemble_system ()
   right_hand_side.compress(dealii::VectorOperation::add);
 }
 
-template <int dim,bool same_diagonal>
-void MyLaplace<dim,same_diagonal>::setup_multigrid ()
+template <int dim,bool same_diagonal,unsigned int degree>
+void MyLaplace<dim,same_diagonal,degree>::setup_multigrid ()
 {
   const unsigned int n_global_levels = triangulation.n_global_levels();
   mg_matrix.resize(0, n_global_levels-1);
@@ -173,8 +173,8 @@ void MyLaplace<dim,same_diagonal>::setup_multigrid ()
 //  coarse_matrix.copy_from(mg_matrix[0]) ;
 }
 
-template <int dim,bool same_diagonal>
-void MyLaplace<dim,same_diagonal>::solve ()
+template <int dim,bool same_diagonal,unsigned int degree>
+void MyLaplace<dim,same_diagonal,degree>::solve ()
 {
   global_timer.enter_subsection("solve::mg_initialization");
 #ifdef MG
@@ -274,7 +274,7 @@ void MyLaplace<dim,same_diagonal>::solve ()
   // SmootherSetup
   dealii::MGSmootherPrecondition<SystemMatrixType, Smoother, LA::MPI::Vector> mg_smoother;
   mg_smoother.initialize(mg_matrix, smoother_data);
-  mg_smoother.set_steps(1);
+  mg_smoother.set_steps(2);
   dealii::mg::Matrix<LA::MPI::Vector>         mgmatrix;
   mgmatrix.initialize(mg_matrix);
   dealii::MGTransferPrebuilt<LA::MPI::Vector> mg_transfer;
@@ -306,8 +306,8 @@ void MyLaplace<dim,same_diagonal>::solve ()
 }
 
 
-template <int dim,bool same_diagonal>
-void MyLaplace<dim, same_diagonal>::compute_error () const
+template <int dim,bool same_diagonal,unsigned int degree>
+void MyLaplace<dim, same_diagonal, degree>::compute_error () const
 {
   dealii::QGauss<dim> quadrature (fe.degree+2);
   dealii::Vector<double> local_errors;
@@ -325,8 +325,8 @@ void MyLaplace<dim, same_diagonal>::compute_error () const
   pcout << "L2 error: " << L2_error << std::endl;
 }
 
-template <int dim, bool same_diagonal>
-void MyLaplace<dim, same_diagonal>::output_results (const unsigned int cycle) const
+template <int dim, bool same_diagonal, unsigned int degree>
+void MyLaplace<dim, same_diagonal, degree>::output_results (const unsigned int cycle) const
 {
   std::string filename = "solution-"+dealii::Utilities::int_to_string(cycle,2);
 
@@ -368,10 +368,10 @@ void MyLaplace<dim, same_diagonal>::output_results (const unsigned int cycle) co
 }
 
 
-template <int dim,bool same_diagonal>
-void MyLaplace<dim,same_diagonal>::run ()
+template <int dim,bool same_diagonal,unsigned int degree>
+void MyLaplace<dim,same_diagonal,degree>::run ()
 {
-  for (unsigned int cycle=0; cycle<4; ++cycle)
+  for (unsigned int cycle=0; cycle<3; ++cycle)
     {
       pcout << "Cycle " << cycle << std::endl;
       global_timer.reset();
@@ -413,10 +413,18 @@ void MyLaplace<dim,same_diagonal>::run ()
     }
 }
 
-template class MyLaplace<2,true>;
-template class MyLaplace<3,true>;
-template class MyLaplace<2,false>;
-template class MyLaplace<3,false>;
+template class MyLaplace<2,true,1>;
+template class MyLaplace<2,true,2>;
+template class MyLaplace<2,true,3>;
+template class MyLaplace<3,true,1>;
+template class MyLaplace<3,true,2>;
+template class MyLaplace<3,true,3>;
+template class MyLaplace<2,false,1>;
+template class MyLaplace<2,false,2>;
+template class MyLaplace<2,false,3>;
+template class MyLaplace<3,false,1>;
+template class MyLaplace<3,false,2>;
+template class MyLaplace<3,false,3>;
 //template class dealii::PreconditionBlockJacobi<LaplaceOperator<2, 1, true>,double >;
 //template class dealii::PreconditionBlockJacobi<LaplaceOperator<2, 1, false>,double >;
 //template class dealii::PreconditionBlockJacobi<LaplaceOperator<3, 1, true>,double >;

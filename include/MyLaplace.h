@@ -42,11 +42,11 @@
 #include <string>
 #include <fstream>
 
-template <int dim,bool same_diagonal = true>
+template <int dim=2,bool same_diagonal = true, unsigned int degree = 1>
 class MyLaplace
 {
 public:
-  MyLaplace (const unsigned int degree = 1);
+  MyLaplace ();
   ~MyLaplace ();
   void run ();
 
@@ -58,7 +58,7 @@ private:
   void compute_error () const;
   void output_results (const unsigned int cycle) const;
 
-  typedef LaplaceOperator<dim, 1, same_diagonal> SystemMatrixType;
+  typedef LaplaceOperator<dim, degree, same_diagonal> SystemMatrixType;
 
   dealii::IndexSet           locally_owned_dofs;
   dealii::IndexSet           locally_relevant_dofs;

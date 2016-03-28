@@ -39,6 +39,8 @@ void LaplaceOperator<dim, fe_degree, same_diagonal>::reinit (dealii::DoFHandler<
   level=level_;
   constraints = constraints_;
   mpi_communicator = mpi_communicator_;
+  if (!(dof_info = NULL))
+    delete dof_info;
   dof_info = new dealii::MeshWorker::DoFInfo<dim> {*dof_handler};
   Assert(fe->degree == fe_degree, dealii::ExcInternalError());
   const unsigned int n_gauss_points = dof_handler->get_fe().degree+1;
@@ -226,6 +228,14 @@ void LaplaceOperator<dim,fe_degree, same_diagonal>::Tvmult_add (LA::MPI::Vector 
 }
 
 template class LaplaceOperator<2, 1, true>;
+template class LaplaceOperator<2, 2, true>;
+template class LaplaceOperator<2, 3, true>;
 template class LaplaceOperator<2, 1, false>;
+template class LaplaceOperator<2, 2, false>;
+template class LaplaceOperator<2, 3, false>;
 template class LaplaceOperator<3, 1, true>;
+template class LaplaceOperator<3, 2, true>;
+template class LaplaceOperator<3, 3, true>;
 template class LaplaceOperator<3, 1, false>;
+template class LaplaceOperator<3, 2, false>;
+template class LaplaceOperator<3, 3, false>;
