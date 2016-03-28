@@ -11,7 +11,8 @@ LaplaceOperator<dim, fe_degree, same_diagonal>::~LaplaceOperator()
   dof_handler = NULL ;
   fe = NULL ;
   mapping = NULL ;
-  delete dof_info ;
+  if (!(dof_info = NULL))
+    delete dof_info ;
   dof_info = NULL ;
 }
 
@@ -21,7 +22,8 @@ void LaplaceOperator<dim, fe_degree, same_diagonal>::clear()
   dof_handler = NULL ;
   fe = NULL ;
   mapping = NULL ;
-  delete dof_info ;
+  if (!(dof_info = NULL))
+    delete dof_info ;
   dof_info = NULL ;
 }
 

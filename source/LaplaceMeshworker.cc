@@ -12,10 +12,10 @@ int main (int argc, char *argv[])
       std::ofstream logfile("deallog");
       dealii::deallog.attach(logfile);
       dealii::deallog.depth_console (2);
-      {
-        MyLaplace<2,true,3> dgmethod;
-        dgmethod.run ();
-      }
+//      {
+//        MyLaplace<2,true,3> dgmethod;
+//        dgmethod.run ();
+//      }
       {
         MyLaplace<2,true,2> dgmethod;
         dgmethod.run ();

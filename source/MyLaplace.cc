@@ -163,6 +163,7 @@ template <int dim,bool same_diagonal,unsigned int degree>
 void MyLaplace<dim,same_diagonal,degree>::setup_multigrid ()
 {
   const unsigned int n_global_levels = triangulation.n_global_levels();
+  //if we come here for the second setup an error is thrown, why?
   mg_matrix.resize(0, n_global_levels-1);
   for (unsigned int level=0; level<n_global_levels; ++level)
     {
