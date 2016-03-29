@@ -10,16 +10,16 @@ q3: 2d:  same_diagonal: smoothening 1: 14 21 26 31 34 38
 q3: 2d: !same_diagonal: smoothening 1:  8 17 28 35 45 54
 q3: 3d: !same_diagonal: smoothening 1: 11 22 32 39
 q3: 3d:  same_diagonal: smoothening 1: 22 29 34 39
-q1: 2d: !same_diagonal: smoothening 2:
+q1: 2d: !same_diagonal: smoothening 2:  3  6  8  9 10 10
 q1: 2d:  same_diagonal: smoothening 2:  5  7  8  8  8  8
-q1: 3d:  same_diagonal: smoothehing 2:
-q1: 3d: !same_diagonal: smoothening 2:
-q2: 2d:  same_diagonal: smoothening 2:
-q2: 2d: !same_diagonal: smoothening 2:  8 10 11 12 12 12
-q2: 3d:  same_diagonal: smoothening 2:
-q2: 3d: !same_diagonal: smoothening 2:
-q3: 2d:  same_diagonal: smoothening 2: 10 15 17 19 19 20
-q3: 2d: !same_diagonal: smoothening 2:
-q3: 3d: !same_diagonal: smoothening 2:
-q3: 3d:  same_diagonal: smoothening 2:
+q1: 3d:  same_diagonal: smoothehing 2:  6  8  9 10
+q1: 3d: !same_diagonal: smoothening 2:  4  6  9 10
+q2: 2d:  same_diagonal: smoothening 2:  8 10 11 12 12 12
+q2: 2d: !same_diagonal: smoothening 2:  5  9 15 18 21 23 
+q2: 3d:  same_diagonal: smoothening 2: 10 12 13 14
+q2: 3d: !same_diagonal: smoothening 2:  5 11 17 20
+q3: 2d:  same_diagonal: smoothening 2: 10 14 17 19 19 20
+q3: 2d: !same_diagonal: smoothening 2:  6 12 19 24 28 32
+q3: 3d: !same_diagonal: smoothening 2:  8 15 21 25
+q3: 3d:  same_diagonal: smoothening 2: 15 19 21 22
 

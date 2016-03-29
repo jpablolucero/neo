@@ -14,7 +14,7 @@ DEAL_II_INITIALIZE_CACHED_VARIABLES()
 PROJECT(laplace_meshworker)
 
 
-set(PARALLEL_LA 0 CACHE FILEPATH "Use deal.II (0) PETSc(1) or Trilinos(2)?")
+set(PARALLEL_LA 2 CACHE FILEPATH "Use deal.II (0) PETSc(1) or Trilinos(2)?")
 add_definitions(-DPARALLEL_LA=${PARALLEL_LA})
 
 option(CG "Use FE_Q?" OFF)
