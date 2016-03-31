@@ -1,11 +1,9 @@
 #include <PSCPreconditioner.h>
 
+#include <deal.II/base/timer.h>
 #include <deal.II/base/work_stream.h>
 #include <deal.II/dofs/dof_tools.h>
-
 #include <functional>
-
-#include <GlobalTimer.h>
 
 namespace implementation
 {
@@ -119,12 +117,12 @@ void PSCPreconditioner<dim, VectorType, number>::vmult_add (VectorType &dst,
 {
   std::string section = "Smoothing @ level ";
   section += std::to_string(data.ddh->get_level());
-  global_timer.enter_subsection(section);
+  timer->enter_subsection(section);
 
   implementation::WorkStream::parallel_loop<dim, VectorType, number>
   (&dst, &src, data.ddh, &(data.local_inverses));
   dst *= data.weight;
-  global_timer.leave_subsection();
+  timer->leave_subsection();
 }
 
 template <int dim, typename VectorType, class number>

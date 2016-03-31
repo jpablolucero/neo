@@ -3,6 +3,7 @@
 
 #include <DDHandler.h>
 
+#include <deal.II/base/timer.h>
 #include <deal.II/lac/vector.h>
 #include <deal.II/lac/full_matrix.h>
 #include <deal.II/dofs/dof_handler.h>
@@ -29,6 +30,8 @@ public:
   void vmult_add(VectorType &dst, const VectorType &src) const;
 
   void Tvmult_add(VectorType &dst, const VectorType &src) const;
+
+  static dealii::TimerOutput *timer;
 
 protected:
   AdditionalData data;
@@ -59,5 +62,9 @@ void PSCPreconditioner<dim, VectorType, number>::initialize(const GlobalOperator
 template <int dim, typename VectorType, class number>
 void PSCPreconditioner<dim, VectorType, number>::clear()
 {}
+
+template <int dim, typename VectorType, class number>
+dealii::TimerOutput *
+PSCPreconditioner<dim, VectorType, number>::timer;
 
 #endif

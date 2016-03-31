@@ -5,6 +5,7 @@
 #include <deal.II/base/conditional_ostream.h>
 #include <deal.II/base/mg_level_object.h>
 #include <deal.II/base/mpi.h>
+#include <deal.II/base/timer.h>
 #include <deal.II/base/utilities.h>
 #include <deal.II/distributed/tria.h>
 #include <deal.II/dofs/dof_handler.h>
@@ -85,6 +86,8 @@ private:
   dealii::MGLevelObject<SystemMatrixType >            mg_matrix ;
 
   dealii::ConditionalOStream pcout;
+
+  dealii::TimerOutput timer;
 };
 
 #endif // MYLAPLACE_H

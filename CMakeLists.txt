@@ -17,6 +17,9 @@ PROJECT(laplace_meshworker)
 set(PARALLEL_LA 2 CACHE FILEPATH "Use deal.II (0) PETSc(1) or Trilinos(2)?")
 add_definitions(-DPARALLEL_LA=${PARALLEL_LA})
 
+set(MAXTHREADS 0 CACHE FILEPATH "Maximum number of threads used per MPI process, 0 means no limit")
+add_definitions(-DMAXTHREADS=${MAXTHREADS})
+
 option(CG "Use FE_Q?" OFF)
 if(CG)
   add_definitions(-DCG)
@@ -31,6 +34,9 @@ option(MG "Multigrid Preconditioner?" ON)
 if (MG)
   add_definitions(-DMG)
 endif()
+
+set(SMOOTHENINGSTEPS 10 CACHE FILEPATH "Number of smoothening steps")
+add_definitions(-DSMOOTHENINGSTEPS=${SMOOTHENINGSTEPS})
 
 INCLUDE_DIRECTORIES(include)
 FILE(GLOB sources source/*.cc)

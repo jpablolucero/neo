@@ -1,6 +1,7 @@
 #ifndef LAPLACEOPERATOR_H
 #define LAPLACEOPERATOR_H
 
+#include <deal.II/base/timer.h>
 #include <deal.II/grid/tria.h>
 #include <deal.II/fe/mapping_q1.h>
 #include <deal.II/fe/fe_dgq.h>
@@ -72,13 +73,15 @@ public:
     return matrix(i,j);
   }
 
+  static dealii::TimerOutput *timer;
+
 private:
   unsigned int level ;
   dealii::DoFHandler<dim> *dof_handler;
   const dealii::FiniteElement<dim> *fe;
   const dealii::MappingQ1<dim>   *mapping;
   const dealii::ConstraintMatrix *constraints;
-  dealii::MeshWorker::DoFInfo<dim> *dof_info;
+  std::unique_ptr<dealii::MeshWorker::DoFInfo<dim> > dof_info;
   mutable dealii::MeshWorker::IntegrationInfoBox<dim> info_box;
   LA::MPI::SparseMatrix matrix ;
   MatrixIntegrator<dim,same_diagonal> matrix_integrator ;
@@ -86,5 +89,9 @@ private:
   mutable LA::MPI::Vector ghosted_vector;
   MPI_Comm mpi_communicator;
 };
+
+template <int dim, int fe_degree, bool same_diagonal>
+dealii::TimerOutput *
+LaplaceOperator<dim,fe_degree,same_diagonal>::timer;
 
 #endif // LAPLACEOPERATOR_H

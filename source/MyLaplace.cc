@@ -1,5 +1,4 @@
 #include <MyLaplace.h>
-#include <GlobalTimer.h>
 #include <DDHandler.h>
 #include <PSCPreconditioner.h>
 
@@ -13,8 +12,11 @@ MyLaplace<dim,same_diagonal,degree>::MyLaplace ()
   mapping (),
   fe (degree),
   dof_handler (triangulation),
-  pcout (std::cout,(dealii::Utilities::MPI::this_mpi_process(mpi_communicator)==0))
+  pcout (std::cout,(dealii::Utilities::MPI::this_mpi_process(mpi_communicator)==0)),
+  timer(mpi_communicator, pcout, dealii::TimerOutput::never,dealii::TimerOutput::wall_times)
 {
+  LaplaceOperator<dim, degree, same_diagonal>::timer = &timer;
+  //initialize timer
 #if PARALLEL_LA == 0
   pcout<< "Using deal.II parallel linear algebra" << std::endl;
 #elif PARALLEL_LA == 1
@@ -142,7 +144,6 @@ void MyLaplace<dim, same_diagonal, degree>::assemble_system ()
 
   dealii::MeshWorker::DoFInfo<dim> dof_info(dof_handler);
 
-//  dealii::MeshWorker::Assembler::ResidualSimple<LA::MPI::Vector > rhs_assembler;
   ResidualSimpleConstraints<LA::MPI::Vector > rhs_assembler;
   dealii::AnyData data;
   data.add<LA::MPI::Vector *>(&right_hand_side, "RHS");
@@ -163,21 +164,18 @@ template <int dim,bool same_diagonal,unsigned int degree>
 void MyLaplace<dim,same_diagonal,degree>::setup_multigrid ()
 {
   const unsigned int n_global_levels = triangulation.n_global_levels();
-  //if we come here for the second setup an error is thrown, why?
   mg_matrix.resize(0, n_global_levels-1);
   for (unsigned int level=0; level<n_global_levels; ++level)
     {
       mg_matrix[level].reinit(&dof_handler,&mapping,&constraints, mpi_communicator, level);
       mg_matrix[level].build_matrix();
     }
-//  coarse_matrix.reinit(dof_handler.n_dofs(0),dof_handler.n_dofs(0));
-//  coarse_matrix.copy_from(mg_matrix[0]) ;
 }
 
 template <int dim,bool same_diagonal,unsigned int degree>
 void MyLaplace<dim,same_diagonal,degree>::solve ()
 {
-  global_timer.enter_subsection("solve::mg_initialization");
+  timer.enter_subsection("solve::mg_initialization");
 #ifdef MG
   const LA::MPI::SparseMatrix &coarse_matrix = mg_matrix[0].get_coarse_matrix();
 
@@ -190,6 +188,7 @@ void MyLaplace<dim,same_diagonal,degree>::solve ()
 
   // Smoother setup
   typedef PSCPreconditioner<dim, LA::MPI::Vector, double> Smoother;
+  Smoother::timer = &timer;
 
   dealii::MGLevelObject<std::vector<dealii::FullMatrix<double> > > local_level_inverse;
   local_level_inverse.resize(mg_matrix.min_level(), mg_matrix.max_level());
@@ -275,7 +274,7 @@ void MyLaplace<dim,same_diagonal,degree>::solve ()
   // SmootherSetup
   dealii::MGSmootherPrecondition<SystemMatrixType, Smoother, LA::MPI::Vector> mg_smoother;
   mg_smoother.initialize(mg_matrix, smoother_data);
-  mg_smoother.set_steps(2);
+  mg_smoother.set_steps(SMOOTHENINGSTEPS);
   dealii::mg::Matrix<LA::MPI::Vector>         mgmatrix;
   mgmatrix.initialize(mg_matrix);
   dealii::MGTransferPrebuilt<LA::MPI::Vector> mg_transfer;
@@ -295,22 +294,22 @@ void MyLaplace<dim,same_diagonal,degree>::solve ()
   dealii::ReductionControl          solver_control (dof_handler.n_dofs(), 1.e-20, 1.e-10);
   dealii::SolverCG<LA::MPI::Vector> solver (solver_control);
 
-  global_timer.leave_subsection();
-  global_timer.enter_subsection("solve::solve");
+  timer.leave_subsection();
+  timer.enter_subsection("solve::solve");
   constraints.set_zero(solution_tmp);
   solver.solve(system_matrix,solution_tmp,right_hand_side,preconditioner);
 #ifdef CG
   constraints.distribute(solution_tmp);
 #endif
   solution = solution_tmp;
-  global_timer.leave_subsection();
+  timer.leave_subsection();
 }
 
 
 template <int dim,bool same_diagonal,unsigned int degree>
 void MyLaplace<dim, same_diagonal, degree>::compute_error () const
 {
-  dealii::QGauss<dim> quadrature (fe.degree+2);
+  dealii::QGauss<dim> quadrature (degree+2);
   dealii::Vector<double> local_errors;
 
   dealii::VectorTools::integrate_difference (mapping, dof_handler,
@@ -372,61 +371,61 @@ void MyLaplace<dim, same_diagonal, degree>::output_results (const unsigned int c
 template <int dim,bool same_diagonal,unsigned int degree>
 void MyLaplace<dim,same_diagonal,degree>::run ()
 {
-  for (unsigned int cycle=0; cycle<3; ++cycle)
+  for (unsigned int cycle=0; cycle<10-2*dim; ++cycle)
     {
       pcout << "Cycle " << cycle << std::endl;
-      global_timer.reset();
-
-      global_timer.enter_subsection("refine_global");
+      timer.reset();
+      timer.enter_subsection("refine_global");
       pcout << "Refine global" << std::endl;
       triangulation.refine_global (1);
-      global_timer.leave_subsection();
+      timer.leave_subsection();
 
-      dealii::deallog << "Number of active cells: " <<
-                      triangulation.n_global_active_cells() << std::endl;
-      global_timer.enter_subsection("setup_system");
+      pcout << "Number of active cells: "
+            << triangulation.n_global_active_cells()
+            << std::endl;
+      timer.enter_subsection("setup_system");
       pcout << "Setup system" << std::endl;
       setup_system ();
       pcout << "Assemble system" << std::endl;
       assemble_system();
-      global_timer.leave_subsection();
+      timer.leave_subsection();
       dealii::deallog << "DoFHandler levels: ";
       for (unsigned int l=0; l<triangulation.n_global_levels(); ++l)
         dealii::deallog << ' ' << dof_handler.n_dofs(l);
       dealii::deallog << std::endl;
 #ifdef MG
-      global_timer.enter_subsection("setup_multigrid");
+      timer.enter_subsection("setup_multigrid");
       pcout << "Setup multigrid" << std::endl;
       setup_multigrid ();
-      global_timer.leave_subsection();
+      timer.leave_subsection();
 #endif
-      global_timer.enter_subsection("solve");
+      timer.enter_subsection("solve");
       pcout << "Solve" << std::endl;
       solve ();
-      global_timer.leave_subsection();
-      global_timer.enter_subsection("output");
+      timer.leave_subsection();
+      timer.enter_subsection("output");
       pcout << "Output" << std::endl;
       compute_error();
       output_results(cycle);
-      global_timer.leave_subsection();
-      global_timer.print_summary();
-      dealii::deallog << std::endl;
+      timer.leave_subsection();
+      timer.print_summary();
+      pcout << std::endl;
     }
 }
 
 template class MyLaplace<2,true,1>;
 template class MyLaplace<2,true,2>;
 template class MyLaplace<2,true,3>;
+template class MyLaplace<2,true,4>;
 template class MyLaplace<3,true,1>;
 template class MyLaplace<3,true,2>;
 template class MyLaplace<3,true,3>;
+template class MyLaplace<3,true,4>;
 template class MyLaplace<2,false,1>;
 template class MyLaplace<2,false,2>;
 template class MyLaplace<2,false,3>;
+template class MyLaplace<2,false,4>;
 template class MyLaplace<3,false,1>;
 template class MyLaplace<3,false,2>;
 template class MyLaplace<3,false,3>;
-//template class dealii::PreconditionBlockJacobi<LaplaceOperator<2, 1, true>,double >;
-//template class dealii::PreconditionBlockJacobi<LaplaceOperator<2, 1, false>,double >;
-//template class dealii::PreconditionBlockJacobi<LaplaceOperator<3, 1, true>,double >;
-//template class dealii::PreconditionBlockJacobi<LaplaceOperator<3, 1, false>,double >;
+template class MyLaplace<3,false,4>;
