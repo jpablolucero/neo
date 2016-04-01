@@ -121,7 +121,7 @@ void MyLaplace<dim,same_diagonal,degree>::setup_system ()
   solution_tmp.reinit (locally_owned_dofs, mpi_communicator);
   right_hand_side.reinit (locally_owned_dofs, mpi_communicator);
 
-  system_matrix.reinit (&dof_handler,&mapping, &constraints, mpi_communicator, triangulation.n_global_levels()-1) ;
+  system_matrix.reinit (&dof_handler,&mapping, &constraints, mpi_communicator, triangulation.n_global_levels()-1);
 }
 
 

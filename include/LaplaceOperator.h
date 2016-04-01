@@ -83,10 +83,10 @@ private:
   const dealii::ConstraintMatrix *constraints;
   std::unique_ptr<dealii::MeshWorker::DoFInfo<dim> > dof_info;
   mutable dealii::MeshWorker::IntegrationInfoBox<dim> info_box;
-  LA::MPI::SparseMatrix matrix ;
-  MatrixIntegrator<dim,same_diagonal> matrix_integrator ;
-  ResidualIntegrator<dim> residual_integrator ;
-  mutable LA::MPI::Vector ghosted_vector;
+  LA::MPI::SparseMatrix matrix;
+  MatrixIntegrator<dim,same_diagonal> matrix_integrator;
+  ResidualIntegrator<dim> residual_integrator;
+  mutable dealii::MGLevelObject<LA::MPI::Vector> ghosted_src;
   MPI_Comm mpi_communicator;
 };
 
