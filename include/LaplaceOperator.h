@@ -12,6 +12,7 @@
 #include <deal.II/meshworker/loop.h>
 
 #include <generic_linear_algebra.h>
+#include <Integrators.h>
 
 
 template <int dim, int fe_degree, bool same_diagonal>
@@ -76,14 +77,13 @@ public:
 
 private:
   unsigned int                                        level;
-  dealii::DoFHandler<dim> *                           dof_handler; 
+  dealii::DoFHandler<dim>                            *dof_handler;
   const dealii::FiniteElement<dim> *fe;
-  const dealii::MappingQ1<dim> *                      mapping;
+  const dealii::MappingQ1<dim>                       *mapping;
   const dealii::ConstraintMatrix *constraints;
   std::unique_ptr<dealii::MeshWorker::DoFInfo<dim> >  dof_info;
   mutable dealii::MeshWorker::IntegrationInfoBox<dim> info_box;
   LA::MPI::SparseMatrix                               matrix;
-  dealii::ConstraintMatrix                            cmatrix_dummy;
   MatrixIntegrator<dim,same_diagonal>                 matrix_integrator;
   ResidualIntegrator<dim>                             residual_integrator;
   mutable dealii::MGLevelObject<LA::MPI::Vector> ghosted_src;

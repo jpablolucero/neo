@@ -13,7 +13,7 @@ void Coefficient<dim>::value_list (const std::vector<dealii::Point<dim> > &point
                                    const unsigned int                     component) const
 {
   Assert (values.size() == points.size(),
-		  dealii::ExcDimensionMismatch (values.size(), points.size()));
+          dealii::ExcDimensionMismatch (values.size(), points.size()));
 
   const unsigned int n_points = points.size();
   for (unsigned int i=0; i<n_points; ++i)

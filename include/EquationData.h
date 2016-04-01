@@ -14,8 +14,8 @@ public:
   double value (const dealii::Point<dim>  &p,
                 const unsigned int        component = 0) const override;
   void value_list (const std::vector<dealii::Point<dim> > &points,
-                           std::vector<double>                    &values,
-                           const unsigned int                     component = 0) const override;
+                   std::vector<double>                    &values,
+                   const unsigned int                     component = 0) const override;
 };
 
 #endif // EQUATIONDATA_H

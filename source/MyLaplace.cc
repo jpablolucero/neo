@@ -1,4 +1,5 @@
 #include <MyLaplace.h>
+#include <PSCPreconditioner.h>
 
 template <int dim,bool same_diagonal,unsigned int degree>
 MyLaplace<dim,same_diagonal,degree>::MyLaplace ()
@@ -131,7 +132,7 @@ template <int dim, bool same_diagonal, unsigned int degree>
 void MyLaplace<dim, same_diagonal, degree>::assemble_system ()
 {
   dealii::MeshWorker::IntegrationInfoBox<dim> info_box;
-  
+
   const unsigned int n_gauss_points = dof_handler.get_fe().degree+1;
   info_box.initialize_gauss_quadrature(n_gauss_points,
                                        n_gauss_points,
@@ -140,7 +141,7 @@ void MyLaplace<dim, same_diagonal, degree>::assemble_system ()
   dealii::UpdateFlags update_flags = dealii::update_quadrature_points |
                                      dealii::update_values;
   info_box.add_update_flags(update_flags, true, true, true, true);
-  
+
   info_box.initialize(fe, mapping, &(dof_handler.block_info()));
 
   dealii::MeshWorker::DoFInfo<dim> dof_info(dof_handler.block_info());
@@ -155,7 +156,7 @@ void MyLaplace<dim, same_diagonal, degree>::assemble_system ()
 
   dealii::MeshWorker::integration_loop<dim, dim>(dof_handler.begin_active(), dof_handler.end(),
                                                  dof_info, info_box,
-						 rhs_integrator, rhs_assembler);
+                                                 rhs_integrator, rhs_assembler);
   right_hand_side.compress(dealii::VectorOperation::add);
 }
 
@@ -191,7 +192,7 @@ void MyLaplace<dim,same_diagonal,degree>::solve ()
 
   dealii::MGLevelObject<std::vector<dealii::FullMatrix<double> > > local_level_inverse;
   local_level_inverse.resize(mg_matrix.min_level(), mg_matrix.max_level());
-  dealii::MGLevelObject<DGDDHandler<dim, double> > level_ddh;
+  dealii::MGLevelObject<DGDDHandler<dim> > level_ddh;
   level_ddh.resize(mg_matrix.min_level(), mg_matrix.max_level());
   dealii::MGLevelObject<typename Smoother::AdditionalData> smoother_data;
   smoother_data.resize(mg_matrix.min_level(), mg_matrix.max_level());
@@ -378,7 +379,7 @@ void MyLaplace<dim,same_diagonal,degree>::run ()
       pcout << "Refine global" << std::endl;
       triangulation.refine_global (1);
       timer.leave_subsection();
-      dealii::deallog << "Finite element: " << fe.get_name() << std::endl;
+      pcout << "Finite element: " << fe.get_name() << std::endl;
       pcout << "Number of active cells: "
             << triangulation.n_global_active_cells()
             << std::endl;

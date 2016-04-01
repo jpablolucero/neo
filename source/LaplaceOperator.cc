@@ -8,6 +8,7 @@ template <int dim, int fe_degree, bool same_diagonal>
 LaplaceOperator<dim, fe_degree, same_diagonal>::~LaplaceOperator()
 {
   dof_handler = NULL ;
+  fe = NULL ;
   mapping = NULL ;
 }
 
@@ -15,6 +16,7 @@ template <int dim, int fe_degree, bool same_diagonal>
 void LaplaceOperator<dim, fe_degree, same_diagonal>::clear()
 {
   dof_handler = NULL ;
+  fe = NULL ;
   mapping = NULL ;
 }
 
@@ -35,7 +37,7 @@ void LaplaceOperator<dim, fe_degree, same_diagonal>::reinit
   constraints = constraints_;
   mpi_communicator = mpi_communicator_;
   std::unique_ptr<dealii::MeshWorker::DoFInfo<dim> > tmp
-  (new dealii::MeshWorker::DoFInfo<dim> {*dof_handler});
+  (new dealii::MeshWorker::DoFInfo<dim> {dof_handler->block_info()});
   dof_info = std::move(tmp);
   Assert(fe->degree == fe_degree, dealii::ExcInternalError());
   const unsigned int n_gauss_points = dof_handler->get_fe().degree+1;
@@ -52,6 +54,7 @@ void LaplaceOperator<dim, fe_degree, same_diagonal>::reinit
   info_box.cell_selector.add("src", true, true, false);
   info_box.boundary_selector.add("src", true, true, false);
   info_box.face_selector.add("src", true, true, false);
+
   dealii::IndexSet locally_owned_level_dofs = dof_handler->locally_owned_mg_dofs(level);
   dealii::IndexSet locally_relevant_level_dofs;
   dealii::DoFTools::extract_locally_relevant_level_dofs
@@ -197,10 +200,10 @@ void LaplaceOperator<dim,fe_degree,same_diagonal>::vmult_add (LA::MPI::Vector &d
   timer->leave_subsection();
 
   timer->enter_subsection("LO::vmult_add::assembler_setup");
-  info_box.initialize(*fe, *mapping, src_data, ghosted_src, &(dof_handler->block_info());
+  info_box.initialize(*fe, *mapping, src_data, ghosted_src, &(dof_handler->block_info()));
   dealii::MeshWorker::Assembler::ResidualSimple<LA::MPI::Vector > assembler;
   assembler.initialize(dst_data);
-  assembler.initialize(constraints);
+  assembler.initialize(*constraints);
   timer->leave_subsection();
 
   timer->enter_subsection("LO::vmult_add::IntegrationLoop");

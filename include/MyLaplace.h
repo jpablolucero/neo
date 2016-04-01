@@ -1,7 +1,6 @@
 #ifndef MYLAPLACE_H
 #define MYLAPLACE_H
 
-#include <deal.II/fe/fe_system.h>
 #include <deal.II/algorithms/any_data.h>
 #include <deal.II/base/conditional_ostream.h>
 #include <deal.II/base/mg_level_object.h>
@@ -39,12 +38,7 @@
 
 #include <LaplaceOperator.h>
 #include <referencefunction.h>
-#include <Integrators.h>
-#include <GlobalTimer.h>
-#include <RHSIntegrator.h>
 #include <ResidualSimpleConstraints.h>
-#include <DDHandler.h>
-#include <PSCPreconditioner.h>
 
 #include <string>
 #include <fstream>
