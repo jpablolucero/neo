@@ -186,6 +186,7 @@ void LaplaceOperator<dim,fe_degree,same_diagonal>::Tvmult (LA::MPI::Vector &dst,
   dst = 0;
   Tvmult_add(dst, src);
   dst.compress(dealii::VectorOperation::add);
+  AssertIsFinite(dst.l2_norm());
 }
 
 template <int dim, int fe_degree, bool same_diagonal>
@@ -204,7 +205,9 @@ void LaplaceOperator<dim,fe_degree,same_diagonal>::vmult_add (LA::MPI::Vector &d
   info_box.initialize(*fe, *mapping, src_data, ghosted_src, &(dof_handler->block_info()));
   dealii::MeshWorker::Assembler::ResidualSimple<LA::MPI::Vector > assembler;
   assembler.initialize(dst_data);
-  assembler.initialize(*constraints);
+//  assembler.initialize(*constraints);
+//  std::cout << "Constraints: " << std::endl;
+//  constraints->print(std::cout);
   timer->leave_subsection();
 
   timer->enter_subsection("LO::vmult_add::IntegrationLoop");
@@ -220,6 +223,7 @@ void LaplaceOperator<dim,fe_degree, same_diagonal>::Tvmult_add (LA::MPI::Vector 
 {
   dst = 0;
   vmult_add(dst, src);
+  AssertIsFinite(dst.l2_norm());
 }
 
 #include "LaplaceOperator.inst"

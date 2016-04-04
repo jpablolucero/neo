@@ -33,7 +33,7 @@ MyLaplace<dim,same_diagonal,degree>::MyLaplace ()
   pcout<< "Using FE_DGQ elements" << std::endl;
 #endif
 
-  dealii::GridGenerator::hyper_cube (triangulation,0.,1., true);
+  dealii::GridGenerator::hyper_cube (triangulation,-1,1., true);
 
 #ifdef PERIODIC
   //add periodicity

@@ -16,7 +16,7 @@ public:
   virtual double value(const dealii::Point<dim> &p,
                        const unsigned int /*component = 0*/) const
   {
-    const double pi2 = dealii::numbers::PI;
+    const double pi2 = dealii::numbers::PI_2;
     return std::sin(pi2*p(0))*std::sin(pi2*p(1));
   }
 
@@ -24,7 +24,7 @@ public:
   virtual double laplacian(const dealii::Point<dim> &p,
                            const unsigned int /*component = 0*/) const
   {
-    const double pi2 = dealii::numbers::PI;
+    const double pi2 = dealii::numbers::PI_2;
     const double return_value = -2*pi2*pi2*std::sin(pi2*p(0))*std::sin(pi2*p(1));
     return return_value;
   }

@@ -86,7 +86,7 @@ private:
   LA::MPI::SparseMatrix                               matrix;
   MatrixIntegrator<dim,same_diagonal>                 matrix_integrator;
   ResidualIntegrator<dim>                             residual_integrator;
-  mutable dealii::MGLevelObject<LA::MPI::Vector> ghosted_src;
+  mutable dealii::MGLevelObject<LA::MPI::Vector>      ghosted_src;
   MPI_Comm mpi_communicator;
 };
 

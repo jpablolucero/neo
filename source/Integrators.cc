@@ -11,6 +11,7 @@ void MatrixIntegrator<dim, same_diagonal>::cell(dealii::MeshWorker::DoFInfo<dim>
 {
   const dealii::FEValuesBase<dim> &fev = info.fe_values(0) ;
   const unsigned int n_blocks = dinfo.block_info->local().size();
+  Assert(n_blocks>0, dealii::ExcMessage("BlockInfo not initialized!"));
   const unsigned int n_quads = fev.n_quadrature_points;
 
   for ( unsigned int b=0; b<n_blocks; ++b )
@@ -31,6 +32,7 @@ void MatrixIntegrator<dim,same_diagonal>::face(dealii::MeshWorker::DoFInfo<dim> 
   const dealii::FEValuesBase<dim> &fev1 = info1.fe_values(0);
   const dealii::FEValuesBase<dim> &fev2 = info2.fe_values(0);
   const unsigned int n_blocks = dinfo1.block_info->local().size();
+  Assert(n_blocks>0, dealii::ExcMessage("BlockInfo not initialized!"));
   const unsigned int n_quads = fev1.n_quadrature_points;
   const unsigned int deg1 = info1.fe_values(0).get_fe().tensor_degree();
   const unsigned int deg2 = info2.fe_values(0).get_fe().tensor_degree();
@@ -72,6 +74,7 @@ void MatrixIntegrator<dim,same_diagonal>::boundary(dealii::MeshWorker::DoFInfo<d
   const dealii::FEValuesBase<dim> &fev = info.fe_values(0);
   const unsigned int deg = info.fe_values(0).get_fe().tensor_degree();
   const unsigned int n_blocks = dinfo.block_info->local().size();
+  Assert(n_blocks>0, dealii::ExcMessage("BlockInfo not initialized!"));
   const unsigned int n_quads = fev.n_quadrature_points;
 
   for ( unsigned int b=0; b<n_blocks; ++b )
@@ -97,6 +100,7 @@ void ResidualIntegrator<dim>::cell(dealii::MeshWorker::DoFInfo<dim> &dinfo,
   const dealii::FEValuesBase<dim> &fev = info.fe_values(0);
   dealii::BlockVector<double> &localdst = dinfo.vector(0);
   const unsigned int n_blocks = localdst.n_blocks();
+  Assert(n_blocks>0, dealii::ExcMessage("BlockInfo not initialized!"));
   const unsigned int n_quads = fev.n_quadrature_points;
 
   const std::vector<std::vector<dealii::Tensor<1,dim> > > &Dsrc = info.gradients[0];
@@ -120,6 +124,7 @@ void ResidualIntegrator<dim>::face(dealii::MeshWorker::DoFInfo<dim> &dinfo1,
   dealii::BlockVector<double> &localdst1 = dinfo1.vector(0);
   dealii::BlockVector<double> &localdst2 = dinfo2.vector(0);
   const unsigned int n_blocks = localdst1.n_blocks();
+  Assert(n_blocks>0, dealii::ExcMessage("BlockInfo not initialized!"));
   const unsigned int n_quads = fev1.n_quadrature_points;
   const unsigned int deg1 = fev1.get_fe().tensor_degree();
   const unsigned int deg2 = fev2.get_fe().tensor_degree();
@@ -149,6 +154,7 @@ void ResidualIntegrator<dim>::boundary(dealii::MeshWorker::DoFInfo<dim> &dinfo,
   const unsigned int deg = fev.get_fe().tensor_degree();
   dealii::BlockVector<double> &localdst = dinfo.vector(0);
   const unsigned int n_blocks = localdst.n_blocks();
+  Assert(n_blocks>0, dealii::ExcMessage("BlockInfo not initialized!"));
   const unsigned int n_quads = fev.n_quadrature_points;
 
   const std::vector<std::vector<dealii::Tensor<1,dim> > > &Dsrc = info.gradients[0];
@@ -179,6 +185,7 @@ void RHSIntegrator<dim>::cell(dealii::MeshWorker::DoFInfo<dim> &dinfo, typename 
   const dealii::FEValuesBase<dim> &fev = info.fe_values(0);
   dealii::BlockVector<double> &result = dinfo.vector(0);
   const unsigned int n_blocks = result.n_blocks();
+  Assert(n_blocks>0, dealii::ExcMessage("BlockInfo not initialized!"));
   const unsigned int n_quads = fev.n_quadrature_points;
 
   std::vector<double> exact_laplacian(n_quads);
@@ -199,25 +206,25 @@ template <int dim>
 void RHSIntegrator<dim>::boundary(dealii::MeshWorker::DoFInfo<dim> &dinfo, typename dealii::MeshWorker::IntegrationInfo<dim> &info) const
 {
 #ifndef CG
-  /*const dealii::FEValuesBase<dim> &fe = info.fe_values();
+  const dealii::FEValuesBase<dim> &fe = info.fe_values();
   dealii::BlockVector<double> &result = dinfo.vector(0);
   const unsigned int n_blocks = result.n_blocks();
+  Assert(n_blocks>0, dealii::ExcMessage("BlockInfo not initialized!"));
+  const unsigned int deg = fe.get_fe().tensor_degree();
+  const double penalty = 2. * deg * (deg+1) * dinfo.face->measure() / dinfo.cell->measure();
+
   for ( unsigned int b=0; b<n_blocks; ++b)
     {
-        dealii::Vector<double> &local_vector = dinfo.vector(0).block(b);
+      dealii::Vector<double> &local_vector = dinfo.vector(0).block(b);
+      std::vector<double> boundary_values(fe.n_quadrature_points);
+      exact_solution.value_list(fe.get_quadrature_points(), boundary_values);
 
-        std::vector<double> boundary_values(fe.n_quadrature_points);
-        exact_solution.value_list(fe.get_quadrature_points(), boundary_values);
-
-        const unsigned int deg = fe.get_fe().tensor_degree();
-        const double penalty = 2. * deg * (deg+1) * dinfo.face->measure() / dinfo.cell->measure();
-
-        for (unsigned k=0; k<fe.n_quadrature_points; ++k)
+      for (unsigned k=0; k<fe.n_quadrature_points; ++k)
         for (unsigned int i=0; i<fe.dofs_per_cell; ++i)
-        local_vector(i) += (fe.shape_value(i,k) * penalty * boundary_values[k]
-                          - (fe.normal_vector(k) * fe.shape_grad(i,k)) * boundary_values[k])
-                         * fe.JxW(k);
-  }*/
+          local_vector(i) += (fe.shape_value(i,k) * penalty * boundary_values[k]
+                              - (fe.normal_vector(k) * fe.shape_grad(i,k)) * boundary_values[k])
+                             * fe.JxW(k);
+    }
 #endif
 
 
