@@ -1,0 +1,22 @@
+#ifndef LAPLACEOPERATOR_INST
+#define LAPLACEOPERATOR_INST
+
+template class LaplaceOperator<2, 1, true>;
+template class LaplaceOperator<2, 2, true>;
+template class LaplaceOperator<2, 3, true>;
+template class LaplaceOperator<2, 4, true>;
+template class LaplaceOperator<2, 1, false>;
+template class LaplaceOperator<2, 2, false>;
+template class LaplaceOperator<2, 3, false>;
+template class LaplaceOperator<2, 4, false>;
+template class LaplaceOperator<3, 1, true>;
+template class LaplaceOperator<3, 2, true>;
+template class LaplaceOperator<3, 3, true>;
+template class LaplaceOperator<3, 4, true>;
+template class LaplaceOperator<3, 1, false>;
+template class LaplaceOperator<3, 2, false>;
+template class LaplaceOperator<3, 3, false>;
+template class LaplaceOperator<3, 4, false>;
+
+#endif // LAPLACEOPERATOR_INST
+
