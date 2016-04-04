@@ -42,6 +42,7 @@ public:
             typename dealii::MeshWorker::IntegrationInfo<dim> &info2) const override;
 private:
   Coefficient<dim> diffcoeff;
+  ReferenceFunction<dim> exact_solution;
 };
 
 template <int dim>

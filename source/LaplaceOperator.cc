@@ -176,6 +176,7 @@ void LaplaceOperator<dim,fe_degree,same_diagonal>::vmult (LA::MPI::Vector &dst,
   dst = 0;
   vmult_add(dst, src);
   dst.compress(dealii::VectorOperation::add);
+  AssertIsFinite(dst.l2_norm());
 }
 
 template <int dim, int fe_degree, bool same_diagonal>

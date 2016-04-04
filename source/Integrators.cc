@@ -10,7 +10,7 @@ void MatrixIntegrator<dim, same_diagonal>::cell(dealii::MeshWorker::DoFInfo<dim>
                                                 typename dealii::MeshWorker::IntegrationInfo<dim> &info) const
 {
   const dealii::FEValuesBase<dim> &fev = info.fe_values(0) ;
-  const unsigned int n_blocks = dinfo.block_info->global().size();
+  const unsigned int n_blocks = dinfo.block_info->local().size();
   const unsigned int n_quads = fev.n_quadrature_points;
 
   for ( unsigned int b=0; b<n_blocks; ++b )
@@ -30,7 +30,7 @@ void MatrixIntegrator<dim,same_diagonal>::face(dealii::MeshWorker::DoFInfo<dim> 
 {
   const dealii::FEValuesBase<dim> &fev1 = info1.fe_values(0);
   const dealii::FEValuesBase<dim> &fev2 = info2.fe_values(0);
-  const unsigned int n_blocks = dinfo1.block_info->global().size();
+  const unsigned int n_blocks = dinfo1.block_info->local().size();
   const unsigned int n_quads = fev1.n_quadrature_points;
   const unsigned int deg1 = info1.fe_values(0).get_fe().tensor_degree();
   const unsigned int deg2 = info2.fe_values(0).get_fe().tensor_degree();
@@ -71,7 +71,7 @@ void MatrixIntegrator<dim,same_diagonal>::boundary(dealii::MeshWorker::DoFInfo<d
 {
   const dealii::FEValuesBase<dim> &fev = info.fe_values(0);
   const unsigned int deg = info.fe_values(0).get_fe().tensor_degree();
-  const unsigned int n_blocks = dinfo.block_info->global().size();
+  const unsigned int n_blocks = dinfo.block_info->local().size();
   const unsigned int n_quads = fev.n_quadrature_points;
 
   for ( unsigned int b=0; b<n_blocks; ++b )
@@ -196,8 +196,32 @@ void RHSIntegrator<dim>::cell(dealii::MeshWorker::DoFInfo<dim> &dinfo, typename 
 }
 
 template <int dim>
-void RHSIntegrator<dim>::boundary(dealii::MeshWorker::DoFInfo<dim> &, typename dealii::MeshWorker::IntegrationInfo<dim> &) const
-{}
+void RHSIntegrator<dim>::boundary(dealii::MeshWorker::DoFInfo<dim> &dinfo, typename dealii::MeshWorker::IntegrationInfo<dim> &info) const
+{
+#ifndef CG
+  /*const dealii::FEValuesBase<dim> &fe = info.fe_values();
+  dealii::BlockVector<double> &result = dinfo.vector(0);
+  const unsigned int n_blocks = result.n_blocks();
+  for ( unsigned int b=0; b<n_blocks; ++b)
+    {
+        dealii::Vector<double> &local_vector = dinfo.vector(0).block(b);
+
+        std::vector<double> boundary_values(fe.n_quadrature_points);
+        exact_solution.value_list(fe.get_quadrature_points(), boundary_values);
+
+        const unsigned int deg = fe.get_fe().tensor_degree();
+        const double penalty = 2. * deg * (deg+1) * dinfo.face->measure() / dinfo.cell->measure();
+
+        for (unsigned k=0; k<fe.n_quadrature_points; ++k)
+        for (unsigned int i=0; i<fe.dofs_per_cell; ++i)
+        local_vector(i) += (fe.shape_value(i,k) * penalty * boundary_values[k]
+                          - (fe.normal_vector(k) * fe.shape_grad(i,k)) * boundary_values[k])
+                         * fe.JxW(k);
+  }*/
+#endif
+
+
+}
 
 template <int dim>
 void RHSIntegrator<dim>::face(dealii::MeshWorker::DoFInfo<dim> &,

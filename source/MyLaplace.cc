@@ -33,7 +33,7 @@ MyLaplace<dim,same_diagonal,degree>::MyLaplace ()
   pcout<< "Using FE_DGQ elements" << std::endl;
 #endif
 
-  dealii::GridGenerator::hyper_cube (triangulation,-1.,1., true);
+  dealii::GridGenerator::hyper_cube (triangulation,0.,1., true);
 
 #ifdef PERIODIC
   //add periodicity
@@ -139,7 +139,7 @@ void MyLaplace<dim, same_diagonal, degree>::assemble_system ()
                                        n_gauss_points);
   info_box.initialize_update_flags();
   dealii::UpdateFlags update_flags = dealii::update_quadrature_points |
-                                     dealii::update_values;
+                                     dealii::update_values | dealii::update_gradients;
   info_box.add_update_flags(update_flags, true, true, true, true);
 
   info_box.initialize(fe, mapping, &(dof_handler.block_info()));

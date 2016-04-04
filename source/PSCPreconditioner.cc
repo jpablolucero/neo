@@ -101,6 +101,8 @@ void PSCPreconditioner<dim, VectorType, number>::vmult (VectorType &dst,
 {
   dst = 0;
   vmult_add(dst, src);
+  dst.compress(dealii::VectorOperation::add);
+  AssertIsFinite(dst.l2_norm());
 }
 
 template <int dim, typename VectorType, class number>
@@ -109,6 +111,7 @@ void PSCPreconditioner<dim, VectorType, number>::Tvmult (VectorType &dst,
 {
   dst = 0;
   Tvmult_add(dst, src);
+  dst.compress(dealii::VectorOperation::add);
 }
 
 template <int dim, typename VectorType, class number>
