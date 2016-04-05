@@ -37,7 +37,7 @@
 #include <deal.II/numerics/vector_tools.templates.h>
 
 #include <LaplaceOperator.h>
-#include <referencefunction.h>
+#include <EquationData.h>
 #include <ResidualSimpleConstraints.h>
 
 #include <string>

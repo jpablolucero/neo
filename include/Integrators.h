@@ -12,7 +12,6 @@
 
 #include <Diffusion.h>
 #include <EquationData.h>
-#include <referencefunction.h>
 
 template <int dim,bool same_diagonal=true>
 class MatrixIntegrator final : public dealii::MeshWorker::LocalIntegrator<dim>
@@ -57,6 +56,7 @@ public:
             typename dealii::MeshWorker::IntegrationInfo<dim> &info1,
             typename dealii::MeshWorker::IntegrationInfo<dim> &info2) const override;
 private:
+  Coefficient<dim> diffcoeff;
   ReferenceFunction<dim> exact_solution;
 };
 
