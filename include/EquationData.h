@@ -16,6 +16,8 @@ class DiffCoefficient final : public dealii::Function<dim>
   virtual void value_list (const std::vector<dealii::Point<dim> > &points,
 			   std::vector<double>                    &values,
 			   const unsigned int                     block = 0) const override;
+  virtual dealii::Tensor<1,dim> gradient (const dealii::Point<dim>  &p,
+					  const unsigned int        component = 0) const override;
 };
 
 template <int dim>
