@@ -12,7 +12,7 @@ MyLaplace<dim,same_diagonal,degree>::MyLaplace ()
 #ifdef CG
   fe(dealii::FE_Q<dim>(degree),1),
 #else
-  fe(dealii::FE_DGQ<dim>(degree),1),
+  fe(dealii::FESystem<dim>(dealii::FE_DGQ<dim>(degree),1), 2),
 #endif
   dof_handler (triangulation),
   pcout (std::cout,(dealii::Utilities::MPI::this_mpi_process(mpi_communicator)==0)),
@@ -146,7 +146,8 @@ void MyLaplace<dim, same_diagonal, degree>::assemble_system ()
 
   dealii::MeshWorker::DoFInfo<dim> dof_info(dof_handler.block_info());
 
-  ResidualSimpleConstraints<LA::MPI::Vector > rhs_assembler;
+  //ResidualSimpleConstraints<LA::MPI::Vector > rhs_assembler;
+  dealii::MeshWorker::Assembler::ResidualSimple<LA::MPI::Vector > rhs_assembler;
   dealii::AnyData data;
   data.add<LA::MPI::Vector *>(&right_hand_side, "RHS");
   rhs_assembler.initialize(data);
@@ -405,7 +406,7 @@ void MyLaplace<dim,same_diagonal,degree>::run ()
       timer.leave_subsection();
       timer.enter_subsection("output");
       pcout << "Output" << std::endl;
-      compute_error();
+      //      compute_error();
       output_results(cycle);
       timer.leave_subsection();
       timer.print_summary();

@@ -19,22 +19,6 @@ int main (int argc, char *argv[])
       if (dealii::Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0)
         dealii::deallog.depth_console (2);
       {
-        MyLaplace<2,true,1> dgmethod;
-        dgmethod.run ();
-      }
-      {
-        MyLaplace<2,true,2> dgmethod;
-        dgmethod.run ();
-      }
-      {
-        MyLaplace<2,true,3> dgmethod;
-        dgmethod.run ();
-      }
-      {
-        MyLaplace<2,true,4> dgmethod;
-        dgmethod.run ();
-      }
-      {
         MyLaplace<2,false,1> dgmethod;
         dgmethod.run ();
       }
@@ -51,22 +35,6 @@ int main (int argc, char *argv[])
         dgmethod.run ();
       }
       {
-        MyLaplace<3,true,1> dgmethod;
-        dgmethod.run ();
-      }
-      {
-        MyLaplace<3,true,2> dgmethod;
-        dgmethod.run ();
-      }
-      {
-        MyLaplace<3,true,3> dgmethod;
-        dgmethod.run ();
-      }
-      {
-        MyLaplace<3,true,4> dgmethod;
-        dgmethod.run ();
-      }
-      {
         MyLaplace<3,false,1> dgmethod;
         dgmethod.run ();
       }
@@ -80,6 +48,39 @@ int main (int argc, char *argv[])
       }
       {
         MyLaplace<3,false,4> dgmethod;
+        dgmethod.run ();
+      }
+      {
+        MyLaplace<2,true,1> dgmethod;
+        dgmethod.run ();
+      }
+      {
+        MyLaplace<2,true,2> dgmethod;
+        dgmethod.run ();
+      }
+      {
+        MyLaplace<2,true,3> dgmethod;
+        dgmethod.run ();
+      }
+      {
+        MyLaplace<2,true,4> dgmethod;
+        dgmethod.run ();
+      }
+
+      {
+        MyLaplace<3,true,1> dgmethod;
+        dgmethod.run ();
+      }
+      {
+        MyLaplace<3,true,2> dgmethod;
+        dgmethod.run ();
+      }
+      {
+        MyLaplace<3,true,3> dgmethod;
+        dgmethod.run ();
+      }
+      {
+        MyLaplace<3,true,4> dgmethod;
         dgmethod.run ();
       }
     }

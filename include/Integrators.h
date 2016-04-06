@@ -25,7 +25,9 @@ public:
             typename dealii::MeshWorker::IntegrationInfo<dim> &info1,
             typename dealii::MeshWorker::IntegrationInfo<dim> &info2) const override;
 private:
-  Coefficient<dim> diffcoeff;
+  DiffCoefficient<dim> diffcoeff;
+  TotalCoefficient<dim> totalcoeff;
+  ReacCoefficient<dim> reaccoeff;
 };
 
 template <int dim>
@@ -40,8 +42,10 @@ public:
             typename dealii::MeshWorker::IntegrationInfo<dim> &info1,
             typename dealii::MeshWorker::IntegrationInfo<dim> &info2) const override;
 private:
-  Coefficient<dim> diffcoeff;
+  DiffCoefficient<dim> diffcoeff;
   ReferenceFunction<dim> exact_solution;
+  TotalCoefficient<dim> totalcoeff;
+  ReacCoefficient<dim> reaccoeff;
 };
 
 template <int dim>
@@ -56,7 +60,7 @@ public:
             typename dealii::MeshWorker::IntegrationInfo<dim> &info1,
             typename dealii::MeshWorker::IntegrationInfo<dim> &info2) const override;
 private:
-  Coefficient<dim> diffcoeff;
+  DiffCoefficient<dim> diffcoeff;
   ReferenceFunction<dim> exact_solution;
 };
 
