@@ -50,39 +50,39 @@ int main (int argc, char *argv[])
         MyLaplace<3,false,4> dgmethod;
         dgmethod.run ();
       }
-      {
-        MyLaplace<2,true,1> dgmethod;
-        dgmethod.run ();
-      }
-      {
-        MyLaplace<2,true,2> dgmethod;
-        dgmethod.run ();
-      }
-      {
-        MyLaplace<2,true,3> dgmethod;
-        dgmethod.run ();
-      }
-      {
-        MyLaplace<2,true,4> dgmethod;
-        dgmethod.run ();
-      }
+      // {
+      //   MyLaplace<2,true,1> dgmethod;
+      //   dgmethod.run ();
+      // }
+      // {
+      //   MyLaplace<2,true,2> dgmethod;
+      //   dgmethod.run ();
+      // }
+      // {
+      //   MyLaplace<2,true,3> dgmethod;
+      //   dgmethod.run ();
+      // }
+      // {
+      //   MyLaplace<2,true,4> dgmethod;
+      //   dgmethod.run ();
+      // }
 
-      {
-        MyLaplace<3,true,1> dgmethod;
-        dgmethod.run ();
-      }
-      {
-        MyLaplace<3,true,2> dgmethod;
-        dgmethod.run ();
-      }
-      {
-        MyLaplace<3,true,3> dgmethod;
-        dgmethod.run ();
-      }
-      {
-        MyLaplace<3,true,4> dgmethod;
-        dgmethod.run ();
-      }
+      // {
+      //   MyLaplace<3,true,1> dgmethod;
+      //   dgmethod.run ();
+      // }
+      // {
+      //   MyLaplace<3,true,2> dgmethod;
+      //   dgmethod.run ();
+      // }
+      // {
+      //   MyLaplace<3,true,3> dgmethod;
+      //   dgmethod.run ();
+      // }
+      // {
+      //   MyLaplace<3,true,4> dgmethod;
+      //   dgmethod.run ();
+      // }
     }
   catch (std::exception &exc)
     {

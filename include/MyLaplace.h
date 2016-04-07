@@ -71,7 +71,6 @@ private:
   dealii::FESystem<dim>                               fe;
   ReferenceFunction<dim>                              reference_function;
 
-
   dealii::DoFHandler<dim>      dof_handler;
 
   SystemMatrixType             system_matrix;

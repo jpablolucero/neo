@@ -10,9 +10,9 @@ MyLaplace<dim,same_diagonal,degree>::MyLaplace ()
                 dealii::parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy),
   mapping (),
 #ifdef CG
-  fe(dealii::FE_Q<dim>(degree),1),
+  fe(dealii::FE_Q<dim>(degree),2),
 #else
-  fe(dealii::FESystem<dim>(dealii::FE_DGQ<dim>(degree),1), 2),
+  fe(dealii::FE_DGQ<dim>(degree),2),
 #endif
   dof_handler (triangulation),
   pcout (std::cout,(dealii::Utilities::MPI::this_mpi_process(mpi_communicator)==0)),

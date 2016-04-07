@@ -8,11 +8,11 @@ DiffCoefficient<dim>::DiffCoefficient()
 template <int dim>
 double
 DiffCoefficient<dim>::value (const dealii::Point<dim> &p,
-			     const unsigned int d) const
+			     const unsigned int b) const
 {
-  if(d==0)
+  if(b==0)
     return 1./(0.05 + 2.*p.square());
-  else if(d==1)
+  else if(b==1)
     {  
       dealii::Point<dim> mirrorp;
       for (unsigned int i=0; i<dim; ++i)
@@ -24,25 +24,12 @@ DiffCoefficient<dim>::value (const dealii::Point<dim> &p,
 }
 
 template <int dim>
-void DiffCoefficient<dim>::value_list (const std::vector<dealii::Point<dim> > &points,
-				       std::vector<double>                    &values,
-				       const unsigned int                     component) const
-{
-  Assert (values.size() == points.size(),
-          dealii::ExcDimensionMismatch (values.size(), points.size()));
-  
-  const unsigned int n_points = points.size();
-  for (unsigned int i=0; i<n_points; ++i)
-    values[i] = value(points[i],component);
-}
-
-template <int dim>
 dealii::Tensor<1,dim>
 DiffCoefficient<dim>::gradient (const dealii::Point<dim> &p,
-				const unsigned int  d) const
+				const unsigned int  b) const
 {
   dealii::Tensor<1,dim> return_grad;
-  if (d == 0)
+  if (b == 0)
     for (unsigned int i=0; i<dim; ++i)
       return_grad[i] = -p(i)/((p.square()+0.025)*(p.square()+0.025));
   else
@@ -88,23 +75,15 @@ ReferenceFunction<dim>::laplacian(const dealii::Point<dim> &p,
 }
 
 template <int dim>
+TotalCoefficient<dim>::TotalCoefficient()
+  : dealii::Function<dim>()
+{}
+
+template <int dim>
 double TotalCoefficient<dim>::value (const dealii::Point<dim>& /*p*/,
 				     const unsigned int b) const
 {
-  return (b == 0) ? 1. : 1.;
-}
-
-template <int dim>
-void TotalCoefficient<dim>::value_list (const std::vector<dealii::Point<dim> > &points,
-					std::vector<double>                    &values,
-					const unsigned int                     block) const
-{
-  Assert (values.size() == points.size(),
-	  dealii::ExcDimensionMismatch (values.size(), points.size()));
-  
-  const unsigned int n_points = points.size();
-  for (unsigned int i=0; i<n_points; ++i)
-    values[i] = value(points[i],block);
+  return (b == 0) ? 0. : 0.;
 }
 
 template <int dim>
@@ -112,7 +91,7 @@ double ReacCoefficient<dim>::value (const dealii::Point<dim>& /*p*/,
 				    const unsigned int b_m,
 				    const unsigned int b_n) const
 {
-  return (b_n == b_m) ? 1./3. : 1./3. ;
+  return (b_n == b_m) ? 0. : 0. ;
 }
 
 template <int dim>

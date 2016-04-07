@@ -1,6 +1,7 @@
 #ifndef BLOCKINTEGRATORS_H
 #define BLOCKINTEGRATORS_H
 
+#include <deal.II/dofs/block_info.h>
 #include <deal.II/fe/fe_values.h>
 #include <deal.II/integrators/l2.h>
 #include <deal.II/integrators/laplace.h>
@@ -43,7 +44,6 @@ public:
             typename dealii::MeshWorker::IntegrationInfo<dim> &info2) const override;
 private:
   DiffCoefficient<dim> diffcoeff;
-  ReferenceFunction<dim> exact_solution;
   TotalCoefficient<dim> totalcoeff;
   ReacCoefficient<dim> reaccoeff;
 };
@@ -53,6 +53,7 @@ class RHSIntegrator final : public dealii::MeshWorker::LocalIntegrator<dim>
 {
 public:
   RHSIntegrator() ;
+  void initialize(dealii::BlockInfo&);
   void cell(dealii::MeshWorker::DoFInfo<dim> &dinfo, typename dealii::MeshWorker::IntegrationInfo<dim> &info) const override;
   void boundary(dealii::MeshWorker::DoFInfo<dim> &dinfo, typename dealii::MeshWorker::IntegrationInfo<dim> &info) const override;
   void face(dealii::MeshWorker::DoFInfo<dim> &dinfo1,
@@ -60,8 +61,8 @@ public:
             typename dealii::MeshWorker::IntegrationInfo<dim> &info1,
             typename dealii::MeshWorker::IntegrationInfo<dim> &info2) const override;
 private:
+  dealii::BlockInfo block_info;
   DiffCoefficient<dim> diffcoeff;
-  ReferenceFunction<dim> exact_solution;
 };
 
 #endif // BLOCKINTEGRATORS_H
