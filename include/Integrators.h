@@ -40,15 +40,14 @@ public:
             typename dealii::MeshWorker::IntegrationInfo<dim> &info1,
             typename dealii::MeshWorker::IntegrationInfo<dim> &info2) const override;
 private:
-  Coefficient<dim> diffcoeff;
-  ReferenceFunction<dim> exact_solution;
+  Coefficient<dim> diffcoeff;  
 };
 
 template <int dim>
 class RHSIntegrator final : public dealii::MeshWorker::LocalIntegrator<dim>
 {
 public:
-  RHSIntegrator() ;
+  RHSIntegrator(unsigned int n_components);
   void cell(dealii::MeshWorker::DoFInfo<dim> &dinfo, typename dealii::MeshWorker::IntegrationInfo<dim> &info) const override;
   void boundary(dealii::MeshWorker::DoFInfo<dim> &dinfo, typename dealii::MeshWorker::IntegrationInfo<dim> &info) const override;
   void face(dealii::MeshWorker::DoFInfo<dim> &dinfo1,

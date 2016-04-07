@@ -59,14 +59,7 @@ public:
     return dof_handler->n_dofs(level);
   }
 
-  //typedef typename LA::MPI::SparseMatrixConstIterator const_iterator ;
   typedef LA::MPI::SparseMatrixSizeType      size_type ;
-
-  //const_iterator begin (const size_type r) const
-  //{return matrix.begin(r) ;}
-
-  //const_iterator end (const size_type r) const
-  //{return matrix.end(r) ;}
 
   double operator()(const size_type i,const size_type j) const
   {
@@ -77,10 +70,10 @@ public:
 
 private:
   unsigned int                                        level;
-  dealii::DoFHandler<dim>                            *dof_handler;
-  const dealii::FiniteElement<dim> *fe;
-  const dealii::MappingQ1<dim>                       *mapping;
-  const dealii::ConstraintMatrix *constraints;
+  dealii::DoFHandler<dim>                             *dof_handler;
+  const dealii::FiniteElement<dim>                    *fe;
+  const dealii::MappingQ1<dim>                        *mapping;
+  const dealii::ConstraintMatrix                      *constraints;
   std::unique_ptr<dealii::MeshWorker::DoFInfo<dim> >  dof_info;
   mutable dealii::MeshWorker::IntegrationInfoBox<dim> info_box;
   LA::MPI::SparseMatrix                               matrix;

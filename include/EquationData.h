@@ -27,7 +27,7 @@ template <int dim>
 class ReferenceFunction : public dealii::Function<dim>
 {
 public:
-  ReferenceFunction();
+  ReferenceFunction(unsigned int n_comp_);
 
   virtual double value(const dealii::Point<dim> &p,
                        const unsigned int /*component = 0*/) const;

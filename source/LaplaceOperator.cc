@@ -205,9 +205,7 @@ void LaplaceOperator<dim,fe_degree,same_diagonal>::vmult_add (LA::MPI::Vector &d
   info_box.initialize(*fe, *mapping, src_data, ghosted_src, &(dof_handler->block_info()));
   dealii::MeshWorker::Assembler::ResidualSimple<LA::MPI::Vector > assembler;
   assembler.initialize(dst_data);
-  assembler.initialize(*constraints);
-//  std::cout << "Constraints: " << std::endl;
-//  constraints->print(std::cout);
+//  assembler.initialize(*constraints);
   timer->leave_subsection();
 
   timer->enter_subsection("LO::vmult_add::IntegrationLoop");

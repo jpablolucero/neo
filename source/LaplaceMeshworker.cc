@@ -18,7 +18,7 @@ int main (int argc, char *argv[])
       //lots of output only on the first process
       if (dealii::Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0)
         dealii::deallog.depth_console (2);
-      {
+      /*{
         MyLaplace<2,true,1> dgmethod;
         dgmethod.run ();
       }
@@ -33,12 +33,12 @@ int main (int argc, char *argv[])
       {
         MyLaplace<2,true,4> dgmethod;
         dgmethod.run ();
-      }
+      }*/
       {
         MyLaplace<2,false,1> dgmethod;
         dgmethod.run ();
       }
-      {
+      /*{
         MyLaplace<2,false,2> dgmethod;
         dgmethod.run ();
       }
@@ -65,12 +65,12 @@ int main (int argc, char *argv[])
       {
         MyLaplace<3,true,4> dgmethod;
         dgmethod.run ();
-      }
+      }*/
       {
         MyLaplace<3,false,1> dgmethod;
         dgmethod.run ();
       }
-      {
+      /*{
         MyLaplace<3,false,2> dgmethod;
         dgmethod.run ();
       }
@@ -81,7 +81,7 @@ int main (int argc, char *argv[])
       {
         MyLaplace<3,false,4> dgmethod;
         dgmethod.run ();
-      }
+      }*/
     }
   catch (std::exception &exc)
     {

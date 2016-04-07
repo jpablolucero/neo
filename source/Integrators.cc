@@ -183,7 +183,8 @@ void ResidualIntegrator<dim>::boundary(dealii::MeshWorker::DoFInfo<dim> &dinfo,
 
 // RHS INTEGRATOR
 template <int dim>
-RHSIntegrator<dim>::RHSIntegrator()
+RHSIntegrator<dim>::RHSIntegrator(unsigned int n_components)
+    : exact_solution(n_components)
 {}
 
 template <int dim>
