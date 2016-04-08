@@ -22,34 +22,34 @@ int main (int argc, char *argv[])
         MyLaplace<2,false,1> dgmethod;
         dgmethod.run ();
       }
-      {
-        MyLaplace<2,false,2> dgmethod;
-        dgmethod.run ();
-      }
-      {
-        MyLaplace<2,false,3> dgmethod;
-        dgmethod.run ();
-      }
-      {
-        MyLaplace<2,false,4> dgmethod;
-        dgmethod.run ();
-      }
-      {
-        MyLaplace<3,false,1> dgmethod;
-        dgmethod.run ();
-      }
-      {
-        MyLaplace<3,false,2> dgmethod;
-        dgmethod.run ();
-      }
-      {
-        MyLaplace<3,false,3> dgmethod;
-        dgmethod.run ();
-      }
-      {
-        MyLaplace<3,false,4> dgmethod;
-        dgmethod.run ();
-      }
+      // {
+      //   MyLaplace<2,false,2> dgmethod;
+      //   dgmethod.run ();
+      // }
+      // {
+      //   MyLaplace<2,false,3> dgmethod;
+      //   dgmethod.run ();
+      // }
+      // {
+      //   MyLaplace<2,false,4> dgmethod;
+      //   dgmethod.run ();
+      // }
+      // {
+      //   MyLaplace<3,false,1> dgmethod;
+      //   dgmethod.run ();
+      // }
+      // {
+      //   MyLaplace<3,false,2> dgmethod;
+      //   dgmethod.run ();
+      // }
+      // {
+      //   MyLaplace<3,false,3> dgmethod;
+      //   dgmethod.run ();
+      // }
+      // {
+      //   MyLaplace<3,false,4> dgmethod;
+      //   dgmethod.run ();
+      // }
       // {
       //   MyLaplace<2,true,1> dgmethod;
       //   dgmethod.run ();

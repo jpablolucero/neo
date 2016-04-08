@@ -13,11 +13,6 @@ class DiffCoefficient final : public dealii::Function<dim>
   DiffCoefficient();
   virtual double value (const dealii::Point<dim>  &p,
 			const unsigned int        block = 0) const override;
-  // virtual void value_list (const std::vector<dealii::Point<dim> > &points,
-  // 			   std::vector<double>                    &values,
-  // 			   const unsigned int                     component = 0) const override;
-  virtual dealii::Tensor<1,dim> gradient (const dealii::Point<dim>  &p,
-					  const unsigned int        block = 0) const override;
  private:
   std::vector<double> data;
 };
@@ -42,12 +37,15 @@ class TotalCoefficient final : public dealii::Function<dim>
   TotalCoefficient();
   virtual double value (const dealii::Point<dim>  &p,
 			const unsigned int        block = 0) const override;
+ private:
+  std::vector<double> data;
 };
 
 template <int dim>
 class ReacCoefficient final
 {
  public:
+  ReacCoefficient();
   double value (const dealii::Point<dim>  &p,
 		const unsigned int        block_m = 0,
 		const unsigned int        block_n = 0) const;
@@ -55,6 +53,8 @@ class ReacCoefficient final
 		   std::vector<double>                    &values,
 		   const unsigned int                     block_m = 0,
 		   const unsigned int                     block_n = 0) const;
+ private:
+  std::vector<std::vector<double> > M_data;
 };
 
 #endif // EQUATIONDATA_H

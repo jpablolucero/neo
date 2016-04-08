@@ -2,42 +2,34 @@
 
 template <int dim>
 DiffCoefficient<dim>::DiffCoefficient()
-  : dealii::Function<dim>()
-{}
+  : dealii::Function<dim>(),
+    data(3)
+{
+  data[0] = 1./9.;//*/ 1./9.;
+  data[1] = 1./18.;//*/ 1./18.;
+  data[2] = 1./27.;//*/ 1./27.;
+}
 
 template <int dim>
 double
-DiffCoefficient<dim>::value (const dealii::Point<dim> &p,
+DiffCoefficient<dim>::value (const dealii::Point<dim> &,
 			     const unsigned int b) const
 {
-  if(b==0)
-    return 1./(0.05 + 2.*p.square());
-  else if(b==1)
-    {  
-      dealii::Point<dim> mirrorp;
-      for (unsigned int i=0; i<dim; ++i)
-	mirrorp(i) = 1 - p(i);
-      return 1./(0.05 + 2.*mirrorp.square());  
-    }
-  else
-    return 1.;
+  return data[b];
+  //return 1.;
 }
 
-template <int dim>
-dealii::Tensor<1,dim>
-DiffCoefficient<dim>::gradient (const dealii::Point<dim> &p,
-				const unsigned int  b) const
-{
-  dealii::Tensor<1,dim> return_grad;
-  if (b == 0)
-    for (unsigned int i=0; i<dim; ++i)
-      return_grad[i] = -p(i)/((p.square()+0.025)*(p.square()+0.025));
-  else
-    for (unsigned int i=0; i<dim; ++i)
-      return_grad[i] = 0.;
+// template <int dim>
+// dealii::Tensor<1,dim>
+// DiffCoefficient<dim>::gradient (const dealii::Point<dim> &p,
+// 				const unsigned int  b) const
+// {
+//   dealii::Tensor<1,dim> return_grad;
+//   for (unsigned int i=0; i<dim; ++i)
+//     return_grad[i] = 0.;
 
-  return return_grad;
-}
+//   return return_grad;
+// }
 
 template <int dim>
 ReferenceFunction<dim>::ReferenceFunction() : dealii::Function<dim> () {}
@@ -76,14 +68,31 @@ ReferenceFunction<dim>::laplacian(const dealii::Point<dim> &p,
 
 template <int dim>
 TotalCoefficient<dim>::TotalCoefficient()
-  : dealii::Function<dim>()
-{}
+  : dealii::Function<dim>(),
+    data(3)
+{
+  data[0] = 3.;
+  data[1] = 6.;
+  data[2] = 9.;
+}
 
 template <int dim>
 double TotalCoefficient<dim>::value (const dealii::Point<dim>& /*p*/,
 				     const unsigned int b) const
 {
-  return (b == 0) ? 0. : 0.;
+  return data[b];
+}
+
+template <int dim>
+ReacCoefficient<dim>::ReacCoefficient()
+  : M_data(3)
+{
+  M_data[0].resize(3);
+  M_data[0][0] = -1.; M_data[0][1] = 0.; M_data[0][2] = -3.; 
+  M_data[1].resize(3);
+  M_data[1][0] = -1.; M_data[1][1] = -3.; M_data[1][2] = 0.; 
+  M_data[2].resize(3);
+  M_data[2][0] = -1.; M_data[2][1] = -3.; M_data[2][2] = -6.; 
 }
 
 template <int dim>
@@ -91,7 +100,7 @@ double ReacCoefficient<dim>::value (const dealii::Point<dim>& /*p*/,
 				    const unsigned int b_m,
 				    const unsigned int b_n) const
 {
-  return (b_n == b_m) ? 0. : 0. ;
+  return M_data[b_m][b_n] ;
 }
 
 template <int dim>

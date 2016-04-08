@@ -10,9 +10,9 @@ MyLaplace<dim,same_diagonal,degree>::MyLaplace ()
                 dealii::parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy),
   mapping (),
 #ifdef CG
-  fe(dealii::FE_Q<dim>(degree),2),
+  fe(dealii::FE_Q<dim>(degree),1),
 #else
-  fe(dealii::FE_DGQ<dim>(degree),2),
+  fe(dealii::FE_DGQ<dim>(degree),3),
 #endif
   dof_handler (triangulation),
   pcout (std::cout,(dealii::Utilities::MPI::this_mpi_process(mpi_communicator)==0)),
@@ -146,7 +146,6 @@ void MyLaplace<dim, same_diagonal, degree>::assemble_system ()
 
   dealii::MeshWorker::DoFInfo<dim> dof_info(dof_handler.block_info());
 
-  //ResidualSimpleConstraints<LA::MPI::Vector > rhs_assembler;
   dealii::MeshWorker::Assembler::ResidualSimple<LA::MPI::Vector > rhs_assembler;
   dealii::AnyData data;
   data.add<LA::MPI::Vector *>(&right_hand_side, "RHS");
@@ -181,9 +180,9 @@ void MyLaplace<dim,same_diagonal,degree>::solve ()
   const LA::MPI::SparseMatrix &coarse_matrix = mg_matrix[0].get_coarse_matrix();
 
   dealii::SolverControl coarse_solver_control (dof_handler.n_dofs(0), 1e-10, false, false);
-  dealii::SolverCG<LA::MPI::Vector> coarse_solver(coarse_solver_control);
+  dealii::SolverGMRES<LA::MPI::Vector> coarse_solver(coarse_solver_control);
   dealii::PreconditionIdentity id;
-  dealii::MGCoarseGridLACIteration<dealii::SolverCG<LA::MPI::Vector>,LA::MPI::Vector> mg_coarse(coarse_solver,
+  dealii::MGCoarseGridLACIteration<dealii::SolverGMRES<LA::MPI::Vector>,LA::MPI::Vector> mg_coarse(coarse_solver,
       coarse_matrix,
       id);
 
@@ -293,7 +292,7 @@ void MyLaplace<dim,same_diagonal,degree>::solve ()
 #endif
 
   dealii::ReductionControl          solver_control (dof_handler.n_dofs(), 1.e-20, 1.e-10);
-  dealii::SolverCG<LA::MPI::Vector> solver (solver_control);
+  dealii::SolverGMRES<LA::MPI::Vector> solver (solver_control);
 
   timer.leave_subsection();
   timer.enter_subsection("solve::solve");

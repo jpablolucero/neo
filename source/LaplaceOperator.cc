@@ -166,6 +166,10 @@ void LaplaceOperator<dim, fe_degree, same_diagonal>::build_matrix ()
     }
   mg_matrix[level].compress(dealii::VectorOperation::add);
   matrix.copy_from(mg_matrix[level]);
+  // std::cout << "Level=" << level << std::endl;
+  // dealii::SparseMatrix<double> dummy;
+  // dummy.copy_from(matrix);
+  // dummy.print_formatted(std::cout);
   timer->leave_subsection();
 }
 
