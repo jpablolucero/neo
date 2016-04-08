@@ -35,7 +35,7 @@ if (MG)
   add_definitions(-DMG)
 endif()
 
-set(SMOOTHENINGSTEPS 10 CACHE FILEPATH "Number of smoothening steps")
+set(SMOOTHENINGSTEPS 1 CACHE FILEPATH "Number of smoothening steps")
 add_definitions(-DSMOOTHENINGSTEPS=${SMOOTHENINGSTEPS})
 
 INCLUDE_DIRECTORIES(include include/local_integrators)
