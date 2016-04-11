@@ -17,7 +17,7 @@
 template <int dim,bool same_diagonal=true>
 class MatrixIntegrator final : public dealii::MeshWorker::LocalIntegrator<dim>
 {
-public:
+ public:
   MatrixIntegrator();
   void cell(dealii::MeshWorker::DoFInfo<dim> &dinfo, typename dealii::MeshWorker::IntegrationInfo<dim> &info) const override;
   void boundary(dealii::MeshWorker::DoFInfo<dim> &dinfo, typename dealii::MeshWorker::IntegrationInfo<dim> &info) const override;
@@ -25,7 +25,7 @@ public:
             dealii::MeshWorker::DoFInfo<dim> &dinfo2,
             typename dealii::MeshWorker::IntegrationInfo<dim> &info1,
             typename dealii::MeshWorker::IntegrationInfo<dim> &info2) const override;
-private:
+ private:
   DiffCoefficient<dim> diffcoeff;
   TotalCoefficient<dim> totalcoeff;
   ReacCoefficient<dim> reaccoeff;
@@ -34,7 +34,7 @@ private:
 template <int dim>
 class ResidualIntegrator final : public dealii::MeshWorker::LocalIntegrator<dim>
 {
-public:
+ public:
   ResidualIntegrator();
   void cell(dealii::MeshWorker::DoFInfo<dim> &dinfo, typename dealii::MeshWorker::IntegrationInfo<dim> &info) const override;
   void boundary(dealii::MeshWorker::DoFInfo<dim> &dinfo, typename dealii::MeshWorker::IntegrationInfo<dim> &info) const override;
@@ -42,7 +42,7 @@ public:
             dealii::MeshWorker::DoFInfo<dim> &dinfo2,
             typename dealii::MeshWorker::IntegrationInfo<dim> &info1,
             typename dealii::MeshWorker::IntegrationInfo<dim> &info2) const override;
-private:
+ private:
   DiffCoefficient<dim> diffcoeff;
   TotalCoefficient<dim> totalcoeff;
   ReacCoefficient<dim> reaccoeff;
@@ -51,17 +51,15 @@ private:
 template <int dim>
 class RHSIntegrator final : public dealii::MeshWorker::LocalIntegrator<dim>
 {
-public:
+ public:
   RHSIntegrator() ;
-  void initialize(dealii::BlockInfo&);
   void cell(dealii::MeshWorker::DoFInfo<dim> &dinfo, typename dealii::MeshWorker::IntegrationInfo<dim> &info) const override;
   void boundary(dealii::MeshWorker::DoFInfo<dim> &dinfo, typename dealii::MeshWorker::IntegrationInfo<dim> &info) const override;
   void face(dealii::MeshWorker::DoFInfo<dim> &dinfo1,
             dealii::MeshWorker::DoFInfo<dim> &dinfo2,
             typename dealii::MeshWorker::IntegrationInfo<dim> &info1,
             typename dealii::MeshWorker::IntegrationInfo<dim> &info2) const override;
-private:
-  dealii::BlockInfo block_info;
+ private:
   DiffCoefficient<dim> diffcoeff;
 };
 

@@ -395,9 +395,9 @@ namespace LocalIntegrators
       const unsigned int n_dofs = fe.dofs_per_cell;
       const unsigned int n_quads = fe.n_quadrature_points;
 
-      AssertDimension(input.size(), fe.n_quadrature_points);
-      AssertDimension(Dinput.size(), fe.n_quadrature_points);
-      AssertDimension(boundary_data.size(), fe.n_quadrature_points);
+      AssertDimension(input.size(), n_quads);
+      AssertDimension(Dinput.size(), n_quads);
+      AssertDimension(boundary_data.size(), n_quads);
 
       for (unsigned int q=0; q<n_quads; ++q)
         {

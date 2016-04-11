@@ -14,8 +14,9 @@ MyLaplace<dim,same_diagonal,degree>::MyLaplace ()
 #else
   fe(dealii::FE_DGQ<dim>(degree),3),
 #endif
+//  reference_function(fe.n_components()),
   dof_handler (triangulation),
-  pcout (std::cout,(dealii::Utilities::MPI::this_mpi_process(mpi_communicator)==0)),
+  pcout (std::cout,(dealii::Utilities::MPI::this_mpi_process(mpi_communicator)==0)),  
   timer(mpi_communicator, pcout, dealii::TimerOutput::never,dealii::TimerOutput::wall_times)
 {
   LaplaceOperator<dim, degree, same_diagonal>::timer = &timer;
@@ -62,19 +63,19 @@ void MyLaplace<dim,same_diagonal,degree>::setup_system ()
 
   locally_owned_dofs = dof_handler.locally_owned_dofs();
 
-  dealii::deallog << "locally owned dofs on process "
-                  << dealii::Utilities::MPI::this_mpi_process(mpi_communicator)
-                  << std::endl;
+  std::cout << "locally owned dofs on process "
+            << dealii::Utilities::MPI::this_mpi_process(mpi_communicator)
+            << std::endl;
   for (unsigned int l=0; l<triangulation.n_global_levels(); ++l)
     {
-      dealii::deallog << "level: " << l << " n_elements(): "
-                      << dof_handler.locally_owned_mg_dofs(l).n_elements()
-                      << " index set: ";
-      dof_handler.locally_owned_mg_dofs(l).print(dealii::deallog);
+      std::cout << "level: " << l << " n_elements(): "
+                << dof_handler.locally_owned_mg_dofs(l).n_elements()
+                << " index set: ";
+      dof_handler.locally_owned_mg_dofs(l).print(std::cout);
     }
-  dealii::deallog << "n_elements(): "
-                  << dof_handler.locally_owned_dofs().n_elements()
-                  <<std::endl;
+  std::cout << "n_elements(): "
+            << dof_handler.locally_owned_dofs().n_elements()
+            <<std::endl;
   dof_handler.locally_owned_dofs().print(dealii::deallog);
 
   dealii::DoFTools::extract_locally_relevant_dofs
@@ -146,6 +147,7 @@ void MyLaplace<dim, same_diagonal, degree>::assemble_system ()
 
   dealii::MeshWorker::DoFInfo<dim> dof_info(dof_handler.block_info());
 
+//  ResidualSimpleConstraints<LA::MPI::Vector > rhs_assembler;
   dealii::MeshWorker::Assembler::ResidualSimple<LA::MPI::Vector > rhs_assembler;
   dealii::AnyData data;
   data.add<LA::MPI::Vector *>(&right_hand_side, "RHS");
@@ -292,7 +294,7 @@ void MyLaplace<dim,same_diagonal,degree>::solve ()
 #endif
 
   dealii::ReductionControl          solver_control (dof_handler.n_dofs(), 1.e-20, 1.e-10);
-  dealii::SolverGMRES<LA::MPI::Vector> solver (solver_control);
+  dealii::SolverCG<LA::MPI::Vector> solver (solver_control);
 
   timer.leave_subsection();
   timer.enter_subsection("solve::solve");
