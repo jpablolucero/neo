@@ -40,7 +40,7 @@ public:
             typename dealii::MeshWorker::IntegrationInfo<dim> &info1,
             typename dealii::MeshWorker::IntegrationInfo<dim> &info2) const override;
 private:
-  Coefficient<dim> diffcoeff;  
+  Coefficient<dim> diffcoeff;
 };
 
 template <int dim>

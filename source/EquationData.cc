@@ -41,7 +41,7 @@ Coefficient<dim>::gradient (const dealii::Point<dim> &p,
 
 template <int dim>
 ReferenceFunction<dim>::ReferenceFunction(unsigned int n_comp_)
-    : dealii::Function<dim> (n_comp_)
+  : dealii::Function<dim> (n_comp_)
 {}
 
 template <int dim>

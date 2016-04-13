@@ -1,4 +1,5 @@
-#include <LaplaceMeshworker.h>
+#include <deal.II/base/utilities.h>
+#include <MyLaplace.h>
 
 int main (int argc, char *argv[])
 {
@@ -13,73 +14,79 @@ int main (int argc, char *argv[])
       dealii::Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv, MAXTHREADS);
 #endif
 #endif
+      MPI_Comm mpi_communicator (MPI_COMM_WORLD);
+      dealii::ConditionalOStream pcout(std::cout,
+                                       dealii::Utilities::MPI::this_mpi_process(mpi_communicator));
       std::ofstream logfile("deallog");
       dealii::deallog.attach(logfile);
       //lots of output only on the first process
-      if (dealii::Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0)
+      if (dealii::Utilities::MPI::this_mpi_process(mpi_communicator)==0)
         dealii::deallog.depth_console (2);
+      dealii::TimerOutput timer (mpi_communicator, pcout,
+                                 dealii::TimerOutput::never,
+                                 dealii::TimerOutput::wall_times);
       /*{
-        MyLaplace<2,true,1> dgmethod;
+        MyLaplace<2,true,1> dgmethod(timer, mpi_communicator, pcout);
         dgmethod.run ();
       }
       {
-        MyLaplace<2,true,2> dgmethod;
+        MyLaplace<2,true,2> dgmethod(timer, mpi_communicator, pcout);
         dgmethod.run ();
       }
       {
-        MyLaplace<2,true,3> dgmethod;
+        MyLaplace<2,true,3> dgmethod(timer, mpi_communicator, pcout);
         dgmethod.run ();
       }
       {
-        MyLaplace<2,true,4> dgmethod;
+        MyLaplace<2,true,4> dgmethod(timer, mpi_communicator, pcout);
         dgmethod.run ();
       }*/
       {
-        MyLaplace<2,false,1> dgmethod;
+        MyLaplace<2,false,1> dgmethod(timer, mpi_communicator, pcout);
         dgmethod.run ();
       }
       /*{
-        MyLaplace<2,false,2> dgmethod;
+        MyLaplace<2,false,2> dgmethod(timer, mpi_communicator, pcout);
         dgmethod.run ();
       }
       {
-        MyLaplace<2,false,3> dgmethod;
+        MyLaplace<2,false,3> dgmethod(timer, mpi_communicator, pcout);
         dgmethod.run ();
       }
       {
-        MyLaplace<2,false,4> dgmethod;
+        MyLaplace<2,false,4> dgmethod(timer, mpi_communicator, pcout);
         dgmethod.run ();
       }
       {
-        MyLaplace<3,true,1> dgmethod;
+        MyLaplace<3,true,1> dgmethod(timer, mpi_communicator, pcout);
         dgmethod.run ();
       }
       {
-        MyLaplace<3,true,2> dgmethod;
+        MyLaplace<3,true,2> dgmethod(timer, mpi_communicator, pcout);
         dgmethod.run ();
       }
       {
-        MyLaplace<3,true,3> dgmethod;
+        MyLaplace<3,true,3> dgmethod(timer, mpi_communicator, pcout);
         dgmethod.run ();
       }
       {
-        MyLaplace<3,true,4> dgmethod;
+        MyLaplace<3,true,4> dgmethod(timer, mpi_communicator, pcout);
         dgmethod.run ();
       }*/
       {
-        MyLaplace<3,false,1> dgmethod;
+        MyLaplace<3,false,1> dgmethod(timer, mpi_communicator, pcout);
         dgmethod.run ();
       }
       /*{
-        MyLaplace<3,false,2> dgmethod;
+        MyLaplace<3,false,2> dgmethod(timer, mpi_communicator, pcout);
         dgmethod.run ();
       }
       {
-        MyLaplace<3,false,3> dgmethod;
+        MyLaplace<3,false,3> dgmethod(timer, mpi_communicator, pcout);
         dgmethod.run ();
       }
       {
-        MyLaplace<3,false,4> dgmethod;
+        MyLaplace<3,false,4> dgmethod(timer, mpi_communicator, pcout);
         dgmethod.run ();
       }*/
     }

@@ -47,7 +47,9 @@ template <int dim=2,bool same_diagonal = true, unsigned int degree = 1>
 class MyLaplace
 {
 public:
-  MyLaplace ();
+  MyLaplace (dealii::TimerOutput &timer_,
+             MPI_Comm &mpi_communicator_,
+             dealii::ConditionalOStream &pcout_);
   ~MyLaplace ();
   void run ();
 
@@ -63,7 +65,7 @@ private:
 
   dealii::IndexSet           locally_owned_dofs;
   dealii::IndexSet           locally_relevant_dofs;
-  MPI_Comm                   mpi_communicator;
+  MPI_Comm                   &mpi_communicator;
 
   dealii::parallel::distributed::Triangulation<dim>   triangulation;
   const dealii::MappingQ1<dim>                        mapping;
@@ -81,9 +83,9 @@ private:
 
   dealii::MGLevelObject<SystemMatrixType >            mg_matrix ;
 
-  dealii::ConditionalOStream pcout;
+  dealii::ConditionalOStream &pcout;
 
-  dealii::TimerOutput timer;
+  dealii::TimerOutput &timer;
 };
 
 #endif // MYLAPLACE_H

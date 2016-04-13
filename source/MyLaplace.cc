@@ -2,9 +2,11 @@
 #include <PSCPreconditioner.h>
 
 template <int dim,bool same_diagonal,unsigned int degree>
-MyLaplace<dim,same_diagonal,degree>::MyLaplace ()
+MyLaplace<dim,same_diagonal,degree>::MyLaplace (dealii::TimerOutput &timer_,
+                                                MPI_Comm &mpi_communicator_,
+                                                dealii::ConditionalOStream &pcout_)
   :
-  mpi_communicator(MPI_COMM_WORLD),
+  mpi_communicator(mpi_communicator_),
   triangulation(mpi_communicator,dealii::Triangulation<dim>::
                 limit_level_difference_at_vertices,
                 dealii::parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy),
@@ -16,8 +18,8 @@ MyLaplace<dim,same_diagonal,degree>::MyLaplace ()
 #endif
   reference_function(fe.n_components()),
   dof_handler (triangulation),
-  pcout (std::cout,(dealii::Utilities::MPI::this_mpi_process(mpi_communicator)==0)),  
-  timer(mpi_communicator, pcout, dealii::TimerOutput::never,dealii::TimerOutput::wall_times)
+  pcout (pcout_),
+  timer(timer_)
 {
   LaplaceOperator<dim, degree, same_diagonal>::timer = &timer;
   //initialize timer
