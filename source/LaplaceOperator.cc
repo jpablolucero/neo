@@ -5,6 +5,12 @@ LaplaceOperator<dim, fe_degree, same_diagonal>::LaplaceOperator()
 {}
 
 template <int dim, int fe_degree, bool same_diagonal>
+void LaplaceOperator<dim, fe_degree, same_diagonal>::set_timer(dealii::TimerOutput &timer_)
+{
+  timer = &timer_;
+}
+
+template <int dim, int fe_degree, bool same_diagonal>
 LaplaceOperator<dim, fe_degree, same_diagonal>::~LaplaceOperator()
 {
   dof_handler = NULL ;

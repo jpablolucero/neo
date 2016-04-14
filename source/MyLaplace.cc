@@ -21,8 +21,8 @@ MyLaplace<dim,same_diagonal,degree>::MyLaplace (dealii::TimerOutput &timer_,
   pcout (pcout_),
   timer(timer_)
 {
-  LaplaceOperator<dim, degree, same_diagonal>::timer = &timer;
-  //initialize timer
+  // initialize timer
+  system_matrix.set_timer(timer);
 #if PARALLEL_LA == 0
   pcout<< "Using deal.II parallel linear algebra" << std::endl;
 #elif PARALLEL_LA == 1
@@ -171,6 +171,7 @@ void MyLaplace<dim,same_diagonal,degree>::setup_multigrid ()
   mg_matrix.resize(0, n_global_levels-1);
   for (unsigned int level=0; level<n_global_levels; ++level)
     {
+      mg_matrix[level].set_timer(timer);
       mg_matrix[level].reinit(&dof_handler,&mapping,&constraints, mpi_communicator, level);
       mg_matrix[level].build_matrix();
     }
@@ -375,7 +376,7 @@ void MyLaplace<dim, same_diagonal, degree>::output_results (const unsigned int c
 template <int dim,bool same_diagonal,unsigned int degree>
 void MyLaplace<dim,same_diagonal,degree>::run ()
 {
-  for (unsigned int cycle=0; cycle<10-2*dim; ++cycle)
+  for (unsigned int cycle=0; cycle<2; ++cycle)
     {
       pcout << "Cycle " << cycle << std::endl;
       timer.reset();

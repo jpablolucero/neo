@@ -29,6 +29,8 @@ public:
                const MPI_Comm &mpi_communicator_,
                const unsigned int level_ = dealii::numbers::invalid_unsigned_int);
 
+  void set_timer (dealii::TimerOutput &timer_);
+
   void build_matrix () ;
 
   void clear () ;
@@ -66,8 +68,6 @@ public:
     return matrix(i,j);
   }
 
-  static dealii::TimerOutput *timer;
-
 private:
   unsigned int                                        level;
   dealii::DoFHandler<dim>                             *dof_handler;
@@ -80,11 +80,8 @@ private:
   MatrixIntegrator<dim,same_diagonal>                 matrix_integrator;
   ResidualIntegrator<dim>                             residual_integrator;
   mutable dealii::MGLevelObject<LA::MPI::Vector>      ghosted_src;
-  MPI_Comm mpi_communicator;
+  MPI_Comm                                            mpi_communicator;
+  dealii::TimerOutput                                 *timer;
 };
-
-template <int dim, int fe_degree, bool same_diagonal>
-dealii::TimerOutput *
-LaplaceOperator<dim,fe_degree,same_diagonal>::timer;
 
 #endif // LAPLACEOPERATOR_H

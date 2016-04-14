@@ -25,11 +25,11 @@ int main (int argc, char *argv[])
       dealii::TimerOutput timer (mpi_communicator, pcout,
                                  dealii::TimerOutput::never,
                                  dealii::TimerOutput::wall_times);
-      /*{
+      {
         MyLaplace<2,true,1> dgmethod(timer, mpi_communicator, pcout);
         dgmethod.run ();
       }
-      {
+      /*{
         MyLaplace<2,true,2> dgmethod(timer, mpi_communicator, pcout);
         dgmethod.run ();
       }
@@ -73,10 +73,10 @@ int main (int argc, char *argv[])
         MyLaplace<3,true,4> dgmethod(timer, mpi_communicator, pcout);
         dgmethod.run ();
       }*/
-      {
+      /*{
         MyLaplace<3,false,1> dgmethod(timer, mpi_communicator, pcout);
         dgmethod.run ();
-      }
+      }*/
       /*{
         MyLaplace<3,false,2> dgmethod(timer, mpi_communicator, pcout);
         dgmethod.run ();

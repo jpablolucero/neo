@@ -95,6 +95,7 @@ template <int dim, typename VectorType, class number>
 PSCPreconditioner<dim, VectorType, number>::PSCPreconditioner()
 {}
 
+
 template <int dim, typename VectorType, class number>
 void PSCPreconditioner<dim, VectorType, number>::vmult (VectorType &dst,
                                                         const VectorType &src) const
