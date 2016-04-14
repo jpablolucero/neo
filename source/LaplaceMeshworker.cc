@@ -16,7 +16,7 @@ int main (int argc, char *argv[])
 #endif
       MPI_Comm mpi_communicator (MPI_COMM_WORLD);
       dealii::ConditionalOStream pcout(std::cout,
-                                       dealii::Utilities::MPI::this_mpi_process(mpi_communicator));
+                                       dealii::Utilities::MPI::this_mpi_process(mpi_communicator) == 0);
       std::ofstream logfile("deallog");
       dealii::deallog.attach(logfile);
       //lots of output only on the first process
