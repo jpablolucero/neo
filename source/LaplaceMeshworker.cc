@@ -13,6 +13,11 @@ int main (int argc, char *argv[])
 #else
       dealii::Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv, MAXTHREADS);
 #endif
+#if PARALLEL_LA == 0
+      const unsigned int n_proc = dealii::Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);
+      AssertThrow (n_proc==1,
+                   dealii::ExcMessage("If no parallel linear algebra is used, only one MPI process may be used!"));
+#endif
 #endif
       MPI_Comm mpi_communicator (MPI_COMM_WORLD);
       dealii::ConditionalOStream pcout(std::cout,

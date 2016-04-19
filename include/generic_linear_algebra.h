@@ -16,12 +16,11 @@ namespace dealii
     using namespace dealii;
     namespace MPI
     {
-      typedef parallel::distributed::Vector<double> Vector;
-      typedef parallel::distributed::BlockVector<double> BlockVector;
+      typedef Vector<double> Vector;
+      typedef BlockVector<double> BlockVector;
 
       typedef SparseMatrix<double>                          SparseMatrix;
-      typedef typename SparseMatrix<double>::const_iterator SparseMatrixConstIterator;
-      typedef typename SparseMatrix<double>::size_type      SparseMatrixSizeType ;
+      typedef types::global_dof_index                       SparseMatrixSizeType ;
 
       typedef PreconditionSSOR<SparseMatrix > PreconditionSSOR;
     }

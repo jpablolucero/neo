@@ -2,12 +2,6 @@
 #define PSCPRECONDITIONER_INST
 #include <generic_linear_algebra.h>
 
-template class PSCPreconditioner<2, dealii::Vector<double> , double>;
-template class PSCPreconditioner<2, dealii::Vector<double> , float>;
-
-template class PSCPreconditioner<3, dealii::Vector<double>, double>;
-template class PSCPreconditioner<3, dealii::Vector<double>, float>;
-
 template class PSCPreconditioner<2, LA::MPI::Vector, double>;
 template class PSCPreconditioner<2, LA::MPI::Vector, float>;
 

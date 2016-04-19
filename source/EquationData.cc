@@ -10,7 +10,7 @@ double
 Coefficient<dim>::value (const dealii::Point<dim> &p,
                          const unsigned int d) const
 {
-  return (d == 0) ? 1./(0.05 + 2.*p.square()) : 1.;
+  return (d == 0) ? 1.:1.;//1./(0.05 + 2.*p.square()) : 1.;
 }
 
 template <int dim>
@@ -59,7 +59,7 @@ ReferenceFunction<dim>::gradient (const dealii::Point<dim> &p,
                                   const unsigned int /*d*/) const
 {
   dealii::Tensor<1,dim> return_grad;
-  const double pi2 = dealii::numbers::PI;
+  const double pi2 = dealii::numbers::PI*4/3;
   return_grad[0]=pi2*std::cos(pi2*p(0))*std::sin(pi2*p(1));
   return_grad[1]=pi2*std::sin(pi2*p(0))*std::cos(pi2*p(1));
 
@@ -71,7 +71,7 @@ double
 ReferenceFunction<dim>::laplacian(const dealii::Point<dim> &p,
                                   const unsigned int /*component = 0*/) const
 {
-  const double pi2 = dealii::numbers::PI;
+  const double pi2 = dealii::numbers::PI*3/2;
   const double return_value = -2*pi2*pi2*std::sin(pi2*p(0))*std::sin(pi2*p(1));
   return return_value;
 }

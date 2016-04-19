@@ -123,9 +123,15 @@ void MyLaplace<dim,same_diagonal,degree>::setup_system ()
 #endif
   constraints.close();
 
+#if PARALLEL_LA == 0
+  solution.reinit (locally_owned_dofs.n_elements());
+  solution_tmp.reinit (locally_owned_dofs.n_elements());
+  right_hand_side.reinit (locally_owned_dofs.n_elements());
+#else
   solution.reinit (locally_owned_dofs, locally_relevant_dofs, mpi_communicator);
   solution_tmp.reinit (locally_owned_dofs, mpi_communicator);
   right_hand_side.reinit (locally_owned_dofs, mpi_communicator);
+#endif
 
   system_matrix.reinit (&dof_handler,&mapping, &constraints, mpi_communicator, triangulation.n_global_levels()-1);
 }
@@ -376,7 +382,7 @@ void MyLaplace<dim, same_diagonal, degree>::output_results (const unsigned int c
 template <int dim,bool same_diagonal,unsigned int degree>
 void MyLaplace<dim,same_diagonal,degree>::run ()
 {
-  for (unsigned int cycle=0; cycle<2; ++cycle)
+  for (unsigned int cycle=0; cycle<10-2*dim; ++cycle)
     {
       pcout << "Cycle " << cycle << std::endl;
       timer.reset();

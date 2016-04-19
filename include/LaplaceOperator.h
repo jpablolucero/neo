@@ -76,6 +76,9 @@ private:
   const dealii::ConstraintMatrix                      *constraints;
   std::unique_ptr<dealii::MeshWorker::DoFInfo<dim> >  dof_info;
   mutable dealii::MeshWorker::IntegrationInfoBox<dim> info_box;
+#if PARALLEL_LA == 0
+  dealii::SparsityPattern                             sp;
+#endif
   LA::MPI::SparseMatrix                               matrix;
   MatrixIntegrator<dim,same_diagonal>                 matrix_integrator;
   ResidualIntegrator<dim>                             residual_integrator;

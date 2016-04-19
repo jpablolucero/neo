@@ -2,7 +2,14 @@
 
 template <int dim, int fe_degree, bool same_diagonal>
 LaplaceOperator<dim, fe_degree, same_diagonal>::LaplaceOperator()
-{}
+{
+  level = 0;
+  dof_handler = NULL;
+  fe = NULL;
+  mapping = NULL;
+  constraints = NULL;
+  timer = NULL;
+}
 
 template <int dim, int fe_degree, bool same_diagonal>
 void LaplaceOperator<dim, fe_degree, same_diagonal>::set_timer(dealii::TimerOutput &timer_)
@@ -18,13 +25,13 @@ LaplaceOperator<dim, fe_degree, same_diagonal>::~LaplaceOperator()
   mapping = NULL ;
 }
 
-template <int dim, int fe_degree, bool same_diagonal>
+/*template <int dim, int fe_degree, bool same_diagonal>
 void LaplaceOperator<dim, fe_degree, same_diagonal>::clear()
 {
   dof_handler = NULL ;
   fe = NULL ;
   mapping = NULL ;
-}
+}*/
 
 
 template <int dim, int fe_degree, bool same_diagonal>
@@ -67,9 +74,13 @@ void LaplaceOperator<dim, fe_degree, same_diagonal>::reinit
   (*dof_handler, level, locally_relevant_level_dofs);
 
   ghosted_src.resize(level, level);
+#if PARALLEL_LA == 0
+  ghosted_src[level].reinit(locally_owned_level_dofs.n_elements());
+#else
   ghosted_src[level].reinit(locally_owned_level_dofs,
                             locally_relevant_level_dofs,
                             mpi_communicator_);
+#endif
   timer->leave_subsection();
 }
 
@@ -146,9 +157,15 @@ void LaplaceOperator<dim, fe_degree, same_diagonal>::build_matrix ()
   AssertThrow(first_cell_found || dof_handler->locally_owned_mg_dofs(level).n_elements()==0,
               dealii::ExcInternalError());
 
+#if PARALLEL_LA == 0
+  sp.copy_from (dsp);
+  mg_matrix[level].reinit(sp);
+#else
   mg_matrix[level].reinit(dof_handler->locally_owned_mg_dofs(level),
                           dof_handler->locally_owned_mg_dofs(level),
                           dsp,mpi_communicator);
+#endif
+
   if (first_cell_found)
     {
       dealii::MeshWorker::Assembler::MGMatrixSimple<LA::MPI::SparseMatrix> assembler;
@@ -171,7 +188,12 @@ void LaplaceOperator<dim, fe_degree, same_diagonal>::build_matrix ()
                                                       matrix_integrator, assembler);
     }
   mg_matrix[level].compress(dealii::VectorOperation::add);
+#if PARALLEL_LA==0
+  matrix = std::move(mg_matrix[level]);
+#else
   matrix.copy_from(mg_matrix[level]);
+#endif
+
   timer->leave_subsection();
 }
 
