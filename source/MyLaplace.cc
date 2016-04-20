@@ -8,8 +8,8 @@ MyLaplace<dim,same_diagonal,degree>::MyLaplace (dealii::TimerOutput &timer_,
   :
   mpi_communicator(mpi_communicator_),
   triangulation(mpi_communicator,dealii::Triangulation<dim>::
-                limit_level_difference_at_vertices,
-                dealii::parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy),
+               limit_level_difference_at_vertices,
+               dealii::parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy),
   mapping (),
 #ifdef CG
   fe(dealii::FE_Q<dim>(degree),1),
@@ -155,12 +155,14 @@ void MyLaplace<dim, same_diagonal, degree>::assemble_system ()
 
   dealii::MeshWorker::DoFInfo<dim> dof_info(dof_handler.block_info());
 
-//  ResidualSimpleConstraints<LA::MPI::Vector > rhs_assembler;
-  dealii::MeshWorker::Assembler::ResidualSimple<LA::MPI::Vector > rhs_assembler;
+  ResidualSimpleConstraints<LA::MPI::Vector > rhs_assembler;
+//  dealii::MeshWorker::Assembler::ResidualSimple<LA::MPI::Vector > rhs_assembler;
   dealii::AnyData data;
   data.add<LA::MPI::Vector *>(&right_hand_side, "RHS");
   rhs_assembler.initialize(data);
-//  rhs_assembler.initialize(constraints);
+#ifdef CG
+  rhs_assembler.initialize(constraints);
+#endif
 
   RHSIntegrator<dim> rhs_integrator(fe.n_components());
 
@@ -382,14 +384,17 @@ void MyLaplace<dim, same_diagonal, degree>::output_results (const unsigned int c
 template <int dim,bool same_diagonal,unsigned int degree>
 void MyLaplace<dim,same_diagonal,degree>::run ()
 {
-  for (unsigned int cycle=0; cycle<10-2*dim; ++cycle)
+  for (unsigned int cycle=0; cycle<2; ++cycle)
     {
       pcout << "Cycle " << cycle << std::endl;
       timer.reset();
-      timer.enter_subsection("refine_global");
-      pcout << "Refine global" << std::endl;
-      triangulation.refine_global (1);
-      timer.leave_subsection();
+      if (cycle > 0)
+        {
+          timer.enter_subsection("refine_global");
+          pcout << "Refine global" << std::endl;
+          triangulation.refine_global (1);
+          timer.leave_subsection();
+        }
       pcout << "Finite element: " << fe.get_name() << std::endl;
       pcout << "Number of active cells: "
             << triangulation.n_global_active_cells()

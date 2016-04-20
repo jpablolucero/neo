@@ -34,7 +34,7 @@ int main (int argc, char *argv[])
         MyLaplace<2,true,1> dgmethod(timer, mpi_communicator, pcout);
         dgmethod.run ();
       }
-      /*{
+      {
         MyLaplace<2,true,2> dgmethod(timer, mpi_communicator, pcout);
         dgmethod.run ();
       }
@@ -45,12 +45,12 @@ int main (int argc, char *argv[])
       {
         MyLaplace<2,true,4> dgmethod(timer, mpi_communicator, pcout);
         dgmethod.run ();
-      }*/
+      }
       {
         MyLaplace<2,false,1> dgmethod(timer, mpi_communicator, pcout);
         dgmethod.run ();
       }
-      /*{
+      {
         MyLaplace<2,false,2> dgmethod(timer, mpi_communicator, pcout);
         dgmethod.run ();
       }
@@ -77,12 +77,12 @@ int main (int argc, char *argv[])
       {
         MyLaplace<3,true,4> dgmethod(timer, mpi_communicator, pcout);
         dgmethod.run ();
-      }*/
-      /*{
+      }
+      {
         MyLaplace<3,false,1> dgmethod(timer, mpi_communicator, pcout);
         dgmethod.run ();
-      }*/
-      /*{
+      }
+      {
         MyLaplace<3,false,2> dgmethod(timer, mpi_communicator, pcout);
         dgmethod.run ();
       }
@@ -93,7 +93,7 @@ int main (int argc, char *argv[])
       {
         MyLaplace<3,false,4> dgmethod(timer, mpi_communicator, pcout);
         dgmethod.run ();
-      }*/
+      }
     }
   catch (std::exception &exc)
     {

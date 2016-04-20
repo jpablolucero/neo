@@ -224,7 +224,7 @@ void RHSIntegrator<dim>::cell(dealii::MeshWorker::DoFInfo<dim> &dinfo, typename 
 #ifdef CG
       //we need to do the same thing as for matrix integrator
       dealii::FullMatrix<double> &M = dinfo.matrix(b*n_blocks + b).matrix;
-      LocalIntegrators::Diffusion::cell_matrix<dim>(M,fev,coeffs);
+      LocalIntegrators::Diffusion::cell_matrix<dim>(M,fev,coeffs_values);
 #endif
     }
 }

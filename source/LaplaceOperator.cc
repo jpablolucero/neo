@@ -171,7 +171,7 @@ void LaplaceOperator<dim, fe_degree, same_diagonal>::build_matrix ()
       dealii::MeshWorker::Assembler::MGMatrixSimple<LA::MPI::SparseMatrix> assembler;
       assembler.initialize(mg_matrix);
 #ifdef CG
-      //assembler.initialize(constraints);
+      assembler.initialize(constraints);
 #endif
 
       typename dealii::DoFHandler<dim>::level_cell_iterator end_cell;
@@ -221,7 +221,7 @@ template <int dim, int fe_degree, bool same_diagonal>
 void LaplaceOperator<dim,fe_degree,same_diagonal>::vmult_add (LA::MPI::Vector &dst,
     const LA::MPI::Vector &src) const
 {
-  timer->enter_subsection("LO::vmult_add::initialize");
+  timer->enter_subsection("LO::initialize ("+ dealii::Utilities::int_to_string(level)+ ")");
   dealii::AnyData dst_data;
   dst_data.add<LA::MPI::Vector *>(&dst, "dst");
   ghosted_src[level] = src;
@@ -229,14 +229,14 @@ void LaplaceOperator<dim,fe_degree,same_diagonal>::vmult_add (LA::MPI::Vector &d
   src_data.add<const dealii::MGLevelObject<LA::MPI::Vector >*>(&ghosted_src,"src");
   timer->leave_subsection();
 
-  timer->enter_subsection("LO::vmult_add::assembler_setup");
+  timer->enter_subsection("LO::assembler_setup ("+ dealii::Utilities::int_to_string(level)+ ")");
   info_box.initialize(*fe, *mapping, src_data, ghosted_src, &(dof_handler->block_info()));
   dealii::MeshWorker::Assembler::ResidualSimple<LA::MPI::Vector > assembler;
   assembler.initialize(dst_data);
 //  assembler.initialize(*constraints);
   timer->leave_subsection();
 
-  timer->enter_subsection("LO::vmult_add::IntegrationLoop");
+  timer->enter_subsection("LO::IntegrationLoop ("+ dealii::Utilities::int_to_string(level)+ ")");
   dealii::MeshWorker::integration_loop<dim, dim>
   (dof_handler->begin_mg(level), dof_handler->end_mg(level),
    *dof_info,info_box,residual_integrator,assembler);

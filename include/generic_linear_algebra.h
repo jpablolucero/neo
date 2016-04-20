@@ -14,6 +14,7 @@ namespace dealii
   namespace LinearAlgebraDealII
   {
     using namespace dealii;
+    typedef SolverCG<Vector<double> > SolverCG;
     namespace MPI
     {
       typedef Vector<double> Vector;

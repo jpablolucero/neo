@@ -91,22 +91,22 @@ inline void
 ResidualSimpleConstraints<VectorType>::assemble(const DOFINFO &info)
 {
   Assert(!info.level_cell, dealii::ExcMessage("Cell may not access level dofs"));
-  for (unsigned int m=0; m<residuals.size(); ++m)
+
+  for (unsigned int k=0; k<residuals.size(); ++k)
     {
-      const dealii::FullMatrix<double> &local_matrix= info.matrix(m, false).matrix;
-      //Assert there is only one block
-      const dealii::Vector<double> &local_vector = info.vector(m).block(0);
-      const std::vector<dealii::types::global_dof_index> &gdi = info.indices;
-
-      VectorType *v = residuals.entry<VectorType *>(m);
-
-      if (constraints == 0)
+      VectorType *v = residuals.entry<VectorType *>(k);
+      const dealii::FullMatrix<double> &local_matrix= info.matrix(k, false).matrix;
+      for (unsigned int i=0; i != info.vector(k).n_blocks(); ++i)
         {
-          for (unsigned int i=0; i<info.vector(m).block(0).size(); ++i)
-            (*v)(info.indices[i]) += local_vector(i);
+          const std::vector<dealii::types::global_dof_index>  &ldi = info.vector(k).n_blocks()==1?
+                                                             info.indices:
+                                                             info.indices_by_block[i];
+
+          if (constraints !=0)
+            constraints->distribute_local_to_global(info.vector(k).block(i), ldi, *v, local_matrix);
+          else
+            v->add(ldi, info.vector(k).block(i));
         }
-      else
-        constraints->distribute_local_to_global(local_vector, gdi, *v, local_matrix);
     }
 }
 
