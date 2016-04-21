@@ -384,7 +384,7 @@ void MyLaplace<dim, same_diagonal, degree>::output_results (const unsigned int c
 template <int dim,bool same_diagonal,unsigned int degree>
 void MyLaplace<dim,same_diagonal,degree>::run ()
 {
-  for (unsigned int cycle=0; cycle<2; ++cycle)
+  for (unsigned int cycle=0; cycle<10-2*dim; ++cycle)
     {
       pcout << "Cycle " << cycle << std::endl;
       timer.reset();
@@ -427,6 +427,14 @@ void MyLaplace<dim,same_diagonal,degree>::run ()
       timer.print_summary();
       pcout << std::endl;
     }
+  // workaround regarding issue #2533
+  // GrowingVectorMemory does not destroy the vectors
+  // after this instance goes out of scope.
+  // Unfortunately, the mpi_communicators given to the
+  // remaining vectors might be invalid the next time
+  // a vector is requested. Therefore, clean up everything
+  // before going out of scope.
+  dealii::GrowingVectorMemory<LA::MPI::Vector>::release_unused_memory();
 }
 
 template class MyLaplace<2,true,1>;

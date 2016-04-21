@@ -99,8 +99,8 @@ ResidualSimpleConstraints<VectorType>::assemble(const DOFINFO &info)
       for (unsigned int i=0; i != info.vector(k).n_blocks(); ++i)
         {
           const std::vector<dealii::types::global_dof_index>  &ldi = info.vector(k).n_blocks()==1?
-                                                             info.indices:
-                                                             info.indices_by_block[i];
+                                                                     info.indices:
+                                                                     info.indices_by_block[i];
 
           if (constraints !=0)
             constraints->distribute_local_to_global(info.vector(k).block(i), ldi, *v, local_matrix);
