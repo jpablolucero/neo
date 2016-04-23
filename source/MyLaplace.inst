@@ -1,0 +1,13 @@
+#ifndef MYLAPLACE_INST
+#define MYLAPLACE_INST
+
+#undef I
+#define I(D,S,P) template class MyLaplace<D,S,P>
+I(2,true,1);I(2,true,2);I(2,true,3);I(2,true,4);
+I(2,false,1);I(2,false,2);I(2,false,3);I(2,false,4);
+I(3,true,1);I(3,true,2);I(3,true,3);I(3,true,4);
+I(3,false,1);I(3,false,2);I(3,false,3);I(3,false,4);
+#undef I
+
+#endif // MYLAPLACE_INST
+

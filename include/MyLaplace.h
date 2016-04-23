@@ -39,6 +39,7 @@
 #include <LaplaceOperator.h>
 #include <EquationData.h>
 #include <ResidualSimpleConstraints.h>
+#include <PSCPreconditioner.h>
 
 #include <string>
 #include <fstream>

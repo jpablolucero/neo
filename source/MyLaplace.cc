@@ -1,5 +1,4 @@
 #include <MyLaplace.h>
-#include <PSCPreconditioner.h>
 
 template <int dim,bool same_diagonal,unsigned int degree>
 MyLaplace<dim,same_diagonal,degree>::MyLaplace (dealii::TimerOutput &timer_,
@@ -8,8 +7,8 @@ MyLaplace<dim,same_diagonal,degree>::MyLaplace (dealii::TimerOutput &timer_,
   :
   mpi_communicator(mpi_communicator_),
   triangulation(mpi_communicator,dealii::Triangulation<dim>::
-               limit_level_difference_at_vertices,
-               dealii::parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy),
+		limit_level_difference_at_vertices,
+		dealii::parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy),
   mapping (),
 #ifdef CG
   fe(dealii::FE_Q<dim>(degree),1),
@@ -437,19 +436,4 @@ void MyLaplace<dim,same_diagonal,degree>::run ()
   dealii::GrowingVectorMemory<LA::MPI::Vector>::release_unused_memory();
 }
 
-template class MyLaplace<2,true,1>;
-template class MyLaplace<2,true,2>;
-template class MyLaplace<2,true,3>;
-template class MyLaplace<2,true,4>;
-template class MyLaplace<3,true,1>;
-template class MyLaplace<3,true,2>;
-template class MyLaplace<3,true,3>;
-template class MyLaplace<3,true,4>;
-template class MyLaplace<2,false,1>;
-template class MyLaplace<2,false,2>;
-template class MyLaplace<2,false,3>;
-template class MyLaplace<2,false,4>;
-template class MyLaplace<3,false,1>;
-template class MyLaplace<3,false,2>;
-template class MyLaplace<3,false,3>;
-template class MyLaplace<3,false,4>;
+#include "MyLaplace.inst"
