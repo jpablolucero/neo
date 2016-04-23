@@ -16,12 +16,13 @@
 
 
 template <int dim, int fe_degree, bool same_diagonal>
-class LaplaceOperator : public dealii::Subscriptor
+class LaplaceOperator final: public dealii::Subscriptor
 {
 public:
   LaplaceOperator () ;
-
   ~LaplaceOperator () ;
+  LaplaceOperator (const LaplaceOperator &) = delete ;
+  LaplaceOperator& operator = (const LaplaceOperator&) = delete;
 
   void reinit (dealii::DoFHandler<dim> *dof_handler_,
                const dealii::MappingQ1<dim> *mapping_,

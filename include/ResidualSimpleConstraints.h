@@ -4,9 +4,13 @@
 #include <deal.II/meshworker/simple.h>
 
 template <typename VectorType>
-class ResidualSimpleConstraints : private dealii::MeshWorker::Assembler::ResidualSimple<VectorType>
+class ResidualSimpleConstraints final : private dealii::MeshWorker::Assembler::ResidualSimple<VectorType>
 {
 public:
+  ResidualSimpleConstraints () = default;
+  ResidualSimpleConstraints (const ResidualSimpleConstraints &) = delete ;
+  ResidualSimpleConstraints& operator = (const ResidualSimpleConstraints&) = delete;
+
   /**
    * Initialize with an AnyData object holding the result of assembling.
    *

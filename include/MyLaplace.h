@@ -45,13 +45,15 @@
 #include <fstream>
 
 template <int dim=2,bool same_diagonal = true, unsigned int degree = 1>
-class MyLaplace
+class MyLaplace final
 {
 public:
   MyLaplace (dealii::TimerOutput &timer_,
              MPI_Comm &mpi_communicator_,
              dealii::ConditionalOStream &pcout_);
   ~MyLaplace ();
+  MyLaplace (const MyLaplace &) = delete ;
+  MyLaplace& operator = (const MyLaplace&) = delete;
   void run ();
 
 private:

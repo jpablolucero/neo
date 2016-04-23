@@ -1,21 +1,25 @@
 #ifndef PSCPRECONDITIONER_H
 #define PSCPRECONDITIONER_H
 
-#include <DDHandler.h>
-
 #include <deal.II/base/timer.h>
 #include <deal.II/lac/vector.h>
 #include <deal.II/lac/full_matrix.h>
 #include <deal.II/dofs/dof_handler.h>
 
-template <int dim, typename VectorType, class number>
-class PSCPreconditioner
+#include <generic_linear_algebra.h>
+#include <DDHandler.h>
+
+
+template <int dim=2, typename VectorType=LA::MPI::Vector, class number=double>
+class PSCPreconditioner final
 {
 public:
   typedef typename dealii::FullMatrix<double> Matrix;
   class AdditionalData;
 
   PSCPreconditioner();
+  PSCPreconditioner (const PSCPreconditioner &) = delete ;
+  PSCPreconditioner& operator = (const PSCPreconditioner&) = delete;
 
   // interface for MGSmootherPrecondition but global_operator is not used
   template <class GlobalOperatorType>

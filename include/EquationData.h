@@ -11,6 +11,8 @@ class Coefficient final : public dealii::Function<dim>
 {
 public:
   Coefficient();
+  Coefficient (const Coefficient &) = delete ;
+  Coefficient& operator = (const Coefficient&) = delete;
 
   double value (const dealii::Point<dim>  &p,
                 const unsigned int        component = 0) const override;
@@ -24,10 +26,12 @@ public:
 };
 
 template <int dim>
-class ReferenceFunction : public dealii::Function<dim>
+class ReferenceFunction final : public dealii::Function<dim>
 {
 public:
   ReferenceFunction(unsigned int n_comp_);
+  ReferenceFunction (const ReferenceFunction &) = delete ;
+  ReferenceFunction& operator = (const ReferenceFunction&) = delete;
 
   virtual double value(const dealii::Point<dim> &p,
                        const unsigned int /*component = 0*/) const;

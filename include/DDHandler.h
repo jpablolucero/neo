@@ -5,8 +5,6 @@
 #include <deal.II/grid/tria.h>
 #include <deal.II/dofs/dof_handler.h>
 
-
-
 /* Base class for domain decompositions used in the Parallel Subspace
  * Correction Preconditioner.
  */
