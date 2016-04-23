@@ -1,5 +1,6 @@
 #include <LaplaceMeshworker.h>
 
+#ifndef BENCHMARKS
 int main (int argc, char *argv[])
 {
 #if PARALLEL_LA == 1
@@ -26,10 +27,21 @@ int main (int argc, char *argv[])
   dealii::TimerOutput timer (mpi_communicator, pcout,
 			     dealii::TimerOutput::never,
 			     dealii::TimerOutput::wall_times);
-  MyLaplace<2,true,1> dgmethod(timer, mpi_communicator, pcout);
-  dgmethod.run ();
+  for (unsigned int l=2;l<7;l+=2)
+    {
+      MyLaplace<2,false,1> dgmethod(timer, mpi_communicator, pcout);
+      dgmethod.n_levels = l ;
+      dgmethod.run ();
+    }
+  for (unsigned int l=2;l<5;l+=2)
+    {
+      MyLaplace<3,false,1> dgmethod(timer, mpi_communicator, pcout);
+      dgmethod.n_levels = l ;
+      dgmethod.run ();
+    }  
   return 0;
 }
+#endif
 
 
 

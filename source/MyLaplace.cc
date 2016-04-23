@@ -5,6 +5,7 @@ MyLaplace<dim,same_diagonal,degree>::MyLaplace (dealii::TimerOutput &timer_,
                                                 MPI_Comm &mpi_communicator_,
                                                 dealii::ConditionalOStream &pcout_)
   :
+  n_levels(2),
   mpi_communicator(mpi_communicator_),
   triangulation(mpi_communicator,dealii::Triangulation<dim>::
 		limit_level_difference_at_vertices,
@@ -303,7 +304,7 @@ void MyLaplace<dim,same_diagonal,degree>::solve ()
   dealii::PreconditionIdentity preconditioner;
 #endif
 
-  dealii::ReductionControl          solver_control (dof_handler.n_dofs(), 1.e-20, 1.e-10);
+  dealii::ReductionControl          solver_control (dof_handler.n_dofs(), 1.e-20, 1.e-10,true);
   dealii::SolverCG<LA::MPI::Vector> solver (solver_control);
 
   timer.leave_subsection();
@@ -383,49 +384,42 @@ void MyLaplace<dim, same_diagonal, degree>::output_results (const unsigned int c
 template <int dim,bool same_diagonal,unsigned int degree>
 void MyLaplace<dim,same_diagonal,degree>::run ()
 {
-  for (unsigned int cycle=0; cycle<10-2*dim; ++cycle)
-    {
-      pcout << "Cycle " << cycle << std::endl;
-      timer.reset();
-      if (cycle > 0)
-        {
-          timer.enter_subsection("refine_global");
-          pcout << "Refine global" << std::endl;
-          triangulation.refine_global (1);
-          timer.leave_subsection();
-        }
-      pcout << "Finite element: " << fe.get_name() << std::endl;
-      pcout << "Number of active cells: "
-            << triangulation.n_global_active_cells()
-            << std::endl;
-      timer.enter_subsection("setup_system");
-      pcout << "Setup system" << std::endl;
-      setup_system ();
-      pcout << "Assemble system" << std::endl;
-      assemble_system();
-      timer.leave_subsection();
-      dealii::deallog << "DoFHandler levels: ";
-      for (unsigned int l=0; l<triangulation.n_global_levels(); ++l)
-        dealii::deallog << ' ' << dof_handler.n_dofs(l);
-      dealii::deallog << std::endl;
+  timer.reset();
+  timer.enter_subsection("refine_global");
+  pcout << "Refine global" << std::endl;
+  triangulation.refine_global (n_levels-1);
+  timer.leave_subsection();
+  pcout << "Finite element: " << fe.get_name() << std::endl;
+  pcout << "Number of active cells: "
+	<< triangulation.n_global_active_cells()
+	<< std::endl;
+  timer.enter_subsection("setup_system");
+  pcout << "Setup system" << std::endl;
+  setup_system ();
+  pcout << "Assemble system" << std::endl;
+  assemble_system();
+  timer.leave_subsection();
+  dealii::deallog << "DoFHandler levels: ";
+  for (unsigned int l=0; l<triangulation.n_global_levels(); ++l)
+    dealii::deallog << ' ' << dof_handler.n_dofs(l);
+  dealii::deallog << std::endl;
 #ifdef MG
-      timer.enter_subsection("setup_multigrid");
-      pcout << "Setup multigrid" << std::endl;
-      setup_multigrid ();
-      timer.leave_subsection();
+  timer.enter_subsection("setup_multigrid");
+  pcout << "Setup multigrid" << std::endl;
+  setup_multigrid ();
+  timer.leave_subsection();
 #endif
-      timer.enter_subsection("solve");
-      pcout << "Solve" << std::endl;
-      solve ();
-      timer.leave_subsection();
-      timer.enter_subsection("output");
-      pcout << "Output" << std::endl;
-      compute_error();
-      output_results(cycle);
-      timer.leave_subsection();
-      timer.print_summary();
-      pcout << std::endl;
-    }
+  timer.enter_subsection("solve");
+  pcout << "Solve" << std::endl;
+  solve ();
+  timer.leave_subsection();
+  timer.enter_subsection("output");
+  pcout << "Output" << std::endl;
+  compute_error();
+  output_results(n_levels);
+  timer.leave_subsection();
+  timer.print_summary();
+  pcout << std::endl;
   // workaround regarding issue #2533
   // GrowingVectorMemory does not destroy the vectors
   // after this instance goes out of scope.

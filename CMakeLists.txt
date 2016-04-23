@@ -13,56 +13,74 @@ ENDIF()
 DEAL_II_INITIALIZE_CACHED_VARIABLES()
 PROJECT(laplace_meshworker)
 
+SET(PARALLEL_LA 2 CACHE STRING "Use deal.II (0) PETSc(1) or Trilinos(2)?")
+ADD_DEFINITIONS(-DPARALLEL_LA=${PARALLEL_LA})
 
-set(PARALLEL_LA 2 CACHE STRING "Use deal.II (0) PETSc(1) or Trilinos(2)?")
-add_definitions(-DPARALLEL_LA=${PARALLEL_LA})
+SET(MAXTHREADS 0 CACHE STRING "Maximum number of threads used per MPI process, 0 means no limit")
+ADD_DEFINITIONS(-DMAXTHREADS=${MAXTHREADS})
 
-set(MAXTHREADS 0 CACHE STRING "Maximum number of threads used per MPI process, 0 means no limit")
-add_definitions(-DMAXTHREADS=${MAXTHREADS})
+OPTION(CG "Use FE_Q?" OFF)
+IF(CG)
+  ADD_DEFINITIONS(-DCG)
+ENDIF()
 
-option(CG "Use FE_Q?" OFF)
-if(CG)
-  add_definitions(-DCG)
-endif()
+OPTION(PERIODIC "Periodic boundary conditions?" OFF)
+IF(PERIODIC)
+  ADD_DEFINITIONS(-DPERIODIC)
+ENDIF()
 
-option(PERIODIC "Periodic boundary conditions?" OFF)
-if(PERIODIC)
-  add_definitions(-DPERIODIC)
-endif()
+OPTION(MG "Multigrid Preconditioner?" ON)
+IF (MG)
+  ADD_DEFINITIONS(-DMG)
+ENDIF()
 
-option(MG "Multigrid Preconditioner?" ON)
-if (MG)
-  add_definitions(-DMG)
-endif()
+OPTION(BENCHMARKS "Benchmarks?" OFF)
+IF (BENCHMARKS)
+  ADD_DEFINITIONS(-DBENCHMARKS)
+  SET(GOOGLE_BENCHMARK_PATH "" CACHE PATH "Location of the install path of google benchmark")
+  ADD_DEFINITIONS(-DGOOGLE_BENCHMARK_PATH=${GOOGLE_BENCHMARK_PATH})
+  INCLUDE_DIRECTORIES(${GOOGLE_BENCHMARK_PATH}/include)
+  FIND_PACKAGE(Threads REQUIRED)
+  ADD_LIBRARY(benchmark STATIC IMPORTED)
+  SET_TARGET_PROPERTIES(benchmark PROPERTIES
+    IMPORTED_LOCATION 
+    ${GOOGLE_BENCHMARK_PATH}/lib/libbenchmark.a)
+ENDIF()
 
-set(SMOOTHENINGSTEPS 10 CACHE STRING "Number of smoothening steps")
-add_definitions(-DSMOOTHENINGSTEPS=${SMOOTHENINGSTEPS})
+SET(SMOOTHENINGSTEPS 10 CACHE STRING "Number of smoothening steps")
+ADD_DEFINITIONS(-DSMOOTHENINGSTEPS=${SMOOTHENINGSTEPS})
 
 INCLUDE_DIRECTORIES(include include/local_integrators)
 FILE(GLOB sources source/*.cc)
 
-IF(CMAKE_BUILD_TYPE MATCHES "Debug")
+IF(CMAKE_BUILD_TYPE MATCHES "DEBUG")
   ADD_EXECUTABLE(laplace_meshworker.g ${sources})
+  IF (BENCHMARKS)
+    TARGET_LINK_LIBRARIES(laplace_meshworker.g benchmark ${CMAKE_THREAD_LIBS_INIT})
+  ENDIF()
   DEAL_II_SETUP_TARGET(laplace_meshworker.g)
-ELSEIF(CMAKE_BUILD_TYPE MATCHES "Release")
+ELSEIF(CMAKE_BUILD_TYPE MATCHES "RELEASE")
   ADD_EXECUTABLE(laplace_meshworker ${sources})
+  IF (BENCHMARKS)
+    TARGET_LINK_LIBRARIES(laplace_meshworker benchmark ${CMAKE_THREAD_LIBS_INIT})
+  ENDIF()
   DEAL_II_SETUP_TARGET(laplace_meshworker)
 ELSE()
   MESSAGE(FATAL_ERROR
-    "CMAKE_BUILD_TYPE does neither match Release nor Debug!"
+    "CMAKE_BUILD_TYPE does neither match RELEASE nor DEBUG!"
     )
 ENDIF()
 
 ADD_CUSTOM_TARGET(debug
-  COMMAND ${CMAKE_COMMAND} -DCMAKE_BUILD_TYPE=Debug ${CMAKE_SOURCE_DIR}
+  COMMAND ${CMAKE_COMMAND} -DCMAKE_BUILD_TYPE=DEBUG ${CMAKE_SOURCE_DIR}
   COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target all
-  COMMENT "Switch CMAKE_BUILD_TYPE to Debug"
+  COMMENT "Switch CMAKE_BUILD_TYPE to DEBUG"
   )
 
 ADD_CUSTOM_TARGET(release
-  COMMAND ${CMAKE_COMMAND} -DCMAKE_BUILD_TYPE=Release ${CMAKE_SOURCE_DIR}
+  COMMAND ${CMAKE_COMMAND} -DCMAKE_BUILD_TYPE=RELEASE ${CMAKE_SOURCE_DIR}
   COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target all
-  COMMENT "Switch CMAKE_BUILD_TYPE to Release"
+  COMMENT "Switch CMAKE_BUILD_TYPE to RELEASE"
   )
 
 ADD_CUSTOM_TARGET(both)

@@ -55,7 +55,7 @@ public:
   MyLaplace (const MyLaplace &) = delete ;
   MyLaplace& operator = (const MyLaplace&) = delete;
   void run ();
-
+  unsigned int n_levels ;
 private:
   void setup_system ();
   void setup_multigrid ();
