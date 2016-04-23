@@ -1,0 +1,26 @@
+--- ../../../source/benchmark/include/benchmark/benchmark_api.h	2016-04-23 16:37:32.685398441 +0200
++++ benchmark_api.h	2016-04-23 17:04:14.313444197 +0200
+@@ -596,10 +596,19 @@
+ 
+ 
+ // Helper macro to create a main routine in a test that runs the benchmarks
+-#define BENCHMARK_MAIN()                   \
+-  int main(int argc, char** argv) {        \
+-    ::benchmark::Initialize(&argc, argv);  \
+-    ::benchmark::RunSpecifiedBenchmarks(); \
++#define BENCHMARK_MAIN()						\
++  int main(int argc, char** argv) {					\
++    dealii::Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv); \
++    MPI_Comm mpi_communicator (MPI_COMM_WORLD);				\
++    if (dealii::Utilities::MPI::this_mpi_process(mpi_communicator)!=0)  \
++      {                                                                 \
++	fclose (stderr);                                                \
++	stderr = fopen ("/dev/null","w");                               \
++	fclose (stdout);                                                \
++	stdout = fopen ("/dev/null","w");                               \
++      }                                                                 \
++    ::benchmark::Initialize(&argc, argv);				\
++    ::benchmark::RunSpecifiedBenchmarks();				\
+   }
+ 
+ #endif  // BENCHMARK_BENCHMARK_API_H_
