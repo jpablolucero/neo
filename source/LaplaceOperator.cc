@@ -4,11 +4,11 @@ template <int dim, int fe_degree, bool same_diagonal>
 LaplaceOperator<dim, fe_degree, same_diagonal>::LaplaceOperator()
 {
   level = 0;
-  dof_handler = NULL;
-  fe = NULL;
-  mapping = NULL;
-  constraints = NULL;
-  timer = NULL;
+  dof_handler = nullptr;
+  fe = nullptr;
+  mapping = nullptr;
+  constraints = nullptr;
+  timer = nullptr;
 }
 
 template <int dim, int fe_degree, bool same_diagonal>
@@ -20,17 +20,17 @@ void LaplaceOperator<dim, fe_degree, same_diagonal>::set_timer(dealii::TimerOutp
 template <int dim, int fe_degree, bool same_diagonal>
 LaplaceOperator<dim, fe_degree, same_diagonal>::~LaplaceOperator()
 {
-  dof_handler = NULL ;
-  fe = NULL ;
-  mapping = NULL ;
+  dof_handler = nullptr ;
+  fe = nullptr ;
+  mapping = nullptr ;
 }
 
 /*template <int dim, int fe_degree, bool same_diagonal>
 void LaplaceOperator<dim, fe_degree, same_diagonal>::clear()
 {
-  dof_handler = NULL ;
-  fe = NULL ;
-  mapping = NULL ;
+  dof_handler = nullptr ;
+  fe = nullptr ;
+  mapping = nullptr ;
 }*/
 
 
@@ -224,7 +224,7 @@ void LaplaceOperator<dim,fe_degree,same_diagonal>::vmult_add (LA::MPI::Vector &d
   timer->enter_subsection("LO::initialize ("+ dealii::Utilities::int_to_string(level)+ ")");
   dealii::AnyData dst_data;
   dst_data.add<LA::MPI::Vector *>(&dst, "dst");
-  ghosted_src[level] = src;
+  ghosted_src[level] = std::move(src);
   dealii::AnyData src_data ;
   src_data.add<const dealii::MGLevelObject<LA::MPI::Vector >*>(&ghosted_src,"src");
   timer->leave_subsection();
