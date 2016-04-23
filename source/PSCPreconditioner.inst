@@ -1,6 +1,6 @@
 #ifndef PSCPRECONDITIONER_INST
 #define PSCPRECONDITIONER_INST
-#include <generic_linear_algebra.h>
+#include <GenericLinearAlgebra.h>
 
 template class PSCPreconditioner<2, LA::MPI::Vector, double>;
 template class PSCPreconditioner<2, LA::MPI::Vector, float>;

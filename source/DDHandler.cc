@@ -1,10 +1,5 @@
 #include <DDHandler.h>
 
-#include <deal.II/dofs/dof_accessor.h>
-#include <deal.II/base/graph_coloring.h>
-
-
-
 /***
  *** DDHandlerBase
  ***/

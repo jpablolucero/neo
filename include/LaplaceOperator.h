@@ -11,9 +11,8 @@
 #include <deal.II/meshworker/simple.h>
 #include <deal.II/meshworker/loop.h>
 
-#include <generic_linear_algebra.h>
+#include <GenericLinearAlgebra.h>
 #include <Integrators.h>
-
 
 template <int dim, int fe_degree, bool same_diagonal>
 class LaplaceOperator final: public dealii::Subscriptor

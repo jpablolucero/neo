@@ -1,10 +1,5 @@
 #include <PSCPreconditioner.h>
 
-#include <deal.II/base/timer.h>
-#include <deal.II/base/work_stream.h>
-#include <deal.II/dofs/dof_tools.h>
-#include <functional>
-
 namespace implementation
 {
   namespace WorkStream

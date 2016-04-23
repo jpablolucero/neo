@@ -1,4 +1,4 @@
-#include<EquationData.h>
+#include <EquationData.h>
 
 template <int dim>
 Coefficient<dim>::Coefficient()

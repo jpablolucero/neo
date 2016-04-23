@@ -5,10 +5,13 @@
 #include <deal.II/lac/vector.h>
 #include <deal.II/lac/full_matrix.h>
 #include <deal.II/dofs/dof_handler.h>
+#include <deal.II/dofs/dof_tools.h>
+#include <deal.II/base/work_stream.h>
 
-#include <generic_linear_algebra.h>
+#include <functional>
+
+#include <GenericLinearAlgebra.h>
 #include <DDHandler.h>
-
 
 template <int dim=2, typename VectorType=LA::MPI::Vector, class number=double>
 class PSCPreconditioner final
