@@ -91,7 +91,7 @@ private:
 
   dealii::TimerOutput &timer;
 };
-#ifdef FAST
+#ifdef HEADER_IMPLEMENTATION
 #include <MyLaplace.cc>
 #endif
 #endif // MYLAPLACE_H

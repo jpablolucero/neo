@@ -74,7 +74,7 @@ template <int dim, typename VectorType, class number>
 dealii::TimerOutput *
 PSCPreconditioner<dim, VectorType, number>::timer;
 
-#ifdef FAST
+#ifdef HEADER_IMPLEMENTATION
 #include <PSCPreconditioner.cc>
 #endif
 

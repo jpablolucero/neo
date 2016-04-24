@@ -43,7 +43,7 @@ public:
                            const unsigned int /*component = 0*/) const;
 };
 
-#ifdef FAST
+#ifdef HEADER_IMPLEMENTATION
 #include <EquationData.cc>
 #endif
 

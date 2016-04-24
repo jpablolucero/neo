@@ -65,7 +65,7 @@ private:
   ReferenceFunction<dim> exact_solution;
 };
 
-#ifdef FAST
+#ifdef HEADER_IMPLEMENTATION
 #include <Integrators.cc>
 #endif
 

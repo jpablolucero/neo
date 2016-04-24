@@ -87,7 +87,7 @@ protected:
   virtual void initialize_max_n_overlaps();
 };
 
-#ifdef FAST
+#ifdef HEADER_IMPLEMENTATION
 #include <DDHandler.cc>
 #endif
 
