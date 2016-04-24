@@ -87,4 +87,8 @@ private:
   dealii::TimerOutput                                 *timer;
 };
 
+#ifdef FAST
+#include <LaplaceOperator.cc>
+#endif
+
 #endif // LAPLACEOPERATOR_H

@@ -43,4 +43,8 @@ public:
                            const unsigned int /*component = 0*/) const;
 };
 
+#ifdef FAST
+#include <EquationData.cc>
+#endif
+
 #endif // EQUATIONDATA_H

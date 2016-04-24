@@ -65,4 +65,8 @@ private:
   ReferenceFunction<dim> exact_solution;
 };
 
+#ifdef FAST
+#include <Integrators.cc>
+#endif
+
 #endif // INTEGRATORS_H

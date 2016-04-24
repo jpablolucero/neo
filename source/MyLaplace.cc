@@ -6,6 +6,7 @@ MyLaplace<dim,same_diagonal,degree>::MyLaplace (dealii::TimerOutput &timer_,
                                                 dealii::ConditionalOStream &pcout_)
   :
   n_levels(2),
+  smoothing_steps(1),
   mpi_communicator(mpi_communicator_),
   triangulation(mpi_communicator,dealii::Triangulation<dim>::
 		limit_level_difference_at_vertices,
@@ -287,7 +288,7 @@ void MyLaplace<dim,same_diagonal,degree>::solve ()
   // SmootherSetup
   dealii::MGSmootherPrecondition<SystemMatrixType, Smoother, LA::MPI::Vector> mg_smoother;
   mg_smoother.initialize(mg_matrix, smoother_data);
-  mg_smoother.set_steps(SMOOTHENINGSTEPS);
+  mg_smoother.set_steps(smoothing_steps);
   dealii::mg::Matrix<LA::MPI::Vector>         mgmatrix;
   mgmatrix.initialize(mg_matrix);
   dealii::MGTransferPrebuilt<LA::MPI::Vector> mg_transfer;

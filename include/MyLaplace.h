@@ -56,6 +56,7 @@ public:
   MyLaplace& operator = (const MyLaplace&) = delete;
   void run ();
   unsigned int n_levels ;
+  unsigned int smoothing_steps ;
 private:
   void setup_system ();
   void setup_multigrid ();
@@ -90,5 +91,7 @@ private:
 
   dealii::TimerOutput &timer;
 };
-
+#ifdef FAST
+#include <MyLaplace.cc>
+#endif
 #endif // MYLAPLACE_H
