@@ -287,7 +287,7 @@ void Simulator<dim,same_diagonal,degree>::solve ()
                   {
                     local_matrix(i,j) = matrix_entries[n*i+j];
                   }
-
+              delete matrix_entries;
 
               local_level_inverse[level][0].invert(local_matrix);
 
