@@ -36,7 +36,7 @@
 #include <deal.II/numerics/vector_tools.h>
 #include <deal.II/numerics/vector_tools.templates.h>
 
-#include <MGOperator.h>
+#include <MFOperator.h>
 #include <EquationData.h>
 #include <ResidualSimpleConstraints.h>
 #include <PSCPreconditioner.h>
@@ -65,7 +65,7 @@ private:
   void compute_error () const;
   void output_results (const unsigned int cycle) const;
 
-  typedef MGOperator<dim, degree, same_diagonal> SystemMatrixType;
+  typedef MFOperator<dim, degree, same_diagonal> SystemMatrixType;
 
   dealii::IndexSet           locally_owned_dofs;
   dealii::IndexSet           locally_relevant_dofs;

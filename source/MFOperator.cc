@@ -1,7 +1,7 @@
-#include <MGOperator.h>
+#include <MFOperator.h>
 
 template <int dim, int fe_degree, bool same_diagonal>
-MGOperator<dim, fe_degree, same_diagonal>::MGOperator()
+MFOperator<dim, fe_degree, same_diagonal>::MFOperator()
 {
   level = 0;
   dof_handler = nullptr;
@@ -12,13 +12,13 @@ MGOperator<dim, fe_degree, same_diagonal>::MGOperator()
 }
 
 template <int dim, int fe_degree, bool same_diagonal>
-void MGOperator<dim, fe_degree, same_diagonal>::set_timer(dealii::TimerOutput &timer_)
+void MFOperator<dim, fe_degree, same_diagonal>::set_timer(dealii::TimerOutput &timer_)
 {
   timer = &timer_;
 }
 
 template <int dim, int fe_degree, bool same_diagonal>
-MGOperator<dim, fe_degree, same_diagonal>::~MGOperator()
+MFOperator<dim, fe_degree, same_diagonal>::~MFOperator()
 {
   dof_handler = nullptr ;
   fe = nullptr ;
@@ -26,7 +26,7 @@ MGOperator<dim, fe_degree, same_diagonal>::~MGOperator()
 }
 
 /*template <int dim, int fe_degree, bool same_diagonal>
-void MGOperator<dim, fe_degree, same_diagonal>::clear()
+void MFOperator<dim, fe_degree, same_diagonal>::clear()
 {
   dof_handler = nullptr ;
   fe = nullptr ;
@@ -35,7 +35,7 @@ void MGOperator<dim, fe_degree, same_diagonal>::clear()
 
 
 template <int dim, int fe_degree, bool same_diagonal>
-void MGOperator<dim, fe_degree, same_diagonal>::reinit
+void MFOperator<dim, fe_degree, same_diagonal>::reinit
 (dealii::DoFHandler<dim> *dof_handler_,
  const dealii::MappingQ1<dim> *mapping_,
  const dealii::ConstraintMatrix *constraints_,
@@ -85,7 +85,7 @@ void MGOperator<dim, fe_degree, same_diagonal>::reinit
 }
 
 template <int dim, int fe_degree, bool same_diagonal>
-void MGOperator<dim, fe_degree, same_diagonal>::build_matrix ()
+void MFOperator<dim, fe_degree, same_diagonal>::build_matrix ()
 {
   Assert(dof_handler != 0, dealii::ExcInternalError());
 
@@ -198,7 +198,7 @@ void MGOperator<dim, fe_degree, same_diagonal>::build_matrix ()
 }
 
 template <int dim, int fe_degree, bool same_diagonal>
-void MGOperator<dim,fe_degree,same_diagonal>::vmult (LA::MPI::Vector &dst,
+void MFOperator<dim,fe_degree,same_diagonal>::vmult (LA::MPI::Vector &dst,
                                                           const LA::MPI::Vector &src) const
 {
   dst = 0;
@@ -208,7 +208,7 @@ void MGOperator<dim,fe_degree,same_diagonal>::vmult (LA::MPI::Vector &dst,
 }
 
 template <int dim, int fe_degree, bool same_diagonal>
-void MGOperator<dim,fe_degree,same_diagonal>::Tvmult (LA::MPI::Vector &dst,
+void MFOperator<dim,fe_degree,same_diagonal>::Tvmult (LA::MPI::Vector &dst,
                                                            const LA::MPI::Vector &src) const
 {
   dst = 0;
@@ -218,7 +218,7 @@ void MGOperator<dim,fe_degree,same_diagonal>::Tvmult (LA::MPI::Vector &dst,
 }
 
 template <int dim, int fe_degree, bool same_diagonal>
-void MGOperator<dim,fe_degree,same_diagonal>::vmult_add (LA::MPI::Vector &dst,
+void MFOperator<dim,fe_degree,same_diagonal>::vmult_add (LA::MPI::Vector &dst,
     const LA::MPI::Vector &src) const
 {
   timer->enter_subsection("LO::initialize ("+ dealii::Utilities::int_to_string(level)+ ")");
@@ -244,7 +244,7 @@ void MGOperator<dim,fe_degree,same_diagonal>::vmult_add (LA::MPI::Vector &dst,
 }
 
 template <int dim, int fe_degree, bool same_diagonal>
-void MGOperator<dim,fe_degree, same_diagonal>::Tvmult_add (LA::MPI::Vector &dst,
+void MFOperator<dim,fe_degree, same_diagonal>::Tvmult_add (LA::MPI::Vector &dst,
     const LA::MPI::Vector &src) const
 {
   dst = 0;
@@ -252,4 +252,4 @@ void MGOperator<dim,fe_degree, same_diagonal>::Tvmult_add (LA::MPI::Vector &dst,
   AssertIsFinite(dst.l2_norm());
 }
 
-#include "MGOperator.inst"
+#include "MFOperator.inst"

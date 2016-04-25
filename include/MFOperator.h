@@ -1,5 +1,5 @@
-#ifndef MGOPERATOR_H
-#define MGOPERATOR_H
+#ifndef MFOPERATOR_H
+#define MFOPERATOR_H
 
 #include <deal.II/base/timer.h>
 #include <deal.II/grid/tria.h>
@@ -15,13 +15,13 @@
 #include <Integrators.h>
 
 template <int dim, int fe_degree, bool same_diagonal>
-class MGOperator final: public dealii::Subscriptor
+class MFOperator final: public dealii::Subscriptor
 {
 public:
-  MGOperator () ;
-  ~MGOperator () ;
-  MGOperator (const MGOperator &) = delete ;
-  MGOperator& operator = (const MGOperator&) = delete;
+  MFOperator () ;
+  ~MFOperator () ;
+  MFOperator (const MFOperator &) = delete ;
+  MFOperator& operator = (const MFOperator&) = delete;
 
   void reinit (dealii::DoFHandler<dim> *dof_handler_,
                const dealii::MappingQ1<dim> *mapping_,
@@ -88,7 +88,7 @@ private:
 };
 
 #ifdef HEADER_IMPLEMENTATION
-#include <MGOperator.cc>
+#include <MFOperator.cc>
 #endif
 
-#endif // MGOPERATOR_H
+#endif // MFOPERATOR_H
