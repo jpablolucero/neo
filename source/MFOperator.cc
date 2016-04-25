@@ -202,6 +202,7 @@ void MFOperator<dim,fe_degree,same_diagonal>::vmult (LA::MPI::Vector &dst,
                                                      const LA::MPI::Vector &src) const
 {
   dst = 0;
+  dst.compress(dealii::VectorOperation::insert);
   vmult_add(dst, src);
   dst.compress(dealii::VectorOperation::add);
   AssertIsFinite(dst.l2_norm());
@@ -212,6 +213,7 @@ void MFOperator<dim,fe_degree,same_diagonal>::Tvmult (LA::MPI::Vector &dst,
                                                       const LA::MPI::Vector &src) const
 {
   dst = 0;
+  dst.compress(dealii::VectorOperation::insert);
   Tvmult_add(dst, src);
   dst.compress(dealii::VectorOperation::add);
   AssertIsFinite(dst.l2_norm());
@@ -246,10 +248,8 @@ void MFOperator<dim,fe_degree,same_diagonal>::vmult_add (LA::MPI::Vector &dst,
 template <int dim, int fe_degree, bool same_diagonal>
 void MFOperator<dim,fe_degree, same_diagonal>::Tvmult_add (LA::MPI::Vector &dst,
                                                            const LA::MPI::Vector &src) const
-{
-  dst = 0;
+{  
   vmult_add(dst, src);
-  AssertIsFinite(dst.l2_norm());
 }
 
 #include "MFOperator.inst"
