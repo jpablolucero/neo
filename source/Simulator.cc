@@ -259,38 +259,43 @@ void Simulator<dim,same_diagonal,degree>::solve ()
           else //use the first global cell
             {
               local_level_inverse[level].resize(1, dealii::FullMatrix<double>(n));
-              double *matrix_entries = new double[n*n];
-              if (dealii::Utilities::MPI::this_mpi_process(mpi_communicator)==0)
-                {
-                  typename dealii::DoFHandler<dim>::level_cell_iterator cell = dof_handler.begin_mg(level);
-                  while (cell!=dof_handler.end_mg(level)
-                         && cell->level_subdomain_id()!=triangulation.locally_owned_subdomain())
-                    ++cell;
-                  //find the first global cell;
-                  AssertThrow(cell!=dof_handler.end_mg(level), dealii::ExcInternalError());
 
-                  cell->get_active_or_mg_dof_indices (first_level_dof_indices);
-                  local_matrix=0.;
-                  for (unsigned int i = 0; i < n; ++i)
-                    for (unsigned int j = 0; j < n; ++j)
-                      {
-                        const dealii::types::global_dof_index i1 = first_level_dof_indices [i];
-                        const dealii::types::global_dof_index i2 = first_level_dof_indices [j];
-                        matrix_entries[n*i+j] = mg_matrix[level](i1, i2);
-                      }
-                }
+              //find the first global cell;
+              int min_proc = dealii::Utilities::MPI::n_mpi_processes(mpi_communicator);
+              typename dealii::DoFHandler<dim>::level_cell_iterator cell = dof_handler.begin_mg(level);
+              while (cell!=dof_handler.end_mg(level)
+                     && cell->level_subdomain_id()!=triangulation.locally_owned_subdomain())
+                ++cell;
+              if (cell!=dof_handler.end_mg(level))
+                min_proc = dealii::Utilities::MPI::this_mpi_process(mpi_communicator);
+              int global_min_proc;
+              MPI_Allreduce(&min_proc, &global_min_proc, 1, MPI_INT, MPI_MIN, mpi_communicator);
 
-              MPI_Bcast(matrix_entries, n*n, MPI_DOUBLE, 0, mpi_communicator);
-
-              for (unsigned int i = 0; i < n; ++i)
-                for (unsigned int j = 0; j < n; ++j)
+              //get the matrix from the first global cell and broadcast
+              {
+                std::vector<double> matrix_entries (n*n);
+                if (dealii::Utilities::MPI::this_mpi_process(mpi_communicator)==global_min_proc)
                   {
-                    local_matrix(i,j) = matrix_entries[n*i+j];
+                    cell->get_active_or_mg_dof_indices (first_level_dof_indices);
+                    local_matrix=0.;
+                    for (unsigned int i = 0; i < n; ++i)
+                      for (unsigned int j = 0; j < n; ++j)
+                        {
+                          const dealii::types::global_dof_index i1 = first_level_dof_indices [i];
+                          const dealii::types::global_dof_index i2 = first_level_dof_indices [j];
+                          matrix_entries[n*i+j] = mg_matrix[level](i1, i2);
+                        }
                   }
-              delete matrix_entries;
+                MPI_Bcast(&(matrix_entries[0]), n*n, MPI_DOUBLE, global_min_proc, mpi_communicator);
+                for (unsigned int i = 0; i < n; ++i)
+                  for (unsigned int j = 0; j < n; ++j)
+                    {
+                      local_matrix(i,j) = matrix_entries[n*i+j];
+                    }
+              }
 
+              //invert and assign to the smoother
               local_level_inverse[level][0].invert(local_matrix);
-
               for (unsigned int i=0; i<level_ddh[level].size(); ++i)
                 smoother_data[level].local_inverses[i]=&(local_level_inverse[level][0]);
             }
