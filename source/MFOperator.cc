@@ -199,7 +199,7 @@ void MFOperator<dim, fe_degree, same_diagonal>::build_matrix ()
 
 template <int dim, int fe_degree, bool same_diagonal>
 void MFOperator<dim,fe_degree,same_diagonal>::vmult (LA::MPI::Vector &dst,
-                                                          const LA::MPI::Vector &src) const
+                                                     const LA::MPI::Vector &src) const
 {
   dst = 0;
   vmult_add(dst, src);
@@ -209,7 +209,7 @@ void MFOperator<dim,fe_degree,same_diagonal>::vmult (LA::MPI::Vector &dst,
 
 template <int dim, int fe_degree, bool same_diagonal>
 void MFOperator<dim,fe_degree,same_diagonal>::Tvmult (LA::MPI::Vector &dst,
-                                                           const LA::MPI::Vector &src) const
+                                                      const LA::MPI::Vector &src) const
 {
   dst = 0;
   Tvmult_add(dst, src);
@@ -219,7 +219,7 @@ void MFOperator<dim,fe_degree,same_diagonal>::Tvmult (LA::MPI::Vector &dst,
 
 template <int dim, int fe_degree, bool same_diagonal>
 void MFOperator<dim,fe_degree,same_diagonal>::vmult_add (LA::MPI::Vector &dst,
-    const LA::MPI::Vector &src) const
+                                                         const LA::MPI::Vector &src) const
 {
   timer->enter_subsection("LO::initialize ("+ dealii::Utilities::int_to_string(level)+ ")");
   dealii::AnyData dst_data;
@@ -245,7 +245,7 @@ void MFOperator<dim,fe_degree,same_diagonal>::vmult_add (LA::MPI::Vector &dst,
 
 template <int dim, int fe_degree, bool same_diagonal>
 void MFOperator<dim,fe_degree, same_diagonal>::Tvmult_add (LA::MPI::Vector &dst,
-    const LA::MPI::Vector &src) const
+                                                           const LA::MPI::Vector &src) const
 {
   dst = 0;
   vmult_add(dst, src);

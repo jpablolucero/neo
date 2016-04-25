@@ -4,7 +4,7 @@
 
 void Neo2d(benchmark::State &state)
 {
-  while(state.KeepRunning())
+  while (state.KeepRunning())
     {
       dealii::MultithreadInfo::set_thread_limit(state.range_x());
       MPI_Comm mpi_communicator (MPI_COMM_WORLD);
@@ -13,9 +13,9 @@ void Neo2d(benchmark::State &state)
       dealii::ConditionalOStream pcout(std::cout,
                                        dealii::Utilities::MPI::this_mpi_process(mpi_communicator) == 0);
       std::ofstream logfile("deallog");
-      dealii::deallog.attach(logfile); 
+      dealii::deallog.attach(logfile);
       if (dealii::Utilities::MPI::this_mpi_process(mpi_communicator)==0)
-	dealii::deallog.depth_console (0);
+        dealii::deallog.depth_console (0);
       dealii::TimerOutput timer (mpi_communicator, pcout,
                                  dealii::TimerOutput::never,
                                  dealii::TimerOutput::wall_times);
@@ -27,7 +27,7 @@ void Neo2d(benchmark::State &state)
 
 void Neo3d(benchmark::State &state)
 {
-  while(state.KeepRunning())
+  while (state.KeepRunning())
     {
       dealii::MultithreadInfo::set_thread_limit(state.range_x());
       MPI_Comm mpi_communicator (MPI_COMM_WORLD);
@@ -36,9 +36,9 @@ void Neo3d(benchmark::State &state)
       dealii::ConditionalOStream pcout(std::cout,
                                        dealii::Utilities::MPI::this_mpi_process(mpi_communicator) == 0);
       std::ofstream logfile("deallog");
-      dealii::deallog.attach(logfile); 
+      dealii::deallog.attach(logfile);
       if (dealii::Utilities::MPI::this_mpi_process(mpi_communicator)==0)
-	dealii::deallog.depth_console (0);
+        dealii::deallog.depth_console (0);
       dealii::TimerOutput timer (mpi_communicator, pcout,
                                  dealii::TimerOutput::never,
                                  dealii::TimerOutput::wall_times);

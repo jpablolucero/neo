@@ -21,7 +21,7 @@ public:
   MFOperator () ;
   ~MFOperator () ;
   MFOperator (const MFOperator &) = delete ;
-  MFOperator& operator = (const MFOperator&) = delete;
+  MFOperator &operator = (const MFOperator &) = delete;
 
   void reinit (dealii::DoFHandler<dim> *dof_handler_,
                const dealii::MappingQ1<dim> *mapping_,

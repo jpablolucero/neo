@@ -9,7 +9,7 @@ class ResidualSimpleConstraints final : private dealii::MeshWorker::Assembler::R
 public:
   ResidualSimpleConstraints () = default;
   ResidualSimpleConstraints (const ResidualSimpleConstraints &) = delete ;
-  ResidualSimpleConstraints& operator = (const ResidualSimpleConstraints&) = delete;
+  ResidualSimpleConstraints &operator = (const ResidualSimpleConstraints &) = delete;
 
   /**
    * Initialize with an AnyData object holding the result of assembling.

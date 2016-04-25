@@ -14,31 +14,31 @@ int main (int argc, char *argv[])
 #if PARALLEL_LA == 0
   const unsigned int n_proc = dealii::Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);
   AssertThrow (n_proc==1,
-	       dealii::ExcMessage("If no parallel linear algebra is used, only one MPI process may be used!"));
+               dealii::ExcMessage("If no parallel linear algebra is used, only one MPI process may be used!"));
 #endif
 #endif
   MPI_Comm mpi_communicator (MPI_COMM_WORLD);
   dealii::ConditionalOStream pcout(std::cout,
-				   dealii::Utilities::MPI::this_mpi_process(mpi_communicator) == 0);
+                                   dealii::Utilities::MPI::this_mpi_process(mpi_communicator) == 0);
   std::ofstream logfile("deallog");
   dealii::deallog.attach(logfile);
   if (dealii::Utilities::MPI::this_mpi_process(mpi_communicator)==0)
     dealii::deallog.depth_console (2);
   dealii::TimerOutput timer (mpi_communicator, pcout,
-			     dealii::TimerOutput::never,
-			     dealii::TimerOutput::wall_times);
-  for (unsigned int l=2;l<7;l+=2)
+                             dealii::TimerOutput::never,
+                             dealii::TimerOutput::wall_times);
+  for (unsigned int l=2; l<7; l+=2)
     {
-      Simulator<2,false,1> dgmethod(timer, mpi_communicator, pcout);
+      Simulator<2,true,1> dgmethod(timer, mpi_communicator, pcout);
       dgmethod.n_levels = l ;
       dgmethod.run ();
     }
-  for (unsigned int l=2;l<5;l+=2)
+  for (unsigned int l=2; l<5; l+=2)
     {
-      Simulator<3,false,1> dgmethod(timer, mpi_communicator, pcout);
+      Simulator<3,true,1> dgmethod(timer, mpi_communicator, pcout);
       dgmethod.n_levels = l ;
       dgmethod.run ();
-    }  
+    }
   return 0;
 }
 #endif

@@ -53,7 +53,7 @@ public:
              dealii::ConditionalOStream &pcout_);
   ~Simulator ();
   Simulator (const Simulator &) = delete ;
-  Simulator& operator = (const Simulator&) = delete;
+  Simulator &operator = (const Simulator &) = delete;
   void run ();
   unsigned int n_levels ;
   unsigned int smoothing_steps ;

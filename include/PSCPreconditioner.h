@@ -22,7 +22,7 @@ public:
 
   PSCPreconditioner();
   PSCPreconditioner (const PSCPreconditioner &) = delete ;
-  PSCPreconditioner& operator = (const PSCPreconditioner&) = delete;
+  PSCPreconditioner &operator = (const PSCPreconditioner &) = delete;
 
   // interface for MGSmootherPrecondition but global_operator is not used
   template <class GlobalOperatorType>
