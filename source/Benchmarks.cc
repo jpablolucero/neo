@@ -2,7 +2,7 @@
 
 #ifdef BENCHMARKS
 
-void laplace_meshworker2d(benchmark::State &state)
+void Neo2d(benchmark::State &state)
 {
   while(state.KeepRunning())
     {
@@ -19,13 +19,13 @@ void laplace_meshworker2d(benchmark::State &state)
       dealii::TimerOutput timer (mpi_communicator, pcout,
                                  dealii::TimerOutput::never,
                                  dealii::TimerOutput::wall_times);
-      MyLaplace<2,false,1> dgmethod(timer, mpi_communicator, pcout);
+      Simulator<2,false,1> dgmethod(timer, mpi_communicator, pcout);
       dgmethod.n_levels = state.range_y();
       dgmethod.run ();
     }
 }
 
-void laplace_meshworker3d(benchmark::State &state)
+void Neo3d(benchmark::State &state)
 {
   while(state.KeepRunning())
     {
@@ -42,20 +42,20 @@ void laplace_meshworker3d(benchmark::State &state)
       dealii::TimerOutput timer (mpi_communicator, pcout,
                                  dealii::TimerOutput::never,
                                  dealii::TimerOutput::wall_times);
-      MyLaplace<2,false,1> dgmethod(timer, mpi_communicator, pcout);
+      Simulator<2,false,1> dgmethod(timer, mpi_communicator, pcout);
       dgmethod.n_levels = state.range_y();
       dgmethod.run ();
     }
 }
 
-BENCHMARK(laplace_meshworker2d)
+BENCHMARK(Neo2d)
 ->Threads(1)
 ->ArgPair(1,2)->ArgPair(2,2)->ArgPair(4,2)->ArgPair(8,2)->ArgPair(16,2)
 ->ArgPair(1,4)->ArgPair(2,4)->ArgPair(4,4)->ArgPair(8,4)->ArgPair(16,4)
 ->ArgPair(1,6)->ArgPair(2,6)->ArgPair(4,6)->ArgPair(8,6)->ArgPair(16,6)
 ->UseRealTime();
 
-BENCHMARK(laplace_meshworker3d)
+BENCHMARK(Neo3d)
 ->Threads(1)
 ->ArgPair(1,2)->ArgPair(2,2)->ArgPair(4,2)->ArgPair(8,2)->ArgPair(16,2)
 ->ArgPair(1,4)->ArgPair(2,4)->ArgPair(4,4)->ArgPair(8,4)->ArgPair(16,4)

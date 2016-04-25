@@ -9,7 +9,7 @@
 #include <benchmark/benchmark_api.h>
 #endif
 
-#include <MyLaplace.h>
+#include <Simulator.h>
 
 #include <fstream>
 

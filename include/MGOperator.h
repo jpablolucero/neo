@@ -1,5 +1,5 @@
-#ifndef LAPLACEOPERATOR_H
-#define LAPLACEOPERATOR_H
+#ifndef MGOPERATOR_H
+#define MGOPERATOR_H
 
 #include <deal.II/base/timer.h>
 #include <deal.II/grid/tria.h>
@@ -15,13 +15,13 @@
 #include <Integrators.h>
 
 template <int dim, int fe_degree, bool same_diagonal>
-class LaplaceOperator final: public dealii::Subscriptor
+class MGOperator final: public dealii::Subscriptor
 {
 public:
-  LaplaceOperator () ;
-  ~LaplaceOperator () ;
-  LaplaceOperator (const LaplaceOperator &) = delete ;
-  LaplaceOperator& operator = (const LaplaceOperator&) = delete;
+  MGOperator () ;
+  ~MGOperator () ;
+  MGOperator (const MGOperator &) = delete ;
+  MGOperator& operator = (const MGOperator&) = delete;
 
   void reinit (dealii::DoFHandler<dim> *dof_handler_,
                const dealii::MappingQ1<dim> *mapping_,
@@ -88,7 +88,7 @@ private:
 };
 
 #ifdef HEADER_IMPLEMENTATION
-#include <LaplaceOperator.cc>
+#include <MGOperator.cc>
 #endif
 
-#endif // LAPLACEOPERATOR_H
+#endif // MGOPERATOR_H

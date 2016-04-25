@@ -1,5 +1,5 @@
-#ifndef MYLAPLACE_H
-#define MYLAPLACE_H
+#ifndef SIMULATOR_H
+#define SIMULATOR_H
 
 #include <deal.II/algorithms/any_data.h>
 #include <deal.II/base/conditional_ostream.h>
@@ -36,7 +36,7 @@
 #include <deal.II/numerics/vector_tools.h>
 #include <deal.II/numerics/vector_tools.templates.h>
 
-#include <LaplaceOperator.h>
+#include <MGOperator.h>
 #include <EquationData.h>
 #include <ResidualSimpleConstraints.h>
 #include <PSCPreconditioner.h>
@@ -45,15 +45,15 @@
 #include <fstream>
 
 template <int dim=2,bool same_diagonal = true, unsigned int degree = 1>
-class MyLaplace final
+class Simulator final
 {
 public:
-  MyLaplace (dealii::TimerOutput &timer_,
+  Simulator (dealii::TimerOutput &timer_,
              MPI_Comm &mpi_communicator_,
              dealii::ConditionalOStream &pcout_);
-  ~MyLaplace ();
-  MyLaplace (const MyLaplace &) = delete ;
-  MyLaplace& operator = (const MyLaplace&) = delete;
+  ~Simulator ();
+  Simulator (const Simulator &) = delete ;
+  Simulator& operator = (const Simulator&) = delete;
   void run ();
   unsigned int n_levels ;
   unsigned int smoothing_steps ;
@@ -65,7 +65,7 @@ private:
   void compute_error () const;
   void output_results (const unsigned int cycle) const;
 
-  typedef LaplaceOperator<dim, degree, same_diagonal> SystemMatrixType;
+  typedef MGOperator<dim, degree, same_diagonal> SystemMatrixType;
 
   dealii::IndexSet           locally_owned_dofs;
   dealii::IndexSet           locally_relevant_dofs;
@@ -92,6 +92,6 @@ private:
   dealii::TimerOutput &timer;
 };
 #ifdef HEADER_IMPLEMENTATION
-#include <MyLaplace.cc>
+#include <Simulator.cc>
 #endif
-#endif // MYLAPLACE_H
+#endif // SIMULATOR_H

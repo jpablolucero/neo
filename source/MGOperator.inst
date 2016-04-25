@@ -1,13 +1,13 @@
-#ifndef LAPLACEOPERATOR_INST
-#define LAPLACEOPERATOR_INST
+#ifndef MGOPERATOR_INST
+#define MGOPERATOR_INST
 
 #undef I
-#define I(D,P,S) template class LaplaceOperator<D,P,S>
+#define I(D,P,S) template class MGOperator<D,P,S>
 I(2,1,true);I(2,2,true);I(2,3,true);I(2,4,true);
 I(2,1,false);I(2,2,false);I(2,3,false);I(2,4,false);
 I(3,1,true);I(3,2,true);I(3,3,true);I(3,4,true);
 I(3,1,false);I(3,2,false);I(3,3,false);I(3,4,false);
 #undef I
 
-#endif // LAPLACEOPERATOR_INST
+#endif // MGOPERATOR_INST
 

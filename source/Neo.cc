@@ -1,4 +1,4 @@
-#include <LaplaceMeshworker.h>
+#include <Neo.h>
 
 #ifndef BENCHMARKS
 int main (int argc, char *argv[])
@@ -29,13 +29,13 @@ int main (int argc, char *argv[])
 			     dealii::TimerOutput::wall_times);
   for (unsigned int l=2;l<7;l+=2)
     {
-      MyLaplace<2,false,1> dgmethod(timer, mpi_communicator, pcout);
+      Simulator<2,false,1> dgmethod(timer, mpi_communicator, pcout);
       dgmethod.n_levels = l ;
       dgmethod.run ();
     }
   for (unsigned int l=2;l<5;l+=2)
     {
-      MyLaplace<3,false,1> dgmethod(timer, mpi_communicator, pcout);
+      Simulator<3,false,1> dgmethod(timer, mpi_communicator, pcout);
       dgmethod.n_levels = l ;
       dgmethod.run ();
     }  

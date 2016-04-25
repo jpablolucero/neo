@@ -1,7 +1,7 @@
-#include <MyLaplace.h>
+#include <Simulator.h>
 
 template <int dim,bool same_diagonal,unsigned int degree>
-MyLaplace<dim,same_diagonal,degree>::MyLaplace (dealii::TimerOutput &timer_,
+Simulator<dim,same_diagonal,degree>::Simulator (dealii::TimerOutput &timer_,
                                                 MPI_Comm &mpi_communicator_,
                                                 dealii::ConditionalOStream &pcout_)
   :
@@ -54,11 +54,11 @@ MyLaplace<dim,same_diagonal,degree>::MyLaplace (dealii::TimerOutput &timer_,
 }
 
 template <int dim,bool same_diagonal,unsigned int degree>
-MyLaplace<dim,same_diagonal,degree>::~MyLaplace ()
+Simulator<dim,same_diagonal,degree>::~Simulator ()
 {}
 
 template <int dim,bool same_diagonal,unsigned int degree>
-void MyLaplace<dim,same_diagonal,degree>::setup_system ()
+void Simulator<dim,same_diagonal,degree>::setup_system ()
 {
   dof_handler.distribute_dofs (fe);
   dof_handler.distribute_mg_dofs(fe);
@@ -139,7 +139,7 @@ void MyLaplace<dim,same_diagonal,degree>::setup_system ()
 
 
 template <int dim, bool same_diagonal, unsigned int degree>
-void MyLaplace<dim, same_diagonal, degree>::assemble_system ()
+void Simulator<dim, same_diagonal, degree>::assemble_system ()
 {
   dealii::MeshWorker::IntegrationInfoBox<dim> info_box;
 
@@ -174,7 +174,7 @@ void MyLaplace<dim, same_diagonal, degree>::assemble_system ()
 }
 
 template <int dim,bool same_diagonal,unsigned int degree>
-void MyLaplace<dim,same_diagonal,degree>::setup_multigrid ()
+void Simulator<dim,same_diagonal,degree>::setup_multigrid ()
 {
   const unsigned int n_global_levels = triangulation.n_global_levels();
   mg_matrix.resize(0, n_global_levels-1);
@@ -187,7 +187,7 @@ void MyLaplace<dim,same_diagonal,degree>::setup_multigrid ()
 }
 
 template <int dim,bool same_diagonal,unsigned int degree>
-void MyLaplace<dim,same_diagonal,degree>::solve ()
+void Simulator<dim,same_diagonal,degree>::solve ()
 {
   timer.enter_subsection("solve::mg_initialization");
 #ifdef MG
@@ -321,7 +321,7 @@ void MyLaplace<dim,same_diagonal,degree>::solve ()
 
 
 template <int dim,bool same_diagonal,unsigned int degree>
-void MyLaplace<dim, same_diagonal, degree>::compute_error () const
+void Simulator<dim, same_diagonal, degree>::compute_error () const
 {
   dealii::QGauss<dim> quadrature (degree+2);
   dealii::Vector<double> local_errors;
@@ -340,7 +340,7 @@ void MyLaplace<dim, same_diagonal, degree>::compute_error () const
 }
 
 template <int dim, bool same_diagonal, unsigned int degree>
-void MyLaplace<dim, same_diagonal, degree>::output_results (const unsigned int cycle) const
+void Simulator<dim, same_diagonal, degree>::output_results (const unsigned int cycle) const
 {
   std::string filename = "solution-"+dealii::Utilities::int_to_string(cycle,2);
 
@@ -383,7 +383,7 @@ void MyLaplace<dim, same_diagonal, degree>::output_results (const unsigned int c
 
 
 template <int dim,bool same_diagonal,unsigned int degree>
-void MyLaplace<dim,same_diagonal,degree>::run ()
+void Simulator<dim,same_diagonal,degree>::run ()
 {
   timer.reset();
   timer.enter_subsection("refine_global");
@@ -431,4 +431,4 @@ void MyLaplace<dim,same_diagonal,degree>::run ()
   dealii::GrowingVectorMemory<LA::MPI::Vector>::release_unused_memory();
 }
 
-#include "MyLaplace.inst"
+#include "Simulator.inst"

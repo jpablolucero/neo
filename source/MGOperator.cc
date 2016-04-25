@@ -1,7 +1,7 @@
-#include <LaplaceOperator.h>
+#include <MGOperator.h>
 
 template <int dim, int fe_degree, bool same_diagonal>
-LaplaceOperator<dim, fe_degree, same_diagonal>::LaplaceOperator()
+MGOperator<dim, fe_degree, same_diagonal>::MGOperator()
 {
   level = 0;
   dof_handler = nullptr;
@@ -12,13 +12,13 @@ LaplaceOperator<dim, fe_degree, same_diagonal>::LaplaceOperator()
 }
 
 template <int dim, int fe_degree, bool same_diagonal>
-void LaplaceOperator<dim, fe_degree, same_diagonal>::set_timer(dealii::TimerOutput &timer_)
+void MGOperator<dim, fe_degree, same_diagonal>::set_timer(dealii::TimerOutput &timer_)
 {
   timer = &timer_;
 }
 
 template <int dim, int fe_degree, bool same_diagonal>
-LaplaceOperator<dim, fe_degree, same_diagonal>::~LaplaceOperator()
+MGOperator<dim, fe_degree, same_diagonal>::~MGOperator()
 {
   dof_handler = nullptr ;
   fe = nullptr ;
@@ -26,7 +26,7 @@ LaplaceOperator<dim, fe_degree, same_diagonal>::~LaplaceOperator()
 }
 
 /*template <int dim, int fe_degree, bool same_diagonal>
-void LaplaceOperator<dim, fe_degree, same_diagonal>::clear()
+void MGOperator<dim, fe_degree, same_diagonal>::clear()
 {
   dof_handler = nullptr ;
   fe = nullptr ;
@@ -35,7 +35,7 @@ void LaplaceOperator<dim, fe_degree, same_diagonal>::clear()
 
 
 template <int dim, int fe_degree, bool same_diagonal>
-void LaplaceOperator<dim, fe_degree, same_diagonal>::reinit
+void MGOperator<dim, fe_degree, same_diagonal>::reinit
 (dealii::DoFHandler<dim> *dof_handler_,
  const dealii::MappingQ1<dim> *mapping_,
  const dealii::ConstraintMatrix *constraints_,
@@ -85,7 +85,7 @@ void LaplaceOperator<dim, fe_degree, same_diagonal>::reinit
 }
 
 template <int dim, int fe_degree, bool same_diagonal>
-void LaplaceOperator<dim, fe_degree, same_diagonal>::build_matrix ()
+void MGOperator<dim, fe_degree, same_diagonal>::build_matrix ()
 {
   Assert(dof_handler != 0, dealii::ExcInternalError());
 
@@ -198,7 +198,7 @@ void LaplaceOperator<dim, fe_degree, same_diagonal>::build_matrix ()
 }
 
 template <int dim, int fe_degree, bool same_diagonal>
-void LaplaceOperator<dim,fe_degree,same_diagonal>::vmult (LA::MPI::Vector &dst,
+void MGOperator<dim,fe_degree,same_diagonal>::vmult (LA::MPI::Vector &dst,
                                                           const LA::MPI::Vector &src) const
 {
   dst = 0;
@@ -208,7 +208,7 @@ void LaplaceOperator<dim,fe_degree,same_diagonal>::vmult (LA::MPI::Vector &dst,
 }
 
 template <int dim, int fe_degree, bool same_diagonal>
-void LaplaceOperator<dim,fe_degree,same_diagonal>::Tvmult (LA::MPI::Vector &dst,
+void MGOperator<dim,fe_degree,same_diagonal>::Tvmult (LA::MPI::Vector &dst,
                                                            const LA::MPI::Vector &src) const
 {
   dst = 0;
@@ -218,7 +218,7 @@ void LaplaceOperator<dim,fe_degree,same_diagonal>::Tvmult (LA::MPI::Vector &dst,
 }
 
 template <int dim, int fe_degree, bool same_diagonal>
-void LaplaceOperator<dim,fe_degree,same_diagonal>::vmult_add (LA::MPI::Vector &dst,
+void MGOperator<dim,fe_degree,same_diagonal>::vmult_add (LA::MPI::Vector &dst,
     const LA::MPI::Vector &src) const
 {
   timer->enter_subsection("LO::initialize ("+ dealii::Utilities::int_to_string(level)+ ")");
@@ -244,7 +244,7 @@ void LaplaceOperator<dim,fe_degree,same_diagonal>::vmult_add (LA::MPI::Vector &d
 }
 
 template <int dim, int fe_degree, bool same_diagonal>
-void LaplaceOperator<dim,fe_degree, same_diagonal>::Tvmult_add (LA::MPI::Vector &dst,
+void MGOperator<dim,fe_degree, same_diagonal>::Tvmult_add (LA::MPI::Vector &dst,
     const LA::MPI::Vector &src) const
 {
   dst = 0;
@@ -252,4 +252,4 @@ void LaplaceOperator<dim,fe_degree, same_diagonal>::Tvmult_add (LA::MPI::Vector 
   AssertIsFinite(dst.l2_norm());
 }
 
-#include "LaplaceOperator.inst"
+#include "MGOperator.inst"
