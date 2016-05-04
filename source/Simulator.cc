@@ -15,7 +15,7 @@ Simulator<dim,same_diagonal,degree>::Simulator (dealii::TimerOutput &timer_,
 #ifdef CG
   fe(dealii::FE_Q<dim>(degree),1),
 #else
-  fe(dealii::FE_DGQ<dim>(degree),2),
+  fe(dealii::FE_DGQ<dim>(degree),1),
 #endif
   reference_function(fe.n_components()),
   dof_handler (triangulation),
@@ -38,6 +38,7 @@ Simulator<dim,same_diagonal,degree>::Simulator (dealii::TimerOutput &timer_,
 #endif
 
   dealii::GridGenerator::hyper_cube (triangulation,0.,1., true);
+//  dealii::GridGenerator::hyper_L (triangulation);
 
 #ifdef PERIODIC
   //add periodicity
@@ -193,7 +194,7 @@ void Simulator<dim,same_diagonal,degree>::solve ()
 #ifdef MG
   const LA::MPI::SparseMatrix &coarse_matrix = mg_matrix[0].get_coarse_matrix();
 
-  dealii::SolverControl coarse_solver_control (dof_handler.n_dofs(0), 1e-10, false, false);
+  dealii::SolverControl coarse_solver_control (10*dof_handler.n_dofs(0), 1e-10, false, false);
   dealii::SolverCG<LA::MPI::Vector> coarse_solver(coarse_solver_control);
   dealii::PreconditionIdentity id;
   dealii::MGCoarseGridLACIteration<dealii::SolverCG<LA::MPI::Vector>,LA::MPI::Vector> mg_coarse(coarse_solver,
@@ -215,6 +216,9 @@ void Simulator<dim,same_diagonal,degree>::solve ()
   std::vector<dealii::types::global_dof_index> first_level_dof_indices (n);
   dealii::FullMatrix<double> local_matrix(n, n);
 
+  dealii::Quadrature<dim> q_dummy(dof_handler.get_fe().get_unit_support_points());
+  dealii::FEValues<dim> fe_values_dummy (dof_handler.get_fe(), q_dummy, dealii::update_q_points);
+
   for (unsigned int level = mg_matrix.min_level();
        level <= mg_matrix.max_level();
        ++level)
@@ -229,49 +233,118 @@ void Simulator<dim,same_diagonal,degree>::solve ()
 
       if (same_diagonal)
         {
-	  local_level_inverse[level].resize(1, dealii::FullMatrix<double>(n));	  
-	  dealii::Triangulation<dim> local_triangulation;
-	  dealii::DoFHandler<dim> local_dof_handler(local_triangulation);
-	  dealii::GridGenerator::hyper_cube (local_triangulation);
-	  if (level != 0) local_triangulation.refine_global(1);
-	  local_dof_handler.distribute_dofs (fe);
-	  local_dof_handler.initialize_local_block_info();
-	  dealii::MeshWorker::IntegrationInfoBox<dim> local_info_box;
-	  const unsigned int local_n_gauss_points = local_dof_handler.get_fe().degree+1;
-	  local_info_box.initialize_gauss_quadrature(local_n_gauss_points,
-						     local_n_gauss_points,
-						     local_n_gauss_points);
-	  local_info_box.initialize_update_flags();
-	  dealii::UpdateFlags local_update_flags = dealii::update_quadrature_points |
-	    dealii::update_values |
-	    dealii::update_gradients;
-	  local_info_box.add_update_flags(local_update_flags, true, true, true, true);
-	  local_info_box.initialize(fe, mapping, &(local_dof_handler.block_info()));
-	  dealii::MeshWorker::DoFInfo<dim> local_dof_info(local_dof_handler.block_info());
-	  dealii::FullMatrix<double> dummy_matrix(local_dof_handler.n_dofs(),local_dof_handler.n_dofs());
-	  dealii::MeshWorker::Assembler::MatrixSimple<dealii::FullMatrix<double> >
-	    local_assembler;
-	  local_assembler.initialize(dummy_matrix);
-	  MatrixIntegrator<dim,false> local_integrator ;	  
-	  dealii::MeshWorker::integration_loop<dim, dim>
-	    (local_dof_handler.begin_active(), 
-	     local_dof_handler.end(),
-	     local_dof_info, local_info_box, 
-	     local_integrator,local_assembler);
-	  for (unsigned int i = 0; i < n; ++i)
-	    for (unsigned int j = 0; j < n; ++j)
-	      {
-		local_matrix(i, j) = dummy_matrix(i, j);
-	      }
-	  //invert and assign to the smoother
-	  local_level_inverse[level][0].invert(local_matrix);
-	  for (unsigned int i=0; i<level_ddh[level].size(); ++i)
-	    smoother_data[level].local_inverses[i]=&(local_level_inverse[level][0]);	  
-	}
+          local_level_inverse[level].resize(1, dealii::FullMatrix<double>(n));
+
+          dealii::FullMatrix<double> dummy_matrix_1;
+          std::vector<dealii::types::global_dof_index> dof_indices_1(n);
+          {
+            dealii::Triangulation<dim> local_triangulation;
+            dealii::DoFHandler<dim> local_dof_handler(local_triangulation);
+            std::vector<unsigned int> repetitions(dim, 3);
+            repetitions[0] = 3;
+            dealii::Point<dim> p0, p1;
+            p1(0) = 3./std::pow(2., level);
+            for (unsigned int i=1; i<dim; ++i)
+              p1(i) = 3./std::pow(2., level);
+            dealii::GridGenerator::subdivided_hyper_rectangle (local_triangulation,repetitions,p0,p1);
+            local_dof_handler.distribute_dofs (fe);
+            local_dof_handler.initialize_local_block_info();
+            dummy_matrix_1.reinit(local_dof_handler.n_dofs(),local_dof_handler.n_dofs());
+            dealii::MeshWorker::IntegrationInfoBox<dim> local_info_box;
+            const unsigned int local_n_gauss_points = local_dof_handler.get_fe().degree+1;
+            local_info_box.initialize_gauss_quadrature(local_n_gauss_points,
+                                                       local_n_gauss_points,
+                                                       local_n_gauss_points);
+            local_info_box.initialize_update_flags();
+            dealii::UpdateFlags local_update_flags = dealii::update_quadrature_points |
+                                                     dealii::update_values |
+                                                     dealii::update_gradients;
+            local_info_box.add_update_flags(local_update_flags, true, true, true, true);
+            local_info_box.initialize(fe, mapping, &(local_dof_handler.block_info()));
+            dealii::MeshWorker::DoFInfo<dim> local_dof_info(local_dof_handler.block_info());
+            dealii::MeshWorker::Assembler::MatrixSimple<dealii::FullMatrix<double> >
+            local_assembler;
+            local_assembler.initialize(dummy_matrix_1);
+            MatrixIntegrator<dim,false> local_integrator ;
+            dealii::MeshWorker::integration_loop<dim, dim>
+            (local_dof_handler.begin_active(),
+             local_dof_handler.end(),
+             local_dof_info, local_info_box,
+             local_integrator,local_assembler);
+
+            typename dealii::DoFHandler<dim>::cell_iterator cell = local_dof_handler.begin_active();;
+            const unsigned int used_cell_no = 4;
+            for (unsigned int i=0; i<used_cell_no; ++i)
+              ++cell;
+            cell->get_dof_indices (dof_indices_1);
+          }
+
+          dealii::FullMatrix<double> dummy_matrix_0;
+          std::vector<dealii::types::global_dof_index> dof_indices_0(n);
+          {
+            dealii::Triangulation<dim> local_triangulation;
+            dealii::DoFHandler<dim> local_dof_handler(local_triangulation);
+            std::vector<unsigned int> repetitions(dim, 1);
+            repetitions[0] = 1;
+            dealii::Point<dim> p0, p1;
+            p1(0) = 1./std::pow(2., level);
+            for (unsigned int i=1; i<dim; ++i)
+              p1(i) = 1./std::pow(2., level);
+            dealii::GridGenerator::subdivided_hyper_rectangle (local_triangulation,repetitions,p0,p1);
+            local_dof_handler.distribute_dofs (fe);
+            local_dof_handler.initialize_local_block_info();
+            dummy_matrix_0.reinit(local_dof_handler.n_dofs(),local_dof_handler.n_dofs());
+            dealii::MeshWorker::IntegrationInfoBox<dim> local_info_box;
+            const unsigned int local_n_gauss_points = local_dof_handler.get_fe().degree+1;
+            local_info_box.initialize_gauss_quadrature(local_n_gauss_points,
+                                                       local_n_gauss_points,
+                                                       local_n_gauss_points);
+            local_info_box.initialize_update_flags();
+            dealii::UpdateFlags local_update_flags = dealii::update_quadrature_points |
+                                                     dealii::update_values |
+                                                     dealii::update_gradients;
+            local_info_box.add_update_flags(local_update_flags, true, true, true, true);
+            local_info_box.initialize(fe, mapping, &(local_dof_handler.block_info()));
+            dealii::MeshWorker::DoFInfo<dim> local_dof_info(local_dof_handler.block_info());
+            dealii::MeshWorker::Assembler::MatrixSimple<dealii::FullMatrix<double> >
+            local_assembler;
+            local_assembler.initialize(dummy_matrix_0);
+            MatrixIntegrator<dim,false> local_integrator ;
+            dealii::MeshWorker::integration_loop<dim, dim>
+            (local_dof_handler.begin_active(),
+             local_dof_handler.end(),
+             local_dof_info, local_info_box,
+             local_integrator,local_assembler);
+
+            typename dealii::DoFHandler<dim>::cell_iterator cell = local_dof_handler.begin_active();;
+            const unsigned int used_cell_no = 0;
+            for (unsigned int i=0; i<used_cell_no; ++i)
+              ++cell;
+            std::cout << "Cell center: " << cell->center() << std::endl;
+            cell->get_dof_indices (dof_indices_0);
+          }
+          local_matrix = 0.;
+          for (unsigned int i = 0; i < n; ++i)
+            for (unsigned int j = 0; j < n; ++j)
+              {
+                const dealii::types::global_dof_index i0 = dof_indices_0 [i];
+                const dealii::types::global_dof_index j0 = dof_indices_0 [j];
+                const dealii::types::global_dof_index i1 = dof_indices_1 [i];
+                const dealii::types::global_dof_index j1 = dof_indices_1 [j];
+                local_matrix(i, j) = .5*dummy_matrix_0(i0, j0)+.5*dummy_matrix_1(i1,j1);
+              }
+
+
+
+          //invert and assign to the smoother
+          local_level_inverse[level][0].invert(local_matrix);
+          for (unsigned int i=0; i<level_ddh[level].size(); ++i)
+            smoother_data[level].local_inverses[i]=&(local_level_inverse[level][0]);
+        }
       else
-	{
-	  //just store information for locally owned cells
-	  local_level_inverse[level].resize(level_ddh[level].size(), dealii::FullMatrix<double>(n));
+        {
+          //just store information for locally owned cells
+          local_level_inverse[level].resize(level_ddh[level].size(), dealii::FullMatrix<double>(n));
           unsigned int subdomain_idx = 0;
           for (auto cell = dof_handler.begin_mg(level);
                cell != dof_handler.end_mg(level);
@@ -289,6 +362,17 @@ void Simulator<dim,same_diagonal,degree>::solve ()
                     }
 
                 local_level_inverse[level][subdomain_idx].invert(local_matrix);
+//                std::cout << "Level: " << level
+//                          << " Cell center:" << cell->center()
+//                          << std::endl;
+//                local_matrix.print_formatted(std::cout);
+//                std::cout << std::endl;
+//                local_level_inverse[level][subdomain_idx].print_formatted(std::cout);
+                fe_values_dummy.reinit(cell);
+                std::vector<dealii::Point<dim> > support_points = fe_values_dummy.get_quadrature_points();
+                for (unsigned int i = 0; i < n; ++i)
+                  std::cout << "i: " << support_points[i] << std::endl;
+
 
                 smoother_data[level].local_inverses[subdomain_idx]
                   =&(local_level_inverse[level][subdomain_idx]);
@@ -319,7 +403,10 @@ void Simulator<dim,same_diagonal,degree>::solve ()
   dealii::PreconditionIdentity preconditioner;
 #endif
 
-  dealii::ReductionControl          solver_control (dof_handler.n_dofs(), 1.e-20, 1.e-10,true);
+  dealii::ReductionControl          solver_control (10*dof_handler.n_dofs(), 1.e-20, 1.e-10,true);
+  /*  dealii::SolverRichardson<LA::MPI::Vector>::AdditionalData additional_data(.7);
+    dealii::SolverRichardson<LA::MPI::Vector> solver (solver_control,
+                                                      additional_data);*/
   dealii::SolverCG<LA::MPI::Vector> solver (solver_control);
 
   timer.leave_subsection();
@@ -403,6 +490,7 @@ void Simulator<dim,same_diagonal,degree>::run ()
   timer.enter_subsection("refine_global");
   pcout << "Refine global" << std::endl;
   triangulation.refine_global (n_levels-1);
+  dealii::GridTools::distort_random(0.1, triangulation);
   timer.leave_subsection();
   pcout << "Finite element: " << fe.get_name() << std::endl;
   pcout << "Number of active cells: "

@@ -64,6 +64,8 @@ void MFOperator<dim, fe_degree, same_diagonal>::reinit
                                      dealii::update_values |
                                      dealii::update_gradients;
   info_box.add_update_flags(update_flags, true, true, true, true);
+  info_box.add_update_flags_face(dealii::update_normal_vectors);
+  info_box.add_update_flags_boundary(dealii::update_normal_vectors);
   info_box.cell_selector.add("src", true, true, false);
   info_box.boundary_selector.add("src", true, true, false);
   info_box.face_selector.add("src", true, true, false);
@@ -248,7 +250,7 @@ void MFOperator<dim,fe_degree,same_diagonal>::vmult_add (LA::MPI::Vector &dst,
 template <int dim, int fe_degree, bool same_diagonal>
 void MFOperator<dim,fe_degree, same_diagonal>::Tvmult_add (LA::MPI::Vector &dst,
                                                            const LA::MPI::Vector &src) const
-{  
+{
   vmult_add(dst, src);
 }
 

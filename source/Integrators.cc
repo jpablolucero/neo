@@ -1,5 +1,6 @@
 #include <Integrators.h>
 
+
 // MATRIX INTEGRATOR
 template <int dim,bool same_diagonal>
 MatrixIntegrator<dim,same_diagonal>::MatrixIntegrator()
@@ -24,13 +25,15 @@ void MatrixIntegrator<dim, same_diagonal>::cell(dealii::MeshWorker::DoFInfo<dim>
     }
 }
 
+
+
+
 template <int dim,bool same_diagonal>
 void MatrixIntegrator<dim,same_diagonal>::face(dealii::MeshWorker::DoFInfo<dim> &dinfo1,
                                                dealii::MeshWorker::DoFInfo<dim> &dinfo2,
                                                typename dealii::MeshWorker::IntegrationInfo<dim> &info1,
                                                typename dealii::MeshWorker::IntegrationInfo<dim> &info2) const
 {
-
   const unsigned int n_blocks = dinfo1.block_info->local().size();
   Assert(n_blocks>0, dealii::ExcMessage("BlockInfo not initialized!"));
 
@@ -43,27 +46,31 @@ void MatrixIntegrator<dim,same_diagonal>::face(dealii::MeshWorker::DoFInfo<dim> 
       const dealii::FEValuesBase<dim> &fev1 = info1.fe_values(dinfo1.block_info->base_element(b));
       const dealii::FEValuesBase<dim> &fev2 = info2.fe_values(dinfo2.block_info->base_element(b));
 
+
       dealii::FullMatrix<double> &RM11 = dinfo1.matrix(b*n_blocks + b,false).matrix;
       const unsigned int n_quads = fev1.n_quadrature_points;
       coeffs.resize(n_quads);
       diffcoeff.value_list(fev1.get_quadrature_points(), coeffs, b);
+      // we want to average boundary and face contributions
+      for (unsigned int i=0; i<fev1.get_quadrature_points().size(); ++i)
+        coeffs[i]*=.5;
+
+      //face contributions
       //These are unused
       dealii::FullMatrix<double> M21(dinfo1.matrix(b*n_blocks+b,true).matrix.n());
       dealii::FullMatrix<double> M12(dinfo2.matrix(b*n_blocks+b,true).matrix.n());
-      dealii::FullMatrix<double> M22(dinfo2.matrix(b*n_blocks+b,false).matrix.n());
-      if (same_diagonal)
-        {
-          LocalIntegrators::Diffusion::ip_matrix<dim>
-          (RM11,M12,M21,M22,fev1,fev2,coeffs,
-           dealii::LocalIntegrators::Laplace::compute_penalty(dinfo1,dinfo2,deg1,deg2));
-        }
-      else
-        {
-          dealii::FullMatrix<double> &RM22 = dinfo2.matrix(b*n_blocks + b,false).matrix;
-          LocalIntegrators::Diffusion::ip_matrix<dim>
-          (RM11,M12,M21,RM22,fev1,fev2,coeffs,
-           dealii::LocalIntegrators::Laplace::compute_penalty(dinfo1,dinfo2,deg1,deg2));
-        }
+      dealii::FullMatrix<double> &RM22 = dinfo2.matrix(b*n_blocks + b,false).matrix;
+      LocalIntegrators::Diffusion::ip_matrix<dim>
+      (RM11,M12,M21,RM22,fev1,fev2,coeffs,
+       dealii::LocalIntegrators::Laplace::compute_penalty(dinfo1,dinfo2,deg1,deg2));
+
+      //boundary contributions
+      LocalIntegrators::Diffusion::nitsche_matrix<dim>
+      (RM11,fev1,coeffs,
+       dealii::LocalIntegrators::Laplace::compute_penalty(dinfo1,dinfo1,deg1,deg1));
+      LocalIntegrators::Diffusion::nitsche_matrix<dim>
+      (RM22,fev2,coeffs,
+       dealii::LocalIntegrators::Laplace::compute_penalty(dinfo2,dinfo2,deg2,deg2));
     }
 }
 
@@ -79,12 +86,27 @@ void MatrixIntegrator<dim,same_diagonal>::boundary(dealii::MeshWorker::DoFInfo<d
     {
       const dealii::FEValuesBase<dim> &fev = info.fe_values(dinfo.block_info->base_element(b));
       const unsigned int deg = info.fe_values(dinfo.block_info->base_element(b)).get_fe().tensor_degree();
+
+      dealii::FullMatrix<double> &RM11 = dinfo.matrix(b*n_blocks + b,false).matrix;
       const unsigned int n_quads = fev.n_quadrature_points;
       coeffs.resize(n_quads);
-      diffcoeff.value_list(fev.get_quadrature_points(),coeffs,b);
-      dealii::FullMatrix<double> &M = dinfo.matrix(b*n_blocks + b).matrix;
+      diffcoeff.value_list(fev.get_quadrature_points(), coeffs, b);
+      // we want to average boundary and face contributions
+      for (unsigned int i=0; i<fev.get_quadrature_points().size(); ++i)
+        coeffs[i]*=.5;
+
+      //face contributions
+      //These are unused
+      dealii::FullMatrix<double> M21(dinfo.matrix(b*n_blocks+b,true).matrix.n());
+      dealii::FullMatrix<double> M12(dinfo.matrix(b*n_blocks+b,true).matrix.n());
+      dealii::FullMatrix<double> M22(dinfo.matrix(b*n_blocks+b,false).matrix.n());;
+      LocalIntegrators::Diffusion::ip_matrix<dim>
+      (RM11,M12,M21,M22,fev,fev,coeffs,
+       dealii::LocalIntegrators::Laplace::compute_penalty(dinfo,dinfo,deg,deg));
+
+      //boundary contributions
       LocalIntegrators::Diffusion::nitsche_matrix<dim>
-      (M,fev,coeffs,
+      (RM11,fev,coeffs,
        dealii::LocalIntegrators::Laplace::compute_penalty(dinfo,dinfo,deg,deg));
     }
 }

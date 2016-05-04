@@ -27,15 +27,15 @@ int main (int argc, char *argv[])
   dealii::TimerOutput timer (mpi_communicator, pcout,
                              dealii::TimerOutput::never,
                              dealii::TimerOutput::wall_times);
-  for (unsigned int l=2; l<7; l+=2)
+  for (unsigned int l=1; l<12; l+=1)
     {
-      Simulator<2,true,1> dgmethod(timer, mpi_communicator, pcout);
+      Simulator<2,false,2> dgmethod(timer, mpi_communicator, pcout);
       dgmethod.n_levels = l ;
       dgmethod.run ();
     }
-  for (unsigned int l=2; l<5; l+=2)
+  for (unsigned int l=1; l<9; l+=1)
     {
-      Simulator<3,true,1> dgmethod(timer, mpi_communicator, pcout);
+      Simulator<3,false,2> dgmethod(timer, mpi_communicator, pcout);
       dgmethod.n_levels = l ;
       dgmethod.run ();
     }
