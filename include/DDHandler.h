@@ -70,13 +70,27 @@ private:
 };
 
 
+/* Domain Decomposition Handler implementation for vertex patches
+ */
+template<int dim>
+class DGDDHandlerVertex : public DDHandlerBase<dim>
+{
+public:
+  using typename DDHandlerBase<dim>::iterator;
+
+protected:
+  virtual void initialize_subdomain_to_global_map();
+  virtual void initialize_colorized_iterators();
+  virtual void initialize_max_n_overlaps();
+};
+
 
 /* Domain Decomposition Handler implementation for
  *  - Discontinuous Elements
  *  - Subdomains consisting of single cells
  */
 template<int dim>
-class DGDDHandler : public DDHandlerBase<dim>
+class DGDDHandlerCell : public DDHandlerBase<dim>
 {
 public:
   using typename DDHandlerBase<dim>::iterator;

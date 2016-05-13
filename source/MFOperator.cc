@@ -248,7 +248,7 @@ void MFOperator<dim,fe_degree,same_diagonal>::vmult_add (LA::MPI::Vector &dst,
 template <int dim, int fe_degree, bool same_diagonal>
 void MFOperator<dim,fe_degree, same_diagonal>::Tvmult_add (LA::MPI::Vector &dst,
                                                            const LA::MPI::Vector &src) const
-{  
+{
   vmult_add(dst, src);
 }
 

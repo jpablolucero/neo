@@ -38,7 +38,7 @@ template void DDHandlerBase<3>::prolongate_add(LA::MPI::Vector & dst,
                                                const dealii::Vector<float>& src,
                                                const unsigned int subdomain_idx) const;
 
-template class DGDDHandler<2>;
-template class DGDDHandler<3>;
+template class DGDDHandlerCell<2>;
+template class DGDDHandlerCell<3>;
 
 #endif // DDHANDLER_INST
