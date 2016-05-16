@@ -45,7 +45,7 @@ public:
   std::vector<dealii::types::global_dof_index> global_dofs_on_subdomain(const unsigned int subdomain_idx) const;
 
 protected:
-  std::vector<std::vector<dealii::types::global_dof_index> > subdomain_to_global_map;
+  std::vector<std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> > subdomain_to_global_map;
   std::vector<unsigned int> subdomain_iterators;
   std::vector<std::vector<iterator> > colorized_iterators_;
   unsigned int max_n_overlaps_;

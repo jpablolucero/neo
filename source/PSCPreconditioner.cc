@@ -4,14 +4,14 @@ namespace implementation
 {
   namespace WorkStream
   {
-    template <int dim, class IT>
+/*    template <int dim, class IT>
     std::vector<dealii::types::global_dof_index>
     dd_conflict_indices(const DDHandlerBase<dim> &ddh,
                         const IT &iterator)
     {
       const unsigned int subdomain_idx = *iterator;
       return ddh.global_dof_indices_on_subdomain(subdomain_idx);
-    }
+    }*/
 
     template <int dim, typename VectorType, class number>
     class Copy
@@ -89,7 +89,6 @@ namespace implementation
 template <int dim, typename VectorType, class number>
 PSCPreconditioner<dim, VectorType, number>::PSCPreconditioner()
 {}
-
 
 template <int dim, typename VectorType, class number>
 void PSCPreconditioner<dim, VectorType, number>::vmult (VectorType &dst,

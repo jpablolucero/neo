@@ -50,7 +50,7 @@ class PSCPreconditioner<dim, VectorType, number>::AdditionalData
 public:
   AdditionalData() : local_inverses(0), ddh(0), weight(1.0) {}
 
-  std::vector<const Matrix * > local_inverses;
+  std::map<typename dealii::DoFHandler<dim>::level_cell_iterator,const Matrix * > local_matrices;
   const DDHandlerBase<dim> *ddh;
   double weight;
 };
@@ -64,6 +64,19 @@ void PSCPreconditioner<dim, VectorType, number>::initialize(const GlobalOperator
   Assert(data.local_inverses.size() == data.ddh->size(),
          dealii::ExcDimensionMismatch(data.local_inverses.size(),data.ddh->size()));
   this->data = data;
+  // from the DDHandler we get the patches and the corresponding cells
+  // use these to construct the matrices we want to smoothen with
+  // from the local matrices)
+  std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> &patches = data.ddh->subdomain_to_global_map;
+  smoothing_matrices.reinit(patches.size());
+  for (unsigned int i=0; i<patches.size()); ++i)
+  {
+      std::vector<types::global_dof_inde> local_dofs;
+      //get inner
+      for (unsigned int j=0; j< patches[i]; ++j)
+          local_dofs.append(patches[i][j].get_local_dof_indices())
+  }
+
 }
 
 template <int dim, typename VectorType, class number>
