@@ -2,6 +2,7 @@
 #define MFOPERATOR_H
 
 #include <deal.II/base/timer.h>
+#include <deal.II/base/std_cxx11/function.h>
 #include <deal.II/grid/tria.h>
 #include <deal.II/fe/mapping_q1.h>
 #include <deal.II/fe/fe_dgq.h>
@@ -20,14 +21,16 @@ class MFOperator final: public dealii::Subscriptor
 public:
   MFOperator () ;
   ~MFOperator () ;
-  MFOperator (const MFOperator &) = delete ;
+  MFOperator (const MFOperator &operator_);
   MFOperator &operator = (const MFOperator &) = delete;
 
-  void reinit (dealii::DoFHandler<dim> *dof_handler_,
+  void reinit (const dealii::DoFHandler<dim> *dof_handler_,
                const dealii::MappingQ1<dim> *mapping_,
                const dealii::ConstraintMatrix *constraints,
                const MPI_Comm &mpi_communicator_,
                const unsigned int level_ = dealii::numbers::invalid_unsigned_int);
+
+  void set_cell_range (const std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> &cell_range_);
 
   void set_timer (dealii::TimerOutput &timer_);
 
@@ -70,7 +73,7 @@ public:
 
 private:
   unsigned int                                        level;
-  dealii::DoFHandler<dim>                             *dof_handler;
+  const dealii::DoFHandler<dim>                             *dof_handler;
   const dealii::FiniteElement<dim>                    *fe;
   const dealii::MappingQ1<dim>                        *mapping;
   const dealii::ConstraintMatrix                      *constraints;
@@ -85,6 +88,7 @@ private:
   mutable dealii::MGLevelObject<LA::MPI::Vector>      ghosted_src;
   MPI_Comm                                            mpi_communicator;
   dealii::TimerOutput                                 *timer;
+  const std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> *cell_range;
 };
 
 #ifdef HEADER_IMPLEMENTATION

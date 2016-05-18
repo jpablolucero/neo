@@ -35,8 +35,21 @@ void MFOperator<dim, fe_degree, same_diagonal>::clear()
 
 
 template <int dim, int fe_degree, bool same_diagonal>
+MFOperator<dim, fe_degree, same_diagonal>::MFOperator(const MFOperator &operator_)
+  : Subscriptor(operator_)
+{
+  timer = operator_.timer;
+  this->reinit(operator_.dof_handler,
+               operator_.mapping,
+               operator_.constraints,
+               operator_.mpi_communicator,
+               operator_.level);
+}
+
+
+template <int dim, int fe_degree, bool same_diagonal>
 void MFOperator<dim, fe_degree, same_diagonal>::reinit
-(dealii::DoFHandler<dim> *dof_handler_,
+(const dealii::DoFHandler<dim> *dof_handler_,
  const dealii::MappingQ1<dim> *mapping_,
  const dealii::ConstraintMatrix *constraints_,
  const MPI_Comm &mpi_communicator_,
@@ -82,6 +95,14 @@ void MFOperator<dim, fe_degree, same_diagonal>::reinit
                             mpi_communicator_);
 #endif
   timer->leave_subsection();
+}
+
+template <int dim, int fe_degree, bool same_diagonal>
+void MFOperator<dim, fe_degree, same_diagonal>::set_cell_range
+(const std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> &cell_range_)
+{
+  cell_range = &cell_range_;
+  residual_integrator.set_cell_range(*cell_range);
 }
 
 template <int dim, int fe_degree, bool same_diagonal>
@@ -239,9 +260,40 @@ void MFOperator<dim,fe_degree,same_diagonal>::vmult_add (LA::MPI::Vector &dst,
   timer->leave_subsection();
 
   timer->enter_subsection("LO::IntegrationLoop ("+ dealii::Utilities::int_to_string(level)+ ")");
-  dealii::MeshWorker::integration_loop<dim, dim>
-  (dof_handler->begin_mg(level), dof_handler->end_mg(level),
-   *dof_info,info_box,residual_integrator,assembler);
+  if (!cell_range)
+    {
+      dealii::MeshWorker::integration_loop<dim, dim>
+      (dof_handler->begin_mg(level), dof_handler->end_mg(level),
+       *dof_info,info_box,residual_integrator,assembler);
+    }
+  else
+    {
+      dealii::MeshWorker::DoFInfoBox<dim, dealii::MeshWorker::DoFInfo<dim> > dof_info_box(*dof_info);
+      assembler.initialize_info(dof_info_box.cell, false);
+      for (unsigned int i=0; i<dealii::GeometryInfo<dim>::faces_per_cell; ++i)
+        {
+          assembler.initialize_info(dof_info_box.interior[i], true);
+          assembler.initialize_info(dof_info_box.exterior[i], true);
+        }
+
+      auto cell_worker  = dealii::std_cxx11::bind(&dealii::MeshWorker::LocalIntegrator<dim>::cell, &residual_integrator, dealii::std_cxx11::_1, dealii::std_cxx11::_2);
+      auto boundary_worker = dealii::std_cxx11::bind(&dealii::MeshWorker::LocalIntegrator<dim>::boundary, &residual_integrator, dealii::std_cxx11::_1, dealii::std_cxx11::_2);
+      auto face_worker = dealii::std_cxx11::bind(&dealii::MeshWorker::LocalIntegrator<dim>::face, &residual_integrator, dealii::std_cxx11::_1, dealii::std_cxx11::_2, dealii::std_cxx11::_3, dealii::std_cxx11::_4);
+
+      dealii::MeshWorker::LoopControl lctrl;
+      //assemble faces from both sides
+      lctrl.own_faces = dealii::MeshWorker::LoopControl::both;
+
+      // Loop over all cells
+      for (unsigned int i=0; i<cell_range->size(); ++i)
+        {
+          dealii::MeshWorker::cell_action<dealii::MeshWorker::IntegrationInfoBox<dim>,
+                 dealii::MeshWorker::DoFInfo<dim>, dim, dim >
+                 ((*cell_range)[i], dof_info_box, info_box, cell_worker,
+                  boundary_worker, face_worker, lctrl);
+          dof_info_box.assemble(assembler);
+        }
+    }
   timer->leave_subsection();
 }
 

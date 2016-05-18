@@ -30,22 +30,24 @@ public:
   colorized_iterators() const;
   unsigned int max_n_overlaps() const;
 
-  template <class number>
-  void reinit(dealii::Vector<number> &vec,
-              const unsigned int subdomain_idx) const;
-  template <typename VectorType, class number>
-  void restrict_add(dealii::Vector<number> &dst,
-                    const VectorType &src,
-                    const unsigned int subdomain_idx) const;
-  template <typename VectorType, class number>
-  void prolongate_add(VectorType &dst,
-                      const dealii::Vector<number> &src,
-                      const unsigned int subdomain_idx) const;
+//  template <class number>
+//  void reinit(dealii::Vector<number> &vec,
+//              const unsigned int subdomain_idx) const;
+//  template <typename VectorType, class number>
+//  void restrict_add(dealii::Vector<number> &dst,
+//                    const VectorType &src,
+//                    const unsigned int subdomain_idx) const;
+//  template <typename VectorType, class number>
+//  void prolongate_add(VectorType &dst,
+//                      const dealii::Vector<number> &src,
+//                      const unsigned int subdomain_idx) const;
 
-  std::vector<dealii::types::global_dof_index> global_dofs_on_subdomain(const unsigned int subdomain_idx) const;
+//  std::vector<dealii::types::global_dof_index> global_dofs_on_subdomain(const unsigned int subdomain_idx) const;
+  std::vector<std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> > subdomain_to_global_map;
 
 protected:
-  std::vector<std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> > subdomain_to_global_map;
+  std::vector<dealii::types::global_dof_index> local_to_patch_dofs;
+
   std::vector<unsigned int> subdomain_iterators;
   std::vector<std::vector<iterator> > colorized_iterators_;
   unsigned int max_n_overlaps_;

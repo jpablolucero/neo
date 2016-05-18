@@ -7,11 +7,13 @@
 #include <deal.II/dofs/dof_handler.h>
 #include <deal.II/dofs/dof_tools.h>
 #include <deal.II/base/work_stream.h>
+#include <deal.II/distributed/tria.h>
 
 #include <functional>
 
 #include <GenericLinearAlgebra.h>
 #include <DDHandler.h>
+#include <MFOperator.h>
 
 template <int dim=2, typename VectorType=LA::MPI::Vector, class number=double>
 class PSCPreconditioner final
@@ -48,7 +50,7 @@ template <int dim, typename VectorType, class number>
 class PSCPreconditioner<dim, VectorType, number>::AdditionalData
 {
 public:
-  AdditionalData() : local_inverses(0), ddh(0), weight(1.0) {}
+  AdditionalData() : ddh(0), weight(1.0) {}
 
   std::map<typename dealii::DoFHandler<dim>::level_cell_iterator,const Matrix * > local_matrices;
   const DDHandlerBase<dim> *ddh;
@@ -61,22 +63,13 @@ void PSCPreconditioner<dim, VectorType, number>::initialize(const GlobalOperator
                                                             const AdditionalData &data)
 {
   Assert(data.ddh != 0, dealii::ExcInternalError());
-  Assert(data.local_inverses.size() == data.ddh->size(),
-         dealii::ExcDimensionMismatch(data.local_inverses.size(),data.ddh->size()));
+//  Assert(data.local_inverses.size() == data.ddh->size(),
+//         dealii::ExcDimensionMismatch(data.local_inverses.size(),data.ddh->size()));
   this->data = data;
   // from the DDHandler we get the patches and the corresponding cells
   // use these to construct the matrices we want to smoothen with
   // from the local matrices)
-  std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> &patches = data.ddh->subdomain_to_global_map;
-  smoothing_matrices.reinit(patches.size());
-  for (unsigned int i=0; i<patches.size()); ++i)
-  {
-      std::vector<types::global_dof_inde> local_dofs;
-      //get inner
-      for (unsigned int j=0; j< patches[i]; ++j)
-          local_dofs.append(patches[i][j].get_local_dof_indices())
-  }
-
+//  std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> &patches = data.ddh->subdomain_to_global_map;
 }
 
 template <int dim, typename VectorType, class number>
