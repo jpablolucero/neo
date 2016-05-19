@@ -281,10 +281,15 @@ void DGDDHandlerVertex<dim>::initialize_subdomain_to_global_map()
        ++cell)
     if (cell->level_subdomain_id()==triangulation.locally_owned_subdomain())
       {
-        bool boundary_vertex = false;
         for (unsigned int v=0; v<dealii::GeometryInfo<dim>::vertices_per_cell; ++v)
           {
+            bool boundary_vertex = false;
             const unsigned int vg = cell->vertex_index(v);
+            std::cout << "Vertex: " << vg
+                      << " Cell id: " << cell->index()
+                      << " Center " << cell->center()
+                      << std::endl;
+
             if (only_interior_patches)
               {
                 for (unsigned int d=0; d<dim; ++d)
@@ -296,6 +301,7 @@ void DGDDHandlerVertex<dim>::initialize_subdomain_to_global_map()
                         break;
                       }
                   }
+
                 if (!boundary_vertex)
                   vertex_to_cell[vg].push_back(cell);
               }
@@ -327,6 +333,7 @@ void DGDDHandlerVertex<dim>::initialize_subdomain_to_global_map()
       if (it->second.size()>0)
         {
           this->subdomain_to_global_map.push_back(it->second);
+          std::cout << "\nVertex: " << it->first << " ";
           for (unsigned int i=0; i<it->second.size(); ++i)
             std::cout << "Cell id: " << it->second[i]->index()
                       << " Center " << it->second[i]->center()
@@ -350,11 +357,12 @@ void DGDDHandlerVertex<dim>::initialize_colorized_iterators()
       cell_ids[i]=this->subdomain_to_global_map[*it][i]->index();
     return cell_ids;
   };
-  this->colorized_iterators_ =
-    dealii::GraphColoring::make_graph_coloring(
-      this->subdomain_iterators.cbegin(),
-      this->subdomain_iterators.cend(),
-      conflicts);
+  if (this->subdomain_iterators.cbegin()!=this->subdomain_iterators.cend())
+    this->colorized_iterators_ =
+      dealii::GraphColoring::make_graph_coloring(
+        this->subdomain_iterators.cbegin(),
+        this->subdomain_iterators.cend(),
+        conflicts);
 }
 
 
@@ -390,7 +398,8 @@ void DGDDHandlerVertex<dim>::initialize_max_n_overlaps()
             }
         }
     }
-  this->max_n_overlaps_ = *(std::max_element(overlaps.begin(), overlaps.end()));
+
+  this->max_n_overlaps_ = this->size()!=0?*(std::max_element(overlaps.begin(), overlaps.end())):0;
 
 
 }

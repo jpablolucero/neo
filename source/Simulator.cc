@@ -15,7 +15,7 @@ Simulator<dim,same_diagonal,degree>::Simulator (dealii::TimerOutput &timer_,
 #ifdef CG
   fe(dealii::FE_Q<dim>(degree),1),
 #else
-  fe(dealii::FE_DGQ<dim>(degree),2),
+  fe(dealii::FE_DGQ<dim>(degree),1),
 #endif
   reference_function(fe.n_components()),
   dof_handler (triangulation),
@@ -66,26 +66,26 @@ void Simulator<dim,same_diagonal,degree>::setup_system ()
 
   locally_owned_dofs = dof_handler.locally_owned_dofs();
 
-  /*  std::cout << "locally owned dofs on process "
-              << dealii::Utilities::MPI::this_mpi_process(mpi_communicator)
-              << std::endl;
-    for (unsigned int l=0; l<triangulation.n_global_levels(); ++l)
-      {
-        std::cout << "level: " << l << " n_elements(): "
-                  << dof_handler.locally_owned_mg_dofs(l).n_elements()
-                  << " index set: ";
-        dof_handler.locally_owned_mg_dofs(l).print(std::cout);
-      }
-    std::cout << "n_elements(): "
-              << dof_handler.locally_owned_dofs().n_elements()
-              <<std::endl;
-    dof_handler.locally_owned_dofs().print(dealii::deallog);*/
+  std::cout << "locally owned dofs on process "
+            << dealii::Utilities::MPI::this_mpi_process(mpi_communicator)
+            << std::endl;
+  for (unsigned int l=0; l<triangulation.n_global_levels(); ++l)
+    {
+      std::cout << "level: " << l << " n_elements(): "
+                << dof_handler.locally_owned_mg_dofs(l).n_elements()
+                << " index set: ";
+      dof_handler.locally_owned_mg_dofs(l).print(std::cout);
+    }
+  std::cout << "n_elements(): "
+            << dof_handler.locally_owned_dofs().n_elements()
+            <<std::endl;
+  dof_handler.locally_owned_dofs().print(dealii::deallog);
 
   dealii::DoFTools::extract_locally_relevant_dofs
   (dof_handler, locally_relevant_dofs);
-  /*  std::cout << "locally relevant dofs on process "
-              << dealii::Utilities::MPI::this_mpi_process(mpi_communicator) << " ";
-    locally_relevant_dofs.print(std::cout);*/
+  std::cout << "locally relevant dofs on process "
+            << dealii::Utilities::MPI::this_mpi_process(mpi_communicator) << " ";
+  locally_relevant_dofs.print(std::cout);
 
   //constraints
   constraints.clear();

@@ -51,8 +51,11 @@ namespace implementation
               Scratch<dim, VectorType, number> &scratch, Copy<dim, VectorType, number> &copy)
     {
       const unsigned int subdomain_idx = *iterator;
+      std::cout << "Smoothening using patch: " << subdomain_idx << std::endl;
       const DDHandlerBase<dim> &ddh = *(copy.ddh);
       scratch.system_matrix.set_cell_range(ddh.subdomain_to_global_map[subdomain_idx]);
+      for (unsigned int i=0; i<ddh.subdomain_to_global_map[subdomain_idx].size(); ++i)
+        std::cout << "Cell index: " << ddh.subdomain_to_global_map[subdomain_idx][i]->index() << std::endl;
 
       scratch.solver.solve(scratch.system_matrix,*(copy.dst),*(scratch.src),dealii::PreconditionIdentity());
     }
@@ -119,6 +122,7 @@ void PSCPreconditioner<dim, VectorType, number>::vmult_add (VectorType &dst,
 {
   std::string section = "Smoothing @ level ";
   section += std::to_string(data.ddh->get_level());
+  std::cout << section << std::endl;
   timer->enter_subsection(section);
 
   implementation::WorkStream::parallel_loop<dim, VectorType, number>
