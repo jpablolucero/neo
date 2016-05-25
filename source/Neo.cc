@@ -30,7 +30,7 @@ int main (int argc, char *argv[])
   // for (unsigned int l=2; l<7; l+=2)
   //   {
       Simulator<2,true,1> dgmethod(timer, mpi_communicator, pcout);
-      dgmethod.n_levels = 11 ;
+      dgmethod.n_levels = 11;
       dgmethod.run ();
       //    }
   // for (unsigned int l=2; l<5; l+=2)

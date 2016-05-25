@@ -82,91 +82,10 @@ void MFOperator<dim, fe_degree, same_diagonal>::reinit
                             mpi_communicator_);
 #endif
 
-  dealii::std_cxx11::function<std::vector<dealii::types::global_dof_index>
-  			      (const ITERATOR& )>
-    conflicts
-    = [] (const ITERATOR& cell)
-    {
-      std::vector< dealii::types::global_dof_index > conflict_indices;
-
-      const bool ignore_subdomain = (cell->get_triangulation().locally_owned_subdomain()
-  				     == dealii::numbers::invalid_subdomain_id);
-      dealii::types::subdomain_id csid = (cell->is_level_cell())
-        ? cell->level_subdomain_id()
-        : cell->subdomain_id();
-      const bool own_cell = ignore_subdomain || (csid == cell->get_triangulation().locally_owned_subdomain());
-
-      if(own_cell)
-  	{
-  	  conflict_indices.resize(cell->get_fe().dofs_per_cell);
-  	  cell->get_active_or_mg_dof_indices(conflict_indices);
-  	  //print
-  	  // for( unsigned int i=0; i<conflict_indices.size(); ++i)
-  	  // 	std::cout << conflict_indices[i] << " ";
-  	  // std::cout << std::endl;
-      
-  	  std::vector< dealii::types::global_dof_index > cell_indices;
-  	  for (unsigned int face_no=0; face_no < dealii::GeometryInfo<dim>::faces_per_cell; ++face_no)
-  	    {
-  	      //      typename ITERATOR::AccessorType::Container::face_iterator face = cell->face(face_no);
-  	      if ( !(cell->at_boundary(face_no)) )
-  		{
-  		  auto neighbor = cell->neighbor(face_no);
-  		  dealii::types::subdomain_id nsid = (neighbor->is_level_cell())
-  		    ? neighbor->level_subdomain_id()
-  		    : neighbor->subdomain_id();
-  		  const bool own_neighbor = ignore_subdomain || (nsid == neighbor->get_triangulation().locally_owned_subdomain());
-
-  		  if(own_neighbor)
-  		    {
-  		      //Assert(cell->level()==neighbor->level(), ExcInternalError());
-  		      cell_indices.clear();
-  		      cell_indices.resize(cell->get_fe().dofs_per_cell);
-  		      neighbor->get_active_or_mg_dof_indices(cell_indices);	  
-  		      //print
-  		      // for( unsigned int i=0; i<cell_indices.size(); ++i)
-  		      // 	std::cout << cell_indices[i] << " ";
-  		      // std::cout << std::endl;
-  		      for( unsigned int i=0; i<cell_indices.size(); ++i)
-  			conflict_indices.push_back(cell_indices[i]);
-  		    }
-  		}
-  	    }
-  	}
-      return conflict_indices;
-    };
-
-      
-  // std::vector<ITERATOR> locally_owned_cells;
-  
-  // for( auto cell = dof_handler->begin_mg(level); cell!=dof_handler->end_mg(level); ++cell)
-  //   {
-  //     const bool ignore_subdomain = (cell->get_triangulation().locally_owned_subdomain()
-  // 			       == dealii::numbers::invalid_subdomain_id);
-  //     dealii::types::subdomain_id csid = (cell->is_level_cell())
-  // 	? cell->level_subdomain_id()
-  // 	: cell->subdomain_id();
-  //     const bool own_cell = ignore_subdomain || (csid == cell->get_triangulation().locally_owned_subdomain());
-
-  //     if(own_cell)
-  // 	{
-  // 	  locally_owned_cells.push_back(cell);
-  // 	}
-  //   }
-  
-  if( dof_handler->begin_mg(level)!=dof_handler->end_mg(level) )
-    {
-      std::vector<std::vector<ITERATOR> >
-  	dummy_iterators = dealii::GraphColoring::make_graph_coloring ( dof_handler->begin_mg(level),
-  								       dof_handler->end_mg(level),
-  								       conflicts );
-      colored_iterators = std::move(dummy_iterators);
-    }
-  // std::cout << "Initialized colored_iterators on level(" << level << ") with n_colors = " << colored_iterators.size() << std::endl;
-  // std::vector<std::vector<ITERATOR> > all_iterators(1); 
-  // for (ITERATOR p=dof_handler->begin_mg(level); p!=dof_handler->end_mg(level); ++p)
-  //   all_iterators[0].push_back(p);
-  // colored_iterators = std::move(all_iterators);
+  std::vector<std::vector<ITERATOR> > all_iterators(1); 
+  for (ITERATOR p=dof_handler->begin_mg(level); p!=dof_handler->end_mg(level); ++p)
+    all_iterators[0].push_back(p);
+  colored_iterators = std::move(all_iterators);
   
   timer->leave_subsection();
 }
@@ -328,12 +247,6 @@ void MFOperator<dim,fe_degree,same_diagonal>::vmult_add (LA::MPI::Vector &dst,
   info_box.initialize(*fe, *mapping, src_data, ghosted_src, &(dof_handler->block_info()));
   dealii::MeshWorker::Assembler::ResidualSimple<LA::MPI::Vector > assembler;
   assembler.initialize(dst_data);
-//  assembler.initialize(*constraints);
-
-  dealii::MeshWorker::LoopControl lctrl;
-  //  lctrl.ghost_cells = false;
-  //lctrl.faces_to_ghost = dealii::MeshWorker::LoopControl::never;
-  //lctrl.own_faces = dealii::MeshWorker::LoopControl::both;
   timer->leave_subsection();
 
   timer->enter_subsection("LO::IntegrationLoop ("+ dealii::Utilities::int_to_string(level)+ ")");
@@ -341,10 +254,7 @@ void MFOperator<dim,fe_degree,same_diagonal>::vmult_add (LA::MPI::Vector &dst,
     (colored_iterators,
      *dof_info, info_box,
      residual_integrator,
-     assembler, lctrl);
-  // dealii::MeshWorker::integration_loop<dim, dim>
-  // (dof_handler->begin_mg(level), dof_handler->end_mg(level),
-  //  *dof_info,info_box,residual_integrator,assembler);
+     assembler);
   timer->leave_subsection();
 }
 

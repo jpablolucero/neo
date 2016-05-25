@@ -109,7 +109,7 @@ namespace internal
 		    INFOBOX  &info,
 		    const INTEGRATOR &integrator,
 		    ASSEMBLER  &assembler,
-		    const dealii::MeshWorker::LoopControl &lctrl /*= dealii::MeshWorker::LoopControl()*/)
+		    const dealii::MeshWorker::LoopControl &lctrl = dealii::MeshWorker::LoopControl())
   {
     const dealii::std_cxx11::function<void (DOFINFO &, typename INFOBOX::CellInfo &)>   cell_worker 
       = dealii::std_cxx11::bind(&INTEGRATOR::cell, &integrator, dealii::std_cxx11::_1, dealii::std_cxx11::_2);

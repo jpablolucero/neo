@@ -424,14 +424,14 @@ void Simulator<dim,same_diagonal,degree>::run ()
   setup_multigrid ();
   timer.leave_subsection();
 #endif
-  pcout << "Output" << std::endl;
-  output_results(n_levels);
   timer.enter_subsection("solve");
   pcout << "Solve" << std::endl;
   solve ();
   timer.leave_subsection();
   timer.enter_subsection("output");
+  pcout << "Output" << std::endl;
   compute_error();
+  output_results(n_levels);
   timer.leave_subsection();
   timer.print_summary();
   pcout << std::endl;
