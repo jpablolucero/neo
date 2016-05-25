@@ -94,4 +94,5 @@ private:
 #ifdef HEADER_IMPLEMENTATION
 #include <Simulator.cc>
 #endif
+
 #endif // SIMULATOR_H

@@ -27,18 +27,18 @@ int main (int argc, char *argv[])
   dealii::TimerOutput timer (mpi_communicator, pcout,
                              dealii::TimerOutput::never,
                              dealii::TimerOutput::wall_times);
-  for (unsigned int l=2; l<7; l+=2)
-    {
+  // for (unsigned int l=2; l<7; l+=2)
+  //   {
       Simulator<2,true,1> dgmethod(timer, mpi_communicator, pcout);
-      dgmethod.n_levels = l ;
+      dgmethod.n_levels = 11 ;
       dgmethod.run ();
-    }
-  for (unsigned int l=2; l<5; l+=2)
-    {
-      Simulator<3,true,1> dgmethod(timer, mpi_communicator, pcout);
-      dgmethod.n_levels = l ;
-      dgmethod.run ();
-    }
+      //    }
+  // for (unsigned int l=2; l<5; l+=2)
+  //   {
+  //     Simulator<3,false,1> dgmethod(timer, mpi_communicator, pcout);
+  //     dgmethod.n_levels = l ;
+  //     dgmethod.run ();
+  //   }
   return 0;
 }
 #endif

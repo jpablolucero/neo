@@ -1,7 +1,9 @@
 #ifndef MFOPERATOR_H
 #define MFOPERATOR_H
 
+#include <deal.II/base/std_cxx11/function.h>
 #include <deal.II/base/timer.h>
+#include <deal.II/base/graph_coloring.h>
 #include <deal.II/grid/tria.h>
 #include <deal.II/fe/mapping_q1.h>
 #include <deal.II/fe/fe_dgq.h>
@@ -13,6 +15,7 @@
 
 #include <GenericLinearAlgebra.h>
 #include <Integrators.h>
+#include <DDHandler.h>
 
 template <int dim, int fe_degree, bool same_diagonal>
 class MFOperator final: public dealii::Subscriptor
@@ -69,6 +72,12 @@ public:
   }
 
 private:
+  typedef dealii::MeshWorker::DoFInfo<dim> DOFINFO ;
+  typedef dealii::MeshWorker::IntegrationInfoBox<dim> INFOBOX ;
+  typedef dealii::MeshWorker::Assembler::ResidualSimple<LA::MPI::Vector > ASSEMBLER ;
+  typedef typename dealii::DoFHandler< dim, dim >::level_cell_iterator ITERATOR ;
+  typedef dealii::MeshWorker::LocalIntegrator<dim, dim> INTEGRATOR ;
+
   unsigned int                                        level;
   dealii::DoFHandler<dim>                             *dof_handler;
   const dealii::FiniteElement<dim>                    *fe;
@@ -85,10 +94,65 @@ private:
   mutable dealii::MGLevelObject<LA::MPI::Vector>      ghosted_src;
   MPI_Comm                                            mpi_communicator;
   dealii::TimerOutput                                 *timer;
+  std::vector<std::vector<ITERATOR> >                 colored_iterators;
 };
 
 #ifdef HEADER_IMPLEMENTATION
 #include <MFOperator.cc>
 #endif
+
+namespace internal
+{
+  template<int dim, int spacedim, typename ITERATOR, typename DOFINFO, typename INFOBOX, typename INTEGRATOR, typename ASSEMBLER>
+  void colored_loop(const std::vector<std::vector<ITERATOR> > colored_iterators,
+		    DOFINFO  &dof_info,
+		    INFOBOX  &info,
+		    const INTEGRATOR &integrator,
+		    ASSEMBLER  &assembler,
+		    const dealii::MeshWorker::LoopControl &lctrl /*= dealii::MeshWorker::LoopControl()*/)
+  {
+    const dealii::std_cxx11::function<void (DOFINFO &, typename INFOBOX::CellInfo &)>   cell_worker 
+      = dealii::std_cxx11::bind(&INTEGRATOR::cell, &integrator, dealii::std_cxx11::_1, dealii::std_cxx11::_2);
+    const dealii::std_cxx11::function<void (DOFINFO &, typename INFOBOX::CellInfo &)>   boundary_worker 
+      = dealii::std_cxx11::bind(&INTEGRATOR::boundary, &integrator, dealii::std_cxx11::_1, dealii::std_cxx11::_2);
+    const dealii::std_cxx11::function<void (DOFINFO &, DOFINFO &,
+					    typename INFOBOX::CellInfo &,
+					    typename INFOBOX::CellInfo &)>   face_worker
+      = dealii::std_cxx11::bind(&INTEGRATOR::face, &integrator, dealii::std_cxx11::_1, dealii::std_cxx11::_2,
+				dealii::std_cxx11::_3, dealii::std_cxx11::_4);
+
+    dealii::MeshWorker::DoFInfoBox<dim, DOFINFO> dinfo_box(dof_info);
+
+    assembler.initialize_info(dinfo_box.cell, false);
+    for (unsigned int i=0; i<dealii::GeometryInfo<dim>::faces_per_cell; ++i)
+      {
+	assembler.initialize_info(dinfo_box.interior[i], true);
+	assembler.initialize_info(dinfo_box.exterior[i], true);
+      }
+
+    //  Loop over all cells                                                                                                          
+#ifdef DEAL_II_MESHWORKER_PARALLEL
+    dealii::WorkStream::run(colored_iterators,
+			    dealii::std_cxx11::bind(&dealii::MeshWorker::cell_action<INFOBOX, DOFINFO, dim, spacedim, ITERATOR>,
+						    dealii::std_cxx11::_1, dealii::std_cxx11::_3, dealii::std_cxx11::_2,
+						    cell_worker, boundary_worker, face_worker, lctrl),
+			    dealii::std_cxx11::bind(&dealii::internal::assemble<dim,DOFINFO,ASSEMBLER>,
+						    dealii::std_cxx11::_1, &assembler),
+			    info, dinfo_box,
+			    dealii::MultithreadInfo::n_threads(),8);
+
+#else
+      for (unsigned int color=0; color<colored_iterators.size(); ++color)
+	for (typename std::vector<ITERATOR>::const_iterator p = colored_iterators[color].begin();
+	     p != colored_iterators[color].end(); ++p)
+	  {
+	    dealii::MeshWorker::cell_action<INFOBOX,DOFINFO,dim,spacedim>(*p, dinfo_box, info,
+									  cell_worker, boundary_worker, face_worker,
+									  lctrl);
+	    dinfo_box.assemble(assembler);
+	  }
+#endif
+  }
+} // end namespace internal
 
 #endif // MFOPERATOR_H

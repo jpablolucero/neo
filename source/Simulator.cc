@@ -15,7 +15,7 @@ Simulator<dim,same_diagonal,degree>::Simulator (dealii::TimerOutput &timer_,
 #ifdef CG
   fe(dealii::FE_Q<dim>(degree),1),
 #else
-  fe(dealii::FE_DGQ<dim>(degree),2),
+  fe(dealii::FE_DGQ<dim>(degree),1),
 #endif
   reference_function(fe.n_components()),
   dof_handler (triangulation),
@@ -193,7 +193,7 @@ void Simulator<dim,same_diagonal,degree>::solve ()
 #ifdef MG
   const LA::MPI::SparseMatrix &coarse_matrix = mg_matrix[0].get_coarse_matrix();
 
-  dealii::SolverControl coarse_solver_control (dof_handler.n_dofs(0), 1e-10, false, false);
+  dealii::SolverControl coarse_solver_control (dof_handler.n_dofs(0)*10, 1e-10, false, false);
   dealii::SolverCG<LA::MPI::Vector> coarse_solver(coarse_solver_control);
   dealii::PreconditionIdentity id;
   dealii::MGCoarseGridLACIteration<dealii::SolverCG<LA::MPI::Vector>,LA::MPI::Vector> mg_coarse(coarse_solver,
@@ -424,14 +424,14 @@ void Simulator<dim,same_diagonal,degree>::run ()
   setup_multigrid ();
   timer.leave_subsection();
 #endif
+  pcout << "Output" << std::endl;
+  output_results(n_levels);
   timer.enter_subsection("solve");
   pcout << "Solve" << std::endl;
   solve ();
   timer.leave_subsection();
   timer.enter_subsection("output");
-  pcout << "Output" << std::endl;
   compute_error();
-  output_results(n_levels);
   timer.leave_subsection();
   timer.print_summary();
   pcout << std::endl;
