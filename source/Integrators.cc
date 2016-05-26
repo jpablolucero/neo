@@ -142,28 +142,28 @@ void ResidualIntegrator<dim>::face(dealii::MeshWorker::DoFInfo<dim> &dinfo1,
 
   dealii::BlockVector<double> &localdst1 = dinfo1.vector(0);
   const unsigned int n_blocks = localdst1.n_blocks();
-  std::unique_ptr<dealii::BlockVector<double> >localdst2;
+  dealii::BlockVector<double> *localdst2;
 
   Assert(n_blocks>0, dealii::ExcMessage("BlockInfo not initialized!"));
 
   const std::vector<std::vector<dealii::Tensor<1,dim> > > &Dsrc1 = info1.gradients[0];
-  std::unique_ptr<std::vector<std::vector<dealii::Tensor<1,dim> > > >Dsrc2;
+  std::vector<std::vector<dealii::Tensor<1,dim> > > *Dsrc2;
 
   const std::vector<std::vector<double> > &src1 = info1.values[0];
-  std::unique_ptr<std::vector<std::vector<double> > >src2;
+  std::vector<std::vector<double> > *src2;
 
   if (inner_face)
     {
-      localdst2.reset(&dinfo2.vector(0));
-      Dsrc2.reset(&info2.gradients[0]);
-      src2.reset(&info2.values[0]);
+      localdst2 = &dinfo2.vector(0);
+      Dsrc2 = &info2.gradients[0];
+      src2 = &info2.values[0];
     }
   else
     {
-      localdst2.reset(new dealii::BlockVector<double>(n_blocks));
+      localdst2 = new dealii::BlockVector<double>(n_blocks);
       localdst2->reinit(dinfo2.vector(0));
-      Dsrc2.reset(new std::vector<std::vector<dealii::Tensor<1,dim> > >(n_blocks));
-      src2.reset(new std::vector<std::vector<double> > (n_blocks));
+      Dsrc2 = new std::vector<std::vector<dealii::Tensor<1,dim> > >(n_blocks);
+      src2 = new std::vector<std::vector<double> > (n_blocks);
     }
 
 
@@ -196,6 +196,13 @@ void ResidualIntegrator<dim>::face(dealii::MeshWorker::DoFInfo<dim> &dinfo1,
        (*src2)[b],(*Dsrc2)[b],
        coeffs,
        dealii::LocalIntegrators::Laplace::compute_penalty(dinfo1,dinfo2,deg1,deg2));
+    }
+
+  if (!inner_face)
+    {
+      delete localdst2;
+      delete Dsrc2;
+      delete src2;
     }
 }
 

@@ -30,24 +30,23 @@ public:
   colorized_iterators() const;
   unsigned int max_n_overlaps() const;
 
-//  template <class number>
-//  void reinit(dealii::Vector<number> &vec,
-//              const unsigned int subdomain_idx) const;
-//  template <typename VectorType, class number>
-//  void restrict_add(dealii::Vector<number> &dst,
-//                    const VectorType &src,
-//                    const unsigned int subdomain_idx) const;
-//  template <typename VectorType, class number>
-//  void prolongate_add(VectorType &dst,
-//                      const dealii::Vector<number> &src,
-//                      const unsigned int subdomain_idx) const;
+  template <class number>
+  void reinit(dealii::Vector<number> &vec,
+              const unsigned int subdomain_idx) const;
+  template <typename VectorType, class number>
+  void restrict_add(dealii::Vector<number> &dst,
+                    const VectorType &src,
+                    const unsigned int subdomain_idx) const;
+  template <typename VectorType, class number>
+  void prolongate_add(VectorType &dst,
+                      const dealii::Vector<number> &src,
+                      const unsigned int subdomain_idx) const;
 
-//  std::vector<dealii::types::global_dof_index> global_dofs_on_subdomain(const unsigned int subdomain_idx) const;
   std::vector<std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> > subdomain_to_global_map;
+  std::vector<std::vector<dealii::types::global_dof_index> > global_dofs_on_subdomain;
+  std::vector<std::vector<unsigned int> > all_to_unique;
 
 protected:
-  std::vector<dealii::types::global_dof_index> local_to_patch_dofs;
-
   std::vector<unsigned int> subdomain_iterators;
   std::vector<std::vector<iterator> > colorized_iterators_;
   unsigned int max_n_overlaps_;
@@ -56,6 +55,7 @@ protected:
   // subdomain_to_global_map member to map from subdomain index to the
   // global dofs that live there
   virtual void initialize_subdomain_to_global_map() = 0;
+  void initialize_global_dofs_on_subdomain();
   // Initialize colorized_iterators_ such that subdomains of the same color
   // do not share global dofs. By default this calls make_graph_coloring
   // which can be expensive, thus it can be overriden for simpler

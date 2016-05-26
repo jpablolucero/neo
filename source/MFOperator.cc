@@ -9,6 +9,7 @@ MFOperator<dim, fe_degree, same_diagonal>::MFOperator()
   mapping = nullptr;
   constraints = nullptr;
   timer = nullptr;
+  use_cell_range = false;
 }
 
 template <int dim, int fe_degree, bool same_diagonal>
@@ -101,6 +102,7 @@ template <int dim, int fe_degree, bool same_diagonal>
 void MFOperator<dim, fe_degree, same_diagonal>::set_cell_range
 (const std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> &cell_range_)
 {
+  use_cell_range = true;
   cell_range = &cell_range_;
   residual_integrator.set_cell_range(*cell_range);
 }
@@ -260,7 +262,7 @@ void MFOperator<dim,fe_degree,same_diagonal>::vmult_add (LA::MPI::Vector &dst,
   timer->leave_subsection();
 
   timer->enter_subsection("LO::IntegrationLoop ("+ dealii::Utilities::int_to_string(level)+ ")");
-  if (!cell_range)
+  if (!use_cell_range)
     {
       dealii::MeshWorker::integration_loop<dim, dim>
       (dof_handler->begin_mg(level), dof_handler->end_mg(level),

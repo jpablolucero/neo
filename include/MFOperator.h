@@ -89,6 +89,7 @@ private:
   MPI_Comm                                            mpi_communicator;
   dealii::TimerOutput                                 *timer;
   const std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> *cell_range;
+  bool                                                use_cell_range;
 };
 
 #ifdef HEADER_IMPLEMENTATION

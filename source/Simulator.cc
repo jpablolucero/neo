@@ -206,7 +206,7 @@ void Simulator<dim,same_diagonal,degree>::solve ()
 
   dealii::MGLevelObject<std::vector<dealii::FullMatrix<double> > > local_level_inverse;
   local_level_inverse.resize(mg_matrix.min_level(), mg_matrix.max_level());
-  dealii::MGLevelObject<DGDDHandlerVertex<dim> > level_ddh;
+  dealii::MGLevelObject<DGDDHandlerCell<dim> > level_ddh;
   level_ddh.resize(mg_matrix.min_level(), mg_matrix.max_level());
   dealii::MGLevelObject<typename Smoother::AdditionalData> smoother_data;
   smoother_data.resize(mg_matrix.min_level(), mg_matrix.max_level());

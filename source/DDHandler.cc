@@ -46,6 +46,7 @@ void DDHandlerBase<dim>::initialize(const dealii::DoFHandler<dim> &dofh,
   this->dofh = &dofh;
 
   initialize_subdomain_to_global_map();
+  initialize_global_dofs_on_subdomain();
 
   subdomain_iterators.resize(this->size());
   for (unsigned int i = 0; i < subdomain_iterators.size(); ++i)
@@ -102,57 +103,49 @@ unsigned int DDHandlerBase<dim>::max_n_overlaps() const
 }
 
 
-//template <int dim>
-//template <class number>
-//void DDHandlerBase<dim>::reinit(dealii::Vector<number> &vec,
-//                                const unsigned int subdomain_idx) const
-//{
-//  vec.reinit(n_subdomain_dofs(subdomain_idx));
-//}
+template <int dim>
+template <class number>
+void DDHandlerBase<dim>::reinit(dealii::Vector<number> &vec,
+                                const unsigned int subdomain_idx) const
+{
+  vec.reinit(n_subdomain_dofs(subdomain_idx));
+}
 
 
-//template <int dim>
-//template <typename VectorType, class number>
-//void DDHandlerBase<dim>::restrict_add(dealii::Vector<number> &dst,
-//                                      const VectorType &src,
-//                                      const unsigned int subdomain_idx)
-//const
-//{
-//  assert(dst.size() == n_subdomain_dofs(subdomain_idx));
-//  for (unsigned int i = 0; i < n_subdomain_dofs(subdomain_idx); ++i)
-//    {
-//      dst[i] += src[subdomain_to_global_map[subdomain_idx][i]];
-//    }
-//}
+template <int dim>
+template <typename VectorType, class number>
+void DDHandlerBase<dim>::restrict_add(dealii::Vector<number> &dst,
+                                      const VectorType &src,
+                                      const unsigned int subdomain_idx)
+const
+{
+  Assert(dst.size() == n_subdomain_dofs(subdomain_idx),
+         dealii::ExcDimensionMismatch(dst.size(), n_subdomain_dofs(subdomain_idx)));
+  for (unsigned int i = 0; i < n_subdomain_dofs(subdomain_idx); ++i)
+    {
+      dst[i] += src[global_dofs_on_subdomain[subdomain_idx][i]];
+    }
+}
 
 
-//template <int dim>
-//template <typename VectorType, class number>
-//void DDHandlerBase<dim>::prolongate_add(VectorType &dst,
-//                                        const dealii::Vector<number> &src,
-//                                        const unsigned int subdomain_idx)
-//const
-//{
-//  Assert(dst.size() == dofh->n_dofs(level),
-//         dealii::ExcDimensionMismatch(dst.size(), dofh->n_dofs(level)));
-//  unsigned int n_block_dofs = n_subdomain_dofs(subdomain_idx);
-//  Assert(n_block_dofs > 0, dealii::ExcInternalError());
-//  Assert(src.size() == n_block_dofs,
-//         dealii::ExcDimensionMismatch(src.size(), n_block_dofs));
-//  for (unsigned int i = 0; i < n_block_dofs; ++i)
-//    {
-//      dst[subdomain_to_global_map[subdomain_idx][i]] += src[i];
-//    }
-//}
-
-
-//template <int dim>
-//std::vector<dealii::types::global_dof_index> DDHandlerBase<dim>::global_dofs_on_subdomain(
-//  const unsigned int subdomain_idx) const
-//{
-//  return subdomain_to_global_map[subdomain_idx];
-//}
-
+template <int dim>
+template <typename VectorType, class number>
+void DDHandlerBase<dim>::prolongate_add(VectorType &dst,
+                                        const dealii::Vector<number> &src,
+                                        const unsigned int subdomain_idx)
+const
+{
+  Assert(dst.size() == dofh->n_dofs(level),
+         dealii::ExcDimensionMismatch(dst.size(), dofh->n_dofs(level)));
+  unsigned int n_patch_dofs = n_subdomain_dofs(subdomain_idx);
+  Assert(n_patch_dofs > 0, dealii::ExcInternalError());
+  Assert(src.size() == n_patch_dofs,
+         dealii::ExcDimensionMismatch(src.size(), n_patch_dofs));
+  for (unsigned int i = 0; i < n_patch_dofs; ++i)
+    {
+      dst[global_dofs_on_subdomain[subdomain_idx][i]] += src[i];
+    }
+}
 
 template <int dim>
 void DDHandlerBase<dim>::initialize_colorized_iterators()
@@ -162,7 +155,7 @@ void DDHandlerBase<dim>::initialize_colorized_iterators()
 //  std::function<std::vector<dealii::types::global_dof_index>(const IT &)> conflicts =
 //    [this] (const IT& it)
 //  {
-//    return this->global_dofs_on_subdomain(*it);
+//    return global_dofs_on_subdomain(*it);
 //  };
 //  this->colorized_iterators_ =
 //    dealii::GraphColoring::make_graph_coloring(
@@ -204,13 +197,44 @@ void DDHandlerBase<dim>::initialize_max_n_overlaps()
 //  max_n_overlaps_ = *(std::max_element(overlaps.begin(), overlaps.end()));
 }
 
+template <int dim>
+void DDHandlerBase<dim>::initialize_global_dofs_on_subdomain()
+{
+  std::vector<dealii::types::global_dof_index> all_dofs;
+  const unsigned int n_dofs_per_cell = dofh->get_fe().n_dofs_per_cell();
+  std::vector<dealii::types::global_dof_index> ldi(n_dofs_per_cell);;
+  for (unsigned int i=0; i<subdomain_to_global_map.size(); ++i)
+    {
+      all_dofs.clear();
+      for (unsigned int j=0; j<subdomain_to_global_map[i].size(); ++j)
+        {
+          subdomain_to_global_map[i][j]->get_active_or_mg_dof_indices(ldi);
+          all_dofs.insert(all_dofs.end(), ldi.begin(), ldi.end());
+        }
+
+      //store unique dofs
+      std::set<dealii::types::global_dof_index> tmpset(all_dofs.begin(), all_dofs.end());
+      for (dealii::types::global_dof_index const &gdi : tmpset)
+        {
+          std::cout << gdi << ' ';
+        }
+
+      //fill all_to_unique
+      all_to_unique[i].resize(all_dofs.size());
+      for (unsigned int j=0; j<all_dofs.size(); ++j)
+        for (unsigned int k=0; k<global_dofs_on_subdomain[i].size(); ++k)
+          if (all_dofs[j]==global_dofs_on_subdomain[i][k])
+            all_to_unique[i][j]=k;
+    }
+}
+
 
 
 /***
  *** DGDDHandlerCell
  ***/
 
-/*template <int dim>
+template <int dim>
 void DGDDHandlerCell<dim>::initialize_subdomain_to_global_map()
 {
   const dealii::DoFHandler<dim> &dof_handler      = this->get_dofh();
@@ -218,20 +242,14 @@ void DGDDHandlerCell<dim>::initialize_subdomain_to_global_map()
   if (this->get_level() >= triangulation.n_levels())
     return;
   const unsigned int n_subdomains         = triangulation.n_cells(this->get_level());
-  const unsigned int n_subdomain_dofs     = dof_handler.get_fe().dofs_per_cell;
   this->subdomain_to_global_map.reserve(n_subdomains);
 
   //just store information for locally owned cells
-  unsigned int subdomain_idx = 0;
   for (auto cell = dof_handler.begin_mg(this->get_level());
        cell != dof_handler.end_mg(this->get_level());
        ++cell)
     if (cell->level_subdomain_id()==triangulation.locally_owned_subdomain())
-      {
-        this->subdomain_to_global_map.push_back(std::vector<dealii::types::global_dof_index>(n_subdomain_dofs));
-        cell->get_active_or_mg_dof_indices(this->subdomain_to_global_map[subdomain_idx]);
-        ++subdomain_idx;
-      }
+      this->subdomain_to_global_map.push_back(std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator>(1, cell));
 }
 
 template <int dim>
@@ -256,7 +274,7 @@ void DGDDHandlerCell<dim>::initialize_max_n_overlaps()
 {
   // no overlaps
   this->max_n_overlaps_ = 0;
-}*/
+}
 
 
 /***
@@ -266,7 +284,7 @@ void DGDDHandlerCell<dim>::initialize_max_n_overlaps()
 template <int dim>
 void DGDDHandlerVertex<dim>::initialize_subdomain_to_global_map()
 {
-  const bool only_interior_patches = false;
+  const bool only_interior_patches = true;
   const dealii::DoFHandler<dim> &dof_handler      = this->get_dofh();
   const dealii::Triangulation<dim> &triangulation = dof_handler.get_triangulation();
   if (this->get_level() >= triangulation.n_levels())
