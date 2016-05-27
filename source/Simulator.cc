@@ -206,7 +206,7 @@ void Simulator<dim,same_diagonal,degree>::solve ()
 
   dealii::MGLevelObject<std::map<unsigned int, dealii::FullMatrix<double> > > local_level_matrix;
   local_level_matrix.resize(mg_matrix.min_level(), mg_matrix.max_level());
-  dealii::MGLevelObject<DGDDHandlerCell<dim> > level_ddh;
+  dealii::MGLevelObject<DGDDHandlerVertex<dim> > level_ddh;
   level_ddh.resize(mg_matrix.min_level(), mg_matrix.max_level());
   dealii::MGLevelObject<typename Smoother::AdditionalData> smoother_data;
   smoother_data.resize(mg_matrix.min_level(), mg_matrix.max_level());
@@ -251,8 +251,7 @@ void Simulator<dim,same_diagonal,degree>::solve ()
           local_info_box.initialize(fe, mapping, &(local_dof_handler.block_info()));
           dealii::MeshWorker::DoFInfo<dim> local_dof_info(local_dof_handler.block_info());
           dealii::FullMatrix<double> dummy_matrix(local_dof_handler.n_dofs(),local_dof_handler.n_dofs());
-          dealii::MeshWorker::Assembler::MatrixSimple<dealii::FullMatrix<double> >
-          local_assembler;
+          dealii::MeshWorker::Assembler::MatrixSimple<dealii::FullMatrix<double> > local_assembler;
           local_assembler.initialize(dummy_matrix);
           MatrixIntegrator<dim,false> local_integrator ;
           dealii::MeshWorker::integration_loop<dim, dim>

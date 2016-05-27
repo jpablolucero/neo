@@ -11,7 +11,7 @@ namespace implementation
     {
     public:
 #ifndef MATRIX_FREE
-      VectorType local_solution;
+      dealii::Vector<number>  local_solution;
       unsigned int subdomain_idx;
 #endif
       VectorType *dst;
@@ -42,7 +42,7 @@ namespace implementation
 #else
       const std::vector<dealii::FullMatrix<double> > *local_inverses;
 #endif
-      VectorType local_src;
+      dealii::Vector<number>  local_src;
       const VectorType *src;
     };
 
