@@ -92,13 +92,17 @@ void MatrixIntegrator<dim,same_diagonal>::boundary(dealii::MeshWorker::DoFInfo<d
 // RESIDUAL INTEGRATOR
 template <int dim>
 ResidualIntegrator<dim>::ResidualIntegrator()
-{}
+{
+  use_cell_range = false;
+  cell_range = nullptr;
+}
 
 template <int dim>
 void ResidualIntegrator<dim>::set_cell_range
 (const std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> &cell_range_)
 {
   cell_range = &cell_range_;
+  use_cell_range = true;
 }
 
 template <int dim>
@@ -132,7 +136,7 @@ void ResidualIntegrator<dim>::face(dealii::MeshWorker::DoFInfo<dim> &dinfo1,
   // Therefore, we need to multiply the coefficients by .5 in that case.
   // Contributions from cells outside the considered patch are ignored.
   bool inner_face = !cell_range;
-  if (cell_range)
+  if (use_cell_range)
     for (unsigned int i=0; i<cell_range->size(); ++i)
       if ((*cell_range)[i]->id() == dinfo2.cell->id())
         {
@@ -186,7 +190,7 @@ void ResidualIntegrator<dim>::face(dealii::MeshWorker::DoFInfo<dim> &dinfo1,
 
       coeffs.resize(n_quads);
       diffcoeff.value_list(fev1.get_quadrature_points(),coeffs,b);
-      if (cell_range && inner_face)
+      if (use_cell_range && inner_face)
         for (unsigned int i=0; i<=coeffs.size(); ++i)
           coeffs[i] *= .5;
       LocalIntegrators::Diffusion::ip_residual<dim>

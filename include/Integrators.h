@@ -47,6 +47,7 @@ public:
 private:
   Coefficient<dim> diffcoeff;
   const std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> *cell_range;
+  bool use_cell_range;
 };
 
 template <int dim>

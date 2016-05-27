@@ -70,7 +70,7 @@ template <int dim>
 unsigned int DDHandlerBase<dim>::n_subdomain_dofs(
   const unsigned int subdomain_idx) const
 {
-  return subdomain_to_global_map[subdomain_idx].size();
+  return global_dofs_on_subdomain[subdomain_idx].size();
 }
 
 
@@ -202,7 +202,9 @@ void DDHandlerBase<dim>::initialize_global_dofs_on_subdomain()
 {
   std::vector<dealii::types::global_dof_index> all_dofs;
   const unsigned int n_dofs_per_cell = dofh->get_fe().n_dofs_per_cell();
-  std::vector<dealii::types::global_dof_index> ldi(n_dofs_per_cell);;
+  std::vector<dealii::types::global_dof_index> ldi(n_dofs_per_cell);
+  all_to_unique.resize(subdomain_to_global_map.size());
+  global_dofs_on_subdomain.resize(subdomain_to_global_map.size());
   for (unsigned int i=0; i<subdomain_to_global_map.size(); ++i)
     {
       all_dofs.clear();
@@ -214,10 +216,11 @@ void DDHandlerBase<dim>::initialize_global_dofs_on_subdomain()
 
       //store unique dofs
       std::set<dealii::types::global_dof_index> tmpset(all_dofs.begin(), all_dofs.end());
-      for (dealii::types::global_dof_index const &gdi : tmpset)
-        {
-          std::cout << gdi << ' ';
-        }
+      /*      for (dealii::types::global_dof_index const &gdi : tmpset)
+              {
+                std::cout << gdi << ' ';
+              }*/
+      global_dofs_on_subdomain[i].assign(tmpset.begin(), tmpset.end());;
 
       //fill all_to_unique
       all_to_unique[i].resize(all_dofs.size());

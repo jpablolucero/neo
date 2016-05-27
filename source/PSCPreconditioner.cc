@@ -77,6 +77,7 @@ namespace implementation
       ddh.reinit(copy.local_solution, subdomain_idx);
       // get local contributions and copy to dealii vector
       ddh.restrict_add(scratch.local_src, *(scratch.src), subdomain_idx);
+      (*(scratch.local_inverses))[subdomain_idx].print(std::cout);
       (*(scratch.local_inverses))[subdomain_idx].vmult(copy.local_solution,
                                                        scratch.local_src);
 #endif
