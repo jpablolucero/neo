@@ -206,7 +206,7 @@ void Simulator<dim,same_diagonal,degree>::solve ()
 
   dealii::MGLevelObject<std::map<unsigned int, dealii::FullMatrix<double> > > local_level_matrix;
   local_level_matrix.resize(mg_matrix.min_level(), mg_matrix.max_level());
-  dealii::MGLevelObject<DGDDHandlerCell<dim> > level_ddh;
+  dealii::MGLevelObject<DGDDHandlerVertex<dim> > level_ddh;
   level_ddh.resize(mg_matrix.min_level(), mg_matrix.max_level());
   dealii::MGLevelObject<typename Smoother::AdditionalData> smoother_data;
   smoother_data.resize(mg_matrix.min_level(), mg_matrix.max_level());
@@ -215,7 +215,6 @@ void Simulator<dim,same_diagonal,degree>::solve ()
   std::vector<dealii::types::global_dof_index> first_level_dof_indices (n);
   dealii::FullMatrix<double> local_matrix(n, n);
 
-  level_ddh[mg_matrix.max_level()].initialize(dof_handler, mg_matrix.max_level());
   for (unsigned int level = mg_matrix.min_level();
        level <= mg_matrix.max_level();
        ++level)
@@ -283,16 +282,27 @@ void Simulator<dim,same_diagonal,degree>::solve ()
               const unsigned int n_dofs = level_ddh[level].all_to_unique[i].size();
               local_level_matrix[level][i] = dealii::FullMatrix<double>(n_dofs, n_dofs);
 
-              //now use the mapping to create the correct local matrix
-              unsigned int j=0;
-              for (auto it_1 = level_ddh[level].all_to_unique[i].begin(); it_1!=level_ddh[level].all_to_unique[i].end(); ++it_1, ++j)
-                {
-                  unsigned int k=0;
-                  for (auto it_2 = level_ddh[level].all_to_unique[i].begin(); it_2!=level_ddh[level].all_to_unique[i].end(); ++it_2, ++k)
-                    local_level_matrix[level][i](j, k) = mg_matrix[level].el(it_1->second, it_2->second);
-                }
+//              std::cout << "level: " << level << std::endl
+//                        << "all_to_unique[" << i << "]: " << std::endl;
+//              for (unsigned int j=0; j<n_dofs; ++j)
+//                std::cout << level_ddh[level].all_to_unique[i].at[j] << " ";
+//              std::cout << std::endl;
 
+              //now use the mapping to create the correct local matrix
+              for (auto it_1 = level_ddh[level].all_to_unique[i].begin(); it_1!=level_ddh[level].all_to_unique[i].end(); ++it_1)
+                {
+                  for (auto it_2 = level_ddh[level].all_to_unique[i].begin(); it_2!=level_ddh[level].all_to_unique[i].end(); ++it_2)
+                    {
+//                      std::cout << i << "\t" <<it_1->first << "\t" << it_2->first << "\t"
+//                                << it_1->second << "\t" << it_2->second << "\t"
+//                                << mg_matrix[level].el(it_1->first, it_2->first)
+//                                << std::endl;
+                      local_level_matrix[level][i](it_1->second, it_2->second) = mg_matrix[level].el(it_1->first, it_2->first);
+//                      local_level_matrix[level][i].print(std::cout);
+                    }
+                }
               smoother_data[level].local_matrices[i] = &(local_level_matrix[level][i]);
+              local_level_matrix[level][i].print(std::cout);
             }
         }
     }
@@ -309,6 +319,7 @@ void Simulator<dim,same_diagonal,degree>::solve ()
   dealii::Multigrid<LA::MPI::Vector> mg(dof_handler, mgmatrix,
                                         mg_coarse, mg_transfer,
                                         mg_smoother, mg_smoother);
+//  mg.set_debug(10);
   mg.set_minlevel(mg_matrix.min_level());
   mg.set_maxlevel(mg_matrix.max_level());
   dealii::PreconditionMG<dim, LA::MPI::Vector,

@@ -31,7 +31,7 @@ int main (int argc, char *argv[])
   const unsigned int smooth_steps = 1;
 
 
-  for (unsigned int l=1; l<3; ++l)
+  for (unsigned int l=2; l<7; ++l)
     {
       Simulator<2,false,1> dgmethod(timer, mpi_communicator, pcout);
       dgmethod.n_levels = l ;

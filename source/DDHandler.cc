@@ -142,9 +142,7 @@ const
   Assert(src.size() == n_patch_dofs,
          dealii::ExcDimensionMismatch(src.size(), n_patch_dofs));
   for (unsigned int i = 0; i < n_patch_dofs; ++i)
-    {
-      dst[global_dofs_on_subdomain[subdomain_idx][i]] += src[i];
-    }
+    dst[global_dofs_on_subdomain[subdomain_idx][i]] += src[i];
 }
 
 template <int dim>
@@ -215,7 +213,7 @@ void DDHandlerBase<dim>::initialize_global_dofs_on_subdomain()
         }
 
       //store unique dofs
-      std::set<dealii::types::global_dof_index> tmpset(all_dofs.begin(), all_dofs.end());
+      std::unordered_set<dealii::types::global_dof_index> tmpset(all_dofs.begin(), all_dofs.end());
       /*      for (dealii::types::global_dof_index const &gdi : tmpset)
               {
                 std::cout << gdi << ' ';
@@ -223,9 +221,17 @@ void DDHandlerBase<dim>::initialize_global_dofs_on_subdomain()
       global_dofs_on_subdomain[i].assign(tmpset.begin(), tmpset.end());;
 
       //fill all_to_unique
-      for (unsigned int j=0; j<all_dofs.size(); ++j)
-        for (unsigned int k=0; k<global_dofs_on_subdomain[i].size(); ++k)
-          all_to_unique[i][global_dofs_on_subdomain[i][k]]=k;
+      for (unsigned int k=0; k<global_dofs_on_subdomain[i].size(); ++k)
+        all_to_unique[i][global_dofs_on_subdomain[i][k]]=k;
+
+//      std::cout << "all_to_unique["<< i << "]: ";
+//      for (unsigned int j=0; j<all_dofs.size(); ++j)
+//        std::cout << all_to_unique[i][j] << " ";
+//      std::cout << std::endl;
+//      std::cout << "global_dofs_on_subdomain["<< i << "]: ";
+//      for (unsigned int j=0; j<global_dofs_on_subdomain[i].size(); ++j)
+//        std::cout << global_dofs_on_subdomain[i][j] << " ";
+//      std::cout<<std::endl;
     }
 }
 
@@ -354,7 +360,7 @@ void DGDDHandlerVertex<dim>::initialize_subdomain_to_global_map()
       {
         bool has_locally_owned_cell = false;
         for (unsigned int i=0; i<it->second.size(); ++i)
-          if (it->second[i]->is_locally_owned())
+          if (it->second[i]->level_subdomain_id() == triangulation.locally_owned_subdomain())
             {
               has_locally_owned_cell = true;
               break;

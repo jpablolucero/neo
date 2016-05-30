@@ -62,11 +62,11 @@ namespace implementation
               Scratch<dim, VectorType, number> &scratch, Copy<dim, VectorType, number> &copy)
     {
       const unsigned int subdomain_idx = *iterator;
-      std::cout << "Smoothening using patch: " << subdomain_idx << std::endl;
+//      std::cout << "Smoothening using patch: " << subdomain_idx << std::endl;
       const DDHandlerBase<dim> &ddh = *(copy.ddh);
 
-      for (unsigned int i=0; i<ddh.subdomain_to_global_map[subdomain_idx].size(); ++i)
-        std::cout << "Cell index: " << ddh.subdomain_to_global_map[subdomain_idx][i]->index() << std::endl;
+//      for (unsigned int i=0; i<ddh.subdomain_to_global_map[subdomain_idx].size(); ++i)
+//        std::cout << "Cell index: " << ddh.subdomain_to_global_map[subdomain_idx][i]->index() << std::endl;
 
 #ifdef MATRIX_FREE
       scratch.system_matrix.set_cell_range(ddh.subdomain_to_global_map[subdomain_idx]);
@@ -77,8 +77,8 @@ namespace implementation
       ddh.reinit(copy.local_solution, subdomain_idx);
       // get local contributions and copy to dealii vector
       ddh.restrict_add(scratch.local_src, *(scratch.src), subdomain_idx);
-      std::cout<<"apply local inverse" << std::endl;
-      (*(scratch.local_inverses))[subdomain_idx].print(std::cout);
+//      std::cout<<"apply local inverse" << std::endl;
+//      (*(scratch.local_inverses))[subdomain_idx].print(std::cout);
       (*(scratch.local_inverses))[subdomain_idx].vmult(copy.local_solution,
                                                        scratch.local_src);
 #endif
@@ -150,8 +150,6 @@ void PSCPreconditioner<dim, VectorType, number>::vmult_add (VectorType &dst,
                             chunk_size);
 
   }
-
-
 
   dst *= data.weight;
   timer->leave_subsection();

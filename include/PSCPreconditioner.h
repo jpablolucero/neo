@@ -75,22 +75,10 @@ void PSCPreconditioner<dim, VectorType, number>::initialize(const GlobalOperator
   patch_inverses.resize(data.ddh->global_dofs_on_subdomain.size());
   for (unsigned int i=0; i<data.ddh->subdomain_to_global_map.size(); ++i)
     {
-//      patch_inverses[i] = Matrix(data.ddh->global_dofs_on_subdomain[i].size());
-//      for (unsigned int j=0; j<data.ddh->subdomain_to_global_map[i].size(); ++j)
-//        {
-//          const typename dealii::DoFHandler<dim>::level_cell_iterator cell
-//            = data.ddh->subdomain_to_global_map[i][j];
-//          const std::vector<unsigned int> local_to_patch
-//          (data.ddh->all_to_unique[i].begin()+n_dofs_per_cell*j,
-//           data.ddh->all_to_unique[i].begin()+n_dofs_per_cell*(j+1));
-//          data.local_matrices.at(cell->index())->scatter_matrix_to(local_to_patch,
-//                                                                   local_to_patch,
-//                                                                   patch_inverses[i]);
-//        }
-
       //invert patch_matrix
       dealii::FullMatrix<double> matrix = *(data.local_matrices[i]);
-      std::cout << "originall cel matrix: " << std::endl;
+      std::cout << "level: " << data.ddh->get_level() << " "
+                << "original cell matrix " << i << ": "<< std::endl;
       matrix.print(std::cout);
       patch_inverses[i] = matrix;
       patch_inverses[i].gauss_jordan();

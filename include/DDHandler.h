@@ -6,6 +6,7 @@
 #include <deal.II/dofs/dof_handler.h>
 #include <deal.II/dofs/dof_accessor.h>
 #include <deal.II/base/graph_coloring.h>
+#include <unordered_set>
 
 /* Base class for domain decompositions used in the Parallel Subspace
  * Correction Preconditioner.
