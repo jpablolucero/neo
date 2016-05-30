@@ -44,7 +44,7 @@ public:
 
   std::vector<std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> > subdomain_to_global_map;
   std::vector<std::vector<dealii::types::global_dof_index> > global_dofs_on_subdomain;
-  std::vector<std::vector<unsigned int> > all_to_unique;
+  std::vector<std::map<dealii::types::global_dof_index, unsigned int> > all_to_unique;
 
 protected:
   std::vector<unsigned int> subdomain_iterators;

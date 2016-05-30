@@ -77,47 +77,13 @@ namespace implementation
       ddh.reinit(copy.local_solution, subdomain_idx);
       // get local contributions and copy to dealii vector
       ddh.restrict_add(scratch.local_src, *(scratch.src), subdomain_idx);
+      std::cout<<"apply local inverse" << std::endl;
       (*(scratch.local_inverses))[subdomain_idx].print(std::cout);
       (*(scratch.local_inverses))[subdomain_idx].vmult(copy.local_solution,
                                                        scratch.local_src);
 #endif
     }
 
-    /*    template <int dim, typename VectorType, class number>
-        void parallel_loop(VectorType *dst,
-                           const VectorType *src,
-                           const DDHandlerBase<dim> *ddh)
-        {
-          Copy<dim, VectorType, number> copy_sample;
-          copy_sample.dst = dst;
-          copy_sample.ddh = ddh;
-
-          Scratch<dim, VectorType, number> scratch_sample;
-          scratch_sample.src = src;
-          scratch_sample.local_inverses = &patch_inverses;
-    #ifdef MATRIXFREE
-          dealii::ConstraintMatrix dummy_constraints;
-          dealii::MappingQ1<dim> dummy_mapping;
-          const dealii::DoFHandler<dim> &dof_handler      = ddh->get_dofh();
-          const dealii::parallel::distributed::Triangulation<dim> *distributed_tria
-            = dynamic_cast<const dealii::parallel::distributed::Triangulation<dim>* > (&(dof_handler.get_triangulation()));
-          Assert(distributed_tria, dealii::ExcInternalError());
-          const MPI_Comm &mpi_communicator = distributed_tria->get_communicator();
-
-          scratch_sample.system_matrix.set_timer(*PSCPreconditioner<dim, VectorType, number>::timer);
-          scratch_sample.system_matrix.reinit (&dof_handler,&dummy_mapping, &dummy_constraints,
-                                               mpi_communicator, ddh->get_level());
-    #endif
-          const unsigned int queue = 2 * dealii::MultithreadInfo::n_threads();
-          const unsigned int chunk_size = 1;
-
-          dealii::WorkStream::run(ddh->colorized_iterators(),
-                                  work<dim, VectorType, number>,
-                                  assemble<dim, VectorType, number>,
-                                  scratch_sample, copy_sample,
-                                  queue,
-                                  chunk_size);
-        }*/
   }
 }
 
@@ -152,8 +118,6 @@ void PSCPreconditioner<dim, VectorType, number>::vmult_add (VectorType &dst,
   std::cout << section << std::endl;
   timer->enter_subsection(section);
 
-  /*  implementation::WorkStream::parallel_loop<dim, VectorType, number>
-    (&dst, &src, data.ddh);*/
   {
     implementation::WorkStream::Copy<dim, VectorType, number> copy_sample;
     copy_sample.dst = &dst;

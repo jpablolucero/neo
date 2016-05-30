@@ -223,11 +223,9 @@ void DDHandlerBase<dim>::initialize_global_dofs_on_subdomain()
       global_dofs_on_subdomain[i].assign(tmpset.begin(), tmpset.end());;
 
       //fill all_to_unique
-      all_to_unique[i].resize(all_dofs.size());
       for (unsigned int j=0; j<all_dofs.size(); ++j)
         for (unsigned int k=0; k<global_dofs_on_subdomain[i].size(); ++k)
-          if (all_dofs[j]==global_dofs_on_subdomain[i][k])
-            all_to_unique[i][j]=k;
+          all_to_unique[i][global_dofs_on_subdomain[i][k]]=k;
     }
 }
 
@@ -252,7 +250,12 @@ void DGDDHandlerCell<dim>::initialize_subdomain_to_global_map()
        cell != dof_handler.end_mg(this->get_level());
        ++cell)
     if (cell->level_subdomain_id()==triangulation.locally_owned_subdomain())
-      this->subdomain_to_global_map.push_back(std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator>(1, cell));
+      {
+        this->subdomain_to_global_map.push_back(std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator>(1, cell));
+        std::cout << " Cell id: " << cell->index()
+                  << " Center " << cell->center()
+                  << std::endl;
+      }
 }
 
 template <int dim>
@@ -296,11 +299,11 @@ void DGDDHandlerVertex<dim>::initialize_subdomain_to_global_map()
 
   std::map<dealii::types::global_dof_index, std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> > vertex_to_cell;
 
-  //just store information for locally owned cells that are not at the boundary
+  //first store information for all cells and vertices we know about
   for (typename dealii::DoFHandler<dim>::level_cell_iterator cell = dof_handler.begin_mg(this->get_level());
        cell != dof_handler.end_mg(this->get_level());
        ++cell)
-    if (cell->level_subdomain_id()==triangulation.locally_owned_subdomain())
+    if (cell->level_subdomain_id()!=dealii::numbers::artificial_subdomain_id)
       {
         for (unsigned int v=0; v<dealii::GeometryInfo<dim>::vertices_per_cell; ++v)
           {
@@ -345,11 +348,25 @@ void DGDDHandlerVertex<dim>::initialize_subdomain_to_global_map()
             }
         }
     }
+  //erase all vertices that do not have at least one locally owned cell
+  {
+    for (auto it = vertex_to_cell.begin(); it!=vertex_to_cell.end(); ++it)
+      {
+        bool has_locally_owned_cell = false;
+        for (unsigned int i=0; i<it->second.size(); ++i)
+          if (it->second[i]->is_locally_owned())
+            {
+              has_locally_owned_cell = true;
+              break;
+            }
+        if (!has_locally_owned_cell)
+          it->second.clear();
+      }
+  }
 
   std::cout << "Filling subdomain_to_global_map" << std::endl;
   //fill subdomain_to_global_map by ignoring all vertices that don't have cells anymore
-  typename std::map<dealii::types::global_dof_index, std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> >::iterator it;
-  for (it=vertex_to_cell.begin(); it!=vertex_to_cell.end(); ++it)
+  for (auto it=vertex_to_cell.begin(); it!=vertex_to_cell.end(); ++it)
     {
       if (it->second.size()>0)
         {

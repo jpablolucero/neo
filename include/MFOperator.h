@@ -34,7 +34,8 @@ public:
 
   void set_timer (dealii::TimerOutput &timer_);
 
-  void build_matrix () ;
+  void build_matrix
+  (const std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> &cell_range = std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator>()) ;
 
   void clear () ;
 
@@ -69,6 +70,11 @@ public:
   double operator()(const size_type i,const size_type j) const
   {
     return matrix(i,j);
+  }
+
+  double el(const size_type i,const size_type j) const
+  {
+    return matrix.el(i,j);
   }
 
 private:

@@ -5,6 +5,14 @@ template <int dim,bool same_diagonal>
 MatrixIntegrator<dim,same_diagonal>::MatrixIntegrator()
 {}
 
+template <int dim, bool same_diagonal>
+void MatrixIntegrator<dim, same_diagonal>::set_cell_range
+(const std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> &cell_range_)
+{
+  cell_range = &cell_range_;
+  use_cell_range = true;
+}
+
 template <int dim,bool same_diagonal>
 void MatrixIntegrator<dim, same_diagonal>::cell(dealii::MeshWorker::DoFInfo<dim> &dinfo,
                                                 typename dealii::MeshWorker::IntegrationInfo<dim> &info) const
@@ -135,7 +143,7 @@ void ResidualIntegrator<dim>::face(dealii::MeshWorker::DoFInfo<dim> &dinfo1,
   // If we use cell_range, the faces are assmebled from both sides.
   // Therefore, we need to multiply the coefficients by .5 in that case.
   // Contributions from cells outside the considered patch are ignored.
-  bool inner_face = !cell_range;
+  bool inner_face = !use_cell_range;
   if (use_cell_range)
     for (unsigned int i=0; i<cell_range->size(); ++i)
       if ((*cell_range)[i]->id() == dinfo2.cell->id())

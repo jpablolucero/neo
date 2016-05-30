@@ -66,7 +66,7 @@ void Simulator<dim,same_diagonal,degree>::setup_system ()
 
   locally_owned_dofs = dof_handler.locally_owned_dofs();
 
-  std::cout << "locally owned dofs on process "
+  /*std::cout << "locally owned dofs on process "
             << dealii::Utilities::MPI::this_mpi_process(mpi_communicator)
             << std::endl;
   for (unsigned int l=0; l<triangulation.n_global_levels(); ++l)
@@ -79,13 +79,13 @@ void Simulator<dim,same_diagonal,degree>::setup_system ()
   std::cout << "n_elements(): "
             << dof_handler.locally_owned_dofs().n_elements()
             <<std::endl;
-  dof_handler.locally_owned_dofs().print(dealii::deallog);
+  dof_handler.locally_owned_dofs().print(dealii::deallog);*/
 
   dealii::DoFTools::extract_locally_relevant_dofs
   (dof_handler, locally_relevant_dofs);
-  std::cout << "locally relevant dofs on process "
+  /*std::cout << "locally relevant dofs on process "
             << dealii::Utilities::MPI::this_mpi_process(mpi_communicator) << " ";
-  locally_relevant_dofs.print(std::cout);
+  locally_relevant_dofs.print(std::cout);*/
 
   //constraints
   constraints.clear();
@@ -182,7 +182,6 @@ void Simulator<dim,same_diagonal,degree>::setup_multigrid ()
     {
       mg_matrix[level].set_timer(timer);
       mg_matrix[level].reinit(&dof_handler,&mapping,&constraints, mpi_communicator, level);
-      mg_matrix[level].build_matrix();
     }
 }
 
@@ -191,6 +190,7 @@ void Simulator<dim,same_diagonal,degree>::solve ()
 {
   timer.enter_subsection("solve::mg_initialization");
 #ifdef MG
+  mg_matrix[0].build_matrix();
   const LA::MPI::SparseMatrix &coarse_matrix = mg_matrix[0].get_coarse_matrix();
 
   dealii::SolverControl coarse_solver_control (dof_handler.n_dofs(0), 1e-10, false, false);
@@ -206,7 +206,7 @@ void Simulator<dim,same_diagonal,degree>::solve ()
 
   dealii::MGLevelObject<std::map<unsigned int, dealii::FullMatrix<double> > > local_level_matrix;
   local_level_matrix.resize(mg_matrix.min_level(), mg_matrix.max_level());
-  dealii::MGLevelObject<DGDDHandlerVertex<dim> > level_ddh;
+  dealii::MGLevelObject<DGDDHandlerCell<dim> > level_ddh;
   level_ddh.resize(mg_matrix.min_level(), mg_matrix.max_level());
   dealii::MGLevelObject<typename Smoother::AdditionalData> smoother_data;
   smoother_data.resize(mg_matrix.min_level(), mg_matrix.max_level());
@@ -215,6 +215,7 @@ void Simulator<dim,same_diagonal,degree>::solve ()
   std::vector<dealii::types::global_dof_index> first_level_dof_indices (n);
   dealii::FullMatrix<double> local_matrix(n, n);
 
+  level_ddh[mg_matrix.max_level()].initialize(dof_handler, mg_matrix.max_level());
   for (unsigned int level = mg_matrix.min_level();
        level <= mg_matrix.max_level();
        ++level)
@@ -225,6 +226,8 @@ void Simulator<dim,same_diagonal,degree>::solve ()
       // setup smoother data
       smoother_data[level].ddh = &(level_ddh[level]);
       smoother_data[level].weight = 1.0;
+      smoother_data[level].local_matrices.resize(level_ddh[level].subdomain_to_global_map.size());
+
 
       if (same_diagonal)
         {
@@ -274,31 +277,28 @@ void Simulator<dim,same_diagonal,degree>::solve ()
         }
       else
         {
-          //just store information for locally owned cells
-          for (auto cell = dof_handler.begin_mg(level);
-               cell != dof_handler.end_mg(level);
-               ++cell)
-            if (cell->level_subdomain_id()!=dealii::numbers::artificial_subdomain_id)
-              {
-                const unsigned int cell_index = cell->index();
-                cell->get_active_or_mg_dof_indices (first_level_dof_indices);
-                local_level_matrix[level][cell_index] = dealii::FullMatrix<double>(n);
-                for (unsigned int i = 0; i < n; ++i)
-                  for (unsigned int j = 0; j < n; ++j)
-                    {
-                      const dealii::types::global_dof_index i1 = first_level_dof_indices [i];
-                      const dealii::types::global_dof_index i2 = first_level_dof_indices [j];
-                      local_level_matrix[level][cell_index](i, j) = mg_matrix[level](i1, i2);
-                    }
+          for (unsigned int i=0; i<level_ddh[level].subdomain_to_global_map.size(); ++i)
+            {
+              mg_matrix[level].build_matrix(level_ddh[level].subdomain_to_global_map[i]);
+              const unsigned int n_dofs = level_ddh[level].all_to_unique[i].size();
+              local_level_matrix[level][i] = dealii::FullMatrix<double>(n_dofs, n_dofs);
 
-                smoother_data[level].local_matrices[cell->index()]
-                  =&(local_level_matrix[level][cell_index]);
+              //now use the mapping to create the correct local matrix
+              unsigned int j=0;
+              for (auto it_1 = level_ddh[level].all_to_unique[i].begin(); it_1!=level_ddh[level].all_to_unique[i].end(); ++it_1, ++j)
+                {
+                  unsigned int k=0;
+                  for (auto it_2 = level_ddh[level].all_to_unique[i].begin(); it_2!=level_ddh[level].all_to_unique[i].end(); ++it_2, ++k)
+                    local_level_matrix[level][i](j, k) = mg_matrix[level].el(it_1->second, it_2->second);
+                }
 
-              }
+              smoother_data[level].local_matrices[i] = &(local_level_matrix[level][i]);
+            }
         }
     }
 
-// SmootherSetup
+
+  // SmootherSetup
   dealii::MGSmootherPrecondition<SystemMatrixType, Smoother, LA::MPI::Vector> mg_smoother;
   mg_smoother.initialize(mg_matrix, smoother_data);
   mg_smoother.set_steps(smoothing_steps);
