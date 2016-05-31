@@ -217,44 +217,12 @@ void MFOperator<dim, fe_degree, same_diagonal>::build_matrix
     {
       dealii::MeshWorker::LoopControl lctrl;
       //assemble faces from both sides
-      lctrl.own_faces = dealii::MeshWorker::LoopControl::both; //crucial for Cell smoother!
+      //lctrl.own_faces = dealii::MeshWorker::LoopControl::both; //crucial for Cell smoother!
       lctrl.faces_to_ghost = dealii::MeshWorker::LoopControl::both;
       lctrl.ghost_cells = true;
 
-
       dealii::integration_loop<dim, dim> (cell_range, *dof_info, info_box,
                                           matrix_integrator, assembler, lctrl);
-/*      dealii::MeshWorker::DoFInfoBox<dim, dealii::MeshWorker::DoFInfo<dim> > dof_info_box(*dof_info);
-      assembler.initialize_info(dof_info_box.cell, false);
-      for (unsigned int i=0; i<dealii::GeometryInfo<dim>::faces_per_cell; ++i)
-        {
-          assembler.initialize_info(dof_info_box.interior[i], true);
-          assembler.initialize_info(dof_info_box.exterior[i], true);
-        }
-
-      auto cell_worker
-        = dealii::std_cxx11::bind(&dealii::MeshWorker::LocalIntegrator<dim>::cell,
-                                  &matrix_integrator,
-                                  dealii::std_cxx11::_1, dealii::std_cxx11::_2);
-      auto boundary_worker
-        = dealii::std_cxx11::bind(&dealii::MeshWorker::LocalIntegrator<dim>::boundary,
-                                  &matrix_integrator, dealii::std_cxx11::_1, dealii::std_cxx11::_2);
-      auto face_worker
-        = dealii::std_cxx11::bind(&dealii::MeshWorker::LocalIntegrator<dim>::face,
-                                  &matrix_integrator, dealii::std_cxx11::_1, dealii::std_cxx11::_2,
-                                  dealii::std_cxx11::_3, dealii::std_cxx11::_4);
-
-
-
-      // Loop over all cells
-      for (unsigned int i=0; i<cell_range.size(); ++i)
-        {
-          dealii::MeshWorker::cell_action<dealii::MeshWorker::IntegrationInfoBox<dim>,
-                 dealii::MeshWorker::DoFInfo<dim>, dim, dim >
-                 (cell_range[i], dof_info_box, info_box, cell_worker,
-                  boundary_worker, face_worker, lctrl);
-          dof_info_box.assemble(assembler);
-        }*/
     }
 
   mg_matrix[level].compress(dealii::VectorOperation::add);
