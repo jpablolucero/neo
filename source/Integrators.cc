@@ -5,14 +5,6 @@ template <int dim,bool same_diagonal>
 MatrixIntegrator<dim,same_diagonal>::MatrixIntegrator()
 {}
 
-template <int dim, bool same_diagonal>
-void MatrixIntegrator<dim, same_diagonal>::set_cell_range
-(const std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> &cell_range_)
-{
-  cell_range = &cell_range_;
-  use_cell_range = true;
-}
-
 template <int dim,bool same_diagonal>
 void MatrixIntegrator<dim, same_diagonal>::cell(dealii::MeshWorker::DoFInfo<dim> &dinfo,
                                                 typename dealii::MeshWorker::IntegrationInfo<dim> &info) const
@@ -102,18 +94,7 @@ void MatrixIntegrator<dim,same_diagonal>::boundary(dealii::MeshWorker::DoFInfo<d
 // RESIDUAL INTEGRATOR
 template <int dim>
 ResidualIntegrator<dim>::ResidualIntegrator()
-{
-  use_cell_range = false;
-  cell_range = nullptr;
-}
-
-template <int dim>
-void ResidualIntegrator<dim>::set_cell_range
-(const std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> &cell_range_)
-{
-  cell_range = &cell_range_;
-  use_cell_range = true;
-}
+{}
 
 template <int dim>
 void ResidualIntegrator<dim>::cell(dealii::MeshWorker::DoFInfo<dim> &dinfo,
@@ -142,45 +123,15 @@ void ResidualIntegrator<dim>::face(dealii::MeshWorker::DoFInfo<dim> &dinfo1,
                                    typename dealii::MeshWorker::IntegrationInfo<dim> &info1,
                                    typename dealii::MeshWorker::IntegrationInfo<dim> &info2) const
 {
-  // If we use cell_range, the faces are assmebled from both sides.
-  // Therefore, we need to multiply the coefficients by .5 in that case.
-  // Contributions from cells outside the considered patch are ignored.
-  bool inner_face = !use_cell_range;
-  if (use_cell_range)
-    for (unsigned int i=0; i<cell_range->size(); ++i)
-      if ((*cell_range)[i]->id() == dinfo2.cell->id())
-        {
-          inner_face = true;
-          break;
-        }
-
   dealii::BlockVector<double> &localdst1 = dinfo1.vector(0);
+  dealii::BlockVector<double> &localdst2 = dinfo2.vector(0);
   const unsigned int n_blocks = localdst1.n_blocks();
-  dealii::BlockVector<double> *localdst2;
-
   Assert(n_blocks>0, dealii::ExcMessage("BlockInfo not initialized!"));
 
   const std::vector<std::vector<dealii::Tensor<1,dim> > > &Dsrc1 = info1.gradients[0];
-  std::vector<std::vector<dealii::Tensor<1,dim> > > *Dsrc2;
-
+  const std::vector<std::vector<dealii::Tensor<1,dim> > > &Dsrc2 = info2.gradients[0];
   const std::vector<std::vector<double> > &src1 = info1.values[0];
-  std::vector<std::vector<double> > *src2;
-
-  if (inner_face)
-    {
-      localdst2 = &dinfo2.vector(0);
-      Dsrc2 = &info2.gradients[0];
-      src2 = &info2.values[0];
-    }
-  else
-    {
-      localdst2 = new dealii::BlockVector<double>(n_blocks);
-      localdst2->reinit(dinfo2.vector(0));
-      Dsrc2 = new std::vector<std::vector<dealii::Tensor<1,dim> > >(n_blocks);
-      src2 = new std::vector<std::vector<double> > (n_blocks);
-    }
-
-
+  const std::vector<std::vector<double> > &src2 = info2.values[0];
 
   std::vector<double> coeffs;
   for (unsigned int b=0; b<n_blocks; ++b)
@@ -191,32 +142,15 @@ void ResidualIntegrator<dim>::face(dealii::MeshWorker::DoFInfo<dim> &dinfo1,
       const unsigned int deg2 = fev2.get_fe().tensor_degree();
 
       const unsigned int n_quads = fev1.n_quadrature_points;
-
-      if (!inner_face)
-        {
-          (*src2)[b] = std::vector<double>(n_quads);
-          (*Dsrc2)[b] = std::vector<dealii::Tensor<1,dim> >(n_quads);
-        }
-
       coeffs.resize(n_quads);
       diffcoeff.value_list(fev1.get_quadrature_points(),coeffs,b);
-      if (use_cell_range && inner_face)
-        for (unsigned int i=0; i<=coeffs.size(); ++i)
-          coeffs[i] *= .5;
       LocalIntegrators::Diffusion::ip_residual<dim>
-      (localdst1.block(b),localdst2->block(b),
+      (localdst1.block(b),localdst2.block(b),
        fev1,fev2,
        src1[b],Dsrc1[b],
-       (*src2)[b],(*Dsrc2)[b],
+       src2[b],Dsrc2[b],
        coeffs,
        dealii::LocalIntegrators::Laplace::compute_penalty(dinfo1,dinfo2,deg1,deg2));
-    }
-
-  if (!inner_face)
-    {
-      delete localdst2;
-      delete Dsrc2;
-      delete src2;
     }
 }
 

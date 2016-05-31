@@ -104,7 +104,6 @@ void MFOperator<dim, fe_degree, same_diagonal>::set_cell_range
 {
   use_cell_range = true;
   cell_range = &cell_range_;
-  residual_integrator.set_cell_range(*cell_range);
 }
 
 template <int dim, int fe_degree, bool same_diagonal>
@@ -193,8 +192,7 @@ void MFOperator<dim, fe_degree, same_diagonal>::build_matrix
       (*dof_handler, level, relevant_mg_dofs);
       mg_matrix[level].reinit(relevant_mg_dofs,
                               dsp,MPI_COMM_SELF);
-    }
-  matrix_integrator.set_cell_range(cell_range);
+    }  
 #endif
 
   dealii::MeshWorker::Assembler::MGMatrixSimple<LA::MPI::SparseMatrix> assembler;
