@@ -67,9 +67,11 @@ void MatrixIntegrator<dim,same_diagonal>::face(dealii::MeshWorker::DoFInfo<dim> 
         }
       else
         {
+          dealii::FullMatrix<double> &RM12 = dinfo2.matrix(b*n_blocks + b,true).matrix;
+          dealii::FullMatrix<double> &RM21 = dinfo1.matrix(b*n_blocks + b,true).matrix;
           dealii::FullMatrix<double> &RM22 = dinfo2.matrix(b*n_blocks + b,false).matrix;
           LocalIntegrators::Diffusion::ip_matrix<dim>
-          (RM11,M12,M21,RM22,fev1,fev2,coeffs,
+          (RM11,RM12,RM21,RM22,fev1,fev2,coeffs,
            dealii::LocalIntegrators::Laplace::compute_penalty(dinfo1,dinfo2,deg1,deg2));
         }
     }

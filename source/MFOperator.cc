@@ -113,7 +113,6 @@ void MFOperator<dim, fe_degree, same_diagonal>::build_matrix
 {
   Assert(dof_handler != 0, dealii::ExcInternalError());
 
-  timer->enter_subsection("LO::build_matrix");
   info_box.initialize(*fe, *mapping, &(dof_handler->block_info()));
   dealii::MGLevelObject<LA::MPI::SparseMatrix> mg_matrix ;
   mg_matrix.resize(level,level);
@@ -193,7 +192,6 @@ void MFOperator<dim, fe_degree, same_diagonal>::build_matrix
       dealii::DoFTools::extract_locally_relevant_level_dofs
       (*dof_handler, level, relevant_mg_dofs);
       mg_matrix[level].reinit(relevant_mg_dofs,
-                              relevant_mg_dofs,
                               dsp,MPI_COMM_SELF);
     }
   matrix_integrator.set_cell_range(cell_range);
@@ -217,7 +215,16 @@ void MFOperator<dim, fe_degree, same_diagonal>::build_matrix
     }
   else
     {
-      dealii::MeshWorker::DoFInfoBox<dim, dealii::MeshWorker::DoFInfo<dim> > dof_info_box(*dof_info);
+      dealii::MeshWorker::LoopControl lctrl;
+      //assemble faces from both sides
+      lctrl.own_faces = dealii::MeshWorker::LoopControl::both; //crucial for Cell smoother!
+      lctrl.faces_to_ghost = dealii::MeshWorker::LoopControl::both;
+      lctrl.ghost_cells = true;
+
+
+      dealii::integration_loop<dim, dim> (cell_range, *dof_info, info_box,
+                                          matrix_integrator, assembler, lctrl);
+/*      dealii::MeshWorker::DoFInfoBox<dim, dealii::MeshWorker::DoFInfo<dim> > dof_info_box(*dof_info);
       assembler.initialize_info(dof_info_box.cell, false);
       for (unsigned int i=0; i<dealii::GeometryInfo<dim>::faces_per_cell; ++i)
         {
@@ -237,10 +244,7 @@ void MFOperator<dim, fe_degree, same_diagonal>::build_matrix
                                   &matrix_integrator, dealii::std_cxx11::_1, dealii::std_cxx11::_2,
                                   dealii::std_cxx11::_3, dealii::std_cxx11::_4);
 
-      dealii::MeshWorker::LoopControl lctrl;
-      //assemble faces from both sides
-      lctrl.own_faces = dealii::MeshWorker::LoopControl::both;
-      lctrl.ghost_cells = true;
+
 
       // Loop over all cells
       for (unsigned int i=0; i<cell_range.size(); ++i)
@@ -250,7 +254,7 @@ void MFOperator<dim, fe_degree, same_diagonal>::build_matrix
                  (cell_range[i], dof_info_box, info_box, cell_worker,
                   boundary_worker, face_worker, lctrl);
           dof_info_box.assemble(assembler);
-        }
+        }*/
     }
 
   mg_matrix[level].compress(dealii::VectorOperation::add);
@@ -259,7 +263,6 @@ void MFOperator<dim, fe_degree, same_diagonal>::build_matrix
 #else
   matrix.copy_from(mg_matrix[level]);
 #endif
-  timer->leave_subsection();
 }
 
 template <int dim, int fe_degree, bool same_diagonal>

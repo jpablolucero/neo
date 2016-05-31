@@ -206,7 +206,7 @@ void Simulator<dim,same_diagonal,degree>::solve ()
 
   dealii::MGLevelObject<std::map<unsigned int, dealii::FullMatrix<double> > > local_level_matrix;
   local_level_matrix.resize(mg_matrix.min_level(), mg_matrix.max_level());
-  dealii::MGLevelObject<DGDDHandlerVertex<dim> > level_ddh;
+  dealii::MGLevelObject<DGDDHandlerCell<dim> > level_ddh;
   level_ddh.resize(mg_matrix.min_level(), mg_matrix.max_level());
   dealii::MGLevelObject<typename Smoother::AdditionalData> smoother_data;
   smoother_data.resize(mg_matrix.min_level(), mg_matrix.max_level());
@@ -215,6 +215,7 @@ void Simulator<dim,same_diagonal,degree>::solve ()
   std::vector<dealii::types::global_dof_index> first_level_dof_indices (n);
   dealii::FullMatrix<double> local_matrix(n, n);
 
+  timer.enter_subsection("LO::build_matrices");
   for (unsigned int level = mg_matrix.min_level();
        level <= mg_matrix.max_level();
        ++level)
@@ -226,7 +227,6 @@ void Simulator<dim,same_diagonal,degree>::solve ()
       smoother_data[level].ddh = &(level_ddh[level]);
       smoother_data[level].weight = 1.0;
       smoother_data[level].local_matrices.resize(level_ddh[level].subdomain_to_global_map.size());
-
 
       if (same_diagonal)
         {
@@ -302,10 +302,13 @@ void Simulator<dim,same_diagonal,degree>::solve ()
                     }
                 }
               smoother_data[level].local_matrices[i] = &(local_level_matrix[level][i]);
+              std::cout << std::endl;
               local_level_matrix[level][i].print(std::cout);
+              std::cout << std::endl;
             }
         }
     }
+  timer.leave_subsection();
 
 
   // SmootherSetup

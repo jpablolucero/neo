@@ -14,6 +14,7 @@
 
 #include <GenericLinearAlgebra.h>
 #include <Integrators.h>
+#include <integration_loop.h>
 
 template <int dim, int fe_degree, bool same_diagonal>
 class MFOperator final: public dealii::Subscriptor
