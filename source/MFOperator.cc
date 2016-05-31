@@ -107,13 +107,58 @@ void MFOperator<dim, fe_degree, same_diagonal>::set_cell_range
 }
 
 template <int dim, int fe_degree, bool same_diagonal>
+void MFOperator<dim, fe_degree, same_diagonal>::build_coarse_matrix()
+{
+  Assert(level == 0, dealii::ExcInternalError());
+  Assert(dof_handler != 0, dealii::ExcInternalError());
+
+  info_box.initialize(*fe, *mapping, &(dof_handler->block_info()));
+  dealii::MGLevelObject<LA::MPI::SparseMatrix> mg_matrix ;
+  mg_matrix.resize(level,level);
+
+  dealii::IndexSet locally_relevant_level_dofs;
+  dealii::DoFTools::extract_locally_relevant_level_dofs(*dof_handler,level,locally_relevant_level_dofs);
+  dealii::DynamicSparsityPattern dsp(locally_relevant_level_dofs);
+
+  //for the coarse matrix, we want to assemble always everything
+  dealii::MGTools::make_flux_sparsity_pattern(*dof_handler,dsp,level);
+
+#if PARALLEL_LA == 0
+  sp.copy_from (dsp);
+  mg_matrix[level].reinit(sp);
+#else
+    mg_matrix[level].reinit(dof_handler->locally_owned_mg_dofs(level),
+                            dof_handler->locally_owned_mg_dofs(level),
+                            dsp,mpi_communicator);
+#endif
+
+  dealii::MeshWorker::Assembler::MGMatrixSimple<LA::MPI::SparseMatrix> assembler;
+  assembler.initialize(mg_matrix);
+#ifdef CG
+  assembler.initialize(constraints);
+#endif
+
+  dealii::MeshWorker::integration_loop<dim, dim> (dof_handler->begin_mg(level),
+                                                  dof_handler->end_mg(level),
+                                                  *dof_info, info_box,
+                                                  matrix_integrator, assembler);
+
+  mg_matrix[level].compress(dealii::VectorOperation::add);
+#if PARALLEL_LA==0
+  coarse_matrix = std::move(mg_matrix[level]);
+#else
+  coarse_matrix.copy_from(mg_matrix[level]);
+#endif
+}
+
+template <int dim, int fe_degree, bool same_diagonal>
 void MFOperator<dim, fe_degree, same_diagonal>::build_matrix
 (const std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> &cell_range)
 {
   Assert(dof_handler != 0, dealii::ExcInternalError());
 
   info_box.initialize(*fe, *mapping, &(dof_handler->block_info()));
-  dealii::MGLevelObject<LA::MPI::SparseMatrix> mg_matrix ;
+  dealii::MGLevelObject<dealii::SparseMatrix<double> > mg_matrix ;
   mg_matrix.resize(level,level);
 
   const unsigned int n = dof_handler->get_fe().n_dofs_per_cell();
@@ -123,14 +168,11 @@ void MFOperator<dim, fe_degree, same_diagonal>::build_matrix
   dealii::DoFTools::extract_locally_relevant_level_dofs(*dof_handler,level,locally_relevant_level_dofs);
   dealii::DynamicSparsityPattern dsp(locally_relevant_level_dofs);
 
-  if (level == 0)
-    {
-      //for the coarse matrix, we want to assemble always everything
-      dealii::MGTools::make_flux_sparsity_pattern(*dof_handler,dsp,level);
-    }
-  else
-    {
-      //we create a flux_sparsity_pattern
+  if (cell_range.size()==0)
+  dealii::MGTools::make_flux_sparsity_pattern(*dof_handler,dsp,level);
+else
+  {
+        //we create a flux_sparsity_pattern
       for (auto cell = cell_range.begin(); cell != cell_range.end(); ++cell)
         {
           (*cell)->get_active_or_mg_dof_indices (level_dof_indices);
@@ -173,34 +215,19 @@ void MFOperator<dim, fe_degree, same_diagonal>::build_matrix
                 }
               }
         }
-    }
+  }
+
 
 //  dsp.print(std::cout);
 
-#if PARALLEL_LA == 0
   sp.copy_from (dsp);
   mg_matrix[level].reinit(sp);
-#else
-  if (level==0)
-    mg_matrix[level].reinit(dof_handler->locally_owned_mg_dofs(level),
-                            dof_handler->locally_owned_mg_dofs(level),
-                            dsp,mpi_communicator);
-  else
-    {
-      dealii::IndexSet relevant_mg_dofs;
-      dealii::DoFTools::extract_locally_relevant_level_dofs
-      (*dof_handler, level, relevant_mg_dofs);
-      mg_matrix[level].reinit(relevant_mg_dofs,
-                              dsp,MPI_COMM_SELF);
-    }  
-#endif
 
-  dealii::MeshWorker::Assembler::MGMatrixSimple<LA::MPI::SparseMatrix> assembler;
+  dealii::MeshWorker::Assembler::MGMatrixSimple<dealii::SparseMatrix<double> > assembler;
   assembler.initialize(mg_matrix);
 #ifdef CG
   assembler.initialize(constraints);
 #endif
-
 
   //now assemble everything
   if (cell_range.size()==0)
@@ -224,11 +251,7 @@ void MFOperator<dim, fe_degree, same_diagonal>::build_matrix
     }
 
   mg_matrix[level].compress(dealii::VectorOperation::add);
-#if PARALLEL_LA==0
   matrix = std::move(mg_matrix[level]);
-#else
-  matrix.copy_from(mg_matrix[level]);
-#endif
 }
 
 template <int dim, int fe_degree, bool same_diagonal>

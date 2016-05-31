@@ -35,6 +35,8 @@ public:
 
   void set_timer (dealii::TimerOutput &timer_);
 
+  void build_coarse_matrix();
+
   void build_matrix
   (const std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> &cell_range = std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator>()) ;
 
@@ -53,7 +55,7 @@ public:
 
   const LA::MPI::SparseMatrix &get_coarse_matrix() const
   {
-    return matrix;
+    return coarse_matrix;
   }
 
   unsigned int m() const
@@ -70,12 +72,12 @@ public:
 
   double operator()(const size_type i,const size_type j) const
   {
-    return matrix(i,j);
+    return level==0?coarse_matrix(i,j):matrix(i,j);
   }
 
   double el(const size_type i,const size_type j) const
   {
-    return matrix.el(i,j);
+    return level==0?coarse_matrix.el(i,j):matrix.el(i,j);
   }
 
 private:
@@ -86,10 +88,9 @@ private:
   const dealii::ConstraintMatrix                      *constraints;
   std::unique_ptr<dealii::MeshWorker::DoFInfo<dim> >  dof_info;
   mutable dealii::MeshWorker::IntegrationInfoBox<dim> info_box;
-#if PARALLEL_LA == 0
   dealii::SparsityPattern                             sp;
-#endif
-  LA::MPI::SparseMatrix                               matrix;
+  dealii::SparseMatrix<double>                        matrix;
+  LA::MPI::SparseMatrix                               coarse_matrix;
   MatrixIntegrator<dim,same_diagonal>                 matrix_integrator;
   ResidualIntegrator<dim>                             residual_integrator;
   mutable dealii::MGLevelObject<LA::MPI::Vector>      ghosted_src;

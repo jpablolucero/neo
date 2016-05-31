@@ -190,7 +190,7 @@ void Simulator<dim,same_diagonal,degree>::solve ()
 {
   timer.enter_subsection("solve::mg_initialization");
 #ifdef MG
-  mg_matrix[0].build_matrix();
+  mg_matrix[0].build_coarse_matrix();
   const LA::MPI::SparseMatrix &coarse_matrix = mg_matrix[0].get_coarse_matrix();
 
   dealii::SolverControl coarse_solver_control (dof_handler.n_dofs(0), 1e-10, false, false);
