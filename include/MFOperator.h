@@ -16,6 +16,8 @@
 #include <Integrators.h>
 #include <integration_loop.h>
 
+#include <MGMatrixSimpleMapped.h>
+
 template <int dim, int fe_degree, bool same_diagonal>
 class MFOperator final: public dealii::Subscriptor
 {
@@ -38,7 +40,9 @@ public:
   void build_coarse_matrix();
 
   void build_matrix
-  (const std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> &cell_range = std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator>()) ;
+  (const std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> &cell_range = std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator>(),
+   const std::vector<dealii::types::global_dof_index> &global_dofs_on_subdomain = std::vector<typename dealii::types::global_dof_index>(),
+   const std::map<dealii::types::global_dof_index, unsigned int> &all_to_unique = std::map<dealii::types::global_dof_index, unsigned int> ());
 
   void clear () ;
 
@@ -56,6 +60,11 @@ public:
   const LA::MPI::SparseMatrix &get_coarse_matrix() const
   {
     return coarse_matrix;
+  }
+
+  const dealii::FullMatrix<double> &get_matrix() const
+  {
+    return matrix;
   }
 
   unsigned int m() const
@@ -77,19 +86,19 @@ public:
 
   double el(const size_type i,const size_type j) const
   {
-    return level==0?coarse_matrix.el(i,j):matrix.el(i,j);
+    return level==0?coarse_matrix.el(i,j):matrix(i,j);
   }
 
 private:
   unsigned int                                        level;
-  const dealii::DoFHandler<dim>                             *dof_handler;
+  const dealii::DoFHandler<dim>                       *dof_handler;
   const dealii::FiniteElement<dim>                    *fe;
   const dealii::MappingQ1<dim>                        *mapping;
   const dealii::ConstraintMatrix                      *constraints;
   std::unique_ptr<dealii::MeshWorker::DoFInfo<dim> >  dof_info;
   mutable dealii::MeshWorker::IntegrationInfoBox<dim> info_box;
   dealii::SparsityPattern                             sp;
-  dealii::SparseMatrix<double>                        matrix;
+  dealii::FullMatrix<double>                          matrix;
   LA::MPI::SparseMatrix                               coarse_matrix;
   MatrixIntegrator<dim,same_diagonal>                 matrix_integrator;
   ResidualIntegrator<dim>                             residual_integrator;

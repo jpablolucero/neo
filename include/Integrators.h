@@ -19,7 +19,7 @@ class MatrixIntegrator final : public dealii::MeshWorker::LocalIntegrator<dim>
 public:
   MatrixIntegrator();
   MatrixIntegrator (const MatrixIntegrator &) = delete ;
-  MatrixIntegrator &operator = (const MatrixIntegrator &) = delete;  
+  MatrixIntegrator &operator = (const MatrixIntegrator &) = delete;
   void cell(dealii::MeshWorker::DoFInfo<dim> &dinfo, typename dealii::MeshWorker::IntegrationInfo<dim> &info) const override;
   void boundary(dealii::MeshWorker::DoFInfo<dim> &dinfo, typename dealii::MeshWorker::IntegrationInfo<dim> &info) const override;
   void face(dealii::MeshWorker::DoFInfo<dim> &dinfo1,
@@ -28,7 +28,7 @@ public:
             typename dealii::MeshWorker::IntegrationInfo<dim> &info2) const override;
 private:
   Coefficient<dim> diffcoeff;
-  const std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> *cell_range;  
+  const std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> *cell_range;
 };
 
 template <int dim>
@@ -37,7 +37,7 @@ class ResidualIntegrator final : public dealii::MeshWorker::LocalIntegrator<dim>
 public:
   ResidualIntegrator();
   ResidualIntegrator (const ResidualIntegrator &) = delete ;
-  ResidualIntegrator &operator = (const ResidualIntegrator &) = delete;  
+  ResidualIntegrator &operator = (const ResidualIntegrator &) = delete;
   void cell(dealii::MeshWorker::DoFInfo<dim> &dinfo, typename dealii::MeshWorker::IntegrationInfo<dim> &info) const override;
   void boundary(dealii::MeshWorker::DoFInfo<dim> &dinfo, typename dealii::MeshWorker::IntegrationInfo<dim> &info) const override;
   void face(dealii::MeshWorker::DoFInfo<dim> &dinfo1,

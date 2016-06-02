@@ -127,9 +127,9 @@ void MFOperator<dim, fe_degree, same_diagonal>::build_coarse_matrix()
   sp.copy_from (dsp);
   mg_matrix[level].reinit(sp);
 #else
-    mg_matrix[level].reinit(dof_handler->locally_owned_mg_dofs(level),
-                            dof_handler->locally_owned_mg_dofs(level),
-                            dsp,mpi_communicator);
+  mg_matrix[level].reinit(dof_handler->locally_owned_mg_dofs(level),
+                          dof_handler->locally_owned_mg_dofs(level),
+                          dsp,mpi_communicator);
 #endif
 
   dealii::MeshWorker::Assembler::MGMatrixSimple<LA::MPI::SparseMatrix> assembler;
@@ -153,24 +153,32 @@ void MFOperator<dim, fe_degree, same_diagonal>::build_coarse_matrix()
 
 template <int dim, int fe_degree, bool same_diagonal>
 void MFOperator<dim, fe_degree, same_diagonal>::build_matrix
-(const std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> &cell_range)
+(const std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> &cell_range,
+ const std::vector<dealii::types::global_dof_index> &global_dofs_on_subdomain,
+ const std::map<dealii::types::global_dof_index, unsigned int> &all_to_unique)
 {
   Assert(dof_handler != 0, dealii::ExcInternalError());
 
   info_box.initialize(*fe, *mapping, &(dof_handler->block_info()));
-  dealii::MGLevelObject<dealii::SparseMatrix<double> > mg_matrix ;
+  dealii::MGLevelObject<dealii::FullMatrix<double> > mg_matrix ;
   mg_matrix.resize(level,level);
 
-  const unsigned int n = dof_handler->get_fe().n_dofs_per_cell();
+  /*const unsigned int n = dof_handler->get_fe().n_dofs_per_cell();
   std::vector<dealii::types::global_dof_index> level_dof_indices (n);
   std::vector<dealii::types::global_dof_index> neighbor_dof_indices (n);
   dealii::IndexSet locally_relevant_level_dofs;
   dealii::DoFTools::extract_locally_relevant_level_dofs(*dof_handler,level,locally_relevant_level_dofs);
-  dealii::DynamicSparsityPattern dsp(locally_relevant_level_dofs);
+  const dealii::types::global_dof_index n_elements = locally_relevant_level_dofs.n_elements();
+  const dealii::types::global_dof_index last_element = locally_relevant_level_dofs.nth_index_in_set(n_elements-1);
+  const dealii::IndexSet reduced_set = locally_relevant_level_dofs.get_view(0,last_element+1);
+
+  dealii::DynamicSparsityPattern dsp(reduced_set);//locally_relevant_level_dofs);
+
+  //timer->enter_subsection("create pattern");
 
   if (cell_range.size()==0)
   dealii::MGTools::make_flux_sparsity_pattern(*dof_handler,dsp,level);
-else
+  else
   {
         //we create a flux_sparsity_pattern
       for (auto cell = cell_range.begin(); cell != cell_range.end(); ++cell)
@@ -190,18 +198,18 @@ else
 
                 // TODO: normally, we want to allow only entries related to the patch
                 const typename dealii::DoFHandler<dim>::level_cell_iterator neighbor = (*cell)->neighbor(face);
-//                const int neighbor_index = neighbor->index();
+  //                const int neighbor_index = neighbor->index();
 
-//                bool inner_face = false;
+  //                bool inner_face = false;
 
-//                for (unsigned int i=0; i<cell_range.size(); ++i)
-//                  if (cell_range[i]->index() == neighbor_index)
-//                    {
-//                      inner_face = true;
-//                      break;
-//                    }
+  //                for (unsigned int i=0; i<cell_range.size(); ++i)
+  //                  if (cell_range[i]->index() == neighbor_index)
+  //                    {
+  //                      inner_face = true;
+  //                      break;
+  //                    }
 
-//                if (inner_face)
+  //                if (inner_face)
                 {
                   neighbor->get_active_or_mg_dof_indices (neighbor_dof_indices);
                   for (unsigned int i=0; i<n; ++i)
@@ -217,17 +225,37 @@ else
         }
   }
 
+  //timer->leave_subsection();
+  //timer->enter_subsection("print pattern");
+  //dsp.print(std::cout);
+  //timer->leave_subsection();
+//  timer->enter_subsection("copy pattern");
+//  sp.copy_from (dsp);
 
-//  dsp.print(std::cout);
-
+#if PARALLEL_LA == 0
   sp.copy_from (dsp);
   mg_matrix[level].reinit(sp);
+#else
+  const dealii::types::global_dof_index n_elements = locally_relevant_level_dofs.n_elements();
+  const dealii::types::global_dof_index last_element = locally_relevant_level_dofs.nth_index_in_set(n_elements-1);
+  const dealii::IndexSet reduced_set = locally_relevant_level_dofs.get_view(0,last_element+1);
+  Assert(reduced_set.size()==last_element+1, dealii::ExcInternalError());
+  std::cout << locally_relevant_level_dofs.size() << " " << n_elements << " " << last_element << std::endl;
+  mg_matrix[level].reinit(reduced_set, dsp, MPI_COMM_SELF);
+#endif
+*/
 
-  dealii::MeshWorker::Assembler::MGMatrixSimple<dealii::SparseMatrix<double> > assembler;
+
+
+  mg_matrix[level] = std::move(dealii::FullMatrix<double>(global_dofs_on_subdomain.size()));
+
+
+  Assembler::MGMatrixSimpleMapped<dealii::FullMatrix<double> > assembler;
   assembler.initialize(mg_matrix);
 #ifdef CG
   assembler.initialize(constraints);
 #endif
+  assembler.initialize(all_to_unique);
 
   //now assemble everything
   if (cell_range.size()==0)
@@ -250,8 +278,10 @@ else
                                           matrix_integrator, assembler, lctrl);
     }
 
-  mg_matrix[level].compress(dealii::VectorOperation::add);
-  matrix = std::move(mg_matrix[level]);
+  //mg_matrix[level].compress(dealii::VectorOperation::add);
+//  matrix = std::move(mg_matrix[level]);
+  matrix.copy_from(mg_matrix[level]);
+//  timer->leave_subsection();
 }
 
 template <int dim, int fe_degree, bool same_diagonal>

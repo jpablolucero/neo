@@ -278,9 +278,12 @@ void Simulator<dim,same_diagonal,degree>::solve ()
         {
           for (unsigned int i=0; i<level_ddh[level].subdomain_to_global_map.size(); ++i)
             {
-              mg_matrix[level].build_matrix(level_ddh[level].subdomain_to_global_map[i]);
-              const unsigned int n_dofs = level_ddh[level].all_to_unique[i].size();
-              local_level_matrix[level][i] = dealii::FullMatrix<double>(n_dofs, n_dofs);
+              mg_matrix[level].build_matrix(level_ddh[level].subdomain_to_global_map[i],
+                                            level_ddh[level].global_dofs_on_subdomain[i],
+                                            level_ddh[level].all_to_unique[i]);
+
+//              const unsigned int n_dofs = level_ddh[level].all_to_unique[i].size();
+              local_level_matrix[level][i] = mg_matrix[level].get_matrix();
 
 //              std::cout << "level: " << level << std::endl
 //                        << "all_to_unique[" << i << "]: " << std::endl;
@@ -289,18 +292,18 @@ void Simulator<dim,same_diagonal,degree>::solve ()
 //              std::cout << std::endl;
 
               //now use the mapping to create the correct local matrix
-              for (auto it_1 = level_ddh[level].all_to_unique[i].begin(); it_1!=level_ddh[level].all_to_unique[i].end(); ++it_1)
-                {
-                  for (auto it_2 = level_ddh[level].all_to_unique[i].begin(); it_2!=level_ddh[level].all_to_unique[i].end(); ++it_2)
-                    {
-//                      std::cout << i << "\t" <<it_1->first << "\t" << it_2->first << "\t"
-//                                << it_1->second << "\t" << it_2->second << "\t"
-//                                << mg_matrix[level].el(it_1->first, it_2->first)
-//                                << std::endl;
-                      local_level_matrix[level][i](it_1->second, it_2->second) = mg_matrix[level].el(it_1->first, it_2->first);
-//                      local_level_matrix[level][i].print(std::cout);
-                    }
-                }
+//              for (auto it_1 = level_ddh[level].all_to_unique[i].begin(); it_1!=level_ddh[level].all_to_unique[i].end(); ++it_1)
+//                {
+//                  for (auto it_2 = level_ddh[level].all_to_unique[i].begin(); it_2!=level_ddh[level].all_to_unique[i].end(); ++it_2)
+//                    {
+////                      std::cout << i << "\t" <<it_1->first << "\t" << it_2->first << "\t"
+////                                << it_1->second << "\t" << it_2->second << "\t"
+////                                << mg_matrix[level].el(it_1->first, it_2->first)
+////                                << std::endl;
+//                      local_level_matrix[level][i](it_1->second, it_2->second) = mg_matrix[level].el(it_1->first, it_2->first);
+////                      local_level_matrix[level][i].print(std::cout);
+//                    }
+//                }
               smoother_data[level].local_matrices[i] = &(local_level_matrix[level][i]);
               std::cout << std::endl;
               local_level_matrix[level][i].print(std::cout);
