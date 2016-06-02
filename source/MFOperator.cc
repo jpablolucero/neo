@@ -163,92 +163,7 @@ void MFOperator<dim, fe_degree, same_diagonal>::build_matrix
   dealii::MGLevelObject<dealii::FullMatrix<double> > mg_matrix ;
   mg_matrix.resize(level,level);
 
-  /*const unsigned int n = dof_handler->get_fe().n_dofs_per_cell();
-  std::vector<dealii::types::global_dof_index> level_dof_indices (n);
-  std::vector<dealii::types::global_dof_index> neighbor_dof_indices (n);
-  dealii::IndexSet locally_relevant_level_dofs;
-  dealii::DoFTools::extract_locally_relevant_level_dofs(*dof_handler,level,locally_relevant_level_dofs);
-  const dealii::types::global_dof_index n_elements = locally_relevant_level_dofs.n_elements();
-  const dealii::types::global_dof_index last_element = locally_relevant_level_dofs.nth_index_in_set(n_elements-1);
-  const dealii::IndexSet reduced_set = locally_relevant_level_dofs.get_view(0,last_element+1);
-
-  dealii::DynamicSparsityPattern dsp(reduced_set);//locally_relevant_level_dofs);
-
-  //timer->enter_subsection("create pattern");
-
-  if (cell_range.size()==0)
-  dealii::MGTools::make_flux_sparsity_pattern(*dof_handler,dsp,level);
-  else
-  {
-        //we create a flux_sparsity_pattern
-      for (auto cell = cell_range.begin(); cell != cell_range.end(); ++cell)
-        {
-          (*cell)->get_active_or_mg_dof_indices (level_dof_indices);
-          for (unsigned int i = 0; i < n; ++i)
-            for (unsigned int j = 0; j < n; ++j)
-              {
-                const dealii::types::global_dof_index i1 = level_dof_indices [i];
-                const dealii::types::global_dof_index i2 = level_dof_indices [j];
-                dsp.add(i1, i2);
-              }
-          // Loop over all interior neighbors
-          for (unsigned int face = 0; face < dealii::GeometryInfo<dim>::faces_per_cell; ++face)
-            if ( (! (*cell)->at_boundary(face)))
-              {
-
-                // TODO: normally, we want to allow only entries related to the patch
-                const typename dealii::DoFHandler<dim>::level_cell_iterator neighbor = (*cell)->neighbor(face);
-  //                const int neighbor_index = neighbor->index();
-
-  //                bool inner_face = false;
-
-  //                for (unsigned int i=0; i<cell_range.size(); ++i)
-  //                  if (cell_range[i]->index() == neighbor_index)
-  //                    {
-  //                      inner_face = true;
-  //                      break;
-  //                    }
-
-  //                if (inner_face)
-                {
-                  neighbor->get_active_or_mg_dof_indices (neighbor_dof_indices);
-                  for (unsigned int i=0; i<n; ++i)
-                    for (unsigned int j=0; j<n; ++j)
-                      {
-                        dsp.add (level_dof_indices[i], neighbor_dof_indices[j]);
-                        //TODO: Remove the next two
-                        dsp.add (neighbor_dof_indices[i], level_dof_indices[j]);
-                        dsp.add (neighbor_dof_indices[i], neighbor_dof_indices[j]);
-                      }
-                }
-              }
-        }
-  }
-
-  //timer->leave_subsection();
-  //timer->enter_subsection("print pattern");
-  //dsp.print(std::cout);
-  //timer->leave_subsection();
-//  timer->enter_subsection("copy pattern");
-//  sp.copy_from (dsp);
-
-#if PARALLEL_LA == 0
-  sp.copy_from (dsp);
-  mg_matrix[level].reinit(sp);
-#else
-  const dealii::types::global_dof_index n_elements = locally_relevant_level_dofs.n_elements();
-  const dealii::types::global_dof_index last_element = locally_relevant_level_dofs.nth_index_in_set(n_elements-1);
-  const dealii::IndexSet reduced_set = locally_relevant_level_dofs.get_view(0,last_element+1);
-  Assert(reduced_set.size()==last_element+1, dealii::ExcInternalError());
-  std::cout << locally_relevant_level_dofs.size() << " " << n_elements << " " << last_element << std::endl;
-  mg_matrix[level].reinit(reduced_set, dsp, MPI_COMM_SELF);
-#endif
-*/
-
-
-
   mg_matrix[level] = std::move(dealii::FullMatrix<double>(global_dofs_on_subdomain.size()));
-
 
   Assembler::MGMatrixSimpleMapped<dealii::FullMatrix<double> > assembler;
   assembler.initialize(mg_matrix);
@@ -260,28 +175,23 @@ void MFOperator<dim, fe_degree, same_diagonal>::build_matrix
   //now assemble everything
   if (cell_range.size()==0)
     {
+      std::cout << "build full matrix on level" << level << std::endl;
       dealii::MeshWorker::integration_loop<dim, dim> (dof_handler->begin_mg(level),
                                                       dof_handler->end_mg(level),
                                                       *dof_info, info_box,
                                                       matrix_integrator, assembler);
-
     }
   else
     {
       dealii::MeshWorker::LoopControl lctrl;
       //assemble faces from both sides
-      //lctrl.own_faces = dealii::MeshWorker::LoopControl::both; //crucial for Cell smoother!
       lctrl.faces_to_ghost = dealii::MeshWorker::LoopControl::both;
       lctrl.ghost_cells = true;
 
       dealii::integration_loop<dim, dim> (cell_range, *dof_info, info_box,
                                           matrix_integrator, assembler, lctrl);
     }
-
-  //mg_matrix[level].compress(dealii::VectorOperation::add);
-//  matrix = std::move(mg_matrix[level]);
   matrix.copy_from(mg_matrix[level]);
-//  timer->leave_subsection();
 }
 
 template <int dim, int fe_degree, bool same_diagonal>
@@ -334,31 +244,13 @@ void MFOperator<dim,fe_degree,same_diagonal>::vmult_add (LA::MPI::Vector &dst,
     }
   else
     {
-      dealii::MeshWorker::DoFInfoBox<dim, dealii::MeshWorker::DoFInfo<dim> > dof_info_box(*dof_info);
-      assembler.initialize_info(dof_info_box.cell, false);
-      for (unsigned int i=0; i<dealii::GeometryInfo<dim>::faces_per_cell; ++i)
-        {
-          assembler.initialize_info(dof_info_box.interior[i], true);
-          assembler.initialize_info(dof_info_box.exterior[i], true);
-        }
-
-      auto cell_worker  = dealii::std_cxx11::bind(&dealii::MeshWorker::LocalIntegrator<dim>::cell, &residual_integrator, dealii::std_cxx11::_1, dealii::std_cxx11::_2);
-      auto boundary_worker = dealii::std_cxx11::bind(&dealii::MeshWorker::LocalIntegrator<dim>::boundary, &residual_integrator, dealii::std_cxx11::_1, dealii::std_cxx11::_2);
-      auto face_worker = dealii::std_cxx11::bind(&dealii::MeshWorker::LocalIntegrator<dim>::face, &residual_integrator, dealii::std_cxx11::_1, dealii::std_cxx11::_2, dealii::std_cxx11::_3, dealii::std_cxx11::_4);
-
       dealii::MeshWorker::LoopControl lctrl;
       //assemble faces from both sides
-      lctrl.own_faces = dealii::MeshWorker::LoopControl::both;
+      lctrl.faces_to_ghost = dealii::MeshWorker::LoopControl::both;
+      lctrl.ghost_cells = true;
 
-      // Loop over all cells
-      for (unsigned int i=0; i<cell_range->size(); ++i)
-        {
-          dealii::MeshWorker::cell_action<dealii::MeshWorker::IntegrationInfoBox<dim>,
-                 dealii::MeshWorker::DoFInfo<dim>, dim, dim >
-                 ((*cell_range)[i], dof_info_box, info_box, cell_worker,
-                  boundary_worker, face_worker, lctrl);
-          dof_info_box.assemble(assembler);
-        }
+      dealii::integration_loop<dim, dim> (*cell_range, *dof_info, info_box,
+                                          residual_integrator, assembler, lctrl);
     }
   timer->leave_subsection();
 }

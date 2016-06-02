@@ -222,10 +222,10 @@ void DDHandlerBase<dim>::initialize_global_dofs_on_subdomain()
 
       //fill all_to_unique
       for (unsigned int k=0; k<global_dofs_on_subdomain[i].size(); ++k)
-      {
-        all_to_unique[i][global_dofs_on_subdomain[i][k]]=k;
-        std::cout << all_to_unique[i][global_dofs_on_subdomain[i][k]]<< "->" << k << std::endl;
-      }
+        {
+          all_to_unique[i][global_dofs_on_subdomain[i][k]]=k;
+          std::cout << all_to_unique[i][global_dofs_on_subdomain[i][k]]<< "->" << k << std::endl;
+        }
 
 //      std::cout << "all_to_unique["<< i << "]: ";
 //      for (unsigned int j=0; j<all_dofs.size(); ++j)
@@ -447,8 +447,6 @@ void DGDDHandlerVertex<dim>::initialize_max_n_overlaps()
     }
 
   this->max_n_overlaps_ = this->size()!=0?*(std::max_element(overlaps.begin(), overlaps.end())):0;
-
-
 }
 
 #include "DDHandler.inst"

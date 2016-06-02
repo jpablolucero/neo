@@ -38,13 +38,13 @@ int main (int argc, char *argv[])
       dgmethod.smoothing_steps = smooth_steps;
       dgmethod.run ();
     }
-//  for (unsigned int l=1; l<3; ++l)
-//    {
-//      Simulator<2,true,1> dgmethod(timer, mpi_communicator, pcout);
-//      dgmethod.n_levels = l ;
-//      dgmethod.smoothing_steps = smooth_steps;
-//      dgmethod.run ();
-//    }
+  for (unsigned int l=2; l<7; ++l)
+    {
+      Simulator<2,true,1> dgmethod(timer, mpi_communicator, pcout);
+      dgmethod.n_levels = l ;
+      dgmethod.smoothing_steps = smooth_steps;
+      dgmethod.run ();
+    }
   /*  for (unsigned int l=7; l<10; ++l)
       {
         Simulator<3,false,1> dgmethod(timer, mpi_communicator, pcout);

@@ -71,7 +71,6 @@ void PSCPreconditioner<dim, VectorType, number>::initialize(const GlobalOperator
   // from the DDHandler we get the patches and the corresponding cells
   // use these to construct the matrices we want to smoothen with
   // from the local matrices)
-//  const unsigned int n_dofs_per_cell = data.ddh->get_dofh().get_fe().n_dofs_per_cell();
   patch_inverses.resize(data.ddh->global_dofs_on_subdomain.size());
   for (unsigned int i=0; i<data.ddh->subdomain_to_global_map.size(); ++i)
     {

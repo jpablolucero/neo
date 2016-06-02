@@ -267,12 +267,8 @@ void Simulator<dim,same_diagonal,degree>::solve ()
                 local_level_matrix[level][0](i, j) = dummy_matrix(i, j);
               }
           //assign to the smoother
-          local_level_matrix[level][0];
-          for (auto cell = dof_handler.begin_mg(level);
-               cell != dof_handler.end_mg(level);
-               ++cell)
-            if (cell->level_subdomain_id()!=dealii::numbers::artificial_subdomain_id)
-              smoother_data[level].local_matrices[cell->index()]=&(local_level_matrix[level][0]);
+          for (unsigned int i=0; i<level_ddh[level].subdomain_to_global_map.size(); ++i)
+            smoother_data[level].local_matrices[i] = &(local_level_matrix[level][0]);
         }
       else
         {
@@ -281,33 +277,8 @@ void Simulator<dim,same_diagonal,degree>::solve ()
               mg_matrix[level].build_matrix(level_ddh[level].subdomain_to_global_map[i],
                                             level_ddh[level].global_dofs_on_subdomain[i],
                                             level_ddh[level].all_to_unique[i]);
-
-//              const unsigned int n_dofs = level_ddh[level].all_to_unique[i].size();
               local_level_matrix[level][i] = mg_matrix[level].get_matrix();
-
-//              std::cout << "level: " << level << std::endl
-//                        << "all_to_unique[" << i << "]: " << std::endl;
-//              for (unsigned int j=0; j<n_dofs; ++j)
-//                std::cout << level_ddh[level].all_to_unique[i].at[j] << " ";
-//              std::cout << std::endl;
-
-              //now use the mapping to create the correct local matrix
-//              for (auto it_1 = level_ddh[level].all_to_unique[i].begin(); it_1!=level_ddh[level].all_to_unique[i].end(); ++it_1)
-//                {
-//                  for (auto it_2 = level_ddh[level].all_to_unique[i].begin(); it_2!=level_ddh[level].all_to_unique[i].end(); ++it_2)
-//                    {
-////                      std::cout << i << "\t" <<it_1->first << "\t" << it_2->first << "\t"
-////                                << it_1->second << "\t" << it_2->second << "\t"
-////                                << mg_matrix[level].el(it_1->first, it_2->first)
-////                                << std::endl;
-//                      local_level_matrix[level][i](it_1->second, it_2->second) = mg_matrix[level].el(it_1->first, it_2->first);
-////                      local_level_matrix[level][i].print(std::cout);
-//                    }
-//                }
               smoother_data[level].local_matrices[i] = &(local_level_matrix[level][i]);
-              std::cout << std::endl;
-              local_level_matrix[level][i].print(std::cout);
-              std::cout << std::endl;
             }
         }
     }
@@ -385,7 +356,7 @@ void Simulator<dim, same_diagonal, degree>::output_results (const unsigned int c
   data_out.build_patches (fe.degree);
 
   const unsigned int n_proc = dealii::Utilities::MPI::n_mpi_processes(mpi_communicator);
-  if (n_proc >1)
+  if (n_proc>1)
     {
       const int n_digits = dealii::Utilities::needed_digits(n_proc);
       std::ofstream output

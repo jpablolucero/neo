@@ -44,28 +44,16 @@ void MatrixIntegrator<dim,same_diagonal>::face(dealii::MeshWorker::DoFInfo<dim> 
       const dealii::FEValuesBase<dim> &fev2 = info2.fe_values(dinfo2.block_info->base_element(b));
 
       dealii::FullMatrix<double> &RM11 = dinfo1.matrix(b*n_blocks + b,false).matrix;
+      dealii::FullMatrix<double> &RM12 = dinfo2.matrix(b*n_blocks + b,true).matrix;
+      dealii::FullMatrix<double> &RM21 = dinfo1.matrix(b*n_blocks + b,true).matrix;
+      dealii::FullMatrix<double> &RM22 = dinfo2.matrix(b*n_blocks + b,false).matrix;
       const unsigned int n_quads = fev1.n_quadrature_points;
       coeffs.resize(n_quads);
       diffcoeff.value_list(fev1.get_quadrature_points(), coeffs, b);
-      //These are unused
-      dealii::FullMatrix<double> M21(dinfo1.matrix(b*n_blocks+b,true).matrix.n());
-      dealii::FullMatrix<double> M12(dinfo2.matrix(b*n_blocks+b,true).matrix.n());
-      dealii::FullMatrix<double> M22(dinfo2.matrix(b*n_blocks+b,false).matrix.n());
-      if (same_diagonal)
-        {
-          LocalIntegrators::Diffusion::ip_matrix<dim>
-          (RM11,M12,M21,M22,fev1,fev2,coeffs,
-           dealii::LocalIntegrators::Laplace::compute_penalty(dinfo1,dinfo2,deg1,deg2));
-        }
-      else
-        {
-          dealii::FullMatrix<double> &RM12 = dinfo2.matrix(b*n_blocks + b,true).matrix;
-          dealii::FullMatrix<double> &RM21 = dinfo1.matrix(b*n_blocks + b,true).matrix;
-          dealii::FullMatrix<double> &RM22 = dinfo2.matrix(b*n_blocks + b,false).matrix;
-          LocalIntegrators::Diffusion::ip_matrix<dim>
-          (RM11,RM12,RM21,RM22,fev1,fev2,coeffs,
-           dealii::LocalIntegrators::Laplace::compute_penalty(dinfo1,dinfo2,deg1,deg2));
-        }
+
+      LocalIntegrators::Diffusion::ip_matrix<dim>
+      (RM11,RM12,RM21,RM22,fev1,fev2,coeffs,
+       dealii::LocalIntegrators::Laplace::compute_penalty(dinfo1,dinfo2,deg1,deg2));
     }
 }
 
