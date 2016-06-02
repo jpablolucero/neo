@@ -201,21 +201,14 @@ void Simulator<dim,same_diagonal,degree>::solve ()
       id);
 
   // Smoother setup
-  typedef PSCPreconditioner<dim, LA::MPI::Vector, double> Smoother;
+  typedef PSCPreconditioner<dim, LA::MPI::Vector, double, same_diagonal> Smoother;
   Smoother::timer = &timer;
 
-  dealii::MGLevelObject<std::map<unsigned int, dealii::FullMatrix<double> > > local_level_matrix;
-  local_level_matrix.resize(mg_matrix.min_level(), mg_matrix.max_level());
   dealii::MGLevelObject<DGDDHandlerCell<dim> > level_ddh;
   level_ddh.resize(mg_matrix.min_level(), mg_matrix.max_level());
   dealii::MGLevelObject<typename Smoother::AdditionalData> smoother_data;
   smoother_data.resize(mg_matrix.min_level(), mg_matrix.max_level());
 
-  const unsigned int n = dof_handler.get_fe().n_dofs_per_cell();
-  std::vector<dealii::types::global_dof_index> first_level_dof_indices (n);
-  dealii::FullMatrix<double> local_matrix(n, n);
-
-  timer.enter_subsection("LO::build_matrices");
   for (unsigned int level = mg_matrix.min_level();
        level <= mg_matrix.max_level();
        ++level)
@@ -226,64 +219,8 @@ void Simulator<dim,same_diagonal,degree>::solve ()
       // setup smoother data
       smoother_data[level].ddh = &(level_ddh[level]);
       smoother_data[level].weight = 1.0;
-      smoother_data[level].local_matrices.resize(level_ddh[level].subdomain_to_global_map.size());
-
-      if (same_diagonal)
-        {
-          local_level_matrix[level][0]=dealii::FullMatrix<double>(n);
-          dealii::Triangulation<dim> local_triangulation;
-          dealii::DoFHandler<dim> local_dof_handler(local_triangulation);
-          if (level == 0)
-            dealii::GridGenerator::hyper_cube (local_triangulation,0., 1.);
-          else
-            dealii::GridGenerator::hyper_cube (local_triangulation,0., 2./std::pow(2., level));
-          if (level != 0) local_triangulation.refine_global(1);
-          local_dof_handler.distribute_dofs (fe);
-          local_dof_handler.initialize_local_block_info();
-          dealii::MeshWorker::IntegrationInfoBox<dim> local_info_box;
-          const unsigned int local_n_gauss_points = local_dof_handler.get_fe().degree+1;
-          local_info_box.initialize_gauss_quadrature(local_n_gauss_points,
-                                                     local_n_gauss_points,
-                                                     local_n_gauss_points);
-          local_info_box.initialize_update_flags();
-          dealii::UpdateFlags local_update_flags = dealii::update_quadrature_points |
-                                                   dealii::update_values |
-                                                   dealii::update_gradients;
-          local_info_box.add_update_flags(local_update_flags, true, true, true, true);
-          local_info_box.initialize(fe, mapping, &(local_dof_handler.block_info()));
-          dealii::MeshWorker::DoFInfo<dim> local_dof_info(local_dof_handler.block_info());
-          dealii::FullMatrix<double> dummy_matrix(local_dof_handler.n_dofs(),local_dof_handler.n_dofs());
-          dealii::MeshWorker::Assembler::MatrixSimple<dealii::FullMatrix<double> > local_assembler;
-          local_assembler.initialize(dummy_matrix);
-          MatrixIntegrator<dim,false> local_integrator ;
-          dealii::MeshWorker::integration_loop<dim, dim>
-          (local_dof_handler.begin_active(),
-           local_dof_handler.end(),
-           local_dof_info, local_info_box,
-           local_integrator,local_assembler);
-          for (unsigned int i = 0; i < n; ++i)
-            for (unsigned int j = 0; j < n; ++j)
-              {
-                local_level_matrix[level][0](i, j) = dummy_matrix(i, j);
-              }
-          //assign to the smoother
-          for (unsigned int i=0; i<level_ddh[level].subdomain_to_global_map.size(); ++i)
-            smoother_data[level].local_matrices[i] = &(local_level_matrix[level][0]);
-        }
-      else
-        {
-          for (unsigned int i=0; i<level_ddh[level].subdomain_to_global_map.size(); ++i)
-            {
-              mg_matrix[level].build_matrix(level_ddh[level].subdomain_to_global_map[i],
-                                            level_ddh[level].global_dofs_on_subdomain[i],
-                                            level_ddh[level].all_to_unique[i]);
-              local_level_matrix[level][i] = mg_matrix[level].get_matrix();
-              smoother_data[level].local_matrices[i] = &(local_level_matrix[level][i]);
-            }
-        }
+      smoother_data[level].mapping = &mapping;
     }
-  timer.leave_subsection();
-
 
   // SmootherSetup
   dealii::MGSmootherPrecondition<SystemMatrixType, Smoother, LA::MPI::Vector> mg_smoother;

@@ -152,49 +152,6 @@ void MFOperator<dim, fe_degree, same_diagonal>::build_coarse_matrix()
 }
 
 template <int dim, int fe_degree, bool same_diagonal>
-void MFOperator<dim, fe_degree, same_diagonal>::build_matrix
-(const std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> &cell_range,
- const std::vector<dealii::types::global_dof_index> &global_dofs_on_subdomain,
- const std::map<dealii::types::global_dof_index, unsigned int> &all_to_unique)
-{
-  Assert(dof_handler != 0, dealii::ExcInternalError());
-
-  info_box.initialize(*fe, *mapping, &(dof_handler->block_info()));
-  dealii::MGLevelObject<dealii::FullMatrix<double> > mg_matrix ;
-  mg_matrix.resize(level,level);
-
-  mg_matrix[level] = std::move(dealii::FullMatrix<double>(global_dofs_on_subdomain.size()));
-
-  Assembler::MGMatrixSimpleMapped<dealii::FullMatrix<double> > assembler;
-  assembler.initialize(mg_matrix);
-#ifdef CG
-  assembler.initialize(constraints);
-#endif
-  assembler.initialize(all_to_unique);
-
-  //now assemble everything
-  if (cell_range.size()==0)
-    {
-      std::cout << "build full matrix on level" << level << std::endl;
-      dealii::MeshWorker::integration_loop<dim, dim> (dof_handler->begin_mg(level),
-                                                      dof_handler->end_mg(level),
-                                                      *dof_info, info_box,
-                                                      matrix_integrator, assembler);
-    }
-  else
-    {
-      dealii::MeshWorker::LoopControl lctrl;
-      //assemble faces from both sides
-      lctrl.faces_to_ghost = dealii::MeshWorker::LoopControl::both;
-      lctrl.ghost_cells = true;
-
-      dealii::integration_loop<dim, dim> (cell_range, *dof_info, info_box,
-                                          matrix_integrator, assembler, lctrl);
-    }
-  matrix.copy_from(mg_matrix[level]);
-}
-
-template <int dim, int fe_degree, bool same_diagonal>
 void MFOperator<dim,fe_degree,same_diagonal>::vmult (LA::MPI::Vector &dst,
                                                      const LA::MPI::Vector &src) const
 {

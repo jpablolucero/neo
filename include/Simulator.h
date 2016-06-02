@@ -40,6 +40,7 @@
 #include <EquationData.h>
 #include <ResidualSimpleConstraints.h>
 #include <PSCPreconditioner.h>
+#include <MFPSCPreconditioner.h>
 
 #include <string>
 #include <fstream>

@@ -39,11 +39,6 @@ public:
 
   void build_coarse_matrix();
 
-  void build_matrix
-  (const std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> &cell_range = std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator>(),
-   const std::vector<dealii::types::global_dof_index> &global_dofs_on_subdomain = std::vector<typename dealii::types::global_dof_index>(),
-   const std::map<dealii::types::global_dof_index, unsigned int> &all_to_unique = std::map<dealii::types::global_dof_index, unsigned int> ());
-
   void clear () ;
 
   void vmult (LA::MPI::Vector &dst,
@@ -62,11 +57,6 @@ public:
     return coarse_matrix;
   }
 
-  const dealii::FullMatrix<double> &get_matrix() const
-  {
-    return matrix;
-  }
-
   unsigned int m() const
   {
     return dof_handler->n_dofs(level);
@@ -79,16 +69,6 @@ public:
 
   typedef LA::MPI::SparseMatrixSizeType      size_type ;
 
-  double operator()(const size_type i,const size_type j) const
-  {
-    return level==0?coarse_matrix(i,j):matrix(i,j);
-  }
-
-  double el(const size_type i,const size_type j) const
-  {
-    return level==0?coarse_matrix.el(i,j):matrix(i,j);
-  }
-
 private:
   unsigned int                                        level;
   const dealii::DoFHandler<dim>                       *dof_handler;
@@ -98,7 +78,6 @@ private:
   std::unique_ptr<dealii::MeshWorker::DoFInfo<dim> >  dof_info;
   mutable dealii::MeshWorker::IntegrationInfoBox<dim> info_box;
   dealii::SparsityPattern                             sp;
-  dealii::FullMatrix<double>                          matrix;
   LA::MPI::SparseMatrix                               coarse_matrix;
   MatrixIntegrator<dim,same_diagonal>                 matrix_integrator;
   ResidualIntegrator<dim>                             residual_integrator;

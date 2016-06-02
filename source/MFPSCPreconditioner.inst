@@ -1,0 +1,10 @@
+#ifndef MFPSCPRECONDITIONER_INST
+#define MFPSCPRECONDITIONER_INST
+#include <GenericLinearAlgebra.h>
+
+template class MFPSCPreconditioner<2, LA::MPI::Vector, double>;
+template class MFPSCPreconditioner<2, LA::MPI::Vector, float>;
+
+template class MFPSCPreconditioner<3, LA::MPI::Vector, double>;
+template class MFPSCPreconditioner<3, LA::MPI::Vector, float>;
+#endif // MFPSCPRECONDITIONER_INST

@@ -222,19 +222,7 @@ void DDHandlerBase<dim>::initialize_global_dofs_on_subdomain()
 
       //fill all_to_unique
       for (unsigned int k=0; k<global_dofs_on_subdomain[i].size(); ++k)
-        {
-          all_to_unique[i][global_dofs_on_subdomain[i][k]]=k;
-          std::cout << all_to_unique[i][global_dofs_on_subdomain[i][k]]<< "->" << k << std::endl;
-        }
-
-//      std::cout << "all_to_unique["<< i << "]: ";
-//      for (unsigned int j=0; j<all_dofs.size(); ++j)
-//        std::cout << all_to_unique[i][j] << " ";
-//      std::cout << std::endl;
-//      std::cout << "global_dofs_on_subdomain["<< i << "]: ";
-//      for (unsigned int j=0; j<global_dofs_on_subdomain[i].size(); ++j)
-//        std::cout << global_dofs_on_subdomain[i][j] << " ";
-//      std::cout<<std::endl;
+        all_to_unique[i][global_dofs_on_subdomain[i][k]]=k;
     }
 }
 
