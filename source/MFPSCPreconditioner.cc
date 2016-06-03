@@ -10,7 +10,7 @@ namespace implementation
     public:
       VectorType *dst;
 
-      const DDHandlerBase<dim> *ddh;
+      std::shared_ptr<DDHandlerBase<dim> > ddh;
     };
 
     template <int dim, typename VectorType, class number>
@@ -81,19 +81,19 @@ void MFPSCPreconditioner<dim, VectorType, number>::vmult_add (VectorType &dst,
     const VectorType &src) const
 {
   std::string section = "Smoothing @ level ";
-  section += std::to_string(data.ddh->get_level());
+  section += std::to_string(level);
   timer->enter_subsection(section);
 
   {
     implementation::WorkStream::Copy<dim, VectorType, number> copy_sample;
     copy_sample.dst = &dst;
-    copy_sample.ddh = data.ddh;
+    copy_sample.ddh = ddh;
 
     implementation::WorkStream::Scratch<dim, VectorType, number> scratch_sample;
     scratch_sample.src = &src;
     dealii::ConstraintMatrix dummy_constraints;
     dealii::MappingQ1<dim> dummy_mapping;
-    const dealii::DoFHandler<dim> &dof_handler      = data.ddh->get_dofh();
+    const dealii::DoFHandler<dim> &dof_handler      = ddh->get_dofh();
     const dealii::parallel::distributed::Triangulation<dim> *distributed_tria
       = dynamic_cast<const dealii::parallel::distributed::Triangulation<dim>* > (&(dof_handler.get_triangulation()));
     Assert(distributed_tria, dealii::ExcInternalError());
@@ -101,12 +101,12 @@ void MFPSCPreconditioner<dim, VectorType, number>::vmult_add (VectorType &dst,
 
     scratch_sample.system_matrix.set_timer(*MFPSCPreconditioner<dim, VectorType, number>::timer);
     scratch_sample.system_matrix.reinit (&dof_handler,&dummy_mapping, &dummy_constraints,
-                                         mpi_communicator, data.ddh->get_level());
+                                         mpi_communicator, level);
 
     const unsigned int queue = 2 * dealii::MultithreadInfo::n_threads();
     const unsigned int chunk_size = 1;
 
-    dealii::WorkStream::run(data.ddh->colorized_iterators(),
+    dealii::WorkStream::run(ddh->colorized_iterators(),
                             implementation::WorkStream::work<dim, VectorType, number>,
                             implementation::WorkStream::assemble<dim, VectorType, number>,
                             scratch_sample, copy_sample,

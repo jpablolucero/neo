@@ -12,7 +12,7 @@ namespace implementation
       unsigned int subdomain_idx;
       VectorType *dst;
 
-      const DDHandlerBase<dim> *ddh;
+      std::shared_ptr<DDHandlerBase<dim> > ddh;
     };
 
     template <int dim, typename VectorType, class number, bool same_diagonal>
@@ -79,13 +79,13 @@ void PSCPreconditioner<dim, VectorType, number, same_diagonal>::vmult_add (Vecto
     const VectorType &src) const
 {
   std::string section = "Smoothing @ level ";
-  section += std::to_string(data.ddh->get_level());
+  section += std::to_string(level);
   timer->enter_subsection(section);
 
   {
     implementation::WorkStream::Copy<dim, VectorType, number, same_diagonal> copy_sample;
     copy_sample.dst = &dst;
-    copy_sample.ddh = data.ddh;
+    copy_sample.ddh = ddh;
 
     implementation::WorkStream::Scratch<dim, VectorType, number, same_diagonal> scratch_sample;
     scratch_sample.src = &src;
@@ -93,7 +93,7 @@ void PSCPreconditioner<dim, VectorType, number, same_diagonal>::vmult_add (Vecto
     const unsigned int queue = 2 * dealii::MultithreadInfo::n_threads();
     const unsigned int chunk_size = 1;
 
-    dealii::WorkStream::run(data.ddh->colorized_iterators(),
+    dealii::WorkStream::run(ddh->colorized_iterators(),
                             implementation::WorkStream::work<dim, VectorType, number, same_diagonal>,
                             implementation::WorkStream::assemble<dim, VectorType, number, same_diagonal>,
                             scratch_sample, copy_sample,

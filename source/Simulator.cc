@@ -202,10 +202,9 @@ void Simulator<dim,same_diagonal,degree>::solve ()
 
   // Smoother setup
   typedef PSCPreconditioner<dim, LA::MPI::Vector, double, same_diagonal> Smoother;
+  //typedef MFPSCPreconditioner<dim, LA::MPI::Vector, double> Smoother;
   Smoother::timer = &timer;
 
-  dealii::MGLevelObject<DGDDHandlerCell<dim> > level_ddh;
-  level_ddh.resize(mg_matrix.min_level(), mg_matrix.max_level());
   dealii::MGLevelObject<typename Smoother::AdditionalData> smoother_data;
   smoother_data.resize(mg_matrix.min_level(), mg_matrix.max_level());
 
@@ -213,13 +212,12 @@ void Simulator<dim,same_diagonal,degree>::solve ()
        level <= mg_matrix.max_level();
        ++level)
     {
-      // init ddhandler
-      level_ddh[level].initialize(dof_handler, level);
-
       // setup smoother data
-      smoother_data[level].ddh = &(level_ddh[level]);
-      smoother_data[level].weight = 1.0;
+      smoother_data[level].dof_handler = &dof_handler;
+      smoother_data[level].level = level;
       smoother_data[level].mapping = &mapping;
+      smoother_data[level].weight = 1.0;
+      smoother_data[level].patch_type = Smoother::AdditionalData::cell_patches;
     }
 
   // SmootherSetup

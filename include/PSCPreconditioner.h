@@ -62,17 +62,27 @@ private:
   MatrixIntegrator<dim,same_diagonal>                 matrix_integrator;
 
   unsigned int level;
+
+  std::shared_ptr<DDHandlerBase<dim> > ddh;
 };
 
 template <int dim, typename VectorType, class number, bool same_diagonal>
 class PSCPreconditioner<dim, VectorType, number, same_diagonal>::AdditionalData
 {
 public:
-  AdditionalData() : ddh(0), weight(1.0), mapping(0) {}
+  AdditionalData() : dof_handler(0), level(-1), weight(1.0), mapping(0), patch_type(cell_patches) {}
 
-  const DDHandlerBase<dim> *ddh;
+  dealii::DoFHandler<dim> *dof_handler;
+  unsigned int level;
   double weight;
   const dealii::Mapping<dim> *mapping;
+
+  enum PatchType
+  {
+    cell_patches,
+    vertex_patches
+  };
+  PatchType patch_type;
 };
 
 template <int dim, typename VectorType, class number, bool same_diagonal>
@@ -80,15 +90,20 @@ template <class GlobalOperatorType>
 void PSCPreconditioner<dim, VectorType, number, same_diagonal>::initialize(const GlobalOperatorType & /*global_operator*/,
     const AdditionalData &data)
 {
-  Assert(data.ddh != 0, dealii::ExcInternalError());
+  Assert(data.dof_handler != 0, dealii::ExcInternalError());
+  Assert(data.level != -1, dealii::ExcInternalError());
   Assert(data.mapping != 0, dealii::ExcInternalError());
 
   this->data = data;
+  level = data.level;
+  const dealii::DoFHandler<dim> &dof_handler = *(data.dof_handler);
+  const dealii::FiniteElement<dim> &fe = dof_handler.get_fe();
 
-  level = data.ddh->get_level();
-
-  const dealii::FiniteElement<dim> &fe = data.ddh->get_dofh().get_fe();
-  const dealii::DoFHandler<dim> &dof_handler =data.ddh->get_dofh();
+  if (data.patch_type == AdditionalData::PatchType::cell_patches)
+    ddh.reset(new DGDDHandlerCell<dim>());
+  else
+    ddh.reset(new DGDDHandlerVertex<dim>());
+  ddh->initialize(dof_handler, level);
 
   const unsigned int n_gauss_points = fe.degree+1;
   info_box.initialize_gauss_quadrature(n_gauss_points,
@@ -106,7 +121,7 @@ void PSCPreconditioner<dim, VectorType, number, same_diagonal>::initialize(const
   info_box.initialize(fe, *(data.mapping), &(dof_handler.block_info()));
   dof_info.reset(new dealii::MeshWorker::DoFInfo<dim> (dof_handler.block_info()));
 
-  patch_inverses.resize(data.ddh->global_dofs_on_subdomain.size());
+  patch_inverses.resize(ddh->global_dofs_on_subdomain.size());
   //setup local matrices/inverses
   {
     timer->enter_subsection("LO::build_matrices");
@@ -152,17 +167,17 @@ void PSCPreconditioner<dim, VectorType, number, same_diagonal>::initialize(const
               real_patch_inverses[0](i, j) = dummy_matrix(i, j);
             }
         //assign to the smoother
-        for (unsigned int i=0; i<data.ddh->subdomain_to_global_map.size(); ++i)
+        for (unsigned int i=0; i<ddh->subdomain_to_global_map.size(); ++i)
           patch_inverses[i] = &real_patch_inverses[0];
       }
     else
       {
-        real_patch_inverses.resize(data.ddh->subdomain_to_global_map.size());
-        for (unsigned int i=0; i<data.ddh->subdomain_to_global_map.size(); ++i)
+        real_patch_inverses.resize(ddh->subdomain_to_global_map.size());
+        for (unsigned int i=0; i<ddh->subdomain_to_global_map.size(); ++i)
           {
-            build_matrix(data.ddh->subdomain_to_global_map[i],
-                         data.ddh->global_dofs_on_subdomain[i],
-                         data.ddh->all_to_unique[i],
+            build_matrix(ddh->subdomain_to_global_map[i],
+                         ddh->global_dofs_on_subdomain[i],
+                         ddh->all_to_unique[i],
                          real_patch_inverses[i]);
             patch_inverses[i] = &real_patch_inverses[i];
           }
@@ -174,7 +189,7 @@ void PSCPreconditioner<dim, VectorType, number, same_diagonal>::initialize(const
   for (unsigned int i=0; i<real_patch_inverses.size(); ++i)
     {
       //invert patch_matrix
-      /*std::cout << "level: " << data.ddh->get_level() << " "
+      /*std::cout << "level: " << ddh->get_level() << " "
                 << "original cell matrix " << i << ": "<< std::endl;
       real_patch_inverses[i].print(std::cout);*/
       real_patch_inverses[i].gauss_jordan();
