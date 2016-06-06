@@ -66,7 +66,7 @@ void Simulator<dim,same_diagonal,degree>::setup_system ()
 
   locally_owned_dofs = dof_handler.locally_owned_dofs();
 
-  std::cout << "locally owned dofs on process "
+  /*std::cout << "locally owned dofs on process "
             << dealii::Utilities::MPI::this_mpi_process(mpi_communicator)
             << std::endl;
   for (unsigned int l=0; l<triangulation.n_global_levels(); ++l)
@@ -79,13 +79,13 @@ void Simulator<dim,same_diagonal,degree>::setup_system ()
   std::cout << "n_elements(): "
             << dof_handler.locally_owned_dofs().n_elements()
             <<std::endl;
-  dof_handler.locally_owned_dofs().print(dealii::deallog);
+  dof_handler.locally_owned_dofs().print(dealii::deallog);*/
 
   dealii::DoFTools::extract_locally_relevant_dofs
   (dof_handler, locally_relevant_dofs);
-  std::cout << "locally relevant dofs on process "
+  /*std::cout << "locally relevant dofs on process "
             << dealii::Utilities::MPI::this_mpi_process(mpi_communicator) << " ";
-  locally_relevant_dofs.print(std::cout);
+  locally_relevant_dofs.print(std::cout);*/
 
   //constraints
   constraints.clear();
@@ -182,7 +182,6 @@ void Simulator<dim,same_diagonal,degree>::setup_multigrid ()
     {
       mg_matrix[level].set_timer(timer);
       mg_matrix[level].reinit(&dof_handler,&mapping,&constraints, mpi_communicator, level);
-      mg_matrix[level].build_matrix();
     }
 }
 
@@ -191,6 +190,7 @@ void Simulator<dim,same_diagonal,degree>::solve ()
 {
   timer.enter_subsection("solve::mg_initialization");
 #ifdef MG
+  mg_matrix[0].build_coarse_matrix();
   const LA::MPI::SparseMatrix &coarse_matrix = mg_matrix[0].get_coarse_matrix();
 
   dealii::SolverControl coarse_solver_control (dof_handler.n_dofs(0)*10, 1e-10, false, false);
@@ -201,105 +201,26 @@ void Simulator<dim,same_diagonal,degree>::solve ()
       id);
 
   // Smoother setup
-  typedef PSCPreconditioner<dim, LA::MPI::Vector, double> Smoother;
+  typedef PSCPreconditioner<dim, LA::MPI::Vector, double, same_diagonal> Smoother;
+  //typedef MFPSCPreconditioner<dim, LA::MPI::Vector, double> Smoother;
   Smoother::timer = &timer;
 
-  dealii::MGLevelObject<std::vector<dealii::FullMatrix<double> > > local_level_inverse;
-  local_level_inverse.resize(mg_matrix.min_level(), mg_matrix.max_level());
-  dealii::MGLevelObject<DGDDHandler<dim> > level_ddh;
-  level_ddh.resize(mg_matrix.min_level(), mg_matrix.max_level());
   dealii::MGLevelObject<typename Smoother::AdditionalData> smoother_data;
   smoother_data.resize(mg_matrix.min_level(), mg_matrix.max_level());
-
-  const unsigned int n = dof_handler.get_fe().n_dofs_per_cell();
-  std::vector<dealii::types::global_dof_index> first_level_dof_indices (n);
-  dealii::FullMatrix<double> local_matrix(n, n);
 
   for (unsigned int level = mg_matrix.min_level();
        level <= mg_matrix.max_level();
        ++level)
     {
-      // init ddhandler
-      level_ddh[level].initialize(dof_handler, level);
-      smoother_data[level].local_inverses.resize(level_ddh[level].size());
-
       // setup smoother data
-      smoother_data[level].ddh = &(level_ddh[level]);
+      smoother_data[level].dof_handler = &dof_handler;
+      smoother_data[level].level = level;
+      smoother_data[level].mapping = &mapping;
       smoother_data[level].weight = 1.0;
-
-      if (same_diagonal)
-        {
-	  local_level_inverse[level].resize(1, dealii::FullMatrix<double>(n));	  
-	  dealii::Triangulation<dim> local_triangulation;
-	  dealii::DoFHandler<dim> local_dof_handler(local_triangulation);
-	  dealii::GridGenerator::hyper_cube (local_triangulation);
-	  if (level != 0) local_triangulation.refine_global(1);
-	  local_dof_handler.distribute_dofs (fe);
-	  local_dof_handler.initialize_local_block_info();
-	  dealii::MeshWorker::IntegrationInfoBox<dim> local_info_box;
-	  const unsigned int local_n_gauss_points = local_dof_handler.get_fe().degree+1;
-	  local_info_box.initialize_gauss_quadrature(local_n_gauss_points,
-						     local_n_gauss_points,
-						     local_n_gauss_points);
-	  local_info_box.initialize_update_flags();
-	  dealii::UpdateFlags local_update_flags = dealii::update_quadrature_points |
-	    dealii::update_values |
-	    dealii::update_gradients;
-	  local_info_box.add_update_flags(local_update_flags, true, true, true, true);
-	  local_info_box.initialize(fe, mapping, &(local_dof_handler.block_info()));
-	  dealii::MeshWorker::DoFInfo<dim> local_dof_info(local_dof_handler.block_info());
-	  dealii::FullMatrix<double> dummy_matrix(local_dof_handler.n_dofs(),local_dof_handler.n_dofs());
-	  dealii::MeshWorker::Assembler::MatrixSimple<dealii::FullMatrix<double> >
-	    local_assembler;
-	  local_assembler.initialize(dummy_matrix);
-	  MatrixIntegrator<dim,false> local_integrator ;	  
-	  dealii::MeshWorker::integration_loop<dim, dim>
-	    (local_dof_handler.begin_active(), 
-	     local_dof_handler.end(),
-	     local_dof_info, local_info_box, 
-	     local_integrator,local_assembler);
-	  for (unsigned int i = 0; i < n; ++i)
-	    for (unsigned int j = 0; j < n; ++j)
-	      {
-		local_matrix(i, j) = dummy_matrix(i, j);
-	      }
-	  //invert and assign to the smoother
-	  local_level_inverse[level][0].invert(local_matrix);
-	  for (unsigned int i=0; i<level_ddh[level].size(); ++i)
-	    smoother_data[level].local_inverses[i]=&(local_level_inverse[level][0]);	  
-	}
-      else
-	{
-	  //just store information for locally owned cells
-	  local_level_inverse[level].resize(level_ddh[level].size(), dealii::FullMatrix<double>(n));
-          unsigned int subdomain_idx = 0;
-          for (auto cell = dof_handler.begin_mg(level);
-               cell != dof_handler.end_mg(level);
-               ++cell)
-            if (cell->level_subdomain_id()==triangulation.locally_owned_subdomain())
-              {
-                cell->get_active_or_mg_dof_indices (first_level_dof_indices);
-                local_matrix = 0.;
-                for (unsigned int i = 0; i < n; ++i)
-                  for (unsigned int j = 0; j < n; ++j)
-                    {
-                      const dealii::types::global_dof_index i1 = first_level_dof_indices [i];
-                      const dealii::types::global_dof_index i2 = first_level_dof_indices [j];
-                      local_matrix(i, j) = mg_matrix[level](i1, i2);
-                    }
-
-                local_level_inverse[level][subdomain_idx].invert(local_matrix);
-
-                smoother_data[level].local_inverses[subdomain_idx]
-                  =&(local_level_inverse[level][subdomain_idx]);
-                ++subdomain_idx;
-              }
-          AssertThrow(level_ddh[level].size()==subdomain_idx,
-                      dealii::ExcDimensionMismatch(level_ddh[level].size(), subdomain_idx));
-        }
+      smoother_data[level].patch_type = Smoother::AdditionalData::cell_patches;
     }
 
-// SmootherSetup
+  // SmootherSetup
   dealii::MGSmootherPrecondition<SystemMatrixType, Smoother, LA::MPI::Vector> mg_smoother;
   mg_smoother.initialize(mg_matrix, smoother_data);
   mg_smoother.set_steps(smoothing_steps);
@@ -310,6 +231,7 @@ void Simulator<dim,same_diagonal,degree>::solve ()
   dealii::Multigrid<LA::MPI::Vector> mg(dof_handler, mgmatrix,
                                         mg_coarse, mg_transfer,
                                         mg_smoother, mg_smoother);
+//  mg.set_debug(10);
   mg.set_minlevel(mg_matrix.min_level());
   mg.set_maxlevel(mg_matrix.max_level());
   dealii::PreconditionMG<dim, LA::MPI::Vector,
@@ -369,7 +291,7 @@ void Simulator<dim, same_diagonal, degree>::output_results (const unsigned int c
   data_out.build_patches (fe.degree);
 
   const unsigned int n_proc = dealii::Utilities::MPI::n_mpi_processes(mpi_communicator);
-  if (n_proc >1)
+  if (n_proc>1)
     {
       const int n_digits = dealii::Utilities::needed_digits(n_proc);
       std::ofstream output

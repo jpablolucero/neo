@@ -4,38 +4,29 @@ namespace implementation
 {
   namespace WorkStream
   {
-    template <int dim, class IT>
-    std::vector<dealii::types::global_dof_index>
-    dd_conflict_indices(const DDHandlerBase<dim> &ddh,
-                        const IT &iterator)
-    {
-      const unsigned int subdomain_idx = *iterator;
-      return ddh.global_dof_indices_on_subdomain(subdomain_idx);
-    }
-
-    template <int dim, typename VectorType, class number>
+    template <int dim, typename VectorType, class number, bool same_diagonal>
     class Copy
     {
     public:
-      dealii::Vector<number> local_solution;
+      dealii::Vector<number>  local_solution;
       unsigned int subdomain_idx;
       VectorType *dst;
 
-      const DDHandlerBase<dim> *ddh;
+      std::shared_ptr<DDHandlerBase<dim> > ddh;
     };
 
-    template <int dim, typename VectorType, class number>
+    template <int dim, typename VectorType, class number, bool same_diagonal>
     class Scratch
     {
     public:
-      dealii::Vector<number> local_src;
+      const std::vector<dealii::FullMatrix<double>* > *local_inverses;
 
+      dealii::Vector<number>  local_src;
       const VectorType *src;
-      const std::vector<const dealii::FullMatrix<double>* > *local_inverses;
     };
 
-    template <int dim, typename VectorType, class number>
-    void assemble(const Copy<dim, VectorType, number> &copy)
+    template <int dim, typename VectorType, class number, bool same_diagonal>
+    void assemble(const Copy<dim, VectorType, number, same_diagonal> &copy)
     {
       // write back to global vector
       copy.ddh->prolongate_add(*(copy.dst),
@@ -43,57 +34,31 @@ namespace implementation
                                copy.subdomain_idx);
     }
 
-    template <int dim, typename VectorType, class number>
+    template <int dim, typename VectorType, class number, bool same_diagonal>
     void work(const std::vector<unsigned int>::const_iterator &iterator,
-              Scratch<dim, VectorType, number> &scratch, Copy<dim, VectorType, number> &copy)
+              Scratch<dim, VectorType, number, same_diagonal> &scratch, Copy<dim, VectorType, number, same_diagonal> &copy)
     {
-      unsigned int subdomain_idx = *iterator;
-      copy.subdomain_idx = subdomain_idx;
+      const unsigned int subdomain_idx = *iterator;
       const DDHandlerBase<dim> &ddh = *(copy.ddh);
+
+      copy.subdomain_idx = subdomain_idx;
       ddh.reinit(scratch.local_src, subdomain_idx);
       ddh.reinit(copy.local_solution, subdomain_idx);
       // get local contributions and copy to dealii vector
       ddh.restrict_add(scratch.local_src, *(scratch.src), subdomain_idx);
-      (*scratch.local_inverses)[subdomain_idx]->vmult(copy.local_solution,
-                                                      scratch.local_src);
-    }
-
-    template <int dim, typename VectorType, class number>
-    void parallel_loop(VectorType *dst,
-                       const VectorType *src,
-                       const DDHandlerBase<dim> *ddh,
-                       const std::vector<const dealii::FullMatrix<double>* > *
-                       local_inverses)
-    {
-      Copy<dim, VectorType, number> copy_sample;
-      copy_sample.dst = dst;
-      copy_sample.ddh = ddh;
-
-      Scratch<dim, VectorType, number> scratch_sample;
-      scratch_sample.src = src;
-      scratch_sample.local_inverses = local_inverses;
-
-      const unsigned int queue = 2 * dealii::MultithreadInfo::n_threads();
-      const unsigned int chunk_size = 1;
-
-      dealii::WorkStream::run(ddh->colorized_iterators(),
-                              work<dim, VectorType, number>,
-                              assemble<dim, VectorType, number>,
-                              scratch_sample, copy_sample,
-                              queue,
-                              chunk_size);
+      (*(scratch.local_inverses))[subdomain_idx]->vmult(copy.local_solution,
+                                                        scratch.local_src);
     }
   }
 }
 
-template <int dim, typename VectorType, class number>
-PSCPreconditioner<dim, VectorType, number>::PSCPreconditioner()
+template <int dim, typename VectorType, class number, bool same_diagonal>
+PSCPreconditioner<dim, VectorType, number, same_diagonal>::PSCPreconditioner()
 {}
 
-
-template <int dim, typename VectorType, class number>
-void PSCPreconditioner<dim, VectorType, number>::vmult (VectorType &dst,
-                                                        const VectorType &src) const
+template <int dim, typename VectorType, class number, bool same_diagonal>
+void PSCPreconditioner<dim, VectorType, number, same_diagonal>::vmult (VectorType &dst,
+    const VectorType &src) const
 {
   dst = 0;
   vmult_add(dst, src);
@@ -101,35 +66,51 @@ void PSCPreconditioner<dim, VectorType, number>::vmult (VectorType &dst,
   AssertIsFinite(dst.l2_norm());
 }
 
-template <int dim, typename VectorType, class number>
-void PSCPreconditioner<dim, VectorType, number>::Tvmult (VectorType &dst,
-                                                         const VectorType &src) const
+template <int dim, typename VectorType, class number, bool same_diagonal>
+void PSCPreconditioner<dim, VectorType, number, same_diagonal>::Tvmult (VectorType &/*dst*/,
+    const VectorType &/*src*/) const
 {
-  dst = 0;
-  Tvmult_add(dst, src);
-  dst.compress(dealii::VectorOperation::add);
+  // TODO use transpose of local inverses
+  AssertThrow(false, dealii::ExcNotImplemented());
 }
 
-template <int dim, typename VectorType, class number>
-void PSCPreconditioner<dim, VectorType, number>::vmult_add (VectorType &dst,
-                                                            const VectorType &src) const
+template <int dim, typename VectorType, class number, bool same_diagonal>
+void PSCPreconditioner<dim, VectorType, number, same_diagonal>::vmult_add (VectorType &dst,
+    const VectorType &src) const
 {
   std::string section = "Smoothing @ level ";
-  section += std::to_string(data.ddh->get_level());
+  section += std::to_string(level);
   timer->enter_subsection(section);
 
-  implementation::WorkStream::parallel_loop<dim, VectorType, number>
-  (&dst, &src, data.ddh, &(data.local_inverses));
+  {
+    implementation::WorkStream::Copy<dim, VectorType, number, same_diagonal> copy_sample;
+    copy_sample.dst = &dst;
+    copy_sample.ddh = ddh;
+
+    implementation::WorkStream::Scratch<dim, VectorType, number, same_diagonal> scratch_sample;
+    scratch_sample.src = &src;
+    scratch_sample.local_inverses = &patch_inverses;
+    const unsigned int queue = 2 * dealii::MultithreadInfo::n_threads();
+    const unsigned int chunk_size = 1;
+
+    dealii::WorkStream::run(ddh->colorized_iterators(),
+                            implementation::WorkStream::work<dim, VectorType, number, same_diagonal>,
+                            implementation::WorkStream::assemble<dim, VectorType, number, same_diagonal>,
+                            scratch_sample, copy_sample,
+                            queue,
+                            chunk_size);
+  }
+
   dst *= data.weight;
   timer->leave_subsection();
 }
 
-template <int dim, typename VectorType, class number>
-void PSCPreconditioner<dim, VectorType, number>::Tvmult_add (VectorType &dst,
-    const VectorType &src) const
+template <int dim, typename VectorType, class number, bool same_diagonal>
+void PSCPreconditioner<dim, VectorType, number, same_diagonal>::Tvmult_add (VectorType &/*dst*/,
+    const VectorType &/*src*/) const
 {
   // TODO use transpose of local inverses
-  vmult_add(dst, src);
+  AssertThrow(false, dealii::ExcNotImplemented());
 }
 
 #include "PSCPreconditioner.inst"

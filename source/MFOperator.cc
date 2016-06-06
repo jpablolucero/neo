@@ -9,6 +9,7 @@ MFOperator<dim, fe_degree, same_diagonal>::MFOperator()
   mapping = nullptr;
   constraints = nullptr;
   timer = nullptr;
+  use_cell_range = false;
 }
 
 template <int dim, int fe_degree, bool same_diagonal>
@@ -35,8 +36,21 @@ void MFOperator<dim, fe_degree, same_diagonal>::clear()
 
 
 template <int dim, int fe_degree, bool same_diagonal>
+MFOperator<dim, fe_degree, same_diagonal>::MFOperator(const MFOperator &operator_)
+  : Subscriptor(operator_)
+{
+  timer = operator_.timer;
+  this->reinit(operator_.dof_handler,
+               operator_.mapping,
+               operator_.constraints,
+               operator_.mpi_communicator,
+               operator_.level);
+}
+
+
+template <int dim, int fe_degree, bool same_diagonal>
 void MFOperator<dim, fe_degree, same_diagonal>::reinit
-(dealii::DoFHandler<dim> *dof_handler_,
+(const dealii::DoFHandler<dim> *dof_handler_,
  const dealii::MappingQ1<dim> *mapping_,
  const dealii::ConstraintMatrix *constraints_,
  const MPI_Comm &mpi_communicator_,
@@ -82,86 +96,46 @@ void MFOperator<dim, fe_degree, same_diagonal>::reinit
                             mpi_communicator_);
 #endif
 
-  std::vector<std::vector<ITERATOR> > all_iterators(1); 
-  for (ITERATOR p=dof_handler->begin_mg(level); p!=dof_handler->end_mg(level); ++p)
-    all_iterators[0].push_back(p);
+  //TODO possibly colorize iterators, assume thread-safety for the moment
+  std::vector<std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> > all_iterators(1);
+  for (auto p=dof_handler->begin_mg(level); p!=dof_handler->end_mg(level); ++p)
+    {
+      const dealii::types::subdomain_id csid = (p->is_level_cell())
+                                               ? p->level_subdomain_id()
+                                               : p->subdomain_id();
+      if (csid == p->get_triangulation().locally_owned_subdomain())
+        all_iterators[0].push_back(p);
+    }
   colored_iterators = std::move(all_iterators);
-  
+
   timer->leave_subsection();
 }
 
 template <int dim, int fe_degree, bool same_diagonal>
-void MFOperator<dim, fe_degree, same_diagonal>::build_matrix ()
+void MFOperator<dim, fe_degree, same_diagonal>::set_cell_range
+(const std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> &cell_range_)
 {
+  use_cell_range = true;
+  cell_range = &cell_range_;
+  colored_iterators[0] = *cell_range;
+}
+
+template <int dim, int fe_degree, bool same_diagonal>
+void MFOperator<dim, fe_degree, same_diagonal>::build_coarse_matrix()
+{
+  Assert(level == 0, dealii::ExcInternalError());
   Assert(dof_handler != 0, dealii::ExcInternalError());
 
-  timer->enter_subsection("LO::build_matrix");
   info_box.initialize(*fe, *mapping, &(dof_handler->block_info()));
   dealii::MGLevelObject<LA::MPI::SparseMatrix> mg_matrix ;
   mg_matrix.resize(level,level);
 
-  const unsigned int n = dof_handler->get_fe().n_dofs_per_cell();
-  std::vector<dealii::types::global_dof_index> level_dof_indices (n);
   dealii::IndexSet locally_relevant_level_dofs;
   dealii::DoFTools::extract_locally_relevant_level_dofs(*dof_handler,level,locally_relevant_level_dofs);
   dealii::DynamicSparsityPattern dsp(locally_relevant_level_dofs);
 
-  bool first_cell_found = false;
-  typename dealii::DoFHandler<dim>::level_cell_iterator first_cell;
-
-  if (level == 0)
-    {
-      //for the coarse matrix, we want to assemble always everything
-      dealii::MGTools::make_flux_sparsity_pattern(*dof_handler,dsp,level);
-      first_cell_found = true;
-      first_cell = dof_handler->begin_mg(0);
-    }
-  else
-    {
-      //we create a flux_sparsity_pattern without couplings between cells
-      for (auto cell = dof_handler->begin_mg(level); cell != dof_handler->end_mg(level); ++cell)
-        if (cell->level_subdomain_id() == dof_handler->get_triangulation().locally_owned_subdomain())
-          {
-            if (!first_cell_found)
-              {
-                first_cell_found=true;
-                first_cell=cell;
-              }
-
-            cell->get_active_or_mg_dof_indices (level_dof_indices);
-            for (unsigned int i = 0; i < n; ++i)
-              for (unsigned int j = 0; j < n; ++j)
-                {
-                  const dealii::types::global_dof_index i1 = level_dof_indices [i];
-                  const dealii::types::global_dof_index i2 = level_dof_indices [j];
-                  dsp.add(i1, i2);
-                }
-            if (same_diagonal)
-              {
-                //if we use just one cell, we only need to allow for storing one cell
-                break;
-              }
-            else
-              {
-                // Loop over all interior neighbors
-                for (unsigned int face = 0; face < dealii::GeometryInfo<dim>::faces_per_cell; ++face)
-                  {
-                    if ( (! cell->at_boundary(face)) &&
-                         (static_cast<unsigned int>(cell->neighbor_level(face)) == level) )
-                      {
-                        const typename dealii::DoFHandler<dim>::level_cell_iterator neighbor = cell->neighbor(face);
-                        neighbor->get_active_or_mg_dof_indices (level_dof_indices);
-                        if (neighbor->is_locally_owned_on_level() == false)
-                          for (unsigned int i=0; i<n; ++i)
-                            for (unsigned int j=0; j<n; ++j)
-                              dsp.add (level_dof_indices[i], level_dof_indices[j]);
-                      }
-                  }
-              }
-          }
-    }
-  AssertThrow(first_cell_found || dof_handler->locally_owned_mg_dofs(level).n_elements()==0,
-              dealii::ExcInternalError());
+  //for the coarse matrix, we want to assemble always everything
+  dealii::MGTools::make_flux_sparsity_pattern(*dof_handler,dsp,level);
 
 #if PARALLEL_LA == 0
   sp.copy_from (dsp);
@@ -172,35 +146,20 @@ void MFOperator<dim, fe_degree, same_diagonal>::build_matrix ()
                           dsp,mpi_communicator);
 #endif
 
-  if (first_cell_found)
-    {
-      dealii::MeshWorker::Assembler::MGMatrixSimple<LA::MPI::SparseMatrix> assembler;
-      assembler.initialize(mg_matrix);
+  dealii::MeshWorker::Assembler::MGMatrixSimple<LA::MPI::SparseMatrix> assembler;
+  assembler.initialize(mg_matrix);
 #ifdef CG
-      assembler.initialize(constraints);
+  assembler.initialize(constraints);
 #endif
 
-      typename dealii::DoFHandler<dim>::level_cell_iterator end_cell;
-      if (!same_diagonal || level==0)
-        end_cell = dof_handler->end_mg(level);
-      else
-        {
-          end_cell = first_cell;
-          ++end_cell;
-        }
-      dealii::MeshWorker::integration_loop<dim, dim> (first_cell,
-                                                      end_cell,
-                                                      *dof_info, info_box,
-                                                      matrix_integrator, assembler);
-    }
+  dealii::colored_loop<dim, dim> (colored_iterators, *dof_info, info_box, matrix_integrator, assembler);
+
   mg_matrix[level].compress(dealii::VectorOperation::add);
 #if PARALLEL_LA==0
-  matrix = std::move(mg_matrix[level]);
+  coarse_matrix = std::move(mg_matrix[level]);
 #else
-  matrix.copy_from(mg_matrix[level]);
+  coarse_matrix.copy_from(mg_matrix[level]);
 #endif
-
-  timer->leave_subsection();
 }
 
 template <int dim, int fe_degree, bool same_diagonal>
@@ -250,18 +209,28 @@ void MFOperator<dim,fe_degree,same_diagonal>::vmult_add (LA::MPI::Vector &dst,
   timer->leave_subsection();
 
   timer->enter_subsection("LO::IntegrationLoop ("+ dealii::Utilities::int_to_string(level)+ ")");
-  internal::colored_loop<dim,dim,ITERATOR,DOFINFO,INFOBOX,INTEGRATOR,ASSEMBLER>
-    (colored_iterators,
-     *dof_info, info_box,
-     residual_integrator,
-     assembler);
-  timer->leave_subsection();
+  {
+    dealii::MeshWorker::LoopControl lctrl;
+    //TODO possibly colorize iterators, assume thread-safety for the moment
+    if (use_cell_range)
+      {
+        lctrl.faces_to_ghost = dealii::MeshWorker::LoopControl::both;
+        lctrl.ghost_cells = true;
+        dealii::colored_loop<dim, dim> (colored_iterators, *dof_info, info_box, residual_integrator, assembler,lctrl, colored_iterators[0]);
+      }
+    else
+      {
+        dealii::colored_loop<dim, dim> (colored_iterators, *dof_info, info_box, residual_integrator, assembler,lctrl);
+      }
+  }
+
+timer->leave_subsection();
 }
 
 template <int dim, int fe_degree, bool same_diagonal>
 void MFOperator<dim,fe_degree, same_diagonal>::Tvmult_add (LA::MPI::Vector &dst,
                                                            const LA::MPI::Vector &src) const
-{  
+{
   vmult_add(dst, src);
 }
 

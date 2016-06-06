@@ -2,9 +2,16 @@
 #define PSCPRECONDITIONER_INST
 #include <GenericLinearAlgebra.h>
 
-template class PSCPreconditioner<2, LA::MPI::Vector, double>;
-template class PSCPreconditioner<2, LA::MPI::Vector, float>;
+template class PSCPreconditioner<2, LA::MPI::Vector, double, true>;
+template class PSCPreconditioner<2, LA::MPI::Vector, float, true>;
 
-template class PSCPreconditioner<3, LA::MPI::Vector, double>;
-template class PSCPreconditioner<3, LA::MPI::Vector, float>;
+template class PSCPreconditioner<3, LA::MPI::Vector, double, true>;
+template class PSCPreconditioner<3, LA::MPI::Vector, float, true>;
+
+template class PSCPreconditioner<2, LA::MPI::Vector, double, false>;
+template class PSCPreconditioner<2, LA::MPI::Vector, float, false>;
+
+template class PSCPreconditioner<3, LA::MPI::Vector, double, false>;
+template class PSCPreconditioner<3, LA::MPI::Vector, float, false>;
+
 #endif // PSCPRECONDITIONER_INST
