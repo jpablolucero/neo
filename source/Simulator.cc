@@ -15,7 +15,7 @@ Simulator<dim,same_diagonal,degree>::Simulator (dealii::TimerOutput &timer_,
 #ifdef CG
   fe(dealii::FE_Q<dim>(degree),1),
 #else
-  fe(dealii::FE_DGQ<dim>(degree),1),
+  fe(dealii::FESystem<dim>(dealii::FE_DGQ<dim>(degree),1),1),
 #endif
   reference_function(fe.n_components()),
   dof_handler (triangulation),
