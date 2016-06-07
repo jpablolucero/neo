@@ -194,11 +194,11 @@ void ResidualIntegrator<dim>::boundary(dealii::MeshWorker::DoFInfo<dim> &dinfo,
   const auto &src = info.values[0];
   typename std::remove_reference<decltype(info.values[0])>::type bdata_values;
   typename std::remove_reference<decltype(info.values[0])>::type coeffs;
-  for (unsigned int b=0; b<n_blocks; ++b)
+  for (auto b=0; b<n_blocks; ++b)
     {
-      const dealii::FEValuesBase<dim> &fev = info.fe_values(dinfo.block_info->base_element(b));
-      const unsigned int deg = fev.get_fe().tensor_degree();
-      const unsigned int n_quads = fev.n_quadrature_points;
+      const auto &fev = info.fe_values(dinfo.block_info->base_element(b));
+      const auto deg = fev.get_fe().tensor_degree();
+      const auto n_quads = fev.n_quadrature_points;
       const auto n_components = fev.get_fe().n_components();
       coeffs.resize(n_components);
       unsigned int c = 0;
