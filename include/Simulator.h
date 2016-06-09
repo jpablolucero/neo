@@ -10,6 +10,7 @@
 #include <deal.II/distributed/tria.h>
 #include <deal.II/dofs/dof_handler.h>
 #include <deal.II/dofs/dof_tools.h>
+#include <deal.II/fe/fe_dgp.h>
 #include <deal.II/fe/fe_dgq.h>
 #include <deal.II/fe/mapping_q1.h>
 #include <deal.II/fe/fe_system.h>
@@ -19,6 +20,7 @@
 #include <deal.II/lac/full_matrix.h>
 #include <deal.II/lac/precondition.h>
 #include <deal.II/lac/solver_cg.h>
+#include <deal.II/lac/solver_gmres.h>
 #include <deal.II/lac/solver_control.h>
 #include <deal.II/lac/vector.h>
 #include <deal.II/lac/precondition_block.h>

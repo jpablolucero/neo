@@ -12,6 +12,7 @@
 #include <deal.II/base/vector_slice.h>
 
 #include <Diffusion.h>
+#include <Transport.h>
 #include <EquationData.h>
 
 template <int dim,bool same_diagonal=true>

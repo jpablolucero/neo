@@ -3,7 +3,14 @@
 
 #include <deal.II/base/function.h>
 #include <deal.II/base/exceptions.h>
+#include <deal.II/base/subscriptor.h>
+#include <deal.II/base/logstream.h>
+#include <deal.II/base/quadrature.h>
+#include <deal.II/base/parameter_handler.h>
+#include <deal.II/lac/full_matrix.h>
 
+#include <string>
+#include <fstream>
 #include <vector>
 
 template <int dim>
@@ -41,6 +48,14 @@ public:
 
   virtual double laplacian(const dealii::Point<dim> &p,
                            const unsigned int /*component = 0*/) const;
+};
+
+template <int dim>
+class Angle :
+  public dealii::Quadrature<dim>
+{
+public:
+  Angle(const std::string& filename);
 };
 
 #ifdef HEADER_IMPLEMENTATION

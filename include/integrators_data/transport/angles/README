@@ -1,0 +1,19 @@
+Files with angular quadrature formulas.
+
+The formulas are generated with Jean Ragua's and Richard Sanchez' code.
+
+TODO: Documentation on parameters for the formulas.
+
+The file structure is as follows:
+
+1. (int d) space dimension of the formula
+2. (int n) number of quadrature points
+3. (int m) number of moments (the other dimension of the matrices M
+   and D)
+4. (double^d double) For each quadrature point the coordinates and the
+   quadrature weight
+5. (double^(n times m)) The matrix M
+6. (double^(m times n)) The matrix D
+
+The file names are DdPnKm.angles, where d, n, and m are the numbers in
+items 1 to 3 above.

@@ -76,7 +76,36 @@ ReferenceFunction<dim>::laplacian(const dealii::Point<dim> &p,
   return return_value;
 }
 
+template <int dim>
+Angle<dim>::Angle(const std::string& filename)
+{
+  std::ifstream file(filename.c_str());
+  AssertThrow (file.is_open(), dealii::ExcIO());
+
+  unsigned int filedim, n_points, n_moments;
+  file >> filedim;
+  file >> n_points;
+  file >> n_moments;
+
+  AssertThrow(filedim == dim, dealii::ExcDimensionMismatch(filedim,dim));
+
+  std::vector<dealii::Point<dim> > points(n_points);
+  std::vector<double> weights(n_points, 0.);
+
+  for (unsigned int i=0; i<points.size(); ++i)
+    {
+      for (unsigned int d=0; d<filedim; ++d)
+	file >> points[i](d);
+      file >> weights[i];
+    }
+
+  AssertThrow(weights[n_points-1] != 0., dealii::ExcIO());
+  dealii::Quadrature<dim>::initialize(points, weights);
+}
+
 template class Coefficient<2>;
 template class Coefficient<3>;
 template class ReferenceFunction<2>;
 template class ReferenceFunction<3>;
+template class Angle<2>;
+template class Angle<3>;
