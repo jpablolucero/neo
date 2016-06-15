@@ -2,6 +2,8 @@
 #define PSCPRECONDITIONER_H
 
 #include <deal.II/base/timer.h>
+#include <deal.II/base/thread_management.h>
+#include <deal.II/base/multithread_info.h>
 #include <deal.II/lac/vector.h>
 #include <deal.II/lac/full_matrix.h>
 #include <deal.II/dofs/dof_handler.h>
@@ -173,27 +175,36 @@ void PSCPreconditioner<dim, VectorType, number, same_diagonal>::initialize(const
     else
       {
         real_patch_inverses.resize(ddh->subdomain_to_global_map.size());
-        for (unsigned int i=0; i<ddh->subdomain_to_global_map.size(); ++i)
-          {
-            build_matrix(ddh->subdomain_to_global_map[i],
-                         ddh->global_dofs_on_subdomain[i],
-                         ddh->all_to_unique[i],
-                         real_patch_inverses[i]);
-            patch_inverses[i] = &real_patch_inverses[i];
-          }
+        for (unsigned int i=0; i<=ddh->subdomain_to_global_map.size()/dealii::MultithreadInfo::n_threads(); ++i)
+	  {
+	    dealii::Threads::ThreadGroup<> threads;
+	    for (unsigned int j=i*dealii::MultithreadInfo::n_threads(); 
+		 (j<(i+1)*dealii::MultithreadInfo::n_threads())and(j<ddh->subdomain_to_global_map.size()) ; ++j)
+	      {
+		threads += dealii::Threads::new_thread([j,this](){
+		    build_matrix(ddh->subdomain_to_global_map[j],
+				 ddh->global_dofs_on_subdomain[j],
+				 ddh->all_to_unique[j],
+				 real_patch_inverses[j]);
+		  });
+		patch_inverses[j] = &real_patch_inverses[j];
+	      }
+	    threads.join_all ();
+	  }
       }
     timer->leave_subsection();
   }
-
-  // now invert actually
-  for (unsigned int i=0; i<real_patch_inverses.size(); ++i)
+  for (unsigned int i=0; i<=real_patch_inverses.size()/dealii::MultithreadInfo::n_threads(); ++i)
     {
-      //invert patch_matrix
-      /*std::cout << "level: " << ddh->get_level() << " "
-                << "original cell matrix " << i << ": "<< std::endl;
-      real_patch_inverses[i].print(std::cout);*/
-      real_patch_inverses[i].gauss_jordan();
-    }
+      dealii::Threads::ThreadGroup<> threads;
+      for (unsigned int j=i*dealii::MultithreadInfo::n_threads(); 
+  	   (j<(i+1)*dealii::MultithreadInfo::n_threads())and(j<real_patch_inverses.size()) ; ++j)
+  	{
+  	  threads += dealii::Threads::new_thread([j,this](){ 
+  	      real_patch_inverses[j].gauss_jordan();});
+  	}
+      threads.join_all ();
+    } 
 }
 
 template <int dim, typename VectorType, class number, bool same_diagonal>
