@@ -98,7 +98,7 @@ void MFOperator<dim, fe_degree, same_diagonal>::reinit
   //TODO possibly colorize iterators, assume thread-safety for the moment
   std::vector<std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> > 
     all_iterators(static_cast<unsigned int>(std::pow(2,dim)));
-  auto i = 0 ;
+  auto i = 1 ;
   for (auto p=dof_handler->begin_mg(level); p!=dof_handler->end_mg(level); ++p)
     {
       const dealii::types::subdomain_id csid = (p->is_level_cell())
@@ -106,8 +106,9 @@ void MFOperator<dim, fe_degree, same_diagonal>::reinit
                                                : p->subdomain_id();
       if (csid == p->get_triangulation().locally_owned_subdomain())
 	{
-	  all_iterators[i].push_back(p);
+	  all_iterators[i-1].push_back(p);
 	  i = i % static_cast<unsigned int>(std::pow(2,dim)) ;
+	  ++i;
 	}
     }
   colored_iterators = std::move(all_iterators);
