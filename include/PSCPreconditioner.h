@@ -176,35 +176,38 @@ void PSCPreconditioner<dim, VectorType, number, same_diagonal>::initialize(const
       {
         real_patch_inverses.resize(ddh->subdomain_to_global_map.size());
         for (unsigned int i=0; i<=ddh->subdomain_to_global_map.size()/dealii::MultithreadInfo::n_threads(); ++i)
-	  {
-	    dealii::Threads::ThreadGroup<> threads;
-	    for (unsigned int j=i*dealii::MultithreadInfo::n_threads(); 
-		 (j<(i+1)*dealii::MultithreadInfo::n_threads())and(j<ddh->subdomain_to_global_map.size()) ; ++j)
-	      {
-		threads += dealii::Threads::new_thread([j,this](){
-		    build_matrix(ddh->subdomain_to_global_map[j],
-				 ddh->global_dofs_on_subdomain[j],
-				 ddh->all_to_unique[j],
-				 real_patch_inverses[j]);
-		  });
-		patch_inverses[j] = &real_patch_inverses[j];
-	      }
-	    threads.join_all ();
-	  }
+          {
+            dealii::Threads::ThreadGroup<> threads;
+            for (unsigned int j=i*dealii::MultithreadInfo::n_threads();
+                 (j<(i+1)*dealii::MultithreadInfo::n_threads())and(j<ddh->subdomain_to_global_map.size()) ; ++j)
+              {
+                threads += dealii::Threads::new_thread([j,this]()
+                {
+                  build_matrix(ddh->subdomain_to_global_map[j],
+                               ddh->global_dofs_on_subdomain[j],
+                               ddh->all_to_unique[j],
+                               real_patch_inverses[j]);
+                });
+                patch_inverses[j] = &real_patch_inverses[j];
+              }
+            threads.join_all ();
+          }
       }
     timer->leave_subsection();
   }
   for (unsigned int i=0; i<=real_patch_inverses.size()/dealii::MultithreadInfo::n_threads(); ++i)
     {
       dealii::Threads::ThreadGroup<> threads;
-      for (unsigned int j=i*dealii::MultithreadInfo::n_threads(); 
-  	   (j<(i+1)*dealii::MultithreadInfo::n_threads())and(j<real_patch_inverses.size()) ; ++j)
-  	{
-  	  threads += dealii::Threads::new_thread([j,this](){ 
-  	      real_patch_inverses[j].gauss_jordan();});
-  	}
+      for (unsigned int j=i*dealii::MultithreadInfo::n_threads();
+           (j<(i+1)*dealii::MultithreadInfo::n_threads())and(j<real_patch_inverses.size()) ; ++j)
+        {
+          threads += dealii::Threads::new_thread([j,this]()
+          {
+            real_patch_inverses[j].gauss_jordan();
+          });
+        }
       threads.join_all ();
-    } 
+    }
 }
 
 template <int dim, typename VectorType, class number, bool same_diagonal>
@@ -222,9 +225,6 @@ void PSCPreconditioner<dim, VectorType, number, same_diagonal>::build_matrix
 
   Assembler::MGMatrixSimpleMapped<dealii::FullMatrix<double> > assembler;
   assembler.initialize(mg_matrix);
-#ifdef CG
-  assembler.initialize(constraints);
-#endif
   assembler.initialize(all_to_unique);
 
   //now assemble everything

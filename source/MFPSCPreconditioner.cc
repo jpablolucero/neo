@@ -49,7 +49,12 @@ namespace implementation
       const DDHandlerBase<dim> &ddh = *(copy.ddh);
 
       scratch.system_matrix.set_cell_range(ddh.subdomain_to_global_map[subdomain_idx]);
+      std::cout << "cell range is: ";
+      for (unsigned int i=0; i<ddh.subdomain_to_global_map[subdomain_idx].size(); ++i)
+        std::cout << ddh.subdomain_to_global_map[subdomain_idx][i]->index() << " ";
+      std::cout << std::endl;
       scratch.solver.solve(scratch.system_matrix,*(copy.dst),*(scratch.src),dealii::PreconditionIdentity());
+      std::cout << "smoothing done" << std::endl;
     }
   }
 }

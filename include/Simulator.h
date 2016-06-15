@@ -77,6 +77,7 @@ private:
   dealii::parallel::distributed::Triangulation<dim>   triangulation;
   const dealii::MappingQ1<dim>                        mapping;
   dealii::ConstraintMatrix                            constraints;
+  dealii::MGConstrainedDoFs                           mg_constrained_dofs;
   dealii::FESystem<dim>                               fe;
   ReferenceFunction<dim>                              reference_function;
 

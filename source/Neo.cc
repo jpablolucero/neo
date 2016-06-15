@@ -23,7 +23,7 @@ int main (int argc, char *argv[])
   std::ofstream logfile("deallog");
   dealii::deallog.attach(logfile);
   if (dealii::Utilities::MPI::this_mpi_process(mpi_communicator)==0)
-    dealii::deallog.depth_console (2);
+    dealii::deallog.depth_console (10);
   dealii::TimerOutput timer (mpi_communicator, pcout,
                              dealii::TimerOutput::never,
                              dealii::TimerOutput::wall_times);
@@ -31,20 +31,20 @@ int main (int argc, char *argv[])
   const unsigned int smooth_steps = 1;
 
 
-  for (unsigned int l=2; l<7; ++l)
+  for (unsigned int l=1; l<7; ++l)
     {
       Simulator<2,false,1> dgmethod(timer, mpi_communicator, pcout);
       dgmethod.n_levels = l ;
       dgmethod.smoothing_steps = smooth_steps;
       dgmethod.run ();
     }
-  for (unsigned int l=2; l<7; ++l)
-    {
-      Simulator<2,true,1> dgmethod(timer, mpi_communicator, pcout);
-      dgmethod.n_levels = l ;
-      dgmethod.smoothing_steps = smooth_steps;
-      dgmethod.run ();
-    }
+  /*  for (unsigned int l=2; l<7; ++l)
+      {
+        Simulator<2,true,1> dgmethod(timer, mpi_communicator, pcout);
+        dgmethod.n_levels = l ;
+        dgmethod.smoothing_steps = smooth_steps;
+        dgmethod.run ();
+      }*/
   /*  for (unsigned int l=7; l<10; ++l)
       {
         Simulator<3,false,1> dgmethod(timer, mpi_communicator, pcout);
