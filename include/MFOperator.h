@@ -86,6 +86,7 @@ private:
   MatrixIntegrator<dim,same_diagonal>                 matrix_integrator;
   ResidualIntegrator<dim>                             residual_integrator;
   mutable dealii::MGLevelObject<LA::MPI::Vector>      ghosted_src;
+  mutable LA::MPI::Vector                             ghosted_dst;
   MPI_Comm                                            mpi_communicator;
   dealii::TimerOutput                                 *timer;
   std::vector<std::vector<level_cell_iterator> >      colored_iterators;

@@ -66,7 +66,7 @@ void Simulator<dim,same_diagonal,degree>::setup_system ()
 
   locally_owned_dofs = dof_handler.locally_owned_dofs();
 
-  /*std::cout << "locally owned dofs on process "
+  std::cout << "locally owned dofs on process "
             << dealii::Utilities::MPI::this_mpi_process(mpi_communicator)
             << std::endl;
   for (unsigned int l=0; l<triangulation.n_global_levels(); ++l)
@@ -79,13 +79,13 @@ void Simulator<dim,same_diagonal,degree>::setup_system ()
   std::cout << "n_elements(): "
             << dof_handler.locally_owned_dofs().n_elements()
             <<std::endl;
-  dof_handler.locally_owned_dofs().print(dealii::deallog);*/
+  dof_handler.locally_owned_dofs().print(dealii::deallog);
 
   dealii::DoFTools::extract_locally_relevant_dofs
   (dof_handler, locally_relevant_dofs);
-  /*std::cout << "locally relevant dofs on process "
+  std::cout << "locally relevant dofs on process "
             << dealii::Utilities::MPI::this_mpi_process(mpi_communicator) << " ";
-  locally_relevant_dofs.print(std::cout);*/
+  locally_relevant_dofs.print(std::cout);
 
   //constraints
   constraints.clear();
@@ -137,7 +137,7 @@ void Simulator<dim,same_diagonal,degree>::setup_system ()
   right_hand_side.reinit (locally_owned_dofs, mpi_communicator);
 #endif
 
-  system_matrix.reinit (&dof_handler,&mapping, &constraints, &mg_constrained_dofs, mpi_communicator, triangulation.n_global_levels()-1);
+  system_matrix.reinit (&dof_handler,&mapping, &constraints, &mg_constrained_dofs, mpi_communicator);
 }
 
 template <int dim,bool same_diagonal,unsigned int degree>
@@ -230,7 +230,7 @@ void Simulator<dim, same_diagonal, degree>::assemble_system ()
   dealii::MeshWorker::DoFInfo<dim> dof_info(dof_handler.block_info());
 
   ResidualSimpleConstraints<LA::MPI::Vector > rhs_assembler;
-//  dealii::MeshWorker::Assembler::ResidualSimple<LA::MPI::Vector > rhs_assembler;
+  //dealii::MeshWorker::Assembler::ResidualSimple<LA::MPI::Vector > rhs_assembler;
   dealii::AnyData data;
   data.add<LA::MPI::Vector *>(&right_hand_side, "RHS");
   rhs_assembler.initialize(data);
@@ -240,7 +240,8 @@ void Simulator<dim, same_diagonal, degree>::assemble_system ()
 
   RHSIntegrator<dim> rhs_integrator(fe.n_components());
 
-  dealii::MeshWorker::integration_loop<dim, dim>(dof_handler.begin_active(), dof_handler.end(),
+  dealii::MeshWorker::integration_loop<dim, dim>(dof_handler.begin_active(),
+                                                 dof_handler.end(),
                                                  dof_info, info_box,
                                                  rhs_integrator, rhs_assembler);
   right_hand_side.compress(dealii::VectorOperation::add);
@@ -298,7 +299,7 @@ void Simulator<dim,same_diagonal,degree>::solve ()
   dealii::Multigrid<LA::MPI::Vector> mg(dof_handler, mgmatrix,
                                         mg_coarse, mg_transfer,
                                         mg_smoother, mg_smoother);
-//  mg.set_debug(10);
+  mg.set_debug(10);
   mg.set_minlevel(mg_matrix.min_level());
   mg.set_maxlevel(mg_matrix.max_level());
 #ifdef CG
@@ -319,6 +320,12 @@ void Simulator<dim,same_diagonal,degree>::solve ()
 
   timer.leave_subsection();
   timer.enter_subsection("solve::solve");
+  std::cout << "solution_tmp.local_size(): "
+            << solution_tmp.local_size()
+            << std::endl;
+  std::cout << "right_hand_side.local_size(): "
+            << right_hand_side.local_size()
+            << std::endl;
   constraints.set_zero(solution_tmp);
   solver.solve(system_matrix,solution_tmp,right_hand_side,preconditioner);
 #ifdef CG
@@ -391,6 +398,24 @@ void Simulator<dim, same_diagonal, degree>::output_results (const unsigned int c
 }
 
 
+template <int dim, bool same_diagonal, unsigned int degree>
+void Simulator<dim, same_diagonal, degree>::refine_mesh ()
+{
+  dealii::Vector<float> estimated_error_per_cell (triangulation.n_active_cells());
+
+  dealii::KellyErrorEstimator<dim>::estimate (dof_handler,
+                                              dealii::QGauss<dim-1>(degree+1),
+                                              typename dealii::FunctionMap<dim>::type(),
+                                              solution,
+                                              estimated_error_per_cell);
+  dealii::parallel::distributed::GridRefinement::refine_and_coarsen_fixed_number (triangulation,
+      estimated_error_per_cell,
+      0.3, 0.03);
+  triangulation.execute_coarsening_and_refinement ();
+}
+
+
+
 template <int dim,bool same_diagonal,unsigned int degree>
 void Simulator<dim,same_diagonal,degree>::run ()
 {
@@ -401,37 +426,44 @@ void Simulator<dim,same_diagonal,degree>::run ()
   triangulation.refine_global (n_levels-1);
   timer.leave_subsection();
   pcout << "Finite element: " << fe.get_name() << std::endl;
-  pcout << "Number of active cells: "
-        << triangulation.n_global_active_cells()
-        << std::endl;
-  timer.enter_subsection("setup_system");
-  pcout << "Setup system" << std::endl;
-  setup_system ();
-  pcout << "Assemble system" << std::endl;
-  assemble_system();
-  timer.leave_subsection();
-  dealii::deallog << "DoFHandler levels: ";
-  for (unsigned int l=0; l<triangulation.n_global_levels(); ++l)
-    dealii::deallog << ' ' << dof_handler.n_dofs(l);
-  dealii::deallog << std::endl;
+  const unsigned int n_local_refines = 0;
+  for (unsigned int refine_loop = 0; refine_loop<=n_local_refines; ++refine_loop)
+    {
+      timer.reset();
+      if (refine_loop > 0)
+        refine_mesh();
+      pcout << "Number of active cells: "
+            << triangulation.n_global_active_cells()
+            << std::endl;
+      timer.enter_subsection("setup_system");
+      pcout << "Setup system" << std::endl;
+      setup_system ();
+      pcout << "Assemble system" << std::endl;
+      assemble_system();
+      timer.leave_subsection();
+      dealii::deallog << "DoFHandler levels: ";
+      for (unsigned int l=0; l<triangulation.n_global_levels(); ++l)
+        dealii::deallog << ' ' << dof_handler.n_dofs(l);
+      dealii::deallog << std::endl;
 #ifdef MG
-  timer.enter_subsection("setup_multigrid");
-  pcout << "Setup multigrid" << std::endl;
-  setup_multigrid ();
-  assemble_mg_interface ();
-  timer.leave_subsection ();
+      timer.enter_subsection("setup_multigrid");
+      pcout << "Setup multigrid" << std::endl;
+      setup_multigrid ();
+      assemble_mg_interface ();
+      timer.leave_subsection ();
 #endif
-  timer.enter_subsection("solve");
-  pcout << "Solve" << std::endl;
-  solve ();
-  timer.leave_subsection();
-  timer.enter_subsection("output");
-  pcout << "Output" << std::endl;
-  compute_error();
-  output_results(n_levels);
-  timer.leave_subsection();
-  timer.print_summary();
-  pcout << std::endl;
+      timer.enter_subsection("solve");
+      pcout << "Solve" << std::endl;
+      solve ();
+      timer.leave_subsection();
+      timer.enter_subsection("output");
+      pcout << "Output" << std::endl;
+      compute_error();
+      output_results(n_levels);
+      timer.leave_subsection();
+      timer.print_summary();
+      pcout << std::endl;
+    }
   // workaround regarding issue #2533
   // GrowingVectorMemory does not destroy the vectors
   // after this instance goes out of scope.

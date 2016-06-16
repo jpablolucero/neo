@@ -8,6 +8,7 @@
 #include <deal.II/base/timer.h>
 #include <deal.II/base/utilities.h>
 #include <deal.II/distributed/tria.h>
+#include <deal.II/distributed/grid_refinement.h>
 #include <deal.II/dofs/dof_handler.h>
 #include <deal.II/dofs/dof_tools.h>
 #include <deal.II/dofs/function_map.h>
@@ -36,6 +37,7 @@
 #include <deal.II/multigrid/mg_matrix.h>
 #include <deal.II/multigrid/multigrid.h>
 #include <deal.II/numerics/data_out.h>
+#include <deal.II/numerics/error_estimator.h>
 #include <deal.II/numerics/vector_tools.h>
 #include <deal.II/numerics/vector_tools.templates.h>
 
@@ -68,6 +70,7 @@ private:
   void assemble_system ();
   void solve ();
   void compute_error () const;
+  void refine_mesh ();
   void output_results (const unsigned int cycle) const;
 
   typedef MFOperator<dim, degree, same_diagonal> SystemMatrixType;
@@ -86,7 +89,7 @@ private:
 
   dealii::DoFHandler<dim>      dof_handler;
 
-  SystemMatrixType             system_matrix;
+  SystemMatrixType      system_matrix;
   LA::MPI::Vector       solution;
   LA::MPI::Vector       solution_tmp;
   LA::MPI::Vector       right_hand_side;

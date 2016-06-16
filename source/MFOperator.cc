@@ -58,10 +58,12 @@ void MFOperator<dim, fe_degree, same_diagonal>::reinit
  const MPI_Comm &mpi_communicator_,
  const unsigned int level_)
 {
+  const bool is_system_matrix = (level_ == dealii::numbers::invalid_unsigned_int);
+
   dof_handler = dof_handler_ ;
   fe = &(dof_handler->get_fe());
   mapping = mapping_ ;
-  level=level_;
+  level=is_system_matrix?dof_handler_->get_triangulation().n_global_levels()-1:level_;
   constraints = constraints_;
   mg_constrained_dofs = mg_constrained_dofs_;
   mpi_communicator = mpi_communicator_;
@@ -84,19 +86,52 @@ void MFOperator<dim, fe_degree, same_diagonal>::reinit
   info_box.boundary_selector.add("src", true, true, false);
   info_box.face_selector.add("src", true, true, false);
 
-  dealii::IndexSet locally_owned_level_dofs = dof_handler->locally_owned_mg_dofs(level);
+  dealii::IndexSet locally_owned_level_dofs
+    = is_system_matrix?dof_handler->locally_owned_dofs():dof_handler->locally_owned_mg_dofs(level);
   dealii::IndexSet locally_relevant_level_dofs;
-  dealii::DoFTools::extract_locally_relevant_level_dofs
-  (*dof_handler, level, locally_relevant_level_dofs);
+  if (is_system_matrix)
+    dealii::DoFTools::extract_locally_relevant_dofs
+    (*dof_handler, locally_relevant_level_dofs);
+  else
+    dealii::DoFTools::extract_locally_relevant_level_dofs
+    (*dof_handler, level, locally_relevant_level_dofs);
 
-  ghosted_src.resize(level, level);
+  {
+    //Need an additional pseudo-level for adaptivity
+    if (level !=0)
+      ghosted_src.resize(level-1, level);
+    else
+      ghosted_src.resize(level, level);
+
 #if PARALLEL_LA == 0
-  ghosted_src[level].reinit(locally_owned_level_dofs.n_elements());
+    ghosted_src[level].reinit(locally_owned_level_dofs.n_elements());
+    ghosted_dst.reinit(locally_owned_level_dofs.n_elements());
 #else
-  ghosted_src[level].reinit(locally_owned_level_dofs,
-                            locally_relevant_level_dofs,
-                            mpi_communicator_);
+    ghosted_src[level].reinit(locally_owned_level_dofs,
+                              locally_relevant_level_dofs,
+                              mpi_communicator_);
+    ghosted_dst.reinit(locally_owned_level_dofs,locally_relevant_level_dofs,mpi_communicator,true);
 #endif
+
+    if (level!=0)
+      {
+        const dealii::IndexSet locally_owned_lower_level_dofs = dof_handler->locally_owned_mg_dofs(level-1);
+        dealii::IndexSet locally_relevant_lower_level_dofs;
+        dealii::DoFTools::extract_locally_relevant_level_dofs
+        (*dof_handler, level-1, locally_relevant_lower_level_dofs);
+
+#if PARALLEL_LA == 0
+        ghosted_src[level-1].reinit(locally_owned_lower_level_dofs);
+#else
+        ghosted_src[level-1].reinit(locally_owned_lower_level_dofs,
+                                    locally_relevant_lower_level_dofs,
+                                    mpi_communicator_);
+#endif
+        ghosted_src[level-1] = 0.;
+      }
+  }
+
+
   //TODO possibly colorize iterators, assume thread-safety for the moment
   std::vector<std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> >
   all_iterators(static_cast<unsigned int>(std::pow(2,dim)));
@@ -171,39 +206,31 @@ template <int dim, int fe_degree, bool same_diagonal>
 void MFOperator<dim,fe_degree,same_diagonal>::vmult (LA::MPI::Vector &dst,
                                                      const LA::MPI::Vector &src) const
 {
-  dst = 0;
-  dst.compress(dealii::VectorOperation::insert);
   vmult_add(dst, src);
-  dst.compress(dealii::VectorOperation::add);
   AssertIsFinite(dst.l2_norm());
 }
 
 template <int dim, int fe_degree, bool same_diagonal>
-void MFOperator<dim,fe_degree,same_diagonal>::Tvmult (LA::MPI::Vector &dst,
-                                                      const LA::MPI::Vector &src) const
+void MFOperator<dim,fe_degree,same_diagonal>::Tvmult (LA::MPI::Vector &/*dst*/,
+                                                      const LA::MPI::Vector &/*src*/) const
 {
-  dst = 0;
-  dst.compress(dealii::VectorOperation::insert);
-  Tvmult_add(dst, src);
-  dst.compress(dealii::VectorOperation::add);
-  AssertIsFinite(dst.l2_norm());
+  AssertThrow(false, dealii::ExcNotImplemented());
 }
 
 template <int dim, int fe_degree, bool same_diagonal>
 void MFOperator<dim,fe_degree,same_diagonal>::vmult_add (LA::MPI::Vector &dst,
                                                          const LA::MPI::Vector &src) const
 {
+  std::cout << "Level: 0 " << level << std::endl;
+  std::cout << "dst.local_size() before: " << dst.local_size() << std::endl;
+  std::cout << "src.local_size() before: " << src.local_size() << std::endl;
   if (!use_cell_range)
     timer->enter_subsection("LO::initialize ("+ dealii::Utilities::int_to_string(level)+ ")");
-  dealii::IndexSet locally_owned_level_dofs = dof_handler->locally_owned_mg_dofs(level);
-  dealii::IndexSet locally_relevant_level_dofs;
-  dealii::DoFTools::extract_locally_relevant_level_dofs
-  (*dof_handler, level, locally_relevant_level_dofs);
 
-  dst.reinit(locally_owned_level_dofs,locally_relevant_level_dofs,mpi_communicator,true);
+  ghosted_dst = 0.;
   dealii::AnyData dst_data;
-  dst_data.add<LA::MPI::Vector *>(&dst, "dst");
-  ghosted_src[level] = std::move(src);
+  dst_data.add<LA::MPI::Vector *>(&ghosted_dst, "dst");
+  ghosted_src[level] = src;
   dealii::AnyData src_data ;
   src_data.add<const dealii::MGLevelObject<LA::MPI::Vector >*>(&ghosted_src,"src");
   if (!use_cell_range)
@@ -226,23 +253,28 @@ void MFOperator<dim,fe_degree,same_diagonal>::vmult_add (LA::MPI::Vector &dst,
       {
         lctrl.faces_to_ghost = dealii::MeshWorker::LoopControl::both;
         lctrl.ghost_cells = true;
-        dealii::colored_loop<dim, dim> (colored_iterators, *dof_info, info_box, residual_integrator, assembler,lctrl, colored_iterators[0]);
+        dealii::colored_loop<dim, dim> (colored_iterators, *dof_info, info_box, residual_integrator, assembler,lctrl, *cell_range);
       }
     else
       {
         dealii::colored_loop<dim, dim> (colored_iterators, *dof_info, info_box, residual_integrator, assembler,lctrl);
       }
   }
+  ghosted_dst.compress(dealii::VectorOperation::add);
+  dst = ghosted_dst;
 
   if (!use_cell_range)
     timer->leave_subsection();
+
+  std::cout << "dst.local_size() after: " << dst.local_size() << std::endl;
+  std::cout << "src.local_size() after: " << src.local_size() << std::endl;
 }
 
 template <int dim, int fe_degree, bool same_diagonal>
-void MFOperator<dim,fe_degree, same_diagonal>::Tvmult_add (LA::MPI::Vector &dst,
-                                                           const LA::MPI::Vector &src) const
+void MFOperator<dim,fe_degree, same_diagonal>::Tvmult_add (LA::MPI::Vector &/*dst*/,
+                                                           const LA::MPI::Vector &/*src*/) const
 {
-  vmult_add(dst, src);
+  AssertThrow(false, dealii::ExcNotImplemented());
 }
 
 #include "MFOperator.inst"

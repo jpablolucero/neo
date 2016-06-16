@@ -253,7 +253,7 @@ namespace Assembler
   template <typename MatrixType, bool use_mapping>
   inline dealii::types::global_dof_index
   MGMatrixSimpleMapped<MatrixType, use_mapping>::mapped_dof(dealii::types::global_dof_index i)
-  {    
+  {
     return (use_mapping == false)?i:dof_mapping->at(i);
   }
 
@@ -535,8 +535,10 @@ namespace Assembler
               assemble((*matrix)[level1], info1.matrix(0,false).matrix, info1.indices, info1.indices, level1);
             if (level1>0)
               {
-                assemble_up((*flux_up)[level1],info1.matrix(0,true).matrix, info2.indices, info1.indices, level1);
-                assemble_down((*flux_down)[level1], info2.matrix(0,true).matrix, info2.indices, info1.indices, level1);
+                if (flux_up != 0)
+                  assemble_up((*flux_up)[level1],info1.matrix(0,true).matrix, info2.indices, info1.indices, level1);
+                if (flux_down != 0)
+                  assemble_down((*flux_down)[level1], info2.matrix(0,true).matrix, info2.indices, info1.indices, level1);
               }
           }
       }
@@ -566,8 +568,10 @@ namespace Assembler
                 assemble((*matrix)[level1], info1.matrix(k,false).matrix, info1.indices_by_block[row], info1.indices_by_block[column], level1);
               if (level1>0)
                 {
-                  assemble_up((*flux_up)[level1],info1.matrix(k,true).matrix, info2.indices_by_block[column], info1.indices_by_block[row], level1);
-                  assemble_down((*flux_down)[level1], info2.matrix(k,true).matrix, info2.indices_by_block[row], info1.indices_by_block[column], level1);
+                  if (flux_up != 0)
+                    assemble_up((*flux_up)[level1],info1.matrix(k,true).matrix, info2.indices_by_block[column], info1.indices_by_block[row], level1);
+                  if (flux_down != 0)
+                    assemble_down((*flux_down)[level1], info2.matrix(k,true).matrix, info2.indices_by_block[row], info1.indices_by_block[column], level1);
                 }
             }
         }
