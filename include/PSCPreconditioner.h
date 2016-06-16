@@ -21,7 +21,7 @@
 template <int dim=2, typename VectorType=LA::MPI::Vector, class number=double, bool same_diagonal=false>
 class PSCPreconditioner final
 {
-public:
+ public:
   typedef typename dealii::FullMatrix<double> Matrix;
   class AdditionalData;
 
@@ -32,7 +32,7 @@ public:
   // interface for MGSmootherPrecondition but global_operator is not used
   template <class GlobalOperatorType>
   void initialize(const GlobalOperatorType &global_operator,
-                  const AdditionalData &data);
+		  const AdditionalData &data);
   void clear();
 
   void vmult(VectorType &dst, const VectorType &src) const;
@@ -45,15 +45,15 @@ public:
 
   static dealii::TimerOutput *timer;
 
-protected:
+ protected:
   AdditionalData data;
 
-private:
+ private:
   void build_matrix
-  (const std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> &cell_range,
-   const std::vector<dealii::types::global_dof_index> &global_dofs_on_subdomain,
-   const std::map<dealii::types::global_dof_index, unsigned int> &all_to_unique,
-   dealii::FullMatrix<double> &matrix);
+    (const std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> &cell_range,
+     const std::vector<dealii::types::global_dof_index> &global_dofs_on_subdomain,
+     const std::map<dealii::types::global_dof_index, unsigned int> &all_to_unique,
+     dealii::FullMatrix<double> &matrix);
 
   std::vector<Matrix *> patch_inverses;
   std::vector<Matrix> real_patch_inverses;
@@ -80,17 +80,18 @@ public:
   const dealii::Mapping<dim> *mapping;
 
   enum PatchType
-  {
-    cell_patches,
-    vertex_patches
-  };
+    {
+      cell_patches,
+      vertex_patches
+    };
   PatchType patch_type;
 };
 
+// TODO: define inst of this function to be able to move it to the source file
 template <int dim, typename VectorType, class number, bool same_diagonal>
 template <class GlobalOperatorType>
 void PSCPreconditioner<dim, VectorType, number, same_diagonal>::initialize(const GlobalOperatorType & /*global_operator*/,
-    const AdditionalData &data)
+									   const AdditionalData &data)
 {
   Assert(data.dof_handler != 0, dealii::ExcInternalError());
   Assert(data.level != -1, dealii::ExcInternalError());
@@ -113,9 +114,9 @@ void PSCPreconditioner<dim, VectorType, number, same_diagonal>::initialize(const
                                        n_gauss_points);
   info_box.initialize_update_flags();
   dealii::UpdateFlags update_flags = dealii::update_JxW_values |
-                                     dealii::update_quadrature_points |
-                                     dealii::update_values |
-                                     dealii::update_gradients;
+    dealii::update_quadrature_points |
+    dealii::update_values |
+    dealii::update_gradients;
   info_box.add_update_flags(update_flags, true, true, true, true);
   info_box.cell_selector.add("src", true, true, false);
   info_box.boundary_selector.add("src", true, true, false);
@@ -149,8 +150,8 @@ void PSCPreconditioner<dim, VectorType, number, same_diagonal>::initialize(const
                                                    local_n_gauss_points);
         local_info_box.initialize_update_flags();
         dealii::UpdateFlags local_update_flags = dealii::update_quadrature_points |
-                                                 dealii::update_values |
-                                                 dealii::update_gradients;
+	  dealii::update_values |
+	  dealii::update_gradients;
         local_info_box.add_update_flags(local_update_flags, true, true, true, true);
         local_info_box.initialize(fe, *(data.mapping), &(local_dof_handler.block_info()));
         dealii::MeshWorker::DoFInfo<dim> local_dof_info(local_dof_handler.block_info());
@@ -159,10 +160,10 @@ void PSCPreconditioner<dim, VectorType, number, same_diagonal>::initialize(const
         local_assembler.initialize(dummy_matrix);
         MatrixIntegrator<dim,false> local_integrator ;
         dealii::MeshWorker::integration_loop<dim, dim>
-        (local_dof_handler.begin_active(),
-         local_dof_handler.end(),
-         local_dof_info, local_info_box,
-         local_integrator,local_assembler);
+	  (local_dof_handler.begin_active(),
+	   local_dof_handler.end(),
+	   local_dof_info, local_info_box,
+	   local_integrator,local_assembler);
         for (unsigned int i = 0; i < n; ++i)
           for (unsigned int j = 0; j < n; ++j)
             {
@@ -206,44 +207,6 @@ void PSCPreconditioner<dim, VectorType, number, same_diagonal>::initialize(const
       threads.join_all ();
     } 
 }
-
-template <int dim, typename VectorType, class number, bool same_diagonal>
-void PSCPreconditioner<dim, VectorType, number, same_diagonal>::build_matrix
-(const std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> &cell_range,
- const std::vector<dealii::types::global_dof_index> &global_dofs_on_subdomain,
- const std::map<dealii::types::global_dof_index, unsigned int> &all_to_unique,
- dealii::FullMatrix<double> &matrix)
-{
-
-  dealii::MGLevelObject<dealii::FullMatrix<double> > mg_matrix ;
-  mg_matrix.resize(level,level);
-
-  mg_matrix[level] = std::move(dealii::FullMatrix<double>(global_dofs_on_subdomain.size()));
-
-  Assembler::MGMatrixSimpleMapped<dealii::FullMatrix<double> > assembler;
-  assembler.initialize(mg_matrix);
-#ifdef CG
-  assembler.initialize(constraints);
-#endif
-  assembler.initialize(all_to_unique);
-
-  //now assemble everything
-  dealii::MeshWorker::LoopControl lctrl;
-  lctrl.faces_to_ghost = dealii::MeshWorker::LoopControl::both;
-  lctrl.ghost_cells = true;
-  //TODO possibly colorize iterators, assume thread-safety for the moment
-  std::vector<std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> > colored_iterators(1, cell_range);
-
-
-  dealii::colored_loop<dim, dim> (colored_iterators, *dof_info, info_box, matrix_integrator, assembler,lctrl, colored_iterators[0]);
-
-  matrix.copy_from(mg_matrix[level]);
-}
-
-
-template <int dim, typename VectorType, class number, bool same_diagonal>
-void PSCPreconditioner<dim, VectorType, number, same_diagonal>::clear()
-{}
 
 template <int dim, typename VectorType, class number, bool same_diagonal>
 dealii::TimerOutput *
