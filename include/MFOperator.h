@@ -31,6 +31,7 @@ public:
   void reinit (const dealii::DoFHandler<dim> *dof_handler_,
                const dealii::MappingQ1<dim> *mapping_,
                const dealii::ConstraintMatrix *constraints,
+               const dealii::MGConstrainedDoFs *mg_constrained_dofs,
                const MPI_Comm &mpi_communicator_,
                const unsigned int level_ = dealii::numbers::invalid_unsigned_int);
 

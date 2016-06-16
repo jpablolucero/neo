@@ -10,6 +10,7 @@
 #include <deal.II/distributed/tria.h>
 #include <deal.II/dofs/dof_handler.h>
 #include <deal.II/dofs/dof_tools.h>
+#include <deal.II/dofs/function_map.h>
 #include <deal.II/fe/fe_dgp.h>
 #include <deal.II/fe/fe_dgq.h>
 #include <deal.II/fe/mapping_q1.h>
@@ -63,6 +64,7 @@ public:
 private:
   void setup_system ();
   void setup_multigrid ();
+  void assemble_mg_interface ();
   void assemble_system ();
   void solve ();
   void compute_error () const;
@@ -90,6 +92,8 @@ private:
   LA::MPI::Vector       right_hand_side;
 
   dealii::MGLevelObject<SystemMatrixType >            mg_matrix ;
+  dealii::MGLevelObject<LA::MPI::SparseMatrix>        mg_matrix_down;
+  dealii::MGLevelObject<LA::MPI::SparseMatrix>        mg_matrix_up;
 
   dealii::ConditionalOStream &pcout;
 

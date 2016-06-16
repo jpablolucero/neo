@@ -43,6 +43,7 @@ MFOperator<dim, fe_degree, same_diagonal>::MFOperator(const MFOperator &operator
   this->reinit(operator_.dof_handler,
                operator_.mapping,
                operator_.constraints,
+               operator_.mg_constrained_dofs,
                operator_.mpi_communicator,
                operator_.level);
 }
@@ -53,6 +54,7 @@ void MFOperator<dim, fe_degree, same_diagonal>::reinit
 (const dealii::DoFHandler<dim> *dof_handler_,
  const dealii::MappingQ1<dim> *mapping_,
  const dealii::ConstraintMatrix *constraints_,
+ const dealii::MGConstrainedDoFs *mg_constrained_dofs_,
  const MPI_Comm &mpi_communicator_,
  const unsigned int level_)
 {
@@ -61,6 +63,7 @@ void MFOperator<dim, fe_degree, same_diagonal>::reinit
   mapping = mapping_ ;
   level=level_;
   constraints = constraints_;
+  mg_constrained_dofs = mg_constrained_dofs_;
   mpi_communicator = mpi_communicator_;
   std::unique_ptr<dealii::MeshWorker::DoFInfo<dim> > tmp
   (new dealii::MeshWorker::DoFInfo<dim> {dof_handler->block_info()});
@@ -95,8 +98,8 @@ void MFOperator<dim, fe_degree, same_diagonal>::reinit
                             mpi_communicator_);
 #endif
   //TODO possibly colorize iterators, assume thread-safety for the moment
-  std::vector<std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> > 
-    all_iterators(static_cast<unsigned int>(std::pow(2,dim)));
+  std::vector<std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> >
+  all_iterators(static_cast<unsigned int>(std::pow(2,dim)));
   auto i = 1 ;
   for (auto p=dof_handler->begin_mg(level); p!=dof_handler->end_mg(level); ++p)
     {
@@ -104,11 +107,11 @@ void MFOperator<dim, fe_degree, same_diagonal>::reinit
                                                ? p->level_subdomain_id()
                                                : p->subdomain_id();
       if (csid == p->get_triangulation().locally_owned_subdomain())
-	{
-	  all_iterators[i-1].push_back(p);
-	  i = i % static_cast<unsigned int>(std::pow(2,dim)) ;
-	  ++i;
-	}
+        {
+          all_iterators[i-1].push_back(p);
+          i = i % static_cast<unsigned int>(std::pow(2,dim)) ;
+          ++i;
+        }
     }
   colored_iterators = std::move(all_iterators);
 }

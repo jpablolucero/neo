@@ -223,7 +223,7 @@ void PSCPreconditioner<dim, VectorType, number, same_diagonal>::build_matrix
 
   mg_matrix[level] = std::move(dealii::FullMatrix<double>(global_dofs_on_subdomain.size()));
 
-  Assembler::MGMatrixSimpleMapped<dealii::FullMatrix<double> > assembler;
+  Assembler::MGMatrixSimpleMapped<dealii::FullMatrix<double>, true> assembler;
   assembler.initialize(mg_matrix);
   assembler.initialize(all_to_unique);
 
