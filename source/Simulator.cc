@@ -217,6 +217,12 @@ void Simulator<dim,same_diagonal,degree>::solve ()
       smoother_data[level].level = level;
       smoother_data[level].mapping = &mapping;
       smoother_data[level].weight = 1.0;
+      // uncomment to use the dictionary
+      // if(!same_diagonal)
+      // 	{
+      // 	  smoother_data[level].use_dictionary = true;
+      // 	  smoother_data[level].tol = 0.05;
+      // 	}
       smoother_data[level].patch_type = Smoother::AdditionalData::cell_patches;
     }
 

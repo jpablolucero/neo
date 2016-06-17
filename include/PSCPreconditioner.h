@@ -26,6 +26,7 @@ class PSCPreconditioner final
   class AdditionalData;
 
   PSCPreconditioner();
+  ~PSCPreconditioner();
   PSCPreconditioner (const PSCPreconditioner &) = delete ;
   PSCPreconditioner &operator = (const PSCPreconditioner &) = delete;
 
@@ -57,6 +58,8 @@ class PSCPreconditioner final
 
   std::vector<Matrix *> patch_inverses;
   std::vector<Matrix> real_patch_inverses;
+  // change it to smartpointers
+  std::vector<Matrix*> dictionary;
 
   dealii::MeshWorker::IntegrationInfoBox<dim> info_box;
   std::unique_ptr<dealii::MeshWorker::DoFInfo<dim> >  dof_info;
@@ -72,13 +75,15 @@ template <int dim, typename VectorType, class number, bool same_diagonal>
 class PSCPreconditioner<dim, VectorType, number, same_diagonal>::AdditionalData
 {
 public:
-  AdditionalData() : dof_handler(0), level(-1), weight(1.0), mapping(0), patch_type(cell_patches) {}
-
+  AdditionalData() : dof_handler(0), level(-1), weight(1.0), tol(0.), mapping(0), use_dictionary(false), patch_type(cell_patches) {}
+  
   dealii::DoFHandler<dim> *dof_handler;
   unsigned int level;
   double weight;
+  double tol;
   const dealii::Mapping<dim> *mapping;
 
+  bool use_dictionary;
   enum PatchType
     {
       cell_patches,
