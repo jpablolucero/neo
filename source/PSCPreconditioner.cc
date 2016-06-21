@@ -69,7 +69,7 @@ void PSCPreconditioner<dim, VectorType, number, same_diagonal>::initialize(const
     const AdditionalData &data)
 {
   Assert(data.dof_handler != 0, dealii::ExcInternalError());
-  Assert(data.level != -1, dealii::ExcInternalError());
+  Assert(data.level != dealii::numbers::invalid_unsigned_int, dealii::ExcInternalError());
   Assert(data.mapping != 0, dealii::ExcInternalError());
 
   this->data = data;

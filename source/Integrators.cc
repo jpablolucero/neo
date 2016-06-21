@@ -78,7 +78,7 @@ void MatrixIntegrator<dim,same_diagonal>::boundary(dealii::MeshWorker::DoFInfo<d
   Assert(n_blocks>0, dealii::ExcMessage("BlockInfo not initialized!"));
   typename std::remove_reference<decltype(info.values[0])>::type coeffs;
 
-  for (auto b=0; b<n_blocks; ++b )
+  for (unsigned int b=0; b<n_blocks; ++b )
     {
       const auto &fev = info.fe_values(dinfo.block_info->base_element(b));
       const auto deg = info.fe_values(dinfo.block_info->base_element(b)).get_fe().tensor_degree();
@@ -114,7 +114,7 @@ void ResidualIntegrator<dim>::cell(dealii::MeshWorker::DoFInfo<dim> &dinfo,
   const auto &Dsrc = info.gradients[0];
   typename std::remove_reference<decltype(info.values[0])>::type coeffs;
 
-  for (auto b=0; b<n_blocks; ++b)
+  for (unsigned int b=0; b<n_blocks; ++b)
     {
       const auto &fev = info.fe_values(dinfo.block_info->base_element(b));
       const auto n_quads = fev.n_quadrature_points;
@@ -151,7 +151,7 @@ void ResidualIntegrator<dim>::face(dealii::MeshWorker::DoFInfo<dim> &dinfo1,
 
   typename std::remove_reference<decltype(info1.values[0])>::type coeffs;
 
-  for (auto b=0; b<n_blocks; ++b)
+  for (unsigned int b=0; b<n_blocks; ++b)
     {
       const auto &fev1 = info1.fe_values(dinfo1.block_info->base_element(b));
       const auto &fev2 = info2.fe_values(dinfo2.block_info->base_element(b));
@@ -194,7 +194,7 @@ void ResidualIntegrator<dim>::boundary(dealii::MeshWorker::DoFInfo<dim> &dinfo,
   const auto &src = info.values[0];
   typename std::remove_reference<decltype(info.values[0])>::type bdata_values;
   typename std::remove_reference<decltype(info.values[0])>::type coeffs;
-  for (auto b=0; b<n_blocks; ++b)
+  for (unsigned int b=0; b<n_blocks; ++b)
     {
       const auto &fev = info.fe_values(dinfo.block_info->base_element(b));
       const auto deg = fev.get_fe().tensor_degree();
@@ -241,7 +241,7 @@ void RHSIntegrator<dim>::cell(dealii::MeshWorker::DoFInfo<dim> &dinfo, typename 
   typename std::remove_reference<decltype(info.gradients[0][0])>::type coeffs_gradients;
   typename std::remove_reference<decltype(info.values[0])>::type f;
 
-  for (auto b=0; b<n_blocks; ++b)
+  for (unsigned int b=0; b<n_blocks; ++b)
     {
       const auto &fev = info.fe_values(dinfo.block_info->base_element(b));
       const auto n_quads = fev.n_quadrature_points;
@@ -261,7 +261,7 @@ void RHSIntegrator<dim>::cell(dealii::MeshWorker::DoFInfo<dim> &dinfo, typename 
           exact_solution.gradient_list(q_points, exact_gradients, c);
           diffcoeff.value_list(q_points,coeffs_values,c);
           diffcoeff.gradient_list(q_points,coeffs_gradients,c);
-          for (auto q = 0 ; q<component.size() ; ++q)
+          for (unsigned int q = 0 ; q<component.size() ; ++q)
             component[q] = coeffs_gradients[q]*exact_gradients[q]+coeffs_values[q]*exact_laplacian[q];
           ++c ;
         }
@@ -285,7 +285,7 @@ void RHSIntegrator<dim>::boundary(dealii::MeshWorker::DoFInfo<dim> &dinfo, typen
   std::vector<double> coeffs;
   std::vector<double> boundary_values;
 
-  for (auto b=0; b<n_blocks; ++b)
+  for (unsigned int b=0; b<n_blocks; ++b)
     {
       const auto &fev = info.fe_values(dinfo.block_info->base_element(b));
       auto &local_vector = dinfo.vector(0).block(b);
@@ -297,8 +297,8 @@ void RHSIntegrator<dim>::boundary(dealii::MeshWorker::DoFInfo<dim> &dinfo, typen
       diffcoeff.value_list(q_points,coeffs,b);
       exact_solution.value_list(q_points, boundary_values, b);
 
-      for (auto k=0; k<fev.n_quadrature_points; ++k)
-        for (auto i=0; i<fev.dofs_per_cell; ++i)
+      for (unsigned int k=0; k<fev.n_quadrature_points; ++k)
+        for (unsigned int i=0; i<fev.dofs_per_cell; ++i)
           local_vector(i) += coeffs[k]
                              * (fev.shape_value(i,k) * penalty * boundary_values[k]
                                 - (fev.normal_vector(k) * fev.shape_grad(i,k)) * boundary_values[k])
