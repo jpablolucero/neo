@@ -73,7 +73,8 @@ private:
   void refine_mesh ();
   void output_results (const unsigned int cycle) const;
 
-  typedef MFOperator<dim, degree, same_diagonal> SystemMatrixType;
+  typedef MFOperator<dim, degree, same_diagonal, true> SystemMatrixType;
+  typedef MFOperator<dim, degree, same_diagonal, false> SmootherMatrixType;
 
   dealii::IndexSet           locally_owned_dofs;
   dealii::IndexSet           locally_relevant_dofs;
@@ -94,7 +95,7 @@ private:
   LA::MPI::Vector       solution_tmp;
   LA::MPI::Vector       right_hand_side;
 
-  dealii::MGLevelObject<SystemMatrixType >            mg_matrix ;
+  dealii::MGLevelObject<SmootherMatrixType >            mg_matrix ;
   dealii::MGLevelObject<LA::MPI::SparseMatrix>        mg_matrix_down;
   dealii::MGLevelObject<LA::MPI::SparseMatrix>        mg_matrix_up;
 

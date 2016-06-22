@@ -1,7 +1,7 @@
 #include <MFOperator.h>
 
-template <int dim, int fe_degree, bool same_diagonal>
-MFOperator<dim, fe_degree, same_diagonal>::MFOperator()
+template <int dim, int fe_degree, bool same_diagonal, bool is_system_matrix>
+MFOperator<dim, fe_degree, same_diagonal, is_system_matrix>::MFOperator()
 {
   level = 0;
   dof_handler = nullptr;
@@ -12,22 +12,22 @@ MFOperator<dim, fe_degree, same_diagonal>::MFOperator()
   use_cell_range = false;
 }
 
-template <int dim, int fe_degree, bool same_diagonal>
-void MFOperator<dim, fe_degree, same_diagonal>::set_timer(dealii::TimerOutput &timer_)
+template <int dim, int fe_degree, bool same_diagonal, bool is_system_matrix>
+void MFOperator<dim, fe_degree, same_diagonal, is_system_matrix>::set_timer(dealii::TimerOutput &timer_)
 {
   timer = &timer_;
 }
 
-template <int dim, int fe_degree, bool same_diagonal>
-MFOperator<dim, fe_degree, same_diagonal>::~MFOperator()
+template <int dim, int fe_degree, bool same_diagonal, bool is_system_matrix>
+MFOperator<dim, fe_degree, same_diagonal, is_system_matrix>::~MFOperator()
 {
   dof_handler = nullptr ;
   fe = nullptr ;
   mapping = nullptr ;
 }
 
-/*template <int dim, int fe_degree, bool same_diagonal>
-void MFOperator<dim, fe_degree, same_diagonal>::clear()
+/*template <int dim, int fe_degree, bool same_diagonal, bool is_system_matrix>
+void MFOperator<dim, fe_degree, same_diagonal, is_system_matrix>::clear()
 {
   dof_handler = nullptr ;
   fe = nullptr ;
@@ -35,8 +35,8 @@ void MFOperator<dim, fe_degree, same_diagonal>::clear()
 }*/
 
 
-template <int dim, int fe_degree, bool same_diagonal>
-MFOperator<dim, fe_degree, same_diagonal>::MFOperator(const MFOperator &operator_)
+template <int dim, int fe_degree, bool same_diagonal, bool is_system_matrix>
+MFOperator<dim, fe_degree, same_diagonal, is_system_matrix>::MFOperator(const MFOperator &operator_)
   : Subscriptor(operator_)
 {
   timer = operator_.timer;
@@ -49,8 +49,8 @@ MFOperator<dim, fe_degree, same_diagonal>::MFOperator(const MFOperator &operator
 }
 
 
-template <int dim, int fe_degree, bool same_diagonal>
-void MFOperator<dim, fe_degree, same_diagonal>::reinit
+template <int dim, int fe_degree, bool same_diagonal, bool is_system_matrix>
+void MFOperator<dim, fe_degree, same_diagonal, is_system_matrix>::reinit
 (const dealii::DoFHandler<dim> *dof_handler_,
  const dealii::MappingQ1<dim> *mapping_,
  const dealii::ConstraintMatrix *constraints_,
@@ -58,12 +58,15 @@ void MFOperator<dim, fe_degree, same_diagonal>::reinit
  const MPI_Comm &mpi_communicator_,
  const unsigned int level_)
 {
-  const bool is_system_matrix = (level_ == dealii::numbers::invalid_unsigned_int);
+  Assert ((is_system_matrix && level_ == dealii::numbers::invalid_unsigned_int)
+          ||(!is_system_matrix && level_ != dealii::numbers::invalid_unsigned_int),
+          dealii::ExcMessage("A system matrix is not supposed to has levels."
+                             " If not the system matrix represented, a valid level is needed!"));
 
   dof_handler = dof_handler_ ;
   fe = &(dof_handler->get_fe());
   mapping = mapping_ ;
-  level=is_system_matrix?dof_handler_->get_triangulation().n_global_levels()-1:level_;
+  level=is_system_matrix?0:level_;
   constraints = constraints_;
   mg_constrained_dofs = mg_constrained_dofs_;
   mpi_communicator = mpi_communicator_;
@@ -98,7 +101,7 @@ void MFOperator<dim, fe_degree, same_diagonal>::reinit
 
   {
     //Need an additional pseudo-level for adaptivity
-    if (level !=0)
+    if (!is_system_matrix && level !=0)
       ghosted_src.resize(level-1, level);
     else
       ghosted_src.resize(level, level);
@@ -113,7 +116,7 @@ void MFOperator<dim, fe_degree, same_diagonal>::reinit
     ghosted_dst.reinit(locally_owned_level_dofs,locally_relevant_level_dofs,mpi_communicator,true);
 #endif
 
-    if (level!=0)
+    if (!is_system_matrix && level!=0)
       {
         const dealii::IndexSet locally_owned_lower_level_dofs = dof_handler->locally_owned_mg_dofs(level-1);
         dealii::IndexSet locally_relevant_lower_level_dofs;
@@ -133,35 +136,60 @@ void MFOperator<dim, fe_degree, same_diagonal>::reinit
 
 
   //TODO possibly colorize iterators, assume thread-safety for the moment
-  std::vector<std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> >
-  all_iterators(static_cast<unsigned int>(std::pow(2,dim)));
-  auto i = 1 ;
-  for (auto p=dof_handler->begin_mg(level); p!=dof_handler->end_mg(level); ++p)
+  std::vector<std::vector<cell_iterator> > all_iterators
+  (static_cast<unsigned int>(std::pow(2,dim)));
+  if (is_system_matrix)
     {
-      const dealii::types::subdomain_id csid = (p->is_level_cell())
-                                               ? p->level_subdomain_id()
-                                               : p->subdomain_id();
-      if (csid == p->get_triangulation().locally_owned_subdomain())
+      auto i = 1 ;
+      for (typename dealii::DoFHandler<dim>::active_cell_iterator p=dof_handler->begin_active(level);
+           p!=dof_handler->end(); ++p)
         {
-          all_iterators[i-1].push_back(p);
-          i = i % static_cast<unsigned int>(std::pow(2,dim)) ;
-          ++i;
+          AssertThrow(p->active(), dealii::ExcInternalError());
+          const dealii::types::subdomain_id csid = p->subdomain_id();
+          if (csid == p->get_triangulation().locally_owned_subdomain())
+            {
+              all_iterators[i-1].push_back(p);
+              i = i % static_cast<unsigned int>(std::pow(2,dim)) ;
+              ++i;
+            }
+        }
+    }
+  else
+    {
+      auto i = 1 ;
+      for (auto p=dof_handler->begin_mg(level); p!=dof_handler->end_mg(level); ++p)
+        {
+          const dealii::types::subdomain_id csid = p->level_subdomain_id();
+          if (csid == p->get_triangulation().locally_owned_subdomain())
+            {
+              all_iterators[i-1].push_back(p);
+              i = i % static_cast<unsigned int>(std::pow(2,dim)) ;
+              ++i;
+            }
         }
     }
   colored_iterators = std::move(all_iterators);
 }
 
-template <int dim, int fe_degree, bool same_diagonal>
-void MFOperator<dim, fe_degree, same_diagonal>::set_cell_range
+template <int dim, int fe_degree, bool same_diagonal, bool is_system_matrix>
+void MFOperator<dim, fe_degree, same_diagonal, is_system_matrix>::set_cell_range
 (const std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> &cell_range_)
 {
+  Assert(!is_system_matrix, dealii::ExcMessage("Can't set cell_range for system_matrix!"));
   use_cell_range = true;
-  cell_range = &cell_range_;
-  colored_iterators[0] = *cell_range;
+  // Do the necessary cast manually
+  colored_iterators.clear();
+  cell_range.clear();
+  for (unsigned int i=0; i<cell_range_.size(); ++i)
+    {
+      const cell_iterator cell (&(dof_handler->get_triangulation()), level, cell_range_[i]->index(), dof_handler);
+      colored_iterators[0].push_back(cell);
+      cell_range.push_back(cell);
+    }
 }
 
-template <int dim, int fe_degree, bool same_diagonal>
-void MFOperator<dim, fe_degree, same_diagonal>::build_coarse_matrix()
+template <int dim, int fe_degree, bool same_diagonal, bool is_system_matrix>
+void MFOperator<dim, fe_degree, same_diagonal, is_system_matrix>::build_coarse_matrix()
 {
   Assert(level == 0, dealii::ExcInternalError());
   Assert(dof_handler != 0, dealii::ExcInternalError());
@@ -202,43 +230,46 @@ void MFOperator<dim, fe_degree, same_diagonal>::build_coarse_matrix()
 #endif
 }
 
-template <int dim, int fe_degree, bool same_diagonal>
-void MFOperator<dim,fe_degree,same_diagonal>::vmult (LA::MPI::Vector &dst,
-                                                     const LA::MPI::Vector &src) const
+template <int dim, int fe_degree, bool same_diagonal, bool is_system_matrix>
+void MFOperator<dim, fe_degree, same_diagonal, is_system_matrix>::vmult (LA::MPI::Vector &dst,
+    const LA::MPI::Vector &src) const
 {
   vmult_add(dst, src);
   AssertIsFinite(dst.l2_norm());
 }
 
-template <int dim, int fe_degree, bool same_diagonal>
-void MFOperator<dim,fe_degree,same_diagonal>::Tvmult (LA::MPI::Vector &/*dst*/,
-                                                      const LA::MPI::Vector &/*src*/) const
+template <int dim, int fe_degree, bool same_diagonal, bool is_system_matrix>
+void MFOperator<dim, fe_degree, same_diagonal, is_system_matrix>::Tvmult (LA::MPI::Vector &/*dst*/,
+    const LA::MPI::Vector &/*src*/) const
 {
   AssertThrow(false, dealii::ExcNotImplemented());
 }
 
-template <int dim, int fe_degree, bool same_diagonal>
-void MFOperator<dim,fe_degree,same_diagonal>::vmult_add (LA::MPI::Vector &dst,
-                                                         const LA::MPI::Vector &src) const
+template <int dim, int fe_degree, bool same_diagonal, bool is_system_matrix>
+void MFOperator<dim, fe_degree, same_diagonal, is_system_matrix>::vmult_add (LA::MPI::Vector &dst,
+    const LA::MPI::Vector &src) const
 {
-  std::cout << "Level: 0 " << level << std::endl;
-  std::cout << "dst.local_size() before: " << dst.local_size() << std::endl;
-  std::cout << "src.local_size() before: " << src.local_size() << std::endl;
   if (!use_cell_range)
     timer->enter_subsection("LO::initialize ("+ dealii::Utilities::int_to_string(level)+ ")");
-
   ghosted_dst = 0.;
   dealii::AnyData dst_data;
   dst_data.add<LA::MPI::Vector *>(&ghosted_dst, "dst");
   ghosted_src[level] = src;
   dealii::AnyData src_data ;
-  src_data.add<const dealii::MGLevelObject<LA::MPI::Vector >*>(&ghosted_src,"src");
+  if (is_system_matrix)
+    src_data.add<const LA::MPI::Vector *>(&(ghosted_src[level]),"src");
+  else
+    src_data.add<const dealii::MGLevelObject<LA::MPI::Vector >*>(&ghosted_src,"src");
   if (!use_cell_range)
     timer->leave_subsection();
 
   if (!use_cell_range)
     timer->enter_subsection("LO::assembler_setup ("+ dealii::Utilities::int_to_string(level)+ ")");
-  info_box.initialize(*fe, *mapping, src_data, ghosted_src, &(dof_handler->block_info()));
+  if (!is_system_matrix)
+    info_box.initialize(*fe, *mapping, src_data, ghosted_src, &(dof_handler->block_info()));
+  else
+    info_box.initialize(*fe, *mapping, src_data, ghosted_src[level], &(dof_handler->block_info()));
+
   dealii::MeshWorker::Assembler::ResidualSimple<LA::MPI::Vector > assembler;
   assembler.initialize(dst_data);
   if (!use_cell_range)
@@ -253,7 +284,7 @@ void MFOperator<dim,fe_degree,same_diagonal>::vmult_add (LA::MPI::Vector &dst,
       {
         lctrl.faces_to_ghost = dealii::MeshWorker::LoopControl::both;
         lctrl.ghost_cells = true;
-        dealii::colored_loop<dim, dim> (colored_iterators, *dof_info, info_box, residual_integrator, assembler,lctrl, *cell_range);
+        dealii::colored_loop<dim, dim> (colored_iterators, *dof_info, info_box, residual_integrator, assembler,lctrl, cell_range);
       }
     else
       {
@@ -265,14 +296,11 @@ void MFOperator<dim,fe_degree,same_diagonal>::vmult_add (LA::MPI::Vector &dst,
 
   if (!use_cell_range)
     timer->leave_subsection();
-
-  std::cout << "dst.local_size() after: " << dst.local_size() << std::endl;
-  std::cout << "src.local_size() after: " << src.local_size() << std::endl;
 }
 
-template <int dim, int fe_degree, bool same_diagonal>
-void MFOperator<dim,fe_degree, same_diagonal>::Tvmult_add (LA::MPI::Vector &/*dst*/,
-                                                           const LA::MPI::Vector &/*src*/) const
+template <int dim, int fe_degree, bool same_diagonal, bool is_system_matrix>
+void MFOperator<dim,fe_degree, same_diagonal, is_system_matrix>::Tvmult_add (LA::MPI::Vector &/*dst*/,
+    const LA::MPI::Vector &/*src*/) const
 {
   AssertThrow(false, dealii::ExcNotImplemented());
 }

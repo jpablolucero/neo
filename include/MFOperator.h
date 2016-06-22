@@ -19,7 +19,38 @@
 
 #include <MGMatrixSimpleMapped.h>
 
-template <int dim, int fe_degree, bool same_diagonal>
+namespace
+{
+  template <int dim, bool is_system_matrix>
+  struct CellIterator;
+
+  template <>
+  struct CellIterator<2, true>
+  {
+    typedef typename dealii::DoFHandler<2>::active_cell_iterator type;
+  };
+
+  template <>
+  struct CellIterator<3, true>
+  {
+    typedef typename dealii::DoFHandler<3>::active_cell_iterator type;
+  };
+
+  template <>
+  struct CellIterator<2, false>
+  {
+    typedef typename dealii::DoFHandler<2>::level_cell_iterator type;
+  };
+
+  template <>
+  struct CellIterator<3, false>
+  {
+    typedef typename dealii::DoFHandler<3>::level_cell_iterator type;
+  };
+}
+
+
+template <int dim, int fe_degree, bool same_diagonal, bool is_system_matrix=false>
 class MFOperator final: public dealii::Subscriptor
 {
 public:
@@ -70,7 +101,7 @@ public:
   }
 
   typedef LA::MPI::SparseMatrixSizeType                         size_type ;
-  typedef typename dealii::DoFHandler<dim>::level_cell_iterator level_cell_iterator;
+  typedef typename CellIterator<dim, is_system_matrix>::type    cell_iterator;
 
 private:
   unsigned int                                        level;
@@ -89,8 +120,8 @@ private:
   mutable LA::MPI::Vector                             ghosted_dst;
   MPI_Comm                                            mpi_communicator;
   dealii::TimerOutput                                 *timer;
-  std::vector<std::vector<level_cell_iterator> >      colored_iterators;
-  const std::vector<level_cell_iterator>              *cell_range;
+  std::vector<std::vector<cell_iterator> >            colored_iterators;
+  std::vector<cell_iterator>                          cell_range;
   bool                                                use_cell_range;
 };
 

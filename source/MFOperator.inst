@@ -2,11 +2,40 @@
 #define MFOPERATOR_INST
 
 #undef I
-#define I(D,P,S) template class MFOperator<D,P,S>
-I(2,1,true);I(2,2,true);I(2,3,true);I(2,4,true);
-I(2,1,false);I(2,2,false);I(2,3,false);I(2,4,false);
-I(3,1,true);I(3,2,true);I(3,3,true);I(3,4,true);
-I(3,1,false);I(3,2,false);I(3,3,false);I(3,4,false);
+#define I(D,P,S,M) template class MFOperator<D,P,S,M>
+I(2,1,true,true);
+I(2,2,true,true);
+I(2,3,true,true);
+I(2,4,true,true);
+I(2,1,false,true);
+I(2,2,false,true);
+I(2,3,false,true);
+I(2,4,false,true);
+I(3,1,true,true);
+I(3,2,true,true);
+I(3,3,true,true);
+I(3,4,true,true);
+I(3,1,false,true);
+I(3,2,false,true);
+I(3,3,false,true);
+I(3,4,false,true);
+
+I(2,1,true,false);
+I(2,2,true,false);
+I(2,3,true,false);
+I(2,4,true,false);
+I(2,1,false,false);
+I(2,2,false,false);
+I(2,3,false,false);
+I(2,4,false,false);
+I(3,1,true,false);
+I(3,2,true,false);
+I(3,3,true,false);
+I(3,4,true,false);
+I(3,1,false,false);
+I(3,2,false,false);
+I(3,3,false,false);
+I(3,4,false,false);
 #undef I
 
 #endif // MFOPERATOR_INST

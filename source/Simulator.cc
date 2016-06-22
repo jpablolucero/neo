@@ -1,5 +1,53 @@
 #include <Simulator.h>
 
+template <typename VectorType, unsigned int dim>
+class
+  OwnSolverCG:
+  public dealii::SolverCG<VectorType>
+{
+public:
+  OwnSolverCG (dealii::SolverControl &cn,
+               dealii::DoFHandler<dim> &dh,
+               const typename dealii::SolverCG<VectorType>::AdditionalData &data
+               = typename dealii::SolverCG<VectorType>::AdditionalData())
+    : dealii::SolverCG<VectorType>(cn, data),
+      dof_handler(dh)
+  {}
+
+  virtual void print_vectors
+  (const unsigned int step,
+   const VectorType &x,
+   const VectorType &r,
+   const VectorType &d) const override;
+
+private:
+  const dealii::DoFHandler<dim> &dof_handler;
+};
+
+
+template <typename VectorType, unsigned int dim>
+void
+OwnSolverCG<VectorType, dim>::print_vectors
+(const unsigned int step,
+ const VectorType &x,
+ const VectorType &r,
+ const VectorType &d) const
+{
+  std::string filename = "iteration-"+dealii::Utilities::int_to_string(step, 5);
+
+  dealii::DataOut<dim> data_out;
+  data_out.attach_dof_handler (dof_handler);
+  data_out.add_data_vector (x, "iteration");
+  data_out.add_data_vector (r, "residual");
+  data_out.add_data_vector (d, "update");
+
+  data_out.build_patches (1);
+
+  std::ofstream output ((filename + ".vtk").c_str());
+  data_out.write_vtk (output);
+}
+
+
 template <int dim,bool same_diagonal,unsigned int degree>
 Simulator<dim,same_diagonal,degree>::Simulator (dealii::TimerOutput &timer_,
                                                 MPI_Comm &mpi_communicator_,
@@ -280,11 +328,16 @@ void Simulator<dim,same_diagonal,degree>::solve ()
       smoother_data[level].level = level;
       smoother_data[level].mapping = &mapping;
       smoother_data[level].weight = 1.0;
+      if (!same_diagonal)
+        {
+          smoother_data[level].use_dictionary = false;
+          smoother_data[level].tol = 0.05;
+        }
       smoother_data[level].patch_type = Smoother::AdditionalData::cell_patches;
     }
 
   // SmootherSetup
-  dealii::MGSmootherPrecondition<SystemMatrixType, Smoother, LA::MPI::Vector> mg_smoother;
+  dealii::MGSmootherPrecondition<SmootherMatrixType, Smoother, LA::MPI::Vector> mg_smoother;
   mg_smoother.initialize(mg_matrix, smoother_data);
   mg_smoother.set_steps(smoothing_steps);
   dealii::mg::Matrix<LA::MPI::Vector>         mgmatrix(mg_matrix);
@@ -316,16 +369,10 @@ void Simulator<dim,same_diagonal,degree>::solve ()
 #endif
 
   dealii::ReductionControl          solver_control (dof_handler.n_dofs(), 1.e-20, 1.e-10,true);
-  dealii::SolverCG<LA::MPI::Vector> solver (solver_control);
+  OwnSolverCG<LA::MPI::Vector, dim> solver (solver_control, dof_handler);
 
   timer.leave_subsection();
   timer.enter_subsection("solve::solve");
-  std::cout << "solution_tmp.local_size(): "
-            << solution_tmp.local_size()
-            << std::endl;
-  std::cout << "right_hand_side.local_size(): "
-            << right_hand_side.local_size()
-            << std::endl;
   constraints.set_zero(solution_tmp);
   solver.solve(system_matrix,solution_tmp,right_hand_side,preconditioner);
 #ifdef CG
@@ -426,7 +473,7 @@ void Simulator<dim,same_diagonal,degree>::run ()
   triangulation.refine_global (n_levels-1);
   timer.leave_subsection();
   pcout << "Finite element: " << fe.get_name() << std::endl;
-  const unsigned int n_local_refines = 0;
+  const unsigned int n_local_refines = 1;
   for (unsigned int refine_loop = 0; refine_loop<=n_local_refines; ++refine_loop)
     {
       timer.reset();
@@ -438,6 +485,7 @@ void Simulator<dim,same_diagonal,degree>::run ()
       timer.enter_subsection("setup_system");
       pcout << "Setup system" << std::endl;
       setup_system ();
+      output_results(n_levels);
       pcout << "Assemble system" << std::endl;
       assemble_system();
       timer.leave_subsection();

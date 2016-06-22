@@ -233,28 +233,29 @@ namespace dealii
       }
 #endif
 
-    std_cxx11::function<void (MeshWorker::DoFInfo<dim, spacedim>&, MeshWorker::IntegrationInfo<dim, spacedim>&)> cell_worker;
-    std_cxx11::function<void (MeshWorker::DoFInfo<dim, spacedim>&, MeshWorker::IntegrationInfo<dim, spacedim>&)> boundary_worker;
-    std_cxx11::function<void (MeshWorker::DoFInfo<dim, spacedim> &, MeshWorker::DoFInfo<dim, spacedim> &,
-                              MeshWorker::IntegrationInfo<dim, spacedim> &,
-                              MeshWorker::IntegrationInfo<dim, spacedim> &)> face_worker;
-    if (integrator.use_cell)
-      cell_worker = std_cxx11::bind(&MeshWorker::LocalIntegrator<dim, spacedim>::cell, &integrator, std_cxx11::_1, std_cxx11::_2);
-    if (integrator.use_boundary)
-      boundary_worker = std_cxx11::bind(&MeshWorker::LocalIntegrator<dim, spacedim>::boundary, &integrator, std_cxx11::_1, std_cxx11::_2);
-    if (integrator.use_face)
-      face_worker = std_cxx11::bind(&MeshWorker::LocalIntegrator<dim, spacedim>::face, &integrator, std_cxx11::_1, std_cxx11::_2, std_cxx11::_3, std_cxx11::_4);
+    std_cxx11::function<void (DOFINFO &, typename INFOBOX::CellInfo &)>   cell_worker ;
+    std_cxx11::function<void (DOFINFO &, typename INFOBOX::CellInfo &)>   boundary_worker ;
+    std_cxx11::function<void (DOFINFO &, DOFINFO &,
+                              typename INFOBOX::CellInfo &, typename INFOBOX::CellInfo &)>   face_worker ;
 
+    // TODO: get rid of 'ifs' here to allow generic INTEGRATORs as it is designed
+    if (integrator.use_cell)
+      cell_worker = std_cxx11::bind(&INTEGRATOR::cell, &integrator, std_cxx11::_1, std_cxx11::_2);
+    if (integrator.use_boundary)
+      boundary_worker = std_cxx11::bind(&INTEGRATOR::boundary, &integrator, std_cxx11::_1, std_cxx11::_2);
+    if (integrator.use_face)
+      face_worker = std_cxx11::bind(&INTEGRATOR::face, &integrator, std_cxx11::_1, std_cxx11::_2,
+                                    std_cxx11::_3, std_cxx11::_4);
 
     std_cxx11::function<void (const ITERATOR &, INFOBOX &, MeshWorker::DoFInfoBox<dim, DOFINFO>&)> cell_action;
     if (restrict_to_cell_range)
       cell_action = std_cxx11::bind(&restricted_cell_action<INFOBOX, DOFINFO, dim, spacedim, ITERATOR>,
-                                    dealii::std_cxx11::_1, total_cell_range, dealii::std_cxx11::_3,
-                                    dealii::std_cxx11::_2, cell_worker, boundary_worker, face_worker, lctrl);
+                                    std_cxx11::_1, total_cell_range, std_cxx11::_3,
+                                    std_cxx11::_2, cell_worker, boundary_worker, face_worker, lctrl);
 
     else
-      cell_action = std_cxx11::bind(&dealii::MeshWorker::cell_action<INFOBOX, DOFINFO, dim, spacedim, ITERATOR>,
-                                    dealii::std_cxx11::_1, dealii::std_cxx11::_3, dealii::std_cxx11::_2,
+      cell_action = std_cxx11::bind(&MeshWorker::cell_action<INFOBOX, DOFINFO, dim, spacedim, ITERATOR>,
+                                    std_cxx11::_1, std_cxx11::_3, std_cxx11::_2,
                                     cell_worker, boundary_worker, face_worker, lctrl);
 
     MeshWorker::DoFInfoBox<dim, DOFINFO> dof_info_box(dof_info);
@@ -268,11 +269,11 @@ namespace dealii
     //  Loop over all cells
     if (parallel)
       {
-        dealii::WorkStream::run(colored_iterators, cell_action,
-                                dealii::std_cxx11::bind(&dealii::internal::assemble<dim,DOFINFO,ASSEMBLER>,
-                                                        dealii::std_cxx11::_1, &assembler),
-                                info, dof_info_box,
-                                dealii::MultithreadInfo::n_threads(),8);
+        WorkStream::run(colored_iterators, cell_action,
+                        std_cxx11::bind(&internal::assemble<dim,DOFINFO,ASSEMBLER>,
+                                        std_cxx11::_1, &assembler),
+                        info, dof_info_box,
+                        MultithreadInfo::n_threads(),8);
       }
     else
       {
