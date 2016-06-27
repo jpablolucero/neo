@@ -234,9 +234,9 @@ namespace dealii
 #endif
 
     std_cxx11::function<void (DOFINFO &, typename INFOBOX::CellInfo &)>   cell_worker ;
-    std_cxx11::function<void (DOFINFO &, typename INFOBOX::CellInfo &)>   boundary_worker ; 
+    std_cxx11::function<void (DOFINFO &, typename INFOBOX::CellInfo &)>   boundary_worker ;
     std_cxx11::function<void (DOFINFO &, DOFINFO &,
-					    typename INFOBOX::CellInfo &, typename INFOBOX::CellInfo &)>   face_worker ;
+                              typename INFOBOX::CellInfo &, typename INFOBOX::CellInfo &)>   face_worker ;
 
     // TODO: get rid of 'ifs' here to allow generic INTEGRATORs as it is designed
     if (integrator.use_cell)
@@ -245,8 +245,8 @@ namespace dealii
       boundary_worker = std_cxx11::bind(&INTEGRATOR::boundary, &integrator, std_cxx11::_1, std_cxx11::_2);
     if (integrator.use_face)
       face_worker = std_cxx11::bind(&INTEGRATOR::face, &integrator, std_cxx11::_1, std_cxx11::_2,
-					    std_cxx11::_3, std_cxx11::_4);
-    
+                                    std_cxx11::_3, std_cxx11::_4);
+
     std_cxx11::function<void (const ITERATOR &, INFOBOX &, MeshWorker::DoFInfoBox<dim, DOFINFO>&)> cell_action;
     if (restrict_to_cell_range)
       cell_action = std_cxx11::bind(&restricted_cell_action<INFOBOX, DOFINFO, dim, spacedim, ITERATOR>,
@@ -270,10 +270,10 @@ namespace dealii
     if (parallel)
       {
         WorkStream::run(colored_iterators, cell_action,
-                                std_cxx11::bind(&internal::assemble<dim,DOFINFO,ASSEMBLER>,
-                                                        std_cxx11::_1, &assembler),
-                                info, dof_info_box,
-                                MultithreadInfo::n_threads(),8);
+                        std_cxx11::bind(&internal::assemble<dim,DOFINFO,ASSEMBLER>,
+                                        std_cxx11::_1, &assembler),
+                        info, dof_info_box,
+                        MultithreadInfo::n_threads(),8);
       }
     else
       {

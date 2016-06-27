@@ -96,8 +96,8 @@ void MFOperator<dim, fe_degree, same_diagonal>::reinit
                             mpi_communicator_);
 #endif
   //TODO possibly colorize iterators, assume thread-safety for the moment
-  std::vector<std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> > 
-    all_iterators(static_cast<unsigned int>(std::pow(2,dim)));
+  std::vector<std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> >
+  all_iterators(static_cast<unsigned int>(std::pow(2,dim)));
   auto i = 1 ;
   for (auto p=dof_handler->begin_mg(level); p!=dof_handler->end_mg(level); ++p)
     {
@@ -105,11 +105,11 @@ void MFOperator<dim, fe_degree, same_diagonal>::reinit
                                                ? p->level_subdomain_id()
                                                : p->subdomain_id();
       if (csid == p->get_triangulation().locally_owned_subdomain())
-	{
-	  all_iterators[i-1].push_back(p);
-	  i = i % static_cast<unsigned int>(std::pow(2,dim)) ;
-	  ++i;
-	}
+        {
+          all_iterators[i-1].push_back(p);
+          i = i % static_cast<unsigned int>(std::pow(2,dim)) ;
+          ++i;
+        }
     }
   colored_iterators = std::move(all_iterators);
 
@@ -229,7 +229,7 @@ void MFOperator<dim,fe_degree,same_diagonal>::vmult_add (LA::MPI::Vector &dst,
       }
   }
 
-timer->leave_subsection();
+  timer->leave_subsection();
 }
 
 template <int dim, int fe_degree, bool same_diagonal>

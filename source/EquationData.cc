@@ -77,7 +77,7 @@ ReferenceFunction<dim>::laplacian(const dealii::Point<dim> &p,
 }
 
 template <int dim>
-Angle<dim>::Angle(const std::string& filename)
+Angle<dim>::Angle(const std::string &filename)
 {
   std::ifstream file(filename.c_str());
   AssertThrow (file.is_open(), dealii::ExcIO());
@@ -95,7 +95,7 @@ Angle<dim>::Angle(const std::string& filename)
   for (unsigned int i=0; i<points.size(); ++i)
     {
       for (unsigned int d=0; d<filedim; ++d)
-	file >> points[i](d);
+        file >> points[i](d);
       file >> weights[i];
     }
 

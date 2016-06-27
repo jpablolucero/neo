@@ -55,7 +55,7 @@ class Angle :
   public dealii::Quadrature<dim>
 {
 public:
-  Angle(const std::string& filename);
+  Angle(const std::string &filename);
 };
 
 #ifdef HEADER_IMPLEMENTATION

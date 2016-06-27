@@ -20,12 +20,12 @@ void MatrixIntegrator<dim, same_diagonal>::cell(dealii::MeshWorker::DoFInfo<dim>
       const auto n_components = fev.get_fe().n_components();
       coeffs.resize(n_components);
       unsigned int c = 0;
-      for (auto & component : coeffs)
-	{
-	  component.resize(n_quads);
-	  diffcoeff.value_list(fev.get_quadrature_points(),component,c);
-	  ++c ;
-	}
+      for (auto &component : coeffs)
+        {
+          component.resize(n_quads);
+          diffcoeff.value_list(fev.get_quadrature_points(),component,c);
+          ++c ;
+        }
       auto &M = dinfo.matrix(b*n_blocks + b).matrix;
       LocalIntegrators::Diffusion::cell_matrix<dim>(M,fev,coeffs);
     }
@@ -57,12 +57,12 @@ void MatrixIntegrator<dim,same_diagonal>::face(dealii::MeshWorker::DoFInfo<dim> 
       const auto n_components = fev1.get_fe().n_components();
       coeffs.resize(n_components);
       unsigned int c = 0;
-      for (auto & component : coeffs)
-	{
-	  component.resize(n_quads);
-	  diffcoeff.value_list(fev1.get_quadrature_points(),component,c);
-	  ++c ;
-	}
+      for (auto &component : coeffs)
+        {
+          component.resize(n_quads);
+          diffcoeff.value_list(fev1.get_quadrature_points(),component,c);
+          ++c ;
+        }
 
       LocalIntegrators::Diffusion::ip_matrix<dim>
       (RM11,RM12,RM21,RM22,fev1,fev2,coeffs,
@@ -86,12 +86,12 @@ void MatrixIntegrator<dim,same_diagonal>::boundary(dealii::MeshWorker::DoFInfo<d
       const auto n_components = fev.get_fe().n_components();
       coeffs.resize(n_components);
       unsigned int c = 0;
-      for (auto & component : coeffs)
-	{
-	  component.resize(n_quads);
-	  diffcoeff.value_list(fev.get_quadrature_points(),component,c);
-	  ++c ;
-	}
+      for (auto &component : coeffs)
+        {
+          component.resize(n_quads);
+          diffcoeff.value_list(fev.get_quadrature_points(),component,c);
+          ++c ;
+        }
       auto &M = dinfo.matrix(b*n_blocks + b).matrix;
       LocalIntegrators::Diffusion::nitsche_matrix<dim>
       (M,fev,coeffs,
@@ -121,12 +121,12 @@ void ResidualIntegrator<dim>::cell(dealii::MeshWorker::DoFInfo<dim> &dinfo,
       const auto n_components = fev.get_fe().n_components();
       coeffs.resize(n_components);
       unsigned int c = 0;
-      for (auto & component : coeffs)
-	{
-	  component.resize(n_quads);
-	  diffcoeff.value_list(fev.get_quadrature_points(),component,c);
-	  ++c ;
-	}
+      for (auto &component : coeffs)
+        {
+          component.resize(n_quads);
+          diffcoeff.value_list(fev.get_quadrature_points(),component,c);
+          ++c ;
+        }
       AssertDimension(localdst.block(b).size(), fev.dofs_per_cell);
       dealii::VectorSlice<typename std::remove_reference<decltype(Dsrc)>::type> slice (Dsrc,b*n_components,n_components) ;
       LocalIntegrators::Diffusion::cell_residual<dim>(localdst.block(b), fev, slice, coeffs);
@@ -162,12 +162,12 @@ void ResidualIntegrator<dim>::face(dealii::MeshWorker::DoFInfo<dim> &dinfo1,
       const auto n_components = fev1.get_fe().n_components();
       coeffs.resize(n_components);
       unsigned int c = 0;
-      for (auto & component : coeffs)
-	{
-	  component.resize(n_quads);
-	  diffcoeff.value_list(fev1.get_quadrature_points(),component,c);
-	  ++c ;
-	}
+      for (auto &component : coeffs)
+        {
+          component.resize(n_quads);
+          diffcoeff.value_list(fev1.get_quadrature_points(),component,c);
+          ++c ;
+        }
       dealii::VectorSlice<typename std::remove_reference<decltype(src1)>::type> slice1 (src1,b*n_components,n_components) ;
       dealii::VectorSlice<typename std::remove_reference<decltype(Dsrc1)>::type> Dslice1 (Dsrc1,b*n_components,n_components) ;
       dealii::VectorSlice<typename std::remove_reference<decltype(src2)>::type> slice2 (src2,b*n_components,n_components) ;
@@ -202,15 +202,15 @@ void ResidualIntegrator<dim>::boundary(dealii::MeshWorker::DoFInfo<dim> &dinfo,
       const auto n_components = fev.get_fe().n_components();
       coeffs.resize(n_components);
       unsigned int c = 0;
-      for (auto & component : coeffs)
-	{
-	  component.resize(n_quads);
-	  diffcoeff.value_list(fev.get_quadrature_points(),component,c);
-	  ++c ;
-	}
+      for (auto &component : coeffs)
+        {
+          component.resize(n_quads);
+          diffcoeff.value_list(fev.get_quadrature_points(),component,c);
+          ++c ;
+        }
       bdata_values.resize(n_components);
-      for (auto & component : bdata_values)
-	component.resize(n_quads,0.);
+      for (auto &component : bdata_values)
+        component.resize(n_quads,0.);
       dealii::VectorSlice<typename std::remove_reference<decltype(src)>::type> slice (src,b*n_components,n_components) ;
       dealii::VectorSlice<typename std::remove_reference<decltype(Dsrc)>::type> Dslice (Dsrc,b*n_components,n_components) ;
       LocalIntegrators::Diffusion::nitsche_residual<dim>
@@ -240,7 +240,7 @@ void RHSIntegrator<dim>::cell(dealii::MeshWorker::DoFInfo<dim> &dinfo, typename 
   typename std::remove_reference<decltype(info.values[0][0])>::type coeffs_values;
   typename std::remove_reference<decltype(info.gradients[0][0])>::type coeffs_gradients;
   typename std::remove_reference<decltype(info.values[0])>::type f;
-  
+
   for (auto b=0; b<n_blocks; ++b)
     {
       const auto &fev = info.fe_values(dinfo.block_info->base_element(b));
@@ -254,17 +254,17 @@ void RHSIntegrator<dim>::cell(dealii::MeshWorker::DoFInfo<dim> &dinfo, typename 
       coeffs_values.resize(n_quads);
       coeffs_gradients.resize(n_quads);
       unsigned int c = 0 ;
-      for (auto & component : f) 
-	{
-	  component.resize(n_quads);
-	  exact_solution.laplacian_list(q_points, exact_laplacian, c);
-	  exact_solution.gradient_list(q_points, exact_gradients, c);
-	  diffcoeff.value_list(q_points,coeffs_values,c);
-	  diffcoeff.gradient_list(q_points,coeffs_gradients,c);
-	  for (auto q = 0 ; q<component.size() ; ++q)
-	    component[q] = coeffs_gradients[q]*exact_gradients[q]+coeffs_values[q]*exact_laplacian[q];
-	  ++c ;
-	}
+      for (auto &component : f)
+        {
+          component.resize(n_quads);
+          exact_solution.laplacian_list(q_points, exact_laplacian, c);
+          exact_solution.gradient_list(q_points, exact_gradients, c);
+          diffcoeff.value_list(q_points,coeffs_values,c);
+          diffcoeff.gradient_list(q_points,coeffs_gradients,c);
+          for (auto q = 0 ; q<component.size() ; ++q)
+            component[q] = coeffs_gradients[q]*exact_gradients[q]+coeffs_values[q]*exact_laplacian[q];
+          ++c ;
+        }
 
       dealii::LocalIntegrators::L2::L2(result.block(b),fev,f,-1.);
 #ifdef CG

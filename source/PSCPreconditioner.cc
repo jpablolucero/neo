@@ -59,14 +59,14 @@ PSCPreconditioner<dim, VectorType, number, same_diagonal>::PSCPreconditioner()
 template <int dim, typename VectorType, class number, bool same_diagonal>
 PSCPreconditioner<dim, VectorType, number, same_diagonal>::~PSCPreconditioner()
 {
-  for(auto &matrix : dictionary)
+  for (auto &matrix : dictionary)
     delete matrix;
 }
 
 template <int dim, typename VectorType, class number, bool same_diagonal>
 template <class GlobalOperatorType>
 void PSCPreconditioner<dim, VectorType, number, same_diagonal>::initialize(const GlobalOperatorType & /*global_operator*/,
-									   const AdditionalData &data)
+    const AdditionalData &data)
 {
   Assert(data.dof_handler != 0, dealii::ExcInternalError());
   Assert(data.level != -1, dealii::ExcInternalError());
@@ -89,9 +89,9 @@ void PSCPreconditioner<dim, VectorType, number, same_diagonal>::initialize(const
                                        n_gauss_points);
   info_box.initialize_update_flags();
   dealii::UpdateFlags update_flags = dealii::update_JxW_values |
-    dealii::update_quadrature_points |
-    dealii::update_values |
-    dealii::update_gradients;
+                                     dealii::update_quadrature_points |
+                                     dealii::update_values |
+                                     dealii::update_gradients;
   info_box.add_update_flags(update_flags, true, true, true, true);
   info_box.cell_selector.add("src", true, true, false);
   info_box.boundary_selector.add("src", true, true, false);
@@ -127,8 +127,8 @@ void PSCPreconditioner<dim, VectorType, number, same_diagonal>::initialize(const
                                                    local_n_gauss_points);
         local_info_box.initialize_update_flags();
         dealii::UpdateFlags local_update_flags = dealii::update_quadrature_points |
-	  dealii::update_values |
-	  dealii::update_gradients;
+                                                 dealii::update_values |
+                                                 dealii::update_gradients;
         local_info_box.add_update_flags(local_update_flags, true, true, true, true);
         local_info_box.initialize(fe, *(data.mapping), &(local_dof_handler.block_info()));
         dealii::MeshWorker::DoFInfo<dim> local_dof_info(local_dof_handler.block_info());
@@ -137,10 +137,10 @@ void PSCPreconditioner<dim, VectorType, number, same_diagonal>::initialize(const
         local_assembler.initialize(dummy_matrix);
         MatrixIntegrator<dim,false> local_integrator ;
         dealii::MeshWorker::integration_loop<dim, dim>
-	  (local_dof_handler.begin_active(),
-	   local_dof_handler.end(),
-	   local_dof_info, local_info_box,
-	   local_integrator,local_assembler);
+        (local_dof_handler.begin_active(),
+         local_dof_handler.end(),
+         local_dof_info, local_info_box,
+         local_integrator,local_assembler);
         for (unsigned int i = 0; i < n; ++i)
           for (unsigned int j = 0; j < n; ++j)
             {
@@ -150,104 +150,98 @@ void PSCPreconditioner<dim, VectorType, number, same_diagonal>::initialize(const
         for (unsigned int i=0; i<ddh->subdomain_to_global_map.size(); ++i)
           patch_inverses[i] = &real_patch_inverses[0];
       }
-    
+
     // FULL BLOCK JACOBI
-    else if(!same_diagonal && !data.use_dictionary)
+    else if (!same_diagonal && !data.use_dictionary)
       {
         real_patch_inverses.resize(ddh->subdomain_to_global_map.size());
-        for (unsigned int i=0; i<=ddh->subdomain_to_global_map.size()/dealii::MultithreadInfo::n_threads(); ++i)
-	  {
-	    dealii::Threads::ThreadGroup<> threads;
-	    for (unsigned int j=i*dealii::MultithreadInfo::n_threads(); 
-		 (j<(i+1)*dealii::MultithreadInfo::n_threads())and(j<ddh->subdomain_to_global_map.size()) ; ++j)
-	      {
-		threads += dealii::Threads::new_thread([j,this](){
-		    build_matrix(ddh->subdomain_to_global_map[j],
-				 ddh->global_dofs_on_subdomain[j],
-				 ddh->all_to_unique[j],
-				 real_patch_inverses[j]);
-		  });
-		patch_inverses[j] = &real_patch_inverses[j];
-	      }
-	    threads.join_all ();
-	  }
+        dealii::Threads::TaskGroup<> tasks;
+        for (unsigned int i=0; i<ddh->subdomain_to_global_map.size(); ++i)
+          {
+            tasks += dealii::Threads::new_task([i,this]()
+            {
+              build_matrix(ddh->subdomain_to_global_map[i],
+                           ddh->global_dofs_on_subdomain[i],
+                           ddh->all_to_unique[i],
+                           real_patch_inverses[i]);
+            });
+            patch_inverses[i] = &real_patch_inverses[i];
+          }
+        tasks.join_all ();
       }
 
     // DICTIONARY
-    else if(!same_diagonal && data.use_dictionary)
+    else if (!same_diagonal && data.use_dictionary)
       {
-	Assert(data.tol > 0., dealii::ExcInternalError());      
-	patch_inverses.resize(ddh->global_dofs_on_subdomain.size());
-	std::vector<unsigned int> id_range;
-	for(unsigned int id=0; id<ddh->global_dofs_on_subdomain.size(); ++id)
-	  id_range.push_back(id);
-	unsigned int patch_id;
-	// loop over subdomain range
-	while(id_range.size()!=0)
-	  {
-	    // build local inverse of first subdomain in the remaining id_range of subdomains
-	    patch_id = id_range.front();
-	    dictionary.push_back(new Matrix{});
-	    build_matrix(ddh->subdomain_to_global_map[patch_id],
-			 ddh->global_dofs_on_subdomain[patch_id],
-			 ddh->all_to_unique[patch_id],
-			 *(dictionary.back()));
-	    dictionary.back()->gauss_jordan();
-	    patch_inverses[patch_id] = dictionary.back();
-	    id_range.erase(id_range.begin());
-	    if(id_range.size()==0)
-	      break;
-	    // check 'inverse-similarity' with the remainder of subdomains
-	    auto j = id_range.begin();
-	    while(j!=id_range.end())
-	      {
-		Matrix A_j;
-		build_matrix(ddh->subdomain_to_global_map[*j],
-			     ddh->global_dofs_on_subdomain[*j],
-			     ddh->all_to_unique[*j],
-			     A_j);
-		Matrix S_j{A_j.m()};
-		dictionary.back()->mmult(S_j,A_j);
-		S_j.diagadd(-1.);
-		// test if currently observed inverse is a good approximation of inv(A_j)
-		Assert(S_j.m() == S_j.n(), dealii::ExcInternalError());
-		const double tol_m = data.tol * S_j.m() * S_j.n();
-		if(S_j.frobenius_norm() < tol_m)
-		  {
-		    patch_inverses[*j] = dictionary.back();
-		    j = id_range.erase(j);
-		  }
-		else
-		  ++j;
-	      }
-	  }
-	Assert(dictionary.size() <= patch_inverses.size(), dealii::ExcInternalError());
-	//Output
-	//Remark output is written so far only by first mpi process! Each mpi process has its own dictionary!
-	dealii::deallog << "Dictionary(Tol=" << data.tol << ") contains "
-			<< dictionary.size() << " inverse(s)." << std::endl;
+        Assert(data.tol > 0., dealii::ExcInternalError());
+        patch_inverses.resize(ddh->global_dofs_on_subdomain.size());
+        std::vector<unsigned int> id_range;
+        for (unsigned int id=0; id<ddh->global_dofs_on_subdomain.size(); ++id)
+          id_range.push_back(id);
+        unsigned int patch_id;
+        // loop over subdomain range
+        while (id_range.size()!=0)
+          {
+            // build local inverse of first subdomain in the remaining id_range of subdomains
+            patch_id = id_range.front();
+            dictionary.push_back(new Matrix {});
+            build_matrix(ddh->subdomain_to_global_map[patch_id],
+                         ddh->global_dofs_on_subdomain[patch_id],
+                         ddh->all_to_unique[patch_id],
+                         *(dictionary.back()));
+            dictionary.back()->gauss_jordan();
+            patch_inverses[patch_id] = dictionary.back();
+            id_range.erase(id_range.begin());
+            if (id_range.size()==0)
+              break;
+            // check 'inverse-similarity' with the remainder of subdomains
+            auto j = id_range.begin();
+            while (j!=id_range.end())
+              {
+                Matrix A_j;
+                build_matrix(ddh->subdomain_to_global_map[*j],
+                             ddh->global_dofs_on_subdomain[*j],
+                             ddh->all_to_unique[*j],
+                             A_j);
+                Matrix S_j {A_j.m()};
+                dictionary.back()->mmult(S_j,A_j);
+                S_j.diagadd(-1.);
+                // test if currently observed inverse is a good approximation of inv(A_j)
+                Assert(S_j.m() == S_j.n(), dealii::ExcInternalError());
+                const double tol_m = data.tol * S_j.m() * S_j.n();
+                if (S_j.frobenius_norm() < tol_m)
+                  {
+                    patch_inverses[*j] = dictionary.back();
+                    j = id_range.erase(j);
+                  }
+                else
+                  ++j;
+              }
+          }
+        Assert(dictionary.size() <= patch_inverses.size(), dealii::ExcInternalError());
+        //Output
+        //Remark output is written so far only by first mpi process! Each mpi process has its own dictionary!
+        dealii::deallog << "Dictionary(Tol=" << data.tol << ") contains "
+                        << dictionary.size() << " inverse(s)." << std::endl;
       }
     else // same_diagonal + use_dictionary not allowed!
       Assert(false, dealii::ExcInternalError());
 
     timer->leave_subsection();
   }
-  
-  // invert patches in same_diagonal & full block jacobi case
-  if(!data.use_dictionary)
-    {
 
-      for (unsigned int i=0; i<=real_patch_inverses.size()/dealii::MultithreadInfo::n_threads(); ++i)
-	{
-	  dealii::Threads::ThreadGroup<> threads;
-	  for (unsigned int j=i*dealii::MultithreadInfo::n_threads(); 
-	       (j<(i+1)*dealii::MultithreadInfo::n_threads())and(j<real_patch_inverses.size()) ; ++j)
-	    {
-	      threads += dealii::Threads::new_thread([j,this](){ 
-		  real_patch_inverses[j].gauss_jordan();});
-	    }
-	  threads.join_all ();
-	} 
+  // invert patches in same_diagonal & full block jacobi case
+  if (!data.use_dictionary)
+    {
+      dealii::Threads::TaskGroup<> tasks;
+      for (unsigned int i=0; i<real_patch_inverses.size(); ++i)
+        {
+          tasks += dealii::Threads::new_task([i,this]()
+          {
+            real_patch_inverses[i].gauss_jordan();
+          });
+        }
+      tasks.join_all ();
     }
 }
 
@@ -257,7 +251,7 @@ void PSCPreconditioner<dim, VectorType, number, same_diagonal>::clear()
 
 template <int dim, typename VectorType, class number, bool same_diagonal>
 void PSCPreconditioner<dim, VectorType, number, same_diagonal>::vmult (VectorType &dst,
-								       const VectorType &src) const
+    const VectorType &src) const
 {
   dst = 0;
   vmult_add(dst, src);
@@ -267,7 +261,7 @@ void PSCPreconditioner<dim, VectorType, number, same_diagonal>::vmult (VectorTyp
 
 template <int dim, typename VectorType, class number, bool same_diagonal>
 void PSCPreconditioner<dim, VectorType, number, same_diagonal>::Tvmult (VectorType &/*dst*/,
-									const VectorType &/*src*/) const
+    const VectorType &/*src*/) const
 {
   // TODO use transpose of local inverses
   AssertThrow(false, dealii::ExcNotImplemented());
@@ -275,7 +269,7 @@ void PSCPreconditioner<dim, VectorType, number, same_diagonal>::Tvmult (VectorTy
 
 template <int dim, typename VectorType, class number, bool same_diagonal>
 void PSCPreconditioner<dim, VectorType, number, same_diagonal>::vmult_add (VectorType &dst,
-									   const VectorType &src) const
+    const VectorType &src) const
 {
   std::string section = "Smoothing @ level ";
   section += std::to_string(level);
@@ -302,7 +296,7 @@ void PSCPreconditioner<dim, VectorType, number, same_diagonal>::vmult_add (Vecto
 
 template <int dim, typename VectorType, class number, bool same_diagonal>
 void PSCPreconditioner<dim, VectorType, number, same_diagonal>::Tvmult_add (VectorType &/*dst*/,
-									    const VectorType &/*src*/) const
+    const VectorType &/*src*/) const
 {
   // TODO use transpose of local inverses
   AssertThrow(false, dealii::ExcNotImplemented());

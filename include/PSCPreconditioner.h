@@ -21,7 +21,7 @@
 template <int dim=2, typename VectorType=LA::MPI::Vector, class number=double, bool same_diagonal=false>
 class PSCPreconditioner final
 {
- public:
+public:
   typedef typename dealii::FullMatrix<double> Matrix;
   class AdditionalData;
 
@@ -33,7 +33,7 @@ class PSCPreconditioner final
   // interface for MGSmootherPrecondition but global_operator is not used
   template <class GlobalOperatorType>
   void initialize(const GlobalOperatorType &global_operator,
-		  const AdditionalData &data);
+                  const AdditionalData &data);
   void clear();
 
   void vmult(VectorType &dst, const VectorType &src) const;
@@ -46,20 +46,20 @@ class PSCPreconditioner final
 
   static dealii::TimerOutput *timer;
 
- protected:
+protected:
   AdditionalData data;
 
- private:
+private:
   void build_matrix
-    (const std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> &cell_range,
-     const std::vector<dealii::types::global_dof_index> &global_dofs_on_subdomain,
-     const std::map<dealii::types::global_dof_index, unsigned int> &all_to_unique,
-     dealii::FullMatrix<double> &matrix);
+  (const std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> &cell_range,
+   const std::vector<dealii::types::global_dof_index> &global_dofs_on_subdomain,
+   const std::map<dealii::types::global_dof_index, unsigned int> &all_to_unique,
+   dealii::FullMatrix<double> &matrix);
 
   std::vector<Matrix *> patch_inverses;
   std::vector<Matrix> real_patch_inverses;
   // change it to smartpointers
-  std::vector<Matrix*> dictionary;
+  std::vector<Matrix *> dictionary;
 
   dealii::MeshWorker::IntegrationInfoBox<dim> info_box;
   std::unique_ptr<dealii::MeshWorker::DoFInfo<dim> >  dof_info;
@@ -76,7 +76,7 @@ class PSCPreconditioner<dim, VectorType, number, same_diagonal>::AdditionalData
 {
 public:
   AdditionalData() : dof_handler(0), level(-1), weight(1.0), tol(0.), mapping(0), use_dictionary(false), patch_type(cell_patches) {}
-  
+
   dealii::DoFHandler<dim> *dof_handler;
   unsigned int level;
   double weight;
@@ -85,10 +85,10 @@ public:
 
   bool use_dictionary;
   enum PatchType
-    {
-      cell_patches,
-      vertex_patches
-    };
+  {
+    cell_patches,
+    vertex_patches
+  };
   PatchType patch_type;
 };
 
