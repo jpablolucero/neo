@@ -19,7 +19,7 @@ namespace implementation
     class Scratch
     {
     public:
-      const std::vector<dealii::FullMatrix<double>* > *local_inverses;
+      const std::vector<dealii::LAPACKFullMatrix<double>* > *local_inverses;
 
       dealii::Vector<number>  local_src;
       const VectorType *src;
@@ -109,7 +109,7 @@ void PSCPreconditioner<dim, VectorType, number, same_diagonal>::initialize(const
       {
         real_patch_inverses.resize(1);
         const unsigned int n = fe.n_dofs_per_cell();
-        real_patch_inverses[0]=dealii::FullMatrix<double>(n);
+        real_patch_inverses[0]=dealii::LAPACKFullMatrix<double>(n);
         dealii::Triangulation<dim> local_triangulation;
         dealii::DoFHandler<dim> local_dof_handler(local_triangulation);
         if (level == 0)
@@ -184,12 +184,12 @@ void PSCPreconditioner<dim, VectorType, number, same_diagonal>::initialize(const
           {
             // build local inverse of first subdomain in the remaining id_range of subdomains
             patch_id = id_range.front();
-            dictionary.push_back(new Matrix {});
+            dictionary.push_back(new LAPACKMatrix {});
             build_matrix(ddh->subdomain_to_global_map[patch_id],
                          ddh->global_dofs_on_subdomain[patch_id],
                          ddh->all_to_unique[patch_id],
                          *(dictionary.back()));
-            dictionary.back()->gauss_jordan();
+            dictionary.back()->compute_inverse_svd();
             patch_inverses[patch_id] = dictionary.back();
             id_range.erase(id_range.begin());
             if (id_range.size()==0)
@@ -198,7 +198,7 @@ void PSCPreconditioner<dim, VectorType, number, same_diagonal>::initialize(const
             auto j = id_range.begin();
             while (j!=id_range.end())
               {
-                Matrix A_j;
+                LAPACKMatrix A_j;
                 build_matrix(ddh->subdomain_to_global_map[*j],
                              ddh->global_dofs_on_subdomain[*j],
                              ddh->all_to_unique[*j],
@@ -238,7 +238,7 @@ void PSCPreconditioner<dim, VectorType, number, same_diagonal>::initialize(const
         {
           tasks += dealii::Threads::new_task([i,this]()
           {
-            real_patch_inverses[i].gauss_jordan();
+            real_patch_inverses[i].compute_inverse_svd();
           });
         }
       tasks.join_all ();
@@ -307,7 +307,7 @@ void PSCPreconditioner<dim, VectorType, number, same_diagonal>::build_matrix
 (const std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> &cell_range,
  const std::vector<dealii::types::global_dof_index> &global_dofs_on_subdomain,
  const std::map<dealii::types::global_dof_index, unsigned int> &all_to_unique,
- dealii::FullMatrix<double> &matrix)
+ dealii::LAPACKFullMatrix<double> &matrix)
 {
 
   dealii::MGLevelObject<dealii::FullMatrix<double> > mg_matrix ;
