@@ -5,7 +5,7 @@
 #include <deal.II/base/thread_management.h>
 #include <deal.II/base/multithread_info.h>
 #include <deal.II/lac/vector.h>
-#include <deal.II/lac/full_matrix.h>
+#include <deal.II/lac/lapack_full_matrix.h>
 #include <deal.II/dofs/dof_handler.h>
 #include <deal.II/dofs/dof_tools.h>
 #include <deal.II/base/work_stream.h>
@@ -22,6 +22,7 @@ template <int dim=2, typename VectorType=LA::MPI::Vector, class number=double, b
 class PSCPreconditioner final
 {
 public:
+  typedef typename dealii::LAPACKFullMatrix<double> LAPACKMatrix;
   typedef typename dealii::FullMatrix<double> Matrix;
   class AdditionalData;
 
@@ -54,12 +55,12 @@ private:
   (const std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> &cell_range,
    const std::vector<dealii::types::global_dof_index> &global_dofs_on_subdomain,
    const std::map<dealii::types::global_dof_index, unsigned int> &all_to_unique,
-   dealii::FullMatrix<double> &matrix);
+   dealii::LAPACKFullMatrix<double> &matrix);
 
-  std::vector<Matrix *> patch_inverses;
-  std::vector<Matrix> real_patch_inverses;
+  std::vector<LAPACKMatrix *> patch_inverses;
+  std::vector<LAPACKMatrix> real_patch_inverses;
   // change it to smartpointers
-  std::vector<Matrix *> dictionary;
+  std::vector<LAPACKMatrix *> dictionary;
 
   dealii::MeshWorker::IntegrationInfoBox<dim> info_box;
   std::unique_ptr<dealii::MeshWorker::DoFInfo<dim> >  dof_info;
