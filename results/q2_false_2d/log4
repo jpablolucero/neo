@@ -1,0 +1,74 @@
+Using Trilinos parallel linear algebra
+Using FE_DGQ elements
+Refine global
+Finite element: FESystem<2>[FESystem<2>[FE_DGQ<2>(2)]]
+Number of active cells: 64
+Setup system
+Assemble system
+DEAL::DoFHandler levels:  9 36 144 576
+Setup multigrid
+Solve
+DEAL:cg::Check 0	2.20077
+DEAL:cg::Starting value 2.20077
+DEAL:cg::Check 1	1.04721
+DEAL:cg::Check 2	0.380860
+DEAL:cg::Check 3	0.0815272
+DEAL:cg::Check 4	0.0314188
+DEAL:cg::Check 5	0.0166176
+DEAL:cg::Check 6	0.00735793
+DEAL:cg::Check 7	0.00277481
+DEAL:cg::Check 8	0.00108407
+DEAL:cg::Check 9	0.000445425
+DEAL:cg::Check 10	0.000231187
+DEAL:cg::Check 11	0.000105999
+DEAL:cg::Check 12	2.94824e-05
+DEAL:cg::Check 13	1.25996e-05
+DEAL:cg::Check 14	6.84167e-06
+DEAL:cg::Check 15	3.04475e-06
+DEAL:cg::Check 16	1.35857e-06
+DEAL:cg::Check 17	5.06762e-07
+DEAL:cg::Check 18	1.98184e-07
+DEAL:cg::Check 19	9.43601e-08
+DEAL:cg::Check 20	4.19659e-08
+DEAL:cg::Check 21	1.89646e-08
+DEAL:cg::Check 22	7.54471e-09
+DEAL:cg::Check 23	3.50723e-09
+DEAL:cg::Check 24	2.42008e-09
+DEAL:cg::Check 25	1.30193e-09
+DEAL:cg::Check 26	3.59983e-10
+DEAL:cg::Convergence step 27 value 1.31594e-10
+Output
+L2 error: 0.508238
+
+
++---------------------------------------------+------------+------------+
+| Total wallclock time elapsed since start    |       2.1s |            |
+|                                             |            |            |
+| Section                         | no. calls |  wall time | % of total |
++---------------------------------+-----------+------------+------------+
+| LO::IntegrationLoop (1)         |        54 |     0.258s |        12% |
+| LO::IntegrationLoop (2)         |        54 |     0.246s |        12% |
+| LO::IntegrationLoop (3)         |        81 |      0.76s |        36% |
+| LO::assembler_setup (1)         |        54 |    0.0444s |       2.1% |
+| LO::assembler_setup (2)         |        54 |    0.0592s |       2.8% |
+| LO::assembler_setup (3)         |        81 |    0.0889s |       4.2% |
+| LO::build_matrices              |         4 |    0.0224s |       1.1% |
+| LO::initialize (1)              |        54 |   0.00962s |      0.46% |
+| LO::initialize (2)              |        54 |    0.0135s |      0.64% |
+| LO::initialize (3)              |        81 |    0.0157s |      0.75% |
+| LO::reinit                      |         5 |  0.000987s |     0.047% |
+| Smoothing @ level 1             |        54 |    0.0111s |      0.53% |
+| Smoothing @ level 2             |        54 |    0.0134s |      0.64% |
+| Smoothing @ level 3             |        54 |    0.0331s |       1.6% |
+| output                          |         1 |   0.00137s |     0.065% |
+| refine_global                   |         1 |   0.00159s |     0.076% |
+| setup_multigrid                 |         1 |   0.00154s |     0.073% |
+| setup_system                    |         1 |     0.375s |        18% |
+| solve                           |         1 |      1.69s |        80% |
+| solve::mg_initialization        |         1 |    0.0715s |       3.4% |
+| solve::solve                    |         1 |      1.61s |        77% |
++---------------------------------+-----------+------------+------------+
+
+
+memusg: peak=332800
+memusg: avg=228827

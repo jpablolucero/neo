@@ -1,0 +1,10 @@
+Using Trilinos parallel linear algebra
+Using FE_DGQ elements
+Refine global
+Finite element: FESystem<2>[FESystem<2>[FE_DGQ<2>(4)]]
+Number of active cells: 16777216
+Setup system
+Assemble system
+DEAL::DoFHandler levels:  25 100 400 1600 6400 25600 102400 409600 1638400 6553600 26214400 104857600 419430400
+Setup multigrid
+Solve

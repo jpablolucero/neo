@@ -1,0 +1,67 @@
+Using Trilinos parallel linear algebra
+Using FE_DGQ elements
+Refine global
+Finite element: FESystem<2>[FESystem<2>[FE_DGQ<2>(2)]]
+Number of active cells: 16777216
+Setup system
+Assemble system
+DEAL::DoFHandler levels:  9 36 144 576 2304 9216 36864 147456 589824 2359296 9437184 37748736 150994944
+Setup multigrid
+Solve
+DEAL:cg::Check 0	0.00438365
+DEAL:cg::Starting value 0.00438365
+DEAL:cg::Check 1	0.438957
+DEAL:cg::Check 2	0.374123
+DEAL:cg::Check 3	0.185821
+DEAL:cg::Check 4	0.0494771
+DEAL:cg::Check 5	0.0249011
+DEAL:cg::Check 6	0.00894366
+DEAL:cg::Check 7	0.00281668
+DEAL:cg::Check 8	0.00110015
+DEAL:cg::Check 9	0.000352021
+DEAL:cg::Check 10	0.000130807
+DEAL:cg::Check 11	3.88436e-05
+DEAL:cg::Check 12	1.95104e-05
+DEAL:cg::Check 13	1.41766e-05
+DEAL:cg::Check 14	4.07199e-06
+DEAL:cg::Check 15	1.45408e-06
+DEAL:cg::Check 16	6.30856e-07
+DEAL:cg::Check 17	1.76431e-07
+DEAL:cg::Check 18	7.14195e-08
+DEAL:cg::Check 19	2.71633e-08
+DEAL:cg::Check 20	1.09226e-08
+DEAL:cg::Check 21	7.87628e-09
+DEAL:cg::Check 22	3.02680e-09
+DEAL:cg::Check 23	9.31592e-10
+DEAL:cg::Check 24	4.42222e-10
+DEAL:cg::Check 25	3.12429e-10
+DEAL:cg::Check 26	9.05693e-11
+DEAL:cg::Check 27	5.55552e-11
+DEAL:cg::Check 28	2.87748e-11
+DEAL:cg::Check 29	1.12574e-11
+DEAL:cg::Check 30	8.03841e-12
+DEAL:cg::Check 31	3.34445e-12
+DEAL:cg::Check 32	3.12916e-12
+DEAL:cg::Check 33	2.31273e-12
+DEAL:cg::Check 34	1.50990e-12
+DEAL:cg::Check 35	4.45822e-13
+DEAL:cg::Convergence step 36 value 3.81520e-13
+Output
+[simserv02:118129] *** Process received signal ***
+[simserv02:118129] Signal: Aborted (6)
+[simserv02:118129] Signal code:  (-6)
+[simserv02:118129] [ 0] /lib/x86_64-linux-gnu/libpthread.so.0(+0x10330) [0x7f40444e4330]
+[simserv02:118129] [ 1] /lib/x86_64-linux-gnu/libc.so.6(gsignal+0x37) [0x7f40437bac37]
+[simserv02:118129] [ 2] /lib/x86_64-linux-gnu/libc.so.6(abort+0x148) [0x7f40437be028]
+[simserv02:118129] [ 3] /lib/x86_64-linux-gnu/libc.so.6(+0x732a4) [0x7f40437f72a4]
+[simserv02:118129] [ 4] /lib/x86_64-linux-gnu/libc.so.6(+0x7f55e) [0x7f404380355e]
+[simserv02:118129] [ 5] /mnt/data/darndt/deal.II/lib/libdeal_II.so.8.5.0-pre(_ZN6dealii8internal15parallel_reduceINS0_5Norm2IddEEdEEvRKT_yRT0_RSt10shared_ptrINS_8parallel8internal14TBBPartitionerEE+0x3e3) [0x7f40489f4983]
+[simserv02:118129] [ 6] /mnt/data/darndt/deal.II/lib/libdeal_II.so.8.5.0-pre(_ZNK6dealii6VectorIdE7l2_normEv+0x28) [0x7f4048c0d3c8]
+[simserv02:118129] [ 7] ./neo(_ZNK9SimulatorILi2ELb1ELj2EE13compute_errorEv+0xda) [0x6636ea]
+[simserv02:118129] [ 8] ./neo(_ZN9SimulatorILi2ELb1ELj2EE3runEv+0x40e) [0x6a1b3e]
+[simserv02:118129] [ 9] ./neo(main+0x12d) [0x52f76d]
+[simserv02:118129] [10] /lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0xf5) [0x7f40437a5f45]
+[simserv02:118129] [11] ./neo() [0x52f87d]
+[simserv02:118129] *** End of error message ***
+memusg: peak=74783012
+memusg: avg=64958747

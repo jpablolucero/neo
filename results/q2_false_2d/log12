@@ -1,0 +1,109 @@
+Using Trilinos parallel linear algebra
+Using FE_DGQ elements
+Refine global
+Finite element: FESystem<2>[FESystem<2>[FE_DGQ<2>(2)]]
+Number of active cells: 4194304
+Setup system
+Assemble system
+DEAL::DoFHandler levels:  9 36 144 576 2304 9216 36864 147456 589824 2359296 9437184 37748736
+Setup multigrid
+Solve
+DEAL:cg::Check 0	0.00876729
+DEAL:cg::Starting value 0.00876729
+DEAL:cg::Check 1	0.514026
+DEAL:cg::Check 2	0.124517
+DEAL:cg::Check 3	0.128039
+DEAL:cg::Check 4	0.0483620
+DEAL:cg::Check 5	0.0416572
+DEAL:cg::Check 6	0.0182294
+DEAL:cg::Check 7	0.00905537
+DEAL:cg::Check 8	0.00722157
+DEAL:cg::Check 9	0.00478860
+DEAL:cg::Check 10	0.00222551
+DEAL:cg::Check 11	0.00113948
+DEAL:cg::Check 12	0.000722339
+DEAL:cg::Check 13	0.000476919
+DEAL:cg::Check 14	0.000292911
+DEAL:cg::Check 15	0.000125448
+DEAL:cg::Check 16	9.01471e-05
+DEAL:cg::Check 17	7.92812e-05
+DEAL:cg::Check 18	6.29367e-05
+DEAL:cg::Check 19	5.16171e-05
+DEAL:cg::Check 20	4.45844e-05
+DEAL:cg::Check 21	3.51202e-05
+DEAL:cg::Check 22	2.28349e-05
+DEAL:cg::Check 23	1.42032e-05
+DEAL:cg::Check 24	9.02202e-06
+DEAL:cg::Check 25	6.63241e-06
+DEAL:cg::Check 26	5.02492e-06
+DEAL:cg::Check 27	3.36599e-06
+DEAL:cg::Check 28	2.94794e-06
+DEAL:cg::Check 29	1.92500e-06
+DEAL:cg::Check 30	1.44847e-06
+DEAL:cg::Check 31	1.16432e-06
+DEAL:cg::Check 32	8.49540e-07
+DEAL:cg::Check 33	6.30891e-07
+DEAL:cg::Check 34	5.15049e-07
+DEAL:cg::Check 35	4.10226e-07
+DEAL:cg::Check 36	3.04947e-07
+DEAL:cg::Check 37	2.06083e-07
+DEAL:cg::Check 38	1.36142e-07
+DEAL:cg::Check 39	1.05034e-07
+DEAL:cg::Check 40	5.19640e-08
+DEAL:cg::Check 41	4.50390e-08
+DEAL:cg::Check 42	3.54904e-08
+DEAL:cg::Check 43	2.61391e-08
+DEAL:cg::Check 44	2.12485e-08
+DEAL:cg::Check 45	1.69419e-08
+DEAL:cg::Check 46	1.23941e-08
+DEAL:cg::Check 47	8.84018e-09
+DEAL:cg::Check 48	6.55101e-09
+DEAL:cg::Check 49	4.89544e-09
+DEAL:cg::Check 50	3.68236e-09
+DEAL:cg::Check 51	2.27485e-09
+DEAL:cg::Check 52	1.82894e-09
+DEAL:cg::Check 53	1.09055e-09
+DEAL:cg::Check 54	8.11374e-10
+DEAL:cg::Check 55	6.62875e-10
+DEAL:cg::Check 56	5.13988e-10
+DEAL:cg::Check 57	3.77350e-10
+DEAL:cg::Check 58	3.03365e-10
+DEAL:cg::Check 59	2.32536e-10
+DEAL:cg::Check 60	1.63265e-10
+DEAL:cg::Check 61	1.11790e-10
+DEAL:cg::Check 62	7.32621e-11
+DEAL:cg::Check 63	5.97010e-11
+DEAL:cg::Check 64	3.65477e-11
+DEAL:cg::Check 65	2.86745e-11
+DEAL:cg::Check 66	2.31955e-11
+DEAL:cg::Check 67	1.74409e-11
+DEAL:cg::Check 68	1.23222e-11
+DEAL:cg::Check 69	1.02840e-11
+DEAL:cg::Check 70	8.02226e-12
+DEAL:cg::Check 71	5.82326e-12
+DEAL:cg::Check 72	4.48407e-12
+DEAL:cg::Check 73	3.39276e-12
+DEAL:cg::Check 74	2.56689e-12
+DEAL:cg::Check 75	1.57716e-12
+DEAL:cg::Check 76	1.04148e-12
+DEAL:cg::Check 77	8.88629e-13
+DEAL:cg::Convergence step 78 value 5.65773e-13
+Output
+[simserv02:17452] *** Process received signal ***
+[simserv02:17452] Signal: Aborted (6)
+[simserv02:17452] Signal code:  (-6)
+[simserv02:17452] [ 0] /lib/x86_64-linux-gnu/libpthread.so.0(+0x10330) [0x7f76a51a9330]
+[simserv02:17452] [ 1] /lib/x86_64-linux-gnu/libc.so.6(gsignal+0x37) [0x7f76a447fc37]
+[simserv02:17452] [ 2] /lib/x86_64-linux-gnu/libc.so.6(abort+0x148) [0x7f76a4483028]
+[simserv02:17452] [ 3] /lib/x86_64-linux-gnu/libc.so.6(+0x732a4) [0x7f76a44bc2a4]
+[simserv02:17452] [ 4] /lib/x86_64-linux-gnu/libc.so.6(+0x7f55e) [0x7f76a44c855e]
+[simserv02:17452] [ 5] /mnt/data/darndt/deal.II/lib/libdeal_II.so.8.5.0-pre(_ZN6dealii8internal15parallel_reduceINS0_5Norm2IddEEdEEvRKT_yRT0_RSt10shared_ptrINS_8parallel8internal14TBBPartitionerEE+0x3e3) [0x7f76a96b9983]
+[simserv02:17452] [ 6] /mnt/data/darndt/deal.II/lib/libdeal_II.so.8.5.0-pre(_ZNK6dealii6VectorIdE7l2_normEv+0x28) [0x7f76a98d23c8]
+[simserv02:17452] [ 7] ./neo(_ZNK9SimulatorILi2ELb0ELj2EE13compute_errorEv+0xda) [0x663faa]
+[simserv02:17452] [ 8] ./neo(_ZN9SimulatorILi2ELb0ELj2EE3runEv+0x40e) [0x6a72be]
+[simserv02:17452] [ 9] ./neo(main+0x12d) [0x52f76d]
+[simserv02:17452] [10] /lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0xf5) [0x7f76a446af45]
+[simserv02:17452] [11] ./neo() [0x52f87d]
+[simserv02:17452] *** End of error message ***
+memusg: peak=26260344
+memusg: avg=18223375

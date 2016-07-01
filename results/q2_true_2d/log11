@@ -1,0 +1,108 @@
+Using Trilinos parallel linear algebra
+Using FE_DGQ elements
+Refine global
+Finite element: FESystem<2>[FESystem<2>[FE_DGQ<2>(2)]]
+Number of active cells: 1048576
+Setup system
+Assemble system
+DEAL::DoFHandler levels:  9 36 144 576 2304 9216 36864 147456 589824 2359296 9437184
+Setup multigrid
+Solve
+DEAL:cg::Check 0	0.0175346
+DEAL:cg::Starting value 0.0175346
+DEAL:cg::Check 1	0.556512
+DEAL:cg::Check 2	0.349132
+DEAL:cg::Check 3	0.177525
+DEAL:cg::Check 4	0.0488677
+DEAL:cg::Check 5	0.0239809
+DEAL:cg::Check 6	0.00778915
+DEAL:cg::Check 7	0.00273998
+DEAL:cg::Check 8	0.000992678
+DEAL:cg::Check 9	0.000339664
+DEAL:cg::Check 10	0.000119170
+DEAL:cg::Check 11	4.29195e-05
+DEAL:cg::Check 12	1.73265e-05
+DEAL:cg::Check 13	1.45295e-05
+DEAL:cg::Check 14	4.51919e-06
+DEAL:cg::Check 15	2.03710e-06
+DEAL:cg::Check 16	7.14886e-07
+DEAL:cg::Check 17	1.95746e-07
+DEAL:cg::Check 18	8.18006e-08
+DEAL:cg::Check 19	2.70869e-08
+DEAL:cg::Check 20	1.03773e-08
+DEAL:cg::Check 21	5.20674e-09
+DEAL:cg::Check 22	2.64323e-09
+DEAL:cg::Check 23	8.47241e-10
+DEAL:cg::Check 24	3.44553e-10
+DEAL:cg::Check 25	2.72924e-10
+DEAL:cg::Check 26	7.07022e-11
+DEAL:cg::Check 27	3.58508e-11
+DEAL:cg::Check 28	1.15753e-11
+DEAL:cg::Check 29	8.07629e-12
+DEAL:cg::Check 30	2.70890e-12
+DEAL:cg::Check 31	2.33991e-12
+DEAL:cg::Check 32	1.79408e-12
+DEAL:cg::Convergence step 33 value 1.05926e-12
+Output
+L2 error: 0.508233
+
+
++---------------------------------------------+------------+------------+
+| Total wallclock time elapsed since start    |       464s |            |
+|                                             |            |            |
+| Section                         | no. calls |  wall time | % of total |
++---------------------------------+-----------+------------+------------+
+| LO::IntegrationLoop (1)         |        66 |     0.272s |     0.059% |
+| LO::IntegrationLoop (10)        |        99 |      97.1s |        21% |
+| LO::IntegrationLoop (2)         |        66 |     0.319s |     0.069% |
+| LO::IntegrationLoop (3)         |        66 |     0.623s |      0.13% |
+| LO::IntegrationLoop (4)         |        66 |      1.36s |      0.29% |
+| LO::IntegrationLoop (5)         |        66 |      2.81s |       0.6% |
+| LO::IntegrationLoop (6)         |        66 |      6.61s |       1.4% |
+| LO::IntegrationLoop (7)         |        66 |      9.38s |         2% |
+| LO::IntegrationLoop (8)         |        66 |        14s |         3% |
+| LO::IntegrationLoop (9)         |        66 |      26.9s |       5.8% |
+| LO::assembler_setup (1)         |        66 |    0.0409s |    0.0088% |
+| LO::assembler_setup (10)        |        99 |    0.0912s |      0.02% |
+| LO::assembler_setup (2)         |        66 |    0.0874s |     0.019% |
+| LO::assembler_setup (3)         |        66 |    0.0585s |     0.013% |
+| LO::assembler_setup (4)         |        66 |     0.058s |     0.012% |
+| LO::assembler_setup (5)         |        66 |    0.0742s |     0.016% |
+| LO::assembler_setup (6)         |        66 |    0.0682s |     0.015% |
+| LO::assembler_setup (7)         |        66 |    0.0628s |     0.014% |
+| LO::assembler_setup (8)         |        66 |    0.0619s |     0.013% |
+| LO::assembler_setup (9)         |        66 |    0.0569s |     0.012% |
+| LO::build_matrices              |        11 |      0.96s |      0.21% |
+| LO::initialize (1)              |        66 |    0.0092s |     0.002% |
+| LO::initialize (10)             |        99 |      71.3s |        15% |
+| LO::initialize (2)              |        66 |      0.01s |    0.0022% |
+| LO::initialize (3)              |        66 |     0.012s |    0.0026% |
+| LO::initialize (4)              |        66 |    0.0399s |    0.0086% |
+| LO::initialize (5)              |        66 |    0.0567s |     0.012% |
+| LO::initialize (6)              |        66 |     0.124s |     0.027% |
+| LO::initialize (7)              |        66 |     0.519s |      0.11% |
+| LO::initialize (8)              |        66 |      2.14s |      0.46% |
+| LO::initialize (9)              |        66 |      10.7s |       2.3% |
+| LO::reinit                      |        12 |      1.13s |      0.24% |
+| Smoothing @ level 1             |        66 |   0.00988s |    0.0021% |
+| Smoothing @ level 10            |        66 |      17.9s |       3.9% |
+| Smoothing @ level 2             |        66 |     0.023s |    0.0049% |
+| Smoothing @ level 3             |        66 |    0.0172s |    0.0037% |
+| Smoothing @ level 4             |        66 |    0.0527s |     0.011% |
+| Smoothing @ level 5             |        66 |      0.13s |     0.028% |
+| Smoothing @ level 6             |        66 |     0.319s |     0.069% |
+| Smoothing @ level 7             |        66 |     0.738s |      0.16% |
+| Smoothing @ level 8             |        66 |      1.87s |       0.4% |
+| Smoothing @ level 9             |        66 |      5.02s |       1.1% |
+| output                          |         1 |      10.8s |       2.3% |
+| refine_global                   |         1 |      10.4s |       2.2% |
+| setup_multigrid                 |         1 |      0.62s |      0.13% |
+| setup_system                    |         1 |      17.8s |       3.8% |
+| solve                           |         1 |       425s |        91% |
+| solve::mg_initialization        |         1 |      20.8s |       4.5% |
+| solve::solve                    |         1 |       401s |        86% |
++---------------------------------+-----------+------------+------------+
+
+
+memusg: peak=5040472
+memusg: avg=4347280

@@ -1,0 +1,29 @@
+Using Trilinos parallel linear algebra
+Using FE_DGQ elements
+Refine global
+Finite element: FESystem<2>[FESystem<2>[FE_DGQ<2>(3)]]
+Number of active cells: 16777216
+Setup system
+Assemble system
+DEAL::DoFHandler levels:  16 64 256 1024 4096 16384 65536 262144 1048576 4194304 16777216 67108864 268435456
+Setup multigrid
+Solve
+[simserv02:142653] *** Process received signal ***
+[simserv02:142653] Signal: Segmentation fault (11)
+[simserv02:142653] Signal code: Address not mapped (1)
+[simserv02:142653] Failing at address: (nil)
+[simserv02:142653] [ 0] /lib/x86_64-linux-gnu/libpthread.so.0(+0x10330) [0x7f6c80db3330]
+[simserv02:142653] [ 1] /mnt/data/darndt/Trilinos-12.6.1/lib/libepetra.so.12(_ZN15Epetra_CrsGraph9TAllocateIiEEiPKiib+0x19c) [0x7f6c814be59c]
+[simserv02:142653] [ 2] /mnt/data/darndt/Trilinos-12.6.1/lib/libepetra.so.12(_ZN15Epetra_CrsGraph8AllocateEPKiib+0x35) [0x7f6c814b6c65]
+[simserv02:142653] [ 3] /mnt/data/darndt/Trilinos-12.6.1/lib/libepetra.so.12(_ZN15Epetra_CrsGraphC1E17Epetra_DataAccessRK15Epetra_BlockMapS3_PKib+0x124) [0x7f6c814b7314]
+[simserv02:142653] [ 4] /mnt/data/darndt/deal.II/lib/libdeal_II.so.8.5.0-pre(+0x4098e59) [0x7f6c85a77e59]
+[simserv02:142653] [ 5] /mnt/data/darndt/deal.II/lib/libdeal_II.so.8.5.0-pre(_ZN6dealii16TrilinosWrappers12SparseMatrix6reinitINS_22DynamicSparsityPatternEEEvRKNS_8IndexSetES6_RKT_RKP19ompi_communicator_tb+0x76) [0x7f6c85a7dc46]
+[simserv02:142653] [ 6] /mnt/data/darndt/deal.II/lib/libdeal_II.so.8.5.0-pre(_ZN6dealii18MGTransferPrebuiltINS_16TrilinosWrappers3MPI6VectorEE14build_matricesILi2ELi2EEEvRKNS_10DoFHandlerIXT_EXT0_EEE+0x771) [0x7f6c863579d1]
+[simserv02:142653] [ 7] ./neo(_ZN9SimulatorILi2ELb1ELj3EE5solveEv+0x740) [0x688870]
+[simserv02:142653] [ 8] ./neo(_ZN9SimulatorILi2ELb1ELj3EE3runEv+0x38a) [0x6a309a]
+[simserv02:142653] [ 9] ./neo(main+0x12d) [0x52f76d]
+[simserv02:142653] [10] /lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0xf5) [0x7f6c80074f45]
+[simserv02:142653] [11] ./neo() [0x52f87d]
+[simserv02:142653] *** End of error message ***
+memusg: peak=115449836
+memusg: avg=52188590

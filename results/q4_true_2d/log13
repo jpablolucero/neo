@@ -1,0 +1,32 @@
+Using Trilinos parallel linear algebra
+Using FE_DGQ elements
+Refine global
+Finite element: FESystem<2>[FESystem<2>[FE_DGQ<2>(4)]]
+Number of active cells: 16777216
+Setup system
+terminate called after throwing an instance of 'std::bad_alloc'
+  what():  std::bad_alloc
+[simserv02:61042] *** Process received signal ***
+[simserv02:61042] Signal: Aborted (6)
+[simserv02:61042] Signal code:  (-6)
+[simserv02:61042] [ 0] /lib/x86_64-linux-gnu/libpthread.so.0(+0x10330) [0x7fe07e389330]
+[simserv02:61042] [ 1] /lib/x86_64-linux-gnu/libc.so.6(gsignal+0x37) [0x7fe07d65fc37]
+[simserv02:61042] [ 2] /lib/x86_64-linux-gnu/libc.so.6(abort+0x148) [0x7fe07d663028]
+[simserv02:61042] [ 3] /usr/lib/x86_64-linux-gnu/libstdc++.so.6(_ZN9__gnu_cxx27__verbose_terminate_handlerEv+0x155) [0x7fe07dd54535]
+[simserv02:61042] [ 4] /usr/lib/x86_64-linux-gnu/libstdc++.so.6(+0x5e6d6) [0x7fe07dd526d6]
+[simserv02:61042] [ 5] /usr/lib/x86_64-linux-gnu/libstdc++.so.6(+0x5e703) [0x7fe07dd52703]
+[simserv02:61042] [ 6] /usr/lib/x86_64-linux-gnu/libstdc++.so.6(+0x5e922) [0x7fe07dd52922]
+[simserv02:61042] [ 7] /usr/lib/x86_64-linux-gnu/libstdc++.so.6(_Znwm+0x7d) [0x7fe07dd52e0d]
+[simserv02:61042] [ 8] /mnt/data/darndt/deal.II/lib/libdeal_II.so.8.5.0-pre(_ZNSt6vectorIySaIyEE7reserveEm+0x60) [0x7fe0817e7bd0]
+[simserv02:61042] [ 9] /mnt/data/darndt/deal.II/lib/libdeal_II.so.8.5.0-pre(_ZNK6dealii8IndexSet17fill_index_vectorERSt6vectorIySaIyEE+0x48) [0x7fe0831c59b8]
+[simserv02:61042] [10] /mnt/data/darndt/deal.II/lib/libdeal_II.so.8.5.0-pre(_ZNK6dealii8IndexSet17make_trilinos_mapERKP19ompi_communicator_tb+0x8c) [0x7fe0831c5e7c]
+[simserv02:61042] [11] /mnt/data/darndt/deal.II/lib/libdeal_II.so.8.5.0-pre(_ZN6dealii16TrilinosWrappers3MPI6Vector6reinitERKNS_8IndexSetERKP19ompi_communicator_tb+0x62) [0x7fe08305cee2]
+[simserv02:61042] [12] /mnt/data/darndt/deal.II/lib/libdeal_II.so.8.5.0-pre(_ZN6dealii16TrilinosWrappers3MPI6Vector6reinitERKNS_8IndexSetES5_RKP19ompi_communicator_tb+0x273) [0x7fe08305d503]
+[simserv02:61042] [13] ./neo(_ZN9SimulatorILi2ELb1ELj4EE12setup_systemEv+0xb4) [0x675834]
+[simserv02:61042] [14] ./neo(_ZN9SimulatorILi2ELb1ELj4EE3runEv+0x16a) [0x6a445a]
+[simserv02:61042] [15] ./neo(main+0x12d) [0x52f76d]
+[simserv02:61042] [16] /lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0xf5) [0x7fe07d64af45]
+[simserv02:61042] [17] ./neo() [0x52f87d]
+[simserv02:61042] *** End of error message ***
+memusg: peak=21706884
+memusg: avg=10834031

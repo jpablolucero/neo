@@ -1,0 +1,94 @@
+Using Trilinos parallel linear algebra
+Using FE_DGQ elements
+Refine global
+Finite element: FESystem<2>[FESystem<2>[FE_DGQ<2>(2)]]
+Number of active cells: 16777216
+Setup system
+Assemble system
+DEAL::DoFHandler levels:  9 36 144 576 2304 9216 36864 147456 589824 2359296 9437184 37748736 150994944
+Setup multigrid
+Solve
+DEAL:cg::Check 0	0.00438365
+DEAL:cg::Starting value 0.00438365
+DEAL:cg::Check 1	0.482779
+DEAL:cg::Check 2	0.125206
+DEAL:cg::Check 3	0.119149
+DEAL:cg::Check 4	0.0499786
+DEAL:cg::Check 5	0.0457273
+DEAL:cg::Check 6	0.0191474
+DEAL:cg::Check 7	0.00958550
+DEAL:cg::Check 8	0.00795962
+DEAL:cg::Check 9	0.00550658
+DEAL:cg::Check 10	0.00263687
+DEAL:cg::Check 11	0.00136559
+DEAL:cg::Check 12	0.000886974
+DEAL:cg::Check 13	0.000610655
+DEAL:cg::Check 14	0.000356073
+DEAL:cg::Check 15	0.000206105
+DEAL:cg::Check 16	8.38908e-05
+DEAL:cg::Check 17	7.39101e-05
+DEAL:cg::Check 18	5.85543e-05
+DEAL:cg::Check 19	4.41444e-05
+DEAL:cg::Check 20	3.80702e-05
+DEAL:cg::Check 21	3.35312e-05
+DEAL:cg::Check 22	2.66883e-05
+DEAL:cg::Check 23	1.85992e-05
+DEAL:cg::Check 24	1.24158e-05
+DEAL:cg::Check 25	7.94078e-06
+DEAL:cg::Check 26	5.42271e-06
+DEAL:cg::Check 27	3.84769e-06
+DEAL:cg::Check 28	2.72069e-06
+DEAL:cg::Check 29	2.31387e-06
+DEAL:cg::Check 30	1.61816e-06
+DEAL:cg::Check 31	1.31569e-06
+DEAL:cg::Check 32	1.03917e-06
+DEAL:cg::Check 33	7.50177e-07
+DEAL:cg::Check 34	5.27148e-07
+DEAL:cg::Check 35	4.18525e-07
+DEAL:cg::Check 36	3.42407e-07
+DEAL:cg::Check 37	2.68569e-07
+DEAL:cg::Check 38	2.07913e-07
+DEAL:cg::Check 39	1.47725e-07
+DEAL:cg::Check 40	1.05875e-07
+DEAL:cg::Check 41	7.21303e-08
+DEAL:cg::Check 42	4.28125e-08
+DEAL:cg::Check 43	3.61267e-08
+DEAL:cg::Check 44	2.42478e-08
+DEAL:cg::Check 45	2.02881e-08
+DEAL:cg::Check 46	1.69573e-08
+DEAL:cg::Check 47	1.25622e-08
+DEAL:cg::Check 48	9.01738e-09
+DEAL:cg::Check 49	6.71569e-09
+DEAL:cg::Check 50	5.24190e-09
+DEAL:cg::Check 51	3.88171e-09
+DEAL:cg::Check 52	2.98615e-09
+DEAL:cg::Check 53	2.13195e-09
+DEAL:cg::Check 54	1.62390e-09
+DEAL:cg::Check 55	1.10508e-09
+DEAL:cg::Check 56	6.94243e-10
+DEAL:cg::Check 57	5.92850e-10
+DEAL:cg::Check 58	4.42082e-10
+DEAL:cg::Check 59	3.36093e-10
+DEAL:cg::Check 60	2.75703e-10
+DEAL:cg::Check 61	2.19246e-10
+DEAL:cg::Check 62	1.60212e-10
+DEAL:cg::Check 63	1.09715e-10
+DEAL:cg::Check 64	7.54544e-11
+DEAL:cg::Check 65	5.40976e-11
+DEAL:cg::Check 66	4.34332e-11
+DEAL:cg::Check 67	3.03168e-11
+DEAL:cg::Check 68	2.33224e-11
+DEAL:cg::Check 69	1.98904e-11
+DEAL:cg::Check 70	1.32105e-11
+DEAL:cg::Check 71	1.01312e-11
+DEAL:cg::Check 72	8.01757e-12
+DEAL:cg::Check 73	6.49760e-12
+DEAL:cg::Check 74	4.37050e-12
+DEAL:cg::Check 75	3.68026e-12
+DEAL:cg::Check 76	2.79786e-12
+DEAL:cg::Check 77	1.92240e-12
+DEAL:cg::Check 78	1.33443e-12
+DEAL:cg::Check 79	9.04073e-13
+DEAL:cg::Check 80	7.36618e-13
+DEAL:cg::Check 81	5.15415e-13
+DEAL:cg::Convergence step 82 value 3.54160e-13

@@ -1,0 +1,34 @@
+Using Trilinos parallel linear algebra
+Using FE_DGQ elements
+Refine global
+Finite element: FESystem<2>[FESystem<2>[FE_DGQ<2>(1)]]
+Number of active cells: 67108864
+Setup system
+Assemble system
+DEAL::DoFHandler levels:  4 16 64 256 1024 4096 16384 65536 262144 1048576 4194304 16777216 67108864 268435456
+Setup multigrid
+Solve
+terminate called after throwing an instance of 'std::bad_alloc'
+  what():  std::bad_alloc
+[simserv02:08437] *** Process received signal ***
+[simserv02:08437] Signal: Aborted (6)
+[simserv02:08437] Signal code:  (-6)
+[simserv02:08437] [ 0] /lib/x86_64-linux-gnu/libpthread.so.0(+0x10330) [0x7f1571491330]
+[simserv02:08437] [ 1] /lib/x86_64-linux-gnu/libc.so.6(gsignal+0x37) [0x7f1570767c37]
+[simserv02:08437] [ 2] /lib/x86_64-linux-gnu/libc.so.6(abort+0x148) [0x7f157076b028]
+[simserv02:08437] [ 3] /usr/lib/x86_64-linux-gnu/libstdc++.so.6(_ZN9__gnu_cxx27__verbose_terminate_handlerEv+0x155) [0x7f1570e5c535]
+[simserv02:08437] [ 4] /usr/lib/x86_64-linux-gnu/libstdc++.so.6(+0x5e6d6) [0x7f1570e5a6d6]
+[simserv02:08437] [ 5] /usr/lib/x86_64-linux-gnu/libstdc++.so.6(+0x5e703) [0x7f1570e5a703]
+[simserv02:08437] [ 6] /usr/lib/x86_64-linux-gnu/libstdc++.so.6(+0x5e922) [0x7f1570e5a922]
+[simserv02:08437] [ 7] /usr/lib/x86_64-linux-gnu/libstdc++.so.6(_Znwm+0x7d) [0x7f1570e5ae0d]
+[simserv02:08437] [ 8] /mnt/data/darndt/deal.II/lib/libdeal_II.so.8.5.0-pre(_ZN6dealii22DynamicSparsityPattern6reinitEyyRKNS_8IndexSetE+0x267) [0x7f15758b5b67]
+[simserv02:08437] [ 9] /mnt/data/darndt/deal.II/lib/libdeal_II.so.8.5.0-pre(_ZN6dealii22DynamicSparsityPatternC2EyyRKNS_8IndexSetE+0xa2) [0x7f15758b5ee2]
+[simserv02:08437] [10] /mnt/data/darndt/deal.II/lib/libdeal_II.so.8.5.0-pre(_ZN6dealii18MGTransferPrebuiltINS_16TrilinosWrappers3MPI6VectorEE14build_matricesILi2ELi2EEEvRKNS_10DoFHandlerIXT_EXT0_EEE+0x5ae) [0x7f1576a3580e]
+[simserv02:08437] [11] ./neo(_ZN9SimulatorILi2ELb0ELj1EE5solveEv+0x740) [0x68aeb0]
+[simserv02:08437] [12] ./neo(_ZN9SimulatorILi2ELb0ELj1EE3runEv+0x38a) [0x6a5c5a]
+[simserv02:08437] [13] ./neo(main+0x12d) [0x52f76d]
+[simserv02:08437] [14] /lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0xf5) [0x7f1570752f45]
+[simserv02:08437] [15] ./neo() [0x52f87d]
+[simserv02:08437] *** End of error message ***
+memusg: peak=169263644
+memusg: avg=147131436

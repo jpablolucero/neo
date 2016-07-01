@@ -31,20 +31,20 @@ int main (int argc, char *argv[])
   const unsigned int smooth_steps = 1;
 
 
-  for (unsigned int l=2; l<7; ++l)
+//  for (unsigned int l=2; l<7; ++l)
     {
-      Simulator<2,false,1> dgmethod(timer, mpi_communicator, pcout);
-      dgmethod.n_levels = l ;
+      Simulator<3,false,2> dgmethod(timer, mpi_communicator, pcout);
+      dgmethod.n_levels = atoi(argv[1]) ;
       dgmethod.smoothing_steps = smooth_steps;
       dgmethod.run ();
     }
-  for (unsigned int l=2; l<7; ++l)
+/*  for (unsigned int l=2; l<7; ++l)
     {
       Simulator<3,false,1> dgmethod(timer, mpi_communicator, pcout);
       dgmethod.n_levels = l ;
       dgmethod.smoothing_steps = smooth_steps;
       dgmethod.run ();
-    }
+    }*/
   /*  for (unsigned int l=7; l<10; ++l)
       {
         Simulator<3,false,1> dgmethod(timer, mpi_communicator, pcout);

@@ -1,0 +1,49 @@
+Using Trilinos parallel linear algebra
+Using FE_DGQ elements
+Refine global
+Finite element: FESystem<2>[FESystem<2>[FE_DGQ<2>(1)]]
+Number of active cells: 16777216
+Setup system
+Assemble system
+DEAL::DoFHandler levels:  4 16 64 256 1024 4096 16384 65536 262144 1048576 4194304 16777216 67108864
+Setup multigrid
+Solve
+DEAL:cg::Check 0	0.00438365
+DEAL:cg::Starting value 0.00438365
+DEAL:cg::Check 1	0.0127572
+DEAL:cg::Check 2	0.0196243
+DEAL:cg::Check 3	0.0122000
+DEAL:cg::Check 4	0.00230861
+DEAL:cg::Check 5	0.000318221
+DEAL:cg::Check 6	6.55103e-05
+DEAL:cg::Check 7	8.48847e-06
+DEAL:cg::Check 8	2.14961e-06
+DEAL:cg::Check 9	4.06623e-07
+DEAL:cg::Check 10	6.89716e-08
+DEAL:cg::Check 11	1.36343e-08
+DEAL:cg::Check 12	2.63664e-09
+DEAL:cg::Check 13	5.52790e-10
+DEAL:cg::Check 14	9.59757e-11
+DEAL:cg::Check 15	2.27364e-11
+DEAL:cg::Check 16	4.32743e-12
+DEAL:cg::Check 17	8.04579e-13
+DEAL:cg::Convergence step 18 value 1.54778e-13
+Output
+[simserv02:10948] *** Process received signal ***
+[simserv02:10948] Signal: Aborted (6)
+[simserv02:10948] Signal code:  (-6)
+[simserv02:10948] [ 0] /lib/x86_64-linux-gnu/libpthread.so.0(+0x10330) [0x7f83bbfb6330]
+[simserv02:10948] [ 1] /lib/x86_64-linux-gnu/libc.so.6(gsignal+0x37) [0x7f83bb28cc37]
+[simserv02:10948] [ 2] /lib/x86_64-linux-gnu/libc.so.6(abort+0x148) [0x7f83bb290028]
+[simserv02:10948] [ 3] /lib/x86_64-linux-gnu/libc.so.6(+0x732a4) [0x7f83bb2c92a4]
+[simserv02:10948] [ 4] /lib/x86_64-linux-gnu/libc.so.6(+0x7f55e) [0x7f83bb2d555e]
+[simserv02:10948] [ 5] /mnt/data/darndt/deal.II/lib/libdeal_II.so.8.5.0-pre(_ZN6dealii8internal15parallel_reduceINS0_5Norm2IddEEdEEvRKT_yRT0_RSt10shared_ptrINS_8parallel8internal14TBBPartitionerEE+0x3e3) [0x7f83c04c6983]
+[simserv02:10948] [ 6] /mnt/data/darndt/deal.II/lib/libdeal_II.so.8.5.0-pre(_ZNK6dealii6VectorIdE7l2_normEv+0x28) [0x7f83c06df3c8]
+[simserv02:10948] [ 7] ./neo(_ZNK9SimulatorILi2ELb1ELj1EE13compute_errorEv+0xda) [0x6634ba]
+[simserv02:10948] [ 8] ./neo(_ZN9SimulatorILi2ELb1ELj1EE3runEv+0x40e) [0x6864ae]
+[simserv02:10948] [ 9] ./neo(main+0x12d) [0x52f70d]
+[simserv02:10948] [10] /lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0xf5) [0x7f83bb277f45]
+[simserv02:10948] [11] ./neo() [0x52f87d]
+[simserv02:10948] *** End of error message ***
+memusg: peak=38263316
+memusg: avg=29481983

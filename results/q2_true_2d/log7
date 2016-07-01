@@ -1,0 +1,85 @@
+Using Trilinos parallel linear algebra
+Using FE_DGQ elements
+Refine global
+Finite element: FESystem<2>[FESystem<2>[FE_DGQ<2>(2)]]
+Number of active cells: 4096
+Setup system
+Assemble system
+DEAL::DoFHandler levels:  9 36 144 576 2304 9216 36864
+Setup multigrid
+Solve
+DEAL:cg::Check 0	0.280425
+DEAL:cg::Starting value 0.280425
+DEAL:cg::Check 1	0.890675
+DEAL:cg::Check 2	0.336242
+DEAL:cg::Check 3	0.186811
+DEAL:cg::Check 4	0.0568958
+DEAL:cg::Check 5	0.0245485
+DEAL:cg::Check 6	0.00917025
+DEAL:cg::Check 7	0.00343156
+DEAL:cg::Check 8	0.00122831
+DEAL:cg::Check 9	0.000465196
+DEAL:cg::Check 10	0.000144943
+DEAL:cg::Check 11	5.39406e-05
+DEAL:cg::Check 12	1.97717e-05
+DEAL:cg::Check 13	4.58944e-06
+DEAL:cg::Check 14	1.49985e-06
+DEAL:cg::Check 15	1.05205e-06
+DEAL:cg::Check 16	3.46821e-07
+DEAL:cg::Check 17	1.03698e-07
+DEAL:cg::Check 18	2.98922e-08
+DEAL:cg::Check 19	1.23527e-08
+DEAL:cg::Check 20	3.46230e-09
+DEAL:cg::Check 21	1.38022e-09
+DEAL:cg::Check 22	6.95289e-10
+DEAL:cg::Check 23	2.03950e-10
+DEAL:cg::Check 24	1.38289e-10
+DEAL:cg::Check 25	6.82236e-11
+DEAL:cg::Convergence step 26 value 2.14251e-11
+Output
+L2 error: 0.508233
+
+
++---------------------------------------------+------------+------------+
+| Total wallclock time elapsed since start    |      16.4s |            |
+|                                             |            |            |
+| Section                         | no. calls |  wall time | % of total |
++---------------------------------+-----------+------------+------------+
+| LO::IntegrationLoop (1)         |        52 |     0.223s |       1.4% |
+| LO::IntegrationLoop (2)         |        52 |     0.249s |       1.5% |
+| LO::IntegrationLoop (3)         |        52 |     0.475s |       2.9% |
+| LO::IntegrationLoop (4)         |        52 |     0.945s |       5.8% |
+| LO::IntegrationLoop (5)         |        52 |      2.15s |        13% |
+| LO::IntegrationLoop (6)         |        78 |      7.28s |        44% |
+| LO::assembler_setup (1)         |        52 |    0.0472s |      0.29% |
+| LO::assembler_setup (2)         |        52 |    0.0471s |      0.29% |
+| LO::assembler_setup (3)         |        52 |    0.0522s |      0.32% |
+| LO::assembler_setup (4)         |        52 |    0.0526s |      0.32% |
+| LO::assembler_setup (5)         |        52 |    0.0492s |       0.3% |
+| LO::assembler_setup (6)         |        78 |    0.0603s |      0.37% |
+| LO::build_matrices              |         7 |     0.768s |       4.7% |
+| LO::initialize (1)              |        52 |    0.0151s |     0.092% |
+| LO::initialize (2)              |        52 |    0.0103s |     0.063% |
+| LO::initialize (3)              |        52 |    0.0126s |     0.077% |
+| LO::initialize (4)              |        52 |    0.0187s |      0.11% |
+| LO::initialize (5)              |        52 |    0.0378s |      0.23% |
+| LO::initialize (6)              |        78 |     0.169s |         1% |
+| LO::reinit                      |         8 |   0.00478s |     0.029% |
+| Smoothing @ level 1             |        52 |    0.0126s |     0.077% |
+| Smoothing @ level 2             |        52 |    0.0198s |      0.12% |
+| Smoothing @ level 3             |        52 |    0.0199s |      0.12% |
+| Smoothing @ level 4             |        52 |    0.0377s |      0.23% |
+| Smoothing @ level 5             |        52 |    0.0744s |      0.45% |
+| Smoothing @ level 6             |        52 |      0.19s |       1.2% |
+| output                          |         1 |    0.0433s |      0.26% |
+| refine_global                   |         1 |    0.0309s |      0.19% |
+| setup_multigrid                 |         1 |    0.0032s |     0.019% |
+| setup_system                    |         1 |       2.6s |        16% |
+| solve                           |         1 |      13.7s |        84% |
+| solve::mg_initialization        |         1 |     0.934s |       5.7% |
+| solve::solve                    |         1 |      12.8s |        78% |
++---------------------------------+-----------+------------+------------+
+
+
+memusg: peak=389972
+memusg: avg=351053

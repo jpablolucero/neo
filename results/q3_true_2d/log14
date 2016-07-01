@@ -1,0 +1,28 @@
+Using Trilinos parallel linear algebra
+Using FE_DGQ elements
+Refine global
+terminate called after throwing an instance of 'std::bad_alloc'
+  what():  std::bad_alloc
+[simserv02:57327] *** Process received signal ***
+[simserv02:57327] Signal: Aborted (6)
+[simserv02:57327] Signal code:  (-6)
+[simserv02:57327] [ 0] /lib/x86_64-linux-gnu/libpthread.so.0(+0x10330) [0x7f1ea8eb0330]
+[simserv02:57327] [ 1] /lib/x86_64-linux-gnu/libc.so.6(gsignal+0x37) [0x7f1ea8186c37]
+[simserv02:57327] [ 2] /lib/x86_64-linux-gnu/libc.so.6(abort+0x148) [0x7f1ea818a028]
+[simserv02:57327] [ 3] /usr/lib/x86_64-linux-gnu/libstdc++.so.6(_ZN9__gnu_cxx27__verbose_terminate_handlerEv+0x155) [0x7f1ea887b535]
+[simserv02:57327] [ 4] /usr/lib/x86_64-linux-gnu/libstdc++.so.6(+0x5e6d6) [0x7f1ea88796d6]
+[simserv02:57327] [ 5] /usr/lib/x86_64-linux-gnu/libstdc++.so.6(+0x5e703) [0x7f1ea8879703]
+[simserv02:57327] [ 6] /usr/lib/x86_64-linux-gnu/libstdc++.so.6(+0x5e922) [0x7f1ea8879922]
+[simserv02:57327] [ 7] /usr/lib/x86_64-linux-gnu/libstdc++.so.6(_Znwm+0x7d) [0x7f1ea8879e0d]
+[simserv02:57327] [ 8] /mnt/data/darndt/deal.II/lib/libdeal_II.so.8.5.0-pre(_ZN6dealii13TriangulationILi2ELi2EE33execute_coarsening_and_refinementEv+0x380) [0x7f1eae1fb9e0]
+[simserv02:57327] [ 9] /mnt/data/darndt/deal.II/lib/libdeal_II.so.8.5.0-pre(_ZN6dealii8parallel11distributed13TriangulationILi2ELi2EE33execute_coarsening_and_refinementEv+0x675) [0x7f1eae4e9955]
+[simserv02:57327] [10] /mnt/data/darndt/deal.II/lib/libdeal_II.so.8.5.0-pre(_ZN6dealii8parallel11distributed13TriangulationILi2ELi2EE34copy_local_forest_to_triangulationEv+0x8d6) [0x7f1eae4d5816]
+[simserv02:57327] [11] /mnt/data/darndt/deal.II/lib/libdeal_II.so.8.5.0-pre(_ZN6dealii8parallel11distributed13TriangulationILi2ELi2EE33execute_coarsening_and_refinementEv+0x503) [0x7f1eae4e97e3]
+[simserv02:57327] [12] /mnt/data/darndt/deal.II/lib/libdeal_II.so.8.5.0-pre(_ZN6dealii13TriangulationILi2ELi2EE13refine_globalEj+0x19c) [0x7f1eae176d1c]
+[simserv02:57327] [13] ./neo(_ZN9SimulatorILi2ELb1ELj3EE3runEv+0x91) [0x6a2da1]
+[simserv02:57327] [14] ./neo(main+0x12d) [0x52f76d]
+[simserv02:57327] [15] /lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0xf5) [0x7f1ea8171f45]
+[simserv02:57327] [16] ./neo() [0x52f87d]
+[simserv02:57327] *** End of error message ***
+memusg: peak=15881408
+memusg: avg=7708967

@@ -1,0 +1,196 @@
+Using Trilinos parallel linear algebra
+Using FE_DGQ elements
+Refine global
+Finite element: FESystem<2>[FESystem<2>[FE_DGQ<2>(3)]]
+Number of active cells: 4194304
+Setup system
+Assemble system
+DEAL::DoFHandler levels:  16 64 256 1024 4096 16384 65536 262144 1048576 4194304 16777216 67108864
+Setup multigrid
+Solve
+DEAL:cg::Check 0	0.00633193
+DEAL:cg::Starting value 0.00633193
+DEAL:cg::Check 1	1.05019
+DEAL:cg::Check 2	0.561924
+DEAL:cg::Check 3	0.373534
+DEAL:cg::Check 4	0.291745
+DEAL:cg::Check 5	0.314260
+DEAL:cg::Check 6	0.310624
+DEAL:cg::Check 7	0.201156
+DEAL:cg::Check 8	0.115847
+DEAL:cg::Check 9	0.0679591
+DEAL:cg::Check 10	0.0408190
+DEAL:cg::Check 11	0.0314983
+DEAL:cg::Check 12	0.0331252
+DEAL:cg::Check 13	0.0292410
+DEAL:cg::Check 14	0.0205420
+DEAL:cg::Check 15	0.0128247
+DEAL:cg::Check 16	0.00972043
+DEAL:cg::Check 17	0.00645137
+DEAL:cg::Check 18	0.00506697
+DEAL:cg::Check 19	0.00452238
+DEAL:cg::Check 20	0.00392651
+DEAL:cg::Check 21	0.00327033
+DEAL:cg::Check 22	0.00268430
+DEAL:cg::Check 23	0.00226282
+DEAL:cg::Check 24	0.00192646
+DEAL:cg::Check 25	0.00171184
+DEAL:cg::Check 26	0.00154918
+DEAL:cg::Check 27	0.00141932
+DEAL:cg::Check 28	0.00127811
+DEAL:cg::Check 29	0.00116230
+DEAL:cg::Check 30	0.000983991
+DEAL:cg::Check 31	0.000876175
+DEAL:cg::Check 32	0.000767840
+DEAL:cg::Check 33	0.000668414
+DEAL:cg::Check 34	0.000567328
+DEAL:cg::Check 35	0.000492916
+DEAL:cg::Check 36	0.000386861
+DEAL:cg::Check 37	0.000322106
+DEAL:cg::Check 38	0.000257210
+DEAL:cg::Check 39	0.000217869
+DEAL:cg::Check 40	0.000180605
+DEAL:cg::Check 41	0.000158101
+DEAL:cg::Check 42	0.000139629
+DEAL:cg::Check 43	0.000115480
+DEAL:cg::Check 44	9.77386e-05
+DEAL:cg::Check 45	8.22103e-05
+DEAL:cg::Check 46	6.29144e-05
+DEAL:cg::Check 47	5.32978e-05
+DEAL:cg::Check 48	4.13775e-05
+DEAL:cg::Check 49	3.43354e-05
+DEAL:cg::Check 50	2.86742e-05
+DEAL:cg::Check 51	2.46248e-05
+DEAL:cg::Check 52	2.07137e-05
+DEAL:cg::Check 53	1.63686e-05
+DEAL:cg::Check 54	1.45484e-05
+DEAL:cg::Check 55	1.29092e-05
+DEAL:cg::Check 56	1.14060e-05
+DEAL:cg::Check 57	1.05188e-05
+DEAL:cg::Check 58	9.31863e-06
+DEAL:cg::Check 59	8.49037e-06
+DEAL:cg::Check 60	7.80483e-06
+DEAL:cg::Check 61	6.93147e-06
+DEAL:cg::Check 62	6.21094e-06
+DEAL:cg::Check 63	5.11823e-06
+DEAL:cg::Check 64	4.36945e-06
+DEAL:cg::Check 65	3.47983e-06
+DEAL:cg::Check 66	2.90233e-06
+DEAL:cg::Check 67	2.43952e-06
+DEAL:cg::Check 68	2.01239e-06
+DEAL:cg::Check 69	1.67673e-06
+DEAL:cg::Check 70	1.50027e-06
+DEAL:cg::Check 71	1.27462e-06
+DEAL:cg::Check 72	1.00040e-06
+DEAL:cg::Check 73	9.00165e-07
+DEAL:cg::Check 74	7.73731e-07
+DEAL:cg::Check 75	6.64641e-07
+DEAL:cg::Check 76	5.76121e-07
+DEAL:cg::Check 77	5.09844e-07
+DEAL:cg::Check 78	4.45497e-07
+DEAL:cg::Check 79	3.82421e-07
+DEAL:cg::Check 80	3.22702e-07
+DEAL:cg::Check 81	2.77810e-07
+DEAL:cg::Check 82	2.30946e-07
+DEAL:cg::Check 83	2.04350e-07
+DEAL:cg::Check 84	1.85830e-07
+DEAL:cg::Check 85	1.59996e-07
+DEAL:cg::Check 86	1.45622e-07
+DEAL:cg::Check 87	1.28735e-07
+DEAL:cg::Check 88	1.17102e-07
+DEAL:cg::Check 89	1.03877e-07
+DEAL:cg::Check 90	9.42356e-08
+DEAL:cg::Check 91	8.31991e-08
+DEAL:cg::Check 92	7.24531e-08
+DEAL:cg::Check 93	6.20829e-08
+DEAL:cg::Check 94	5.21323e-08
+DEAL:cg::Check 95	4.15114e-08
+DEAL:cg::Check 96	3.33566e-08
+DEAL:cg::Check 97	2.76804e-08
+DEAL:cg::Check 98	1.94947e-08
+DEAL:cg::Check 99	1.61504e-08
+DEAL:cg::Check 100	1.32671e-08
+DEAL:cg::Check 101	1.13628e-08
+DEAL:cg::Check 102	9.55378e-09
+DEAL:cg::Check 103	8.26665e-09
+DEAL:cg::Check 104	6.95171e-09
+DEAL:cg::Check 105	5.62724e-09
+DEAL:cg::Check 106	4.68801e-09
+DEAL:cg::Check 107	3.92691e-09
+DEAL:cg::Check 108	3.24957e-09
+DEAL:cg::Check 109	2.93871e-09
+DEAL:cg::Check 110	2.64062e-09
+DEAL:cg::Check 111	2.29604e-09
+DEAL:cg::Check 112	2.08419e-09
+DEAL:cg::Check 113	1.88684e-09
+DEAL:cg::Check 114	1.65724e-09
+DEAL:cg::Check 115	1.53363e-09
+DEAL:cg::Check 116	1.36160e-09
+DEAL:cg::Check 117	1.17305e-09
+DEAL:cg::Check 118	1.02697e-09
+DEAL:cg::Check 119	8.98381e-10
+DEAL:cg::Check 120	7.81655e-10
+DEAL:cg::Check 121	6.60178e-10
+DEAL:cg::Check 122	5.26235e-10
+DEAL:cg::Check 123	4.66755e-10
+DEAL:cg::Check 124	3.90164e-10
+DEAL:cg::Check 125	3.22370e-10
+DEAL:cg::Check 126	2.80419e-10
+DEAL:cg::Check 127	2.36656e-10
+DEAL:cg::Check 128	2.03571e-10
+DEAL:cg::Check 129	1.78706e-10
+DEAL:cg::Check 130	1.54376e-10
+DEAL:cg::Check 131	1.26836e-10
+DEAL:cg::Check 132	1.10889e-10
+DEAL:cg::Check 133	9.08610e-11
+DEAL:cg::Check 134	7.54650e-11
+DEAL:cg::Check 135	6.24272e-11
+DEAL:cg::Check 136	5.54771e-11
+DEAL:cg::Check 137	4.70263e-11
+DEAL:cg::Check 138	3.84054e-11
+DEAL:cg::Check 139	3.39519e-11
+DEAL:cg::Check 140	3.07323e-11
+DEAL:cg::Check 141	2.59972e-11
+DEAL:cg::Check 142	2.42838e-11
+DEAL:cg::Check 143	2.24373e-11
+DEAL:cg::Check 144	1.98044e-11
+DEAL:cg::Check 145	1.75775e-11
+DEAL:cg::Check 146	1.57570e-11
+DEAL:cg::Check 147	1.39421e-11
+DEAL:cg::Check 148	1.15465e-11
+DEAL:cg::Check 149	1.03377e-11
+DEAL:cg::Check 150	8.51745e-12
+DEAL:cg::Check 151	6.85090e-12
+DEAL:cg::Check 152	5.73002e-12
+DEAL:cg::Check 153	4.77148e-12
+DEAL:cg::Check 154	3.65696e-12
+DEAL:cg::Check 155	3.18805e-12
+DEAL:cg::Check 156	2.62751e-12
+DEAL:cg::Check 157	2.19429e-12
+DEAL:cg::Check 158	1.83306e-12
+DEAL:cg::Check 159	1.48955e-12
+DEAL:cg::Check 160	1.31331e-12
+DEAL:cg::Check 161	1.09306e-12
+DEAL:cg::Check 162	9.74324e-13
+DEAL:cg::Check 163	8.42115e-13
+DEAL:cg::Check 164	7.15061e-13
+DEAL:cg::Convergence step 165 value 6.22136e-13
+Output
+[simserv02:136863] *** Process received signal ***
+[simserv02:136863] Signal: Aborted (6)
+[simserv02:136863] Signal code:  (-6)
+[simserv02:136863] [ 0] /lib/x86_64-linux-gnu/libpthread.so.0(+0x10330) [0x7f7fe3c19330]
+[simserv02:136863] [ 1] /lib/x86_64-linux-gnu/libc.so.6(gsignal+0x37) [0x7f7fe2eefc37]
+[simserv02:136863] [ 2] /lib/x86_64-linux-gnu/libc.so.6(abort+0x148) [0x7f7fe2ef3028]
+[simserv02:136863] [ 3] /lib/x86_64-linux-gnu/libc.so.6(+0x732a4) [0x7f7fe2f2c2a4]
+[simserv02:136863] [ 4] /lib/x86_64-linux-gnu/libc.so.6(+0x7f55e) [0x7f7fe2f3855e]
+[simserv02:136863] [ 5] /mnt/data/darndt/deal.II/lib/libdeal_II.so.8.5.0-pre(_ZN6dealii8internal15parallel_reduceINS0_5Norm2IddEEdEEvRKT_yRT0_RSt10shared_ptrINS_8parallel8internal14TBBPartitionerEE+0x3e3) [0x7f7fe8129983]
+[simserv02:136863] [ 6] /mnt/data/darndt/deal.II/lib/libdeal_II.so.8.5.0-pre(_ZNK6dealii6VectorIdE7l2_normEv+0x28) [0x7f7fe83423c8]
+[simserv02:136863] [ 7] ./neo(_ZNK9SimulatorILi2ELb0ELj3EE13compute_errorEv+0xda) [0x6641da]
+[simserv02:136863] [ 8] ./neo(_ZN9SimulatorILi2ELb0ELj3EE3runEv+0x40e) [0x6a889e]
+[simserv02:136863] [ 9] ./neo(main+0x12d) [0x52f76d]
+[simserv02:136863] [10] /lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0xf5) [0x7f7fe2edaf45]
+[simserv02:136863] [11] ./neo() [0x52f87d]
+[simserv02:136863] *** End of error message ***
+memusg: peak=59859848
+memusg: avg=47396506

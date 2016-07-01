@@ -1,0 +1,39 @@
+Using Trilinos parallel linear algebra
+Using FE_DGQ elements
+Refine global
+Finite element: FESystem<2>[FESystem<2>[FE_DGQ<2>(3)]]
+Number of active cells: 1
+Setup system
+Assemble system
+DEAL::DoFHandler levels:  16
+Setup multigrid
+Solve
+DEAL:cg::Check 0	9.84373
+DEAL:cg::Starting value 9.84373
+DEAL:cg::Convergence step 1 value 7.69206e-15
+Output
+L2 error: 0.482487
+
+
++---------------------------------------------+------------+------------+
+| Total wallclock time elapsed since start    |     0.296s |            |
+|                                             |            |            |
+| Section                         | no. calls |  wall time | % of total |
++---------------------------------+-----------+------------+------------+
+| LO::IntegrationLoop (0)         |         1 |    0.0046s |       1.6% |
+| LO::assembler_setup (0)         |         1 |  0.000664s |      0.22% |
+| LO::build_matrices              |         1 |   0.00216s |      0.73% |
+| LO::initialize (0)              |         1 |  0.000276s |     0.093% |
+| LO::reinit                      |         2 |  0.000229s |     0.077% |
+| output                          |         1 |   0.00134s |      0.45% |
+| refine_global                   |         1 |  0.000136s |     0.046% |
+| setup_multigrid                 |         1 |  0.000343s |      0.12% |
+| setup_system                    |         1 |     0.201s |        68% |
+| solve                           |         1 |    0.0758s |        26% |
+| solve::mg_initialization        |         1 |    0.0654s |        22% |
+| solve::solve                    |         1 |   0.00985s |       3.3% |
++---------------------------------+-----------+------------+------------+
+
+
+memusg: peak=150192
+memusg: avg=59373
