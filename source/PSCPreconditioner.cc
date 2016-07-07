@@ -19,7 +19,7 @@ namespace implementation
     class Scratch
     {
     public:
-      const std::vector<dealii::LAPACKFullMatrix<double>* > *local_inverses;
+      const std::vector<std::shared_ptr<dealii::LAPACKFullMatrix<double> > > *local_inverses;
 
       dealii::Vector<number>  local_src;
       const VectorType *src;
@@ -55,13 +55,6 @@ namespace implementation
 template <int dim, typename VectorType, class number, bool same_diagonal>
 PSCPreconditioner<dim, VectorType, number, same_diagonal>::PSCPreconditioner()
 {}
-
-template <int dim, typename VectorType, class number, bool same_diagonal>
-PSCPreconditioner<dim, VectorType, number, same_diagonal>::~PSCPreconditioner()
-{
-  for (auto &matrix : dictionary)
-    delete matrix;
-}
 
 template <int dim, typename VectorType, class number, bool same_diagonal>
 template <class GlobalOperatorType>
@@ -102,14 +95,17 @@ void PSCPreconditioner<dim, VectorType, number, same_diagonal>::initialize(const
   patch_inverses.resize(ddh->global_dofs_on_subdomain.size());
   //setup local matrices/inverses
   {
-    timer->enter_subsection("LO::build_matrices");
+    timer->enter_subsection("LO::build_patch_inverses");
 
-    // SAME DIAGONAL
-    if (same_diagonal && !data.use_dictionary)
+    // SAME_DIAGONAL
+    if (same_diagonal && !data.use_dictionary && patch_inverses.size()!=0)
       {
-        real_patch_inverses.resize(1);
+        if (level==0)
+          dealii::deallog << "Assembling same_diagonal Block-Jacobi-Smoother." << std::endl;
+        // TODO broadcast local patch inverse instead of solving a local problem
         const unsigned int n = fe.n_dofs_per_cell();
-        real_patch_inverses[0]=dealii::LAPACKFullMatrix<double>(n);
+        patch_inverses[0].reset(new LAPACKMatrix(n));
+
         dealii::Triangulation<dim> local_triangulation;
         dealii::DoFHandler<dim> local_dof_handler(local_triangulation);
         if (level == 0)
@@ -144,56 +140,57 @@ void PSCPreconditioner<dim, VectorType, number, same_diagonal>::initialize(const
         for (unsigned int i = 0; i < n; ++i)
           for (unsigned int j = 0; j < n; ++j)
             {
-              real_patch_inverses[0](i, j) = dummy_matrix(i, j);
+              (*patch_inverses[0])(i, j) = dummy_matrix(i, j);
             }
-        //assign to the smoother
-        for (unsigned int i=0; i<ddh->subdomain_to_global_map.size(); ++i)
-          patch_inverses[i] = &real_patch_inverses[0];
+        patch_inverses[0]->compute_inverse_svd();
+        for ( unsigned int j=1; j<patch_inverses.size(); ++j )
+          patch_inverses[j] = patch_inverses[0];
       }
 
     // FULL BLOCK JACOBI
-    else if (!same_diagonal && !data.use_dictionary)
+    else if (!same_diagonal && !data.use_dictionary && patch_inverses.size()!=0)
       {
-        real_patch_inverses.resize(ddh->subdomain_to_global_map.size());
+        if (level == 0)
+          dealii::deallog << "Assembling Block-Jacobi-Smoother." << std::endl;
         dealii::Threads::TaskGroup<> tasks;
         for (unsigned int i=0; i<ddh->subdomain_to_global_map.size(); ++i)
           {
             tasks += dealii::Threads::new_task([i,this]()
             {
+              patch_inverses[i].reset(new LAPACKMatrix);
               build_matrix(ddh->subdomain_to_global_map[i],
                            ddh->global_dofs_on_subdomain[i],
                            ddh->all_to_unique[i],
-                           real_patch_inverses[i]);
+                           *patch_inverses[i]);
+              patch_inverses[i]->compute_inverse_svd();
             });
-            patch_inverses[i] = &real_patch_inverses[i];
           }
         tasks.join_all ();
       }
 
     // DICTIONARY
-    else if (!same_diagonal && data.use_dictionary)
+    else if (!same_diagonal && data.use_dictionary && patch_inverses.size()!=0)
       {
+        if (level == 0)
+          dealii::deallog << "Assembling Block-Jacobi-Dictionary." << std::endl;
         Assert(data.tol > 0., dealii::ExcInternalError());
-        patch_inverses.resize(ddh->global_dofs_on_subdomain.size());
         std::vector<unsigned int> id_range;
-        for (unsigned int id=0; id<ddh->global_dofs_on_subdomain.size(); ++id)
+        for ( unsigned int id=0; id<ddh->global_dofs_on_subdomain.size(); ++id)
           id_range.push_back(id);
-        unsigned int patch_id;
+        unsigned int patch_id, dict_size = 0;
         // loop over subdomain range
         while (id_range.size()!=0)
           {
             // build local inverse of first subdomain in the remaining id_range of subdomains
             patch_id = id_range.front();
-            dictionary.push_back(new LAPACKMatrix {});
+            patch_inverses[patch_id].reset(new LAPACKMatrix);
             build_matrix(ddh->subdomain_to_global_map[patch_id],
                          ddh->global_dofs_on_subdomain[patch_id],
                          ddh->all_to_unique[patch_id],
-                         *(dictionary.back()));
-            dictionary.back()->compute_inverse_svd();
-            patch_inverses[patch_id] = dictionary.back();
+                         *patch_inverses[patch_id]);
+            patch_inverses[patch_id]->invert();
             id_range.erase(id_range.begin());
-            if (id_range.size()==0)
-              break;
+            ++dict_size;
             // check 'inverse-similarity' with the remainder of subdomains
             auto j = id_range.begin();
             while (j!=id_range.end())
@@ -203,46 +200,29 @@ void PSCPreconditioner<dim, VectorType, number, same_diagonal>::initialize(const
                              ddh->global_dofs_on_subdomain[*j],
                              ddh->all_to_unique[*j],
                              A_j);
-                Matrix S_j {A_j.m()};
-                dictionary.back()->mmult(S_j,A_j);
+                dealii::FullMatrix<double> S_j {A_j.m()};
+                patch_inverses[patch_id]->mmult(S_j,A_j);
                 S_j.diagadd(-1.);
                 // test if currently observed inverse is a good approximation of inv(A_j)
                 Assert(S_j.m() == S_j.n(), dealii::ExcInternalError());
                 const double tol_m = data.tol * S_j.m() * S_j.n();
                 if (S_j.frobenius_norm() < tol_m)
                   {
-                    patch_inverses[*j] = dictionary.back();
+                    patch_inverses[*j] = patch_inverses[patch_id];
                     j = id_range.erase(j);
                   }
                 else
                   ++j;
               }
           }
-        Assert(dictionary.size() <= patch_inverses.size(), dealii::ExcInternalError());
         //Output
-        //Remark output is written so far only by first mpi process! Each mpi process has its own dictionary!
-        dealii::deallog << "Dictionary(Tol=" << data.tol << ") contains "
-                        << dictionary.size() << " inverse(s)." << std::endl;
+        dealii::deallog << "DEAL::Dictionary(level=" << level
+                        << ", mpi_proc=" << 0
+                        << ", Tol=" << data.tol << ") contains "
+                        << dict_size << " inverse(s)." << std::endl;
       }
-    else // same_diagonal + use_dictionary not allowed!
-      Assert(false, dealii::ExcInternalError());
-
-    timer->leave_subsection();
   }
-
-  // invert patches in same_diagonal & full block jacobi case
-  if (!data.use_dictionary)
-    {
-      dealii::Threads::TaskGroup<> tasks;
-      for (unsigned int i=0; i<real_patch_inverses.size(); ++i)
-        {
-          tasks += dealii::Threads::new_task([i,this]()
-          {
-            real_patch_inverses[i].compute_inverse_svd();
-          });
-        }
-      tasks.join_all ();
-    }
+  timer->leave_subsection();
 }
 
 template <int dim, typename VectorType, class number, bool same_diagonal>
@@ -309,7 +289,6 @@ void PSCPreconditioner<dim, VectorType, number, same_diagonal>::build_matrix
  const std::map<dealii::types::global_dof_index, unsigned int> &all_to_unique,
  dealii::LAPACKFullMatrix<double> &matrix)
 {
-
   dealii::MGLevelObject<dealii::FullMatrix<double> > mg_matrix ;
   mg_matrix.resize(level,level);
 

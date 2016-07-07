@@ -27,7 +27,6 @@ public:
   class AdditionalData;
 
   PSCPreconditioner();
-  ~PSCPreconditioner();
   PSCPreconditioner (const PSCPreconditioner &) = delete ;
   PSCPreconditioner &operator = (const PSCPreconditioner &) = delete;
 
@@ -57,10 +56,7 @@ private:
    const std::map<dealii::types::global_dof_index, unsigned int> &all_to_unique,
    dealii::LAPACKFullMatrix<double> &matrix);
 
-  std::vector<LAPACKMatrix *> patch_inverses;
-  std::vector<LAPACKMatrix> real_patch_inverses;
-  // change it to smartpointers
-  std::vector<LAPACKMatrix *> dictionary;
+  std::vector<std::shared_ptr<LAPACKMatrix> > patch_inverses;
 
   dealii::MeshWorker::IntegrationInfoBox<dim> info_box;
   std::unique_ptr<dealii::MeshWorker::DoFInfo<dim> >  dof_info;
