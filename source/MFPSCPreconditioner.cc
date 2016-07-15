@@ -1,6 +1,6 @@
 #include <MFPSCPreconditioner.h>
 
-namespace implementation
+namespace MF
 {
   namespace WorkStream
   {
@@ -85,11 +85,11 @@ void MFPSCPreconditioner<dim, VectorType, number>::vmult_add (VectorType &dst,
   timer->enter_subsection(section);
 
   {
-    implementation::WorkStream::Copy<dim, VectorType, number> copy_sample;
+    MF::WorkStream::Copy<dim, VectorType, number> copy_sample;
     copy_sample.dst = &dst;
     copy_sample.ddh = ddh;
 
-    implementation::WorkStream::Scratch<dim, VectorType, number> scratch_sample;
+    MF::WorkStream::Scratch<dim, VectorType, number> scratch_sample;
     scratch_sample.src = &src;
     dealii::ConstraintMatrix dummy_constraints;
     dealii::MappingQ1<dim> dummy_mapping;
@@ -107,8 +107,8 @@ void MFPSCPreconditioner<dim, VectorType, number>::vmult_add (VectorType &dst,
     const unsigned int chunk_size = 1;
 
     dealii::WorkStream::run(ddh->colorized_iterators(),
-                            implementation::WorkStream::work<dim, VectorType, number>,
-                            implementation::WorkStream::assemble<dim, VectorType, number>,
+                            MF::WorkStream::work<dim, VectorType, number>,
+                            MF::WorkStream::assemble<dim, VectorType, number>,
                             scratch_sample, copy_sample,
                             queue,
                             chunk_size);

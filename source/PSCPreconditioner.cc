@@ -1,6 +1,6 @@
 #include <PSCPreconditioner.h>
 
-namespace implementation
+namespace
 {
   namespace WorkStream
   {
@@ -256,17 +256,17 @@ void PSCPreconditioner<dim, VectorType, number, same_diagonal>::vmult_add (Vecto
   timer->enter_subsection(section);
 
   {
-    implementation::WorkStream::Copy<dim, VectorType, number, same_diagonal> copy_sample;
+    WorkStream::Copy<dim, VectorType, number, same_diagonal> copy_sample;
     copy_sample.dst = &dst;
     copy_sample.ddh = ddh;
 
-    implementation::WorkStream::Scratch<dim, VectorType, number, same_diagonal> scratch_sample;
+    WorkStream::Scratch<dim, VectorType, number, same_diagonal> scratch_sample;
     scratch_sample.src = &src;
     scratch_sample.local_inverses = &patch_inverses;
 
     dealii::WorkStream::run(ddh->colorized_iterators(),
-                            implementation::WorkStream::work<dim, VectorType, number, same_diagonal>,
-                            implementation::WorkStream::assemble<dim, VectorType, number, same_diagonal>,
+                            WorkStream::work<dim, VectorType, number, same_diagonal>,
+                            WorkStream::assemble<dim, VectorType, number, same_diagonal>,
                             scratch_sample, copy_sample);
   }
 
