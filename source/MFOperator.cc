@@ -1,7 +1,7 @@
 #include <MFOperator.h>
 
-template <int dim, int fe_degree, bool same_diagonal>
-MFOperator<dim, fe_degree, same_diagonal>::MFOperator()
+template <int dim, int fe_degree, int n_q_points_1d, typename number>
+MFOperator<dim,fe_degree,n_q_points_1d,number>::MFOperator()
 {
   level = 0;
   dof_handler = nullptr;
@@ -12,31 +12,22 @@ MFOperator<dim, fe_degree, same_diagonal>::MFOperator()
   use_cell_range = false;
 }
 
-template <int dim, int fe_degree, bool same_diagonal>
-void MFOperator<dim, fe_degree, same_diagonal>::set_timer(dealii::TimerOutput &timer_)
+template <int dim, int fe_degree, int n_q_points_1d, typename number>
+void MFOperator<dim,fe_degree,n_q_points_1d,number>::set_timer(dealii::TimerOutput &timer_)
 {
   timer = &timer_;
 }
 
-template <int dim, int fe_degree, bool same_diagonal>
-MFOperator<dim, fe_degree, same_diagonal>::~MFOperator()
+template <int dim, int fe_degree, int n_q_points_1d, typename number>
+MFOperator<dim,fe_degree,n_q_points_1d,number>::~MFOperator()
 {
   dof_handler = nullptr ;
   fe = nullptr ;
   mapping = nullptr ;
 }
 
-/*template <int dim, int fe_degree, bool same_diagonal>
-void MFOperator<dim, fe_degree, same_diagonal>::clear()
-{
-  dof_handler = nullptr ;
-  fe = nullptr ;
-  mapping = nullptr ;
-}*/
-
-
-template <int dim, int fe_degree, bool same_diagonal>
-MFOperator<dim, fe_degree, same_diagonal>::MFOperator(const MFOperator &operator_)
+template <int dim, int fe_degree, int n_q_points_1d, typename number>
+MFOperator<dim,fe_degree,n_q_points_1d,number>::MFOperator(const MFOperator &operator_)
   : Subscriptor(operator_)
 {
   timer = operator_.timer;
@@ -47,11 +38,31 @@ MFOperator<dim, fe_degree, same_diagonal>::MFOperator(const MFOperator &operator
                operator_.level);
 }
 
+template <int dim, int fe_degree, int n_q_points_1d, typename number>
+void MFOperator<dim,fe_degree,n_q_points_1d,number>::initialize (const dealii::DoFHandler<dim> *dof_handler,
+    const dealii::Mapping<dim> *mapping,
+    const MPI_Comm &mpi_communicator,
+    const unsigned int level)
+{
+  const dealii::QGauss<1> quad (n_q_points_1d);
+  typename dealii::MatrixFree<dim,number>::AdditionalData addit_data;
+  addit_data.tasks_parallel_scheme = dealii::MatrixFree<dim,number>::AdditionalData::none;
+  addit_data.tasks_block_size = 3;
+  addit_data.level_mg_handler = level;
+#ifndef CG
+  addit_data.build_face_info = true;
+#endif
+  addit_data.mpi_communicator = mpi_communicator;
+  dealii::ConstraintMatrix constraints;
+  constraints.close();
 
-template <int dim, int fe_degree, bool same_diagonal>
-void MFOperator<dim, fe_degree, same_diagonal>::reinit
+  data.reinit (*mapping, *dof_handler, constraints, quad, addit_data);
+}
+
+template <int dim, int fe_degree, int n_q_points_1d, typename number>
+void MFOperator<dim,fe_degree,n_q_points_1d,number>::reinit
 (const dealii::DoFHandler<dim> *dof_handler_,
- const dealii::MappingQ1<dim> *mapping_,
+ const dealii::Mapping<dim> *mapping_,
  const dealii::ConstraintMatrix *constraints_,
  const MPI_Comm &mpi_communicator_,
  const unsigned int level_)
@@ -71,7 +82,6 @@ void MFOperator<dim, fe_degree, same_diagonal>::reinit
   info_box.initialize_gauss_quadrature(n_gauss_points,
                                        n_gauss_points,
                                        n_gauss_points);
-
   info_box.initialize_update_flags();
   dealii::UpdateFlags update_flags = dealii::update_JxW_values |
                                      dealii::update_quadrature_points |
@@ -81,12 +91,10 @@ void MFOperator<dim, fe_degree, same_diagonal>::reinit
   info_box.cell_selector.add("src", true, true, false);
   info_box.boundary_selector.add("src", true, true, false);
   info_box.face_selector.add("src", true, true, false);
-
   dealii::IndexSet locally_owned_level_dofs = dof_handler->locally_owned_mg_dofs(level);
   dealii::IndexSet locally_relevant_level_dofs;
   dealii::DoFTools::extract_locally_relevant_level_dofs
   (*dof_handler, level, locally_relevant_level_dofs);
-
   ghosted_src.resize(level, level);
 #if PARALLEL_LA == 0
   ghosted_src[level].reinit(locally_owned_level_dofs.n_elements());
@@ -112,12 +120,11 @@ void MFOperator<dim, fe_degree, same_diagonal>::reinit
         }
     }
   colored_iterators = std::move(all_iterators);
-
   timer->leave_subsection();
 }
 
-template <int dim, int fe_degree, bool same_diagonal>
-void MFOperator<dim, fe_degree, same_diagonal>::set_cell_range
+template <int dim, int fe_degree, int n_q_points_1d, typename number>
+void MFOperator<dim,fe_degree,n_q_points_1d,number>::set_cell_range
 (const std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> &cell_range_)
 {
   use_cell_range = true;
@@ -125,23 +132,19 @@ void MFOperator<dim, fe_degree, same_diagonal>::set_cell_range
   colored_iterators[0] = *cell_range;
 }
 
-template <int dim, int fe_degree, bool same_diagonal>
-void MFOperator<dim, fe_degree, same_diagonal>::build_coarse_matrix()
+template <int dim, int fe_degree, int n_q_points_1d, typename number>
+void MFOperator<dim,fe_degree,n_q_points_1d,number>::build_coarse_matrix()
 {
   Assert(level == 0, dealii::ExcInternalError());
   Assert(dof_handler != 0, dealii::ExcInternalError());
-
   info_box.initialize(*fe, *mapping, &(dof_handler->block_info()));
   dealii::MGLevelObject<LA::MPI::SparseMatrix> mg_matrix ;
   mg_matrix.resize(level,level);
-
   dealii::IndexSet locally_relevant_level_dofs;
   dealii::DoFTools::extract_locally_relevant_level_dofs(*dof_handler,level,locally_relevant_level_dofs);
   dealii::DynamicSparsityPattern dsp(locally_relevant_level_dofs);
-
   //for the coarse matrix, we want to assemble always everything
   dealii::MGTools::make_flux_sparsity_pattern(*dof_handler,dsp,level);
-
 #if PARALLEL_LA == 0
   sp.copy_from (dsp);
   mg_matrix[level].reinit(sp);
@@ -150,15 +153,12 @@ void MFOperator<dim, fe_degree, same_diagonal>::build_coarse_matrix()
                           dof_handler->locally_owned_mg_dofs(level),
                           dsp,mpi_communicator);
 #endif
-
   dealii::MeshWorker::Assembler::MGMatrixSimple<LA::MPI::SparseMatrix> assembler;
   assembler.initialize(mg_matrix);
 #ifdef CG
   assembler.initialize(constraints);
 #endif
-
   dealii::colored_loop<dim, dim> (colored_iterators, *dof_info, info_box, matrix_integrator, assembler);
-
   mg_matrix[level].compress(dealii::VectorOperation::add);
 #if PARALLEL_LA==0
   coarse_matrix = std::move(mg_matrix[level]);
@@ -167,9 +167,9 @@ void MFOperator<dim, fe_degree, same_diagonal>::build_coarse_matrix()
 #endif
 }
 
-template <int dim, int fe_degree, bool same_diagonal>
-void MFOperator<dim,fe_degree,same_diagonal>::vmult (LA::MPI::Vector &dst,
-                                                     const LA::MPI::Vector &src) const
+template <int dim, int fe_degree, int n_q_points_1d, typename number>
+void MFOperator<dim,fe_degree,n_q_points_1d,number>::vmult (LA::MPI::Vector &dst,
+                                                            const LA::MPI::Vector &src) const
 {
   dst = 0;
   dst.compress(dealii::VectorOperation::insert);
@@ -178,9 +178,9 @@ void MFOperator<dim,fe_degree,same_diagonal>::vmult (LA::MPI::Vector &dst,
   AssertIsFinite(dst.l2_norm());
 }
 
-template <int dim, int fe_degree, bool same_diagonal>
-void MFOperator<dim,fe_degree,same_diagonal>::Tvmult (LA::MPI::Vector &dst,
-                                                      const LA::MPI::Vector &src) const
+template <int dim, int fe_degree, int n_q_points_1d, typename number>
+void MFOperator<dim,fe_degree,n_q_points_1d,number>::Tvmult (LA::MPI::Vector &dst,
+    const LA::MPI::Vector &src) const
 {
   dst = 0;
   dst.compress(dealii::VectorOperation::insert);
@@ -189,9 +189,9 @@ void MFOperator<dim,fe_degree,same_diagonal>::Tvmult (LA::MPI::Vector &dst,
   AssertIsFinite(dst.l2_norm());
 }
 
-template <int dim, int fe_degree, bool same_diagonal>
-void MFOperator<dim,fe_degree,same_diagonal>::vmult_add (LA::MPI::Vector &dst,
-                                                         const LA::MPI::Vector &src) const
+template <int dim, int fe_degree, int n_q_points_1d, typename number>
+void MFOperator<dim,fe_degree,n_q_points_1d,number>::vmult_add (LA::MPI::Vector &dst,
+    const LA::MPI::Vector &src) const
 {
   timer->enter_subsection("LO::initialize ("+ dealii::Utilities::int_to_string(level)+ ")");
   dealii::IndexSet locally_owned_level_dofs = dof_handler->locally_owned_mg_dofs(level);
@@ -228,13 +228,13 @@ void MFOperator<dim,fe_degree,same_diagonal>::vmult_add (LA::MPI::Vector &dst,
         dealii::colored_loop<dim, dim> (colored_iterators, *dof_info, info_box, residual_integrator, assembler,lctrl);
       }
   }
-
   timer->leave_subsection();
 }
 
-template <int dim, int fe_degree, bool same_diagonal>
-void MFOperator<dim,fe_degree, same_diagonal>::Tvmult_add (LA::MPI::Vector &dst,
-                                                           const LA::MPI::Vector &src) const
+template <int dim, int fe_degree, int n_q_points_1d, typename number>
+void MFOperator<dim,fe_degree,n_q_points_1d,number>::Tvmult_add
+(LA::MPI::Vector &dst,
+ const LA::MPI::Vector &src) const
 {
   vmult_add(dst, src);
 }

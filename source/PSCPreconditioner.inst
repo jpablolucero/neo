@@ -14,40 +14,14 @@ template class PSCPreconditioner<2, LA::MPI::Vector, float, false>;
 template class PSCPreconditioner<3, LA::MPI::Vector, double, false>;
 template class PSCPreconditioner<3, LA::MPI::Vector, float, false>;
 
-template void PSCPreconditioner<2, dealii::TrilinosWrappers::MPI::Vector, double, true>::initialize<MFOperator<2, 1, true> >
-(MFOperator<2, 1, true> const&, PSCPreconditioner<2, dealii::TrilinosWrappers::MPI::Vector, double, true>::AdditionalData const&);
-template void PSCPreconditioner<2, dealii::TrilinosWrappers::MPI::Vector, double, true>::initialize<MFOperator<2, 2, true> >
-(MFOperator<2, 2, true> const&, PSCPreconditioner<2, dealii::TrilinosWrappers::MPI::Vector, double, true>::AdditionalData const&);
-template void PSCPreconditioner<2, dealii::TrilinosWrappers::MPI::Vector, double, true>::initialize<MFOperator<2, 3, true> >
-(MFOperator<2, 3, true> const&, PSCPreconditioner<2, dealii::TrilinosWrappers::MPI::Vector, double, true>::AdditionalData const&);
-template void PSCPreconditioner<2, dealii::TrilinosWrappers::MPI::Vector, double, true>::initialize<MFOperator<2, 4, true> >
-(MFOperator<2, 4, true> const&, PSCPreconditioner<2, dealii::TrilinosWrappers::MPI::Vector, double, true>::AdditionalData const&);
 
-template void PSCPreconditioner<2, dealii::TrilinosWrappers::MPI::Vector, double, false>::initialize<MFOperator<2, 1, false> >
-(MFOperator<2, 1, false> const&, PSCPreconditioner<2, dealii::TrilinosWrappers::MPI::Vector, double, false>::AdditionalData const&);
-template void PSCPreconditioner<2, dealii::TrilinosWrappers::MPI::Vector, double, false>::initialize<MFOperator<2, 2, false> >
-(MFOperator<2, 2, false> const&, PSCPreconditioner<2, dealii::TrilinosWrappers::MPI::Vector, double, false>::AdditionalData const&);
-template void PSCPreconditioner<2, dealii::TrilinosWrappers::MPI::Vector, double, false>::initialize<MFOperator<2, 3, false> >
-(MFOperator<2, 3, false> const&, PSCPreconditioner<2, dealii::TrilinosWrappers::MPI::Vector, double, false>::AdditionalData const&);
-template void PSCPreconditioner<2, dealii::TrilinosWrappers::MPI::Vector, double, false>::initialize<MFOperator<2, 4, false> >
-(MFOperator<2, 4, false> const&, PSCPreconditioner<2, dealii::TrilinosWrappers::MPI::Vector, double, false>::AdditionalData const&);
+#undef I
+#define I(D,P,T,S) template void PSCPreconditioner<D, LA::MPI::Vector, T, S>::initialize(MFOperator<D, P, P+1, T> const&, PSCPreconditioner<D, LA::MPI::Vector, T, S>::AdditionalData const&)
 
-template void PSCPreconditioner<3, dealii::TrilinosWrappers::MPI::Vector, double, true>::initialize<MFOperator<3, 1, true> >
-(MFOperator<3, 1, true> const&, PSCPreconditioner<3, dealii::TrilinosWrappers::MPI::Vector, double, true>::AdditionalData const&);
-template void PSCPreconditioner<3, dealii::TrilinosWrappers::MPI::Vector, double, true>::initialize<MFOperator<3, 2, true> >
-(MFOperator<3, 2, true> const&, PSCPreconditioner<3, dealii::TrilinosWrappers::MPI::Vector, double, true>::AdditionalData const&);
-template void PSCPreconditioner<3, dealii::TrilinosWrappers::MPI::Vector, double, true>::initialize<MFOperator<3, 3, true> >
-(MFOperator<3, 3, true> const&, PSCPreconditioner<3, dealii::TrilinosWrappers::MPI::Vector, double, true>::AdditionalData const&);
-template void PSCPreconditioner<3, dealii::TrilinosWrappers::MPI::Vector, double, true>::initialize<MFOperator<3, 4, true> >
-(MFOperator<3, 4, true> const&, PSCPreconditioner<3, dealii::TrilinosWrappers::MPI::Vector, double, true>::AdditionalData const&);
-
-template void PSCPreconditioner<3, dealii::TrilinosWrappers::MPI::Vector, double, false>::initialize<MFOperator<3, 1, false> >
-(MFOperator<3, 1, false> const&, PSCPreconditioner<3, dealii::TrilinosWrappers::MPI::Vector, double, false>::AdditionalData const&);
-template void PSCPreconditioner<3, dealii::TrilinosWrappers::MPI::Vector, double, false>::initialize<MFOperator<3, 2, false> >
-(MFOperator<3, 2, false> const&, PSCPreconditioner<3, dealii::TrilinosWrappers::MPI::Vector, double, false>::AdditionalData const&);
-template void PSCPreconditioner<3, dealii::TrilinosWrappers::MPI::Vector, double, false>::initialize<MFOperator<3, 3, false> >
-(MFOperator<3, 3, false> const&, PSCPreconditioner<3, dealii::TrilinosWrappers::MPI::Vector, double, false>::AdditionalData const&);
-template void PSCPreconditioner<3, dealii::TrilinosWrappers::MPI::Vector, double, false>::initialize<MFOperator<3, 4, false> >
-(MFOperator<3, 4, false> const&, PSCPreconditioner<3, dealii::TrilinosWrappers::MPI::Vector, double, false>::AdditionalData const&);
+I(2,1,double,true);I(2,2,double,true);I(2,3,double,true);I(2,4,double,true);
+I(2,1,double,false);I(2,2,double,false);I(2,3,double,false);I(2,4,double,false);
+I(3,1,double,true);I(3,2,double,true);I(3,3,double,true);I(3,4,double,true);
+I(3,1,double,false);I(3,2,double,false);I(3,3,double,false);I(3,4,double,false);
+#undef I
 
 #endif // PSCPRECONDITIONER_INST

@@ -18,7 +18,7 @@
 #include <DDHandler.h>
 #include <MFOperator.h>
 
-template <int dim=2, typename VectorType=LA::MPI::Vector, class number=double, bool same_diagonal=false>
+template <int dim=2, typename VectorType=LA::MPI::Vector, typename number=double, bool same_diagonal=false>
 class PSCPreconditioner final
 {
 public:
@@ -31,7 +31,7 @@ public:
   PSCPreconditioner &operator = (const PSCPreconditioner &) = delete;
 
   // interface for MGSmootherPrecondition but global_operator is not used
-  template <class GlobalOperatorType>
+  template <typename GlobalOperatorType>
   void initialize(const GlobalOperatorType &global_operator,
                   const AdditionalData &data);
   void clear();

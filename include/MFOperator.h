@@ -13,23 +13,37 @@
 #include <deal.II/meshworker/simple.h>
 #include <deal.II/meshworker/loop.h>
 
+//MatrixFree
+#include <deal.II/matrix_free/matrix_free.h>
+#include <deal.II/matrix_free/fe_evaluation.h>
+
 #include <GenericLinearAlgebra.h>
 #include <Integrators.h>
 #include <integration_loop.h>
 
 #include <MGMatrixSimpleMapped.h>
 
-template <int dim, int fe_degree, bool same_diagonal>
+template <int dim, int fe_degree, int n_q_points_1d = fe_degree+1, typename number=double>
 class MFOperator final: public dealii::Subscriptor
 {
 public:
+  typedef double value_type ;
+  typedef LA::MPI::SparseMatrixSizeType                         size_type ;
+  typedef typename dealii::DoFHandler<dim>::level_cell_iterator level_cell_iterator;
+
   MFOperator () ;
   ~MFOperator () ;
   MFOperator (const MFOperator &operator_);
   MFOperator &operator = (const MFOperator &) = delete;
 
+  // TODO/? do we need an interface to modify additional data
+  void initialize (const dealii::DoFHandler<dim> *dof_handler,
+                   const dealii::Mapping<dim> *mapping,
+                   const MPI_Comm &mpi_communicator,
+                   const unsigned int level = dealii::numbers::invalid_unsigned_int);
+
   void reinit (const dealii::DoFHandler<dim> *dof_handler_,
-               const dealii::MappingQ1<dim> *mapping_,
+               const dealii::Mapping<dim> *mapping_,
                const dealii::ConstraintMatrix *constraints,
                const MPI_Comm &mpi_communicator_,
                const unsigned int level_ = dealii::numbers::invalid_unsigned_int);
@@ -51,8 +65,6 @@ public:
   void Tvmult_add (LA::MPI::Vector &dst,
                    const LA::MPI::Vector &src) const ;
 
-  typedef double value_type ;
-
   const LA::MPI::SparseMatrix &get_coarse_matrix() const
   {
     return coarse_matrix;
@@ -68,20 +80,18 @@ public:
     return dof_handler->n_dofs(level);
   }
 
-  typedef LA::MPI::SparseMatrixSizeType                         size_type ;
-  typedef typename dealii::DoFHandler<dim>::level_cell_iterator level_cell_iterator;
-
 private:
   unsigned int                                        level;
   const dealii::DoFHandler<dim>                       *dof_handler;
   const dealii::FiniteElement<dim>                    *fe;
-  const dealii::MappingQ1<dim>                        *mapping;
+  const dealii::Mapping<dim>                          *mapping;
   const dealii::ConstraintMatrix                      *constraints;
   std::unique_ptr<dealii::MeshWorker::DoFInfo<dim> >  dof_info;
   mutable dealii::MeshWorker::IntegrationInfoBox<dim> info_box;
   dealii::SparsityPattern                             sp;
   LA::MPI::SparseMatrix                               coarse_matrix;
-  MatrixIntegrator<dim,same_diagonal>                 matrix_integrator;
+  // TODO get rid off same_diagonal in integrators
+  MatrixIntegrator<dim,false>                         matrix_integrator;
   ResidualIntegrator<dim>                             residual_integrator;
   mutable dealii::MGLevelObject<LA::MPI::Vector>      ghosted_src;
   MPI_Comm                                            mpi_communicator;
@@ -89,6 +99,8 @@ private:
   std::vector<std::vector<level_cell_iterator> >      colored_iterators;
   const std::vector<level_cell_iterator>              *cell_range;
   bool                                                use_cell_range;
+  // MatrixFree
+  dealii::MatrixFree<dim,number>                      data;
 };
 
 #ifdef HEADER_IMPLEMENTATION

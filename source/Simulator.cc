@@ -15,7 +15,7 @@ Simulator<dim,same_diagonal,degree>::Simulator (dealii::TimerOutput &timer_,
 #ifdef CG
   fe(dealii::FE_Q<dim>(degree),1),
 #else
-  fe(dealii::FESystem<dim>(dealii::FE_DGQ<dim>(degree),1),1),
+  fe(dealii::FE_DGQ<dim>(degree),1),
 #endif
   reference_function(fe.n_components()),
   dof_handler (triangulation),
@@ -227,7 +227,7 @@ void Simulator<dim,same_diagonal,degree>::solve ()
     }
 
   // SmootherSetup
-  dealii::MGSmootherPrecondition<SystemMatrixType, Smoother, LA::MPI::Vector> mg_smoother;
+  dealii::MGSmootherPrecondition<SystemMatrixType,Smoother,LA::MPI::Vector> mg_smoother;
   mg_smoother.initialize(mg_matrix, smoother_data);
   mg_smoother.set_steps(smoothing_steps);
   dealii::mg::Matrix<LA::MPI::Vector>         mgmatrix;

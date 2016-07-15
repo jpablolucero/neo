@@ -47,7 +47,7 @@
 #include <string>
 #include <fstream>
 
-template <int dim=2,bool same_diagonal = true, unsigned int degree = 1>
+template <int dim=2,bool same_diagonal = true, unsigned int fe_degree = 1>
 class Simulator final
 {
 public:
@@ -68,7 +68,8 @@ private:
   void compute_error () const;
   void output_results (const unsigned int cycle) const;
 
-  typedef MFOperator<dim, degree, same_diagonal> SystemMatrixType;
+  // TODO allow for template call to n_q_points_1d & number
+  typedef MFOperator<dim,fe_degree,fe_degree+1,double> SystemMatrixType;
 
   dealii::IndexSet           locally_owned_dofs;
   dealii::IndexSet           locally_relevant_dofs;

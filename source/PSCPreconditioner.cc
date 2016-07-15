@@ -4,7 +4,7 @@ namespace implementation
 {
   namespace WorkStream
   {
-    template <int dim, typename VectorType, class number, bool same_diagonal>
+    template <int dim, typename VectorType, typename number, bool same_diagonal>
     class Copy
     {
     public:
@@ -15,7 +15,7 @@ namespace implementation
       std::shared_ptr<DDHandlerBase<dim> > ddh;
     };
 
-    template <int dim, typename VectorType, class number, bool same_diagonal>
+    template <int dim, typename VectorType, typename number, bool same_diagonal>
     class Scratch
     {
     public:
@@ -25,7 +25,7 @@ namespace implementation
       const VectorType *src;
     };
 
-    template <int dim, typename VectorType, class number, bool same_diagonal>
+    template <int dim, typename VectorType, typename number, bool same_diagonal>
     void assemble(const Copy<dim, VectorType, number, same_diagonal> &copy)
     {
       // write back to global vector
@@ -34,7 +34,7 @@ namespace implementation
                                copy.subdomain_idx);
     }
 
-    template <int dim, typename VectorType, class number, bool same_diagonal>
+    template <int dim, typename VectorType, typename number, bool same_diagonal>
     void work(const std::vector<unsigned int>::const_iterator &iterator,
               Scratch<dim, VectorType, number, same_diagonal> &scratch, Copy<dim, VectorType, number, same_diagonal> &copy)
     {
@@ -52,13 +52,13 @@ namespace implementation
   }
 }
 
-template <int dim, typename VectorType, class number, bool same_diagonal>
+template <int dim, typename VectorType, typename number, bool same_diagonal>
 PSCPreconditioner<dim, VectorType, number, same_diagonal>::PSCPreconditioner()
 {}
 
-template <int dim, typename VectorType, class number, bool same_diagonal>
-template <class GlobalOperatorType>
-void PSCPreconditioner<dim, VectorType, number, same_diagonal>::initialize(const GlobalOperatorType & /*global_operator*/,
+template <int dim, typename VectorType, typename number, bool same_diagonal>
+template <typename GlobalOperatorType>
+void PSCPreconditioner<dim,VectorType,number,same_diagonal>::initialize(const GlobalOperatorType & /*global_operator*/,
     const AdditionalData &data)
 {
   Assert(data.dof_handler != 0, dealii::ExcInternalError());
@@ -225,11 +225,11 @@ void PSCPreconditioner<dim, VectorType, number, same_diagonal>::initialize(const
   timer->leave_subsection();
 }
 
-template <int dim, typename VectorType, class number, bool same_diagonal>
+template <int dim, typename VectorType, typename number, bool same_diagonal>
 void PSCPreconditioner<dim, VectorType, number, same_diagonal>::clear()
 {}
 
-template <int dim, typename VectorType, class number, bool same_diagonal>
+template <int dim, typename VectorType, typename number, bool same_diagonal>
 void PSCPreconditioner<dim, VectorType, number, same_diagonal>::vmult (VectorType &dst,
     const VectorType &src) const
 {
@@ -239,7 +239,7 @@ void PSCPreconditioner<dim, VectorType, number, same_diagonal>::vmult (VectorTyp
   AssertIsFinite(dst.l2_norm());
 }
 
-template <int dim, typename VectorType, class number, bool same_diagonal>
+template <int dim, typename VectorType, typename number, bool same_diagonal>
 void PSCPreconditioner<dim, VectorType, number, same_diagonal>::Tvmult (VectorType &/*dst*/,
     const VectorType &/*src*/) const
 {
@@ -247,7 +247,7 @@ void PSCPreconditioner<dim, VectorType, number, same_diagonal>::Tvmult (VectorTy
   AssertThrow(false, dealii::ExcNotImplemented());
 }
 
-template <int dim, typename VectorType, class number, bool same_diagonal>
+template <int dim, typename VectorType, typename number, bool same_diagonal>
 void PSCPreconditioner<dim, VectorType, number, same_diagonal>::vmult_add (VectorType &dst,
     const VectorType &src) const
 {
@@ -274,7 +274,7 @@ void PSCPreconditioner<dim, VectorType, number, same_diagonal>::vmult_add (Vecto
   timer->leave_subsection();
 }
 
-template <int dim, typename VectorType, class number, bool same_diagonal>
+template <int dim, typename VectorType, typename number, bool same_diagonal>
 void PSCPreconditioner<dim, VectorType, number, same_diagonal>::Tvmult_add (VectorType &/*dst*/,
     const VectorType &/*src*/) const
 {
@@ -282,7 +282,7 @@ void PSCPreconditioner<dim, VectorType, number, same_diagonal>::Tvmult_add (Vect
   AssertThrow(false, dealii::ExcNotImplemented());
 }
 
-template <int dim, typename VectorType, class number, bool same_diagonal>
+template <int dim, typename VectorType, typename number, bool same_diagonal>
 void PSCPreconditioner<dim, VectorType, number, same_diagonal>::build_matrix
 (const std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> &cell_range,
  const std::vector<dealii::types::global_dof_index> &global_dofs_on_subdomain,
