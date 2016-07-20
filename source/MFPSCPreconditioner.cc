@@ -1,5 +1,6 @@
 #include <MFPSCPreconditioner.h>
 
+#ifndef MATRIXFREE
 namespace implementation
 {
   namespace WorkStream
@@ -47,6 +48,7 @@ namespace implementation
     {
       const unsigned int subdomain_idx = *iterator;
       const DDHandlerBase<dim> &ddh = *(copy.ddh);
+
 
       scratch.system_matrix.set_cell_range(ddh.subdomain_to_global_map[subdomain_idx]);
       scratch.solver.solve(scratch.system_matrix,*(copy.dst),*(scratch.src),dealii::PreconditionIdentity());
@@ -127,3 +129,4 @@ void MFPSCPreconditioner<dim, VectorType, number>::Tvmult_add (VectorType &/*dst
 }
 
 #include "MFPSCPreconditioner.inst"
+#endif // MATRIXFREE

@@ -34,6 +34,7 @@
 #include <deal.II/multigrid/mg_coarse.h>
 #include <deal.II/multigrid/mg_matrix.h>
 #include <deal.II/multigrid/multigrid.h>
+#include <deal.II/multigrid/mg_transfer_matrix_free.h>
 #include <deal.II/numerics/data_out.h>
 #include <deal.II/numerics/vector_tools.h>
 #include <deal.II/numerics/vector_tools.templates.h>
@@ -68,7 +69,7 @@ private:
   void compute_error () const;
   void output_results (const unsigned int cycle) const;
 
-  // TODO allow for template call to n_q_points_1d & number
+  // TODO Simulator needs interface(template) to define n_q_points_1d & number
   typedef MFOperator<dim,fe_degree,fe_degree+1,double> SystemMatrixType;
 
   dealii::IndexSet           locally_owned_dofs;
@@ -80,7 +81,6 @@ private:
   dealii::ConstraintMatrix                            constraints;
   dealii::FESystem<dim>                               fe;
   ReferenceFunction<dim>                              reference_function;
-
 
   dealii::DoFHandler<dim>      dof_handler;
 
@@ -95,6 +95,38 @@ private:
 
   dealii::TimerOutput &timer;
 };
+
+// Is it possible to use this or something similar for Trilinos
+namespace dealii
+{
+  template <int dim, typename LOPERATOR>
+  class MGTransferMF : public dealii::MGTransferMatrixFree<dim, typename LOPERATOR::value_type>
+  {
+  public:
+    MGTransferMF(const MGLevelObject<LOPERATOR> &op)
+      :
+      mg_operator (op)
+    {};
+
+    // Analogous to 'copy_to_mg' from MGTransferPrebuilt ???
+    template <class InVector, int spacedim>
+    void
+    copy_to_mg (const DoFHandler<dim,spacedim> &mg_dof,
+                MGLevelObject<dealii::parallel::distributed::Vector<typename LOPERATOR::value_type> > &dst,
+                const InVector &src) const
+    {
+      for (unsigned int level=dst.min_level();
+           level<=dst.max_level(); ++level)
+        mg_operator[level].initialize_dof_vector(dst[level]);
+      dealii::MGLevelGlobalTransfer
+      <dealii::parallel::distributed::Vector<typename LOPERATOR::value_type> >::copy_to_mg(mg_dof, dst, src);
+    }
+
+  private:
+    const MGLevelObject<LOPERATOR> &mg_operator;
+  };
+}
+
 #ifdef HEADER_IMPLEMENTATION
 #include <Simulator.cc>
 #endif

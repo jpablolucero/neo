@@ -1,6 +1,8 @@
 #ifndef MFPSCPRECONDITIONER_H
 #define MFPSCPRECONDITIONER_H
 
+#ifndef MATRIXFREE
+
 #include <deal.II/base/timer.h>
 #include <deal.II/lac/vector.h>
 #include <deal.II/lac/full_matrix.h>
@@ -103,4 +105,5 @@ MFPSCPreconditioner<dim, VectorType, number>::timer;
 #include <MFPSCPreconditioner.cc>
 #endif
 
-#endif
+#endif // MATRIXFREE OFF
+#endif // MFPSCPRECONDITIONER_H

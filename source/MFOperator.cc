@@ -9,7 +9,9 @@ MFOperator<dim,fe_degree,n_q_points_1d,number>::MFOperator()
   mapping = nullptr;
   constraints = nullptr;
   timer = nullptr;
+#ifndef MATRIXFREE
   use_cell_range = false;
+#endif
 }
 
 template <int dim, int fe_degree, int n_q_points_1d, typename number>
@@ -38,26 +40,48 @@ MFOperator<dim,fe_degree,n_q_points_1d,number>::MFOperator(const MFOperator &ope
                operator_.level);
 }
 
-template <int dim, int fe_degree, int n_q_points_1d, typename number>
-void MFOperator<dim,fe_degree,n_q_points_1d,number>::initialize (const dealii::DoFHandler<dim> *dof_handler,
-    const dealii::Mapping<dim> *mapping,
-    const MPI_Comm &mpi_communicator,
-    const unsigned int level)
-{
-  const dealii::QGauss<1> quad (n_q_points_1d);
-  typename dealii::MatrixFree<dim,number>::AdditionalData addit_data;
-  addit_data.tasks_parallel_scheme = dealii::MatrixFree<dim,number>::AdditionalData::none;
-  addit_data.tasks_block_size = 3;
-  addit_data.level_mg_handler = level;
-#ifndef CG
-  addit_data.build_face_info = true;
-#endif
-  addit_data.mpi_communicator = mpi_communicator;
-  dealii::ConstraintMatrix constraints;
-  constraints.close();
+// template <int dim, int fe_degree, int n_q_points_1d, typename number>
+// void MFOperator<dim,fe_degree,n_q_points_1d,number>::initialize (const dealii::DoFHandler<dim> *dof_handler_,
+//     const dealii::Mapping<dim> *mapping_,
+//     const MPI_Comm &mpi_communicator_,
+//     const unsigned int level_)
+// {
+//   dof_handler = dof_handler_ ;
+//   fe = &(dof_handler->get_fe());
+//   mapping = mapping_ ;
+//   level = level_;
+//   // TODO
+//   //  constraints = constraints_;
+//   mpi_communicator = mpi_communicator_;
 
-  data.reinit (*mapping, *dof_handler, constraints, quad, addit_data);
-}
+//   // TODO generalize since TRILINOS allows only for double!
+//   const dealii::QGauss<1> quad (n_q_points_1d);
+//   typename dealii::MatrixFree<dim,double>::AdditionalData addit_data;
+//   addit_data.tasks_parallel_scheme = dealii::MatrixFree<dim,double>::AdditionalData::none;
+//   addit_data.tasks_block_size = 3;
+//   addit_data.level_mg_handler = level;
+// #ifndef CG
+//   addit_data.build_face_info = true;
+// #endif
+//   addit_data.mpi_communicator = mpi_communicator;
+//   dealii::ConstraintMatrix constraints;
+//   constraints.close();
+//   data.reinit (*mapping, *dof_handler, constraints, quad, addit_data);
+
+//   // TODO already done in reinit function
+// //   dealii::IndexSet locally_owned_level_dofs = dof_handler->locally_owned_mg_dofs(level);
+// //   dealii::IndexSet locally_relevant_level_dofs;
+// //   dealii::DoFTools::extract_locally_relevant_level_dofs
+// //     (*dof_handler, level, locally_relevant_level_dofs);
+// //   ghosted_src.resize(level, level);
+// // #if PARALLEL_LA == 0
+// //   ghosted_src[level].reinit(locally_owned_level_dofs.n_elements());
+// // #else
+// //   ghosted_src[level].reinit(locally_owned_level_dofs,
+// //                             locally_relevant_level_dofs,
+// //                             mpi_communicator_);
+// // #endif
+// }
 
 template <int dim, int fe_degree, int n_q_points_1d, typename number>
 void MFOperator<dim,fe_degree,n_q_points_1d,number>::reinit
@@ -68,12 +92,15 @@ void MFOperator<dim,fe_degree,n_q_points_1d,number>::reinit
  const unsigned int level_)
 {
   timer->enter_subsection("LO::reinit");
+  // Initialize member variables
   dof_handler = dof_handler_ ;
   fe = &(dof_handler->get_fe());
   mapping = mapping_ ;
   level=level_;
   constraints = constraints_;
   mpi_communicator = mpi_communicator_;
+#ifndef MATRIXFREE
+  // Setup DoFInfo & IntegrationInfoBox
   std::unique_ptr<dealii::MeshWorker::DoFInfo<dim> > tmp
   (new dealii::MeshWorker::DoFInfo<dim> {dof_handler->block_info()});
   dof_info = std::move(tmp);
@@ -91,6 +118,7 @@ void MFOperator<dim,fe_degree,n_q_points_1d,number>::reinit
   info_box.cell_selector.add("src", true, true, false);
   info_box.boundary_selector.add("src", true, true, false);
   info_box.face_selector.add("src", true, true, false);
+  // Initialize ghosted src
   dealii::IndexSet locally_owned_level_dofs = dof_handler->locally_owned_mg_dofs(level);
   dealii::IndexSet locally_relevant_level_dofs;
   dealii::DoFTools::extract_locally_relevant_level_dofs
@@ -98,11 +126,11 @@ void MFOperator<dim,fe_degree,n_q_points_1d,number>::reinit
   ghosted_src.resize(level, level);
 #if PARALLEL_LA == 0
   ghosted_src[level].reinit(locally_owned_level_dofs.n_elements());
-#else
+#else // PARALLEL_LA != 0
   ghosted_src[level].reinit(locally_owned_level_dofs,
                             locally_relevant_level_dofs,
                             mpi_communicator_);
-#endif
+#endif // PARALLEL_LA
   //TODO possibly colorize iterators, assume thread-safety for the moment
   std::vector<std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> >
   all_iterators(static_cast<unsigned int>(std::pow(2,dim)));
@@ -120,9 +148,26 @@ void MFOperator<dim,fe_degree,n_q_points_1d,number>::reinit
         }
     }
   colored_iterators = std::move(all_iterators);
+
+#else // MATRIXFREE ON
+  // TODO generalize since TRILINOS allows only for double!
+  const dealii::QGauss<1> quad (n_q_points_1d);
+  typename dealii::MatrixFree<dim,double>::AdditionalData addit_data;
+  addit_data.tasks_parallel_scheme = dealii::MatrixFree<dim,double>::AdditionalData::none;
+  addit_data.tasks_block_size = 3;
+  addit_data.level_mg_handler = level;
+#ifndef CG
+  addit_data.build_face_info = true;
+#endif // CG
+  addit_data.mpi_communicator = mpi_communicator;
+  dealii::ConstraintMatrix constraints;
+  constraints.close();
+  data.reinit (*mapping, *dof_handler, constraints, quad, addit_data);
+#endif // MATRIXFREE
   timer->leave_subsection();
 }
 
+#ifndef MATRIXFREE
 template <int dim, int fe_degree, int n_q_points_1d, typename number>
 void MFOperator<dim,fe_degree,n_q_points_1d,number>::set_cell_range
 (const std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> &cell_range_)
@@ -131,13 +176,16 @@ void MFOperator<dim,fe_degree,n_q_points_1d,number>::set_cell_range
   cell_range = &cell_range_;
   colored_iterators[0] = *cell_range;
 }
+#endif // MATRIXFREE
 
+#if PARALLEL_LA < 3
 template <int dim, int fe_degree, int n_q_points_1d, typename number>
 void MFOperator<dim,fe_degree,n_q_points_1d,number>::build_coarse_matrix()
 {
+  // TODO allow for coarse_level != 0
   Assert(level == 0, dealii::ExcInternalError());
   Assert(dof_handler != 0, dealii::ExcInternalError());
-  info_box.initialize(*fe, *mapping, &(dof_handler->block_info()));
+  info_box.initialize( *fe, *mapping, &(dof_handler->block_info()));
   dealii::MGLevelObject<LA::MPI::SparseMatrix> mg_matrix ;
   mg_matrix.resize(level,level);
   dealii::IndexSet locally_relevant_level_dofs;
@@ -166,6 +214,7 @@ void MFOperator<dim,fe_degree,n_q_points_1d,number>::build_coarse_matrix()
   coarse_matrix.copy_from(mg_matrix[level]);
 #endif
 }
+#endif // PARALLEL_LA < 3
 
 template <int dim, int fe_degree, int n_q_points_1d, typename number>
 void MFOperator<dim,fe_degree,n_q_points_1d,number>::vmult (LA::MPI::Vector &dst,
@@ -193,7 +242,34 @@ template <int dim, int fe_degree, int n_q_points_1d, typename number>
 void MFOperator<dim,fe_degree,n_q_points_1d,number>::vmult_add (LA::MPI::Vector &dst,
     const LA::MPI::Vector &src) const
 {
-  timer->enter_subsection("LO::initialize ("+ dealii::Utilities::int_to_string(level)+ ")");
+#ifdef MATRIXFREE
+  // std::cout << "src Before: Level " << level << " " << src.local_size() << std::endl;
+  // src.ghost_elements().print(std::cout);
+  data.initialize_dof_vector(dst);
+
+  // LA::MPI::Vector ghosted_src;
+  // std::cout << "Before: Level " << level << " " << ghosted_src.local_size() << std::endl;
+  // ghosted_src.ghost_elements().print(std::cout);
+  // data.initialize_dof_vector(ghosted_src);
+  // std::cout << "After: Level " << level << " " << ghosted_src.local_size() << std::endl;
+  // ghosted_src.ghost_elements().print(std::cout);
+  // ghosted_src = src;
+
+  Assert(dst.partitioners_are_globally_compatible(*data.get_dof_info(0).vector_partitioner), dealii::ExcInternalError());
+  Assert(src.partitioners_are_globally_compatible(*data.get_dof_info(0).vector_partitioner), dealii::ExcInternalError());
+
+  if (level != dealii::numbers::invalid_unsigned_int)
+    timer->enter_subsection("MFOperator::loop ("+ dealii::Utilities::int_to_string(level)+ ")");
+  else
+    timer->enter_subsection("MFOperator::loop (global)");
+  data.loop
+  (&MFIntegrator<dim,fe_degree,n_q_points_1d,1,double>::cell,
+   &MFIntegrator<dim,fe_degree,n_q_points_1d,1,double>::face,
+   &MFIntegrator<dim,fe_degree,n_q_points_1d,1,double>::boundary,
+   &mf_integrator,dst,src);
+  timer->leave_subsection();
+#else // MATRIXFREE OFF
+  timer->enter_subsection("MFOperator::initialize ("+ dealii::Utilities::int_to_string(level)+ ")");
   dealii::IndexSet locally_owned_level_dofs = dof_handler->locally_owned_mg_dofs(level);
   dealii::IndexSet locally_relevant_level_dofs;
   dealii::DoFTools::extract_locally_relevant_level_dofs
@@ -207,13 +283,13 @@ void MFOperator<dim,fe_degree,n_q_points_1d,number>::vmult_add (LA::MPI::Vector 
   src_data.add<const dealii::MGLevelObject<LA::MPI::Vector >*>(&ghosted_src,"src");
   timer->leave_subsection();
 
-  timer->enter_subsection("LO::assembler_setup ("+ dealii::Utilities::int_to_string(level)+ ")");
+  timer->enter_subsection("MFOperator::assembler_setup ("+ dealii::Utilities::int_to_string(level)+ ")");
   info_box.initialize(*fe, *mapping, src_data, ghosted_src, &(dof_handler->block_info()));
   dealii::MeshWorker::Assembler::ResidualSimple<LA::MPI::Vector > assembler;
   assembler.initialize(dst_data);
   timer->leave_subsection();
 
-  timer->enter_subsection("LO::IntegrationLoop ("+ dealii::Utilities::int_to_string(level)+ ")");
+  timer->enter_subsection("MFOperator::loop ("+ dealii::Utilities::int_to_string(level)+ ")");
   {
     dealii::MeshWorker::LoopControl lctrl;
     //TODO possibly colorize iterators, assume thread-safety for the moment
@@ -221,14 +297,26 @@ void MFOperator<dim,fe_degree,n_q_points_1d,number>::vmult_add (LA::MPI::Vector 
       {
         lctrl.faces_to_ghost = dealii::MeshWorker::LoopControl::both;
         lctrl.ghost_cells = true;
-        dealii::colored_loop<dim, dim> (colored_iterators, *dof_info, info_box, residual_integrator, assembler,lctrl, colored_iterators[0]);
+        dealii::colored_loop<dim, dim> (colored_iterators,
+                                        *dof_info,
+                                        info_box,
+                                        residual_integrator,
+                                        assembler,
+                                        lctrl,
+                                        colored_iterators[0]);
       }
     else
       {
-        dealii::colored_loop<dim, dim> (colored_iterators, *dof_info, info_box, residual_integrator, assembler,lctrl);
+        dealii::colored_loop<dim, dim> (colored_iterators,
+                                        *dof_info,
+                                        info_box,
+                                        residual_integrator,
+                                        assembler,
+                                        lctrl);
       }
   }
   timer->leave_subsection();
+#endif // MATRIXFREE
 }
 
 template <int dim, int fe_degree, int n_q_points_1d, typename number>

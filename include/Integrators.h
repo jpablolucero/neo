@@ -1,19 +1,28 @@
 #ifndef INTEGRATORS_H
 #define INTEGRATORS_H
 
+#include <deal.II/base/vector_slice.h>
+
 #include <deal.II/fe/fe_values.h>
+
 #include <deal.II/integrators/l2.h>
 #include <deal.II/integrators/laplace.h>
-#include <deal.II/lac/vector.h>
+
 #include <deal.II/lac/matrix_block.h>
+#include <deal.II/lac/parallel_vector.h>
+#include <deal.II/lac/vector.h>
+
+#include <deal.II/matrix_free/fe_evaluation.h>
+#include <deal.II/matrix_free/matrix_free.h>
+
 #include <deal.II/meshworker/dof_info.h>
 #include <deal.II/meshworker/integration_info.h>
 #include <deal.II/meshworker/local_integrator.h>
-#include <deal.II/base/vector_slice.h>
 
 #include <Diffusion.h>
 #include <Transport.h>
 #include <EquationData.h>
+#include <GenericLinearAlgebra.h>
 
 template <int dim,bool same_diagonal=true>
 class MatrixIntegrator final : public dealii::MeshWorker::LocalIntegrator<dim>
@@ -49,6 +58,30 @@ private:
   Coefficient<dim> diffcoeff;
 };
 
+template <int dim, int fe_degree, int n_q_points_1d = fe_degree+1,
+          int n_comp = 1, typename number = double >
+class MFIntegrator final
+{
+public:
+  MFIntegrator ();
+  MFIntegrator (const MFIntegrator &) = delete ;
+  MFIntegrator &operator= (const MFIntegrator &) = delete;
+  void cell(const dealii::MatrixFree<dim,number>       &data,
+            LA::MPI::Vector                            &dst,
+            const LA::MPI::Vector                      &src,
+            const std::pair<unsigned int,unsigned int> &cell_range) const;
+  void boundary(const dealii::MatrixFree<dim,number>       &data,
+                LA::MPI::Vector                            &dst,
+                const LA::MPI::Vector                      &src,
+                const std::pair<unsigned int,unsigned int> &face_range) const;
+  void face(const dealii::MatrixFree<dim,number>       &data,
+            LA::MPI::Vector                            &dst,
+            const LA::MPI::Vector                      &src,
+            const std::pair<unsigned int,unsigned int> &face_range) const;
+// private:
+//   Coefficient<dim> diffcoeff;
+};
+
 template <int dim>
 class RHSIntegrator final : public dealii::MeshWorker::LocalIntegrator<dim>
 {
@@ -67,8 +100,8 @@ private:
   ReferenceFunction<dim> exact_solution;
 };
 
-#ifdef HEADER_IMPLEMENTATION
-#include <Integrators.cc>
-#endif
+//#ifdef HEADER_IMPLEMENTATION
+#include "../source/Integrators.cc"
+//#endif
 
 #endif // INTEGRATORS_H

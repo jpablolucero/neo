@@ -1,5 +1,8 @@
 #include <Integrators.h>
 
+#ifndef INTEGRATORS_CC
+#define INTEGRATORS_CC
+
 // MATRIX INTEGRATOR
 template <int dim,bool same_diagonal>
 MatrixIntegrator<dim,same_diagonal>::MatrixIntegrator()
@@ -222,6 +225,105 @@ void ResidualIntegrator<dim>::boundary(dealii::MeshWorker::DoFInfo<dim> &dinfo,
     }
 }
 
+// MatrixFree Integrator
+template <int dim, int fe_degree, int n_q_points_1d, int n_comp, typename number>
+MFIntegrator<dim,fe_degree,n_q_points_1d,n_comp,number>::MFIntegrator()
+{}
+
+template <int dim, int fe_degree, int n_q_points_1d, int n_comp, typename number>
+void
+MFIntegrator<dim,fe_degree,n_q_points_1d,n_comp,number>::cell(const dealii::MatrixFree<dim,number>       &data,
+    LA::MPI::Vector                            &dst,
+    const LA::MPI::Vector                      &src,
+    const std::pair<unsigned int,unsigned int> &cell_range) const
+{
+  dealii::FEEvaluation<dim,fe_degree,n_q_points_1d,n_comp,number> phi (data);
+  for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
+    {
+      phi.reinit (cell);
+      phi.read_dof_values(src);
+      phi.evaluate (false,true,false);
+      for (unsigned int q=0; q<phi.n_q_points; ++q)
+        phi.submit_gradient (phi.get_gradient(q), q);
+      phi.integrate (false,true);
+      phi.distribute_local_to_global (dst);
+    }
+}
+
+template <int dim, int fe_degree, int n_q_points_1d, int n_comp, typename number>
+void
+MFIntegrator<dim,fe_degree,n_q_points_1d,n_comp,number>::face(const dealii::MatrixFree<dim,number>       &data,
+    LA::MPI::Vector                            &dst,
+    const LA::MPI::Vector                      &src,
+    const std::pair<unsigned int,unsigned int> &face_range) const
+{
+  dealii::FEFaceEvaluation<dim,fe_degree,n_q_points_1d,n_comp,number> fe_eval(data,true);
+  dealii::FEFaceEvaluation<dim,fe_degree,n_q_points_1d,n_comp,number> fe_eval_neighbor(data,false);
+  for (unsigned int face=face_range.first; face<face_range.second; face++)
+    {
+      fe_eval.reinit (face);
+      fe_eval_neighbor.reinit (face);
+
+      fe_eval.read_dof_values(src);
+      fe_eval.evaluate(true,true);
+      fe_eval_neighbor.read_dof_values(src);
+      fe_eval_neighbor.evaluate(true,true);
+      dealii::VectorizedArray<number> sigmaF =
+        (fe_eval.get_normal_volume_fraction() +
+         fe_eval_neighbor.get_normal_volume_fraction()) *
+        (number)(std::max(fe_degree,1) * (fe_degree + 1.0)) * 0.5;
+
+      for (unsigned int q=0; q<fe_eval.n_q_points; ++q)
+        {
+          dealii::VectorizedArray<number> avg_jump_value = (fe_eval.get_value(q)-
+                                                            fe_eval_neighbor.get_value(q)) * 0.5;
+          dealii::VectorizedArray<number> mean_valgrad =
+            fe_eval.get_normal_gradient(q) +
+            fe_eval_neighbor.get_normal_gradient(q);
+          mean_valgrad = avg_jump_value * 2. * sigmaF -
+                         mean_valgrad * 0.5;
+          fe_eval.submit_normal_gradient(-avg_jump_value,q);
+          fe_eval_neighbor.submit_normal_gradient(-avg_jump_value,q);
+          fe_eval.submit_value(mean_valgrad,q);
+          fe_eval_neighbor.submit_value(-mean_valgrad,q);
+        }
+      fe_eval.integrate(true,true);
+      fe_eval.distribute_local_to_global(dst);
+      fe_eval_neighbor.integrate(true,true);
+      fe_eval_neighbor.distribute_local_to_global(dst);
+    }
+}
+
+template <int dim, int fe_degree, int n_q_points_1d, int n_comp, typename number>
+void
+MFIntegrator<dim,fe_degree,n_q_points_1d,n_comp,number>::boundary(const dealii::MatrixFree<dim,number>       &data,
+    LA::MPI::Vector                            &dst,
+    const LA::MPI::Vector                      &src,
+    const std::pair<unsigned int,unsigned int> &face_range) const
+{
+  dealii::FEFaceEvaluation<dim,fe_degree,n_q_points_1d,n_comp,number> fe_eval(data, true);
+  for (unsigned int face=face_range.first; face<face_range.second; face++)
+    {
+      fe_eval.reinit (face);
+      fe_eval.read_dof_values(src);
+      fe_eval.evaluate(true,true);
+      dealii::VectorizedArray<number> sigmaF =
+        (fe_eval.get_normal_volume_fraction()) *
+        (number)(std::max(1,fe_degree) * (fe_degree + 1.0));
+
+      for (unsigned int q=0; q<fe_eval.n_q_points; ++q)
+        {
+          dealii::VectorizedArray<number> jump_value = fe_eval.get_value(q);
+          dealii::VectorizedArray<number> mean_valgrad = -fe_eval.get_normal_gradient(q);
+          mean_valgrad += jump_value * sigmaF * 2.0;
+          fe_eval.submit_normal_gradient(-jump_value,q);
+          fe_eval.submit_value(mean_valgrad,q);
+        }
+      fe_eval.integrate(true,true);
+      fe_eval.distribute_local_to_global(dst);
+    }
+}
+
 // RHS INTEGRATOR
 template <int dim>
 RHSIntegrator<dim>::RHSIntegrator(unsigned int n_components)
@@ -324,3 +426,5 @@ template class ResidualIntegrator<2>;
 template class ResidualIntegrator<3>;
 template class RHSIntegrator<2>;
 template class RHSIntegrator<3>;
+
+#endif

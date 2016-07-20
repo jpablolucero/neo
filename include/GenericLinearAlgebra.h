@@ -76,7 +76,7 @@ namespace dealii
   }
 }
 
-#else//DEAL_II_USE_TRILINOS
+#elif PARALLEL_LA==2 //DEAL_II_USE_TRILINOS
 
 #include <deal.II/lac/trilinos_vector.h>
 #include <deal.II/lac/trilinos_block_vector.h>
@@ -85,6 +85,7 @@ namespace dealii
 #include <deal.II/lac/trilinos_precondition.h>
 #include <deal.II/lac/block_sparsity_pattern.h>
 #include <deal.II/lac/trilinos_solver.h>
+#include <deal.II/lac/parallel_vector.h>
 
 namespace dealii
 {
@@ -125,7 +126,27 @@ namespace dealii
     }
   }
 }
+
 #endif//PARALLEL_LA
+
+#include <deal.II/lac/parallel_vector.h>
+
+namespace dealii
+{
+  namespace ParallelAlgebraDealII
+  {
+    using namespace dealii;
+
+    // more stuff here
+    namespace MPI
+    {
+      // TODO allow for float
+      typedef parallel::distributed::Vector<double> Vector;
+      typedef types::global_dof_index               SparseMatrixSizeType ;
+      // more stuff here
+    }
+  }
+}
 
 namespace LA
 {
@@ -133,8 +154,10 @@ namespace LA
   using namespace dealii::LinearAlgebraDealII;
 #elif PARALLEL_LA == 1
   using namespace dealii::LinearAlgebraPETSc;
-#else
+#elif PARALLEL_LA == 2
   using namespace dealii::LinearAlgebraTrilinos;
+#else
+  using namespace dealii::ParallelAlgebraDealII;
 #endif
 }
 
