@@ -40,49 +40,6 @@ MFOperator<dim,fe_degree,n_q_points_1d,number>::MFOperator(const MFOperator &ope
                operator_.level);
 }
 
-// template <int dim, int fe_degree, int n_q_points_1d, typename number>
-// void MFOperator<dim,fe_degree,n_q_points_1d,number>::initialize (const dealii::DoFHandler<dim> *dof_handler_,
-//     const dealii::Mapping<dim> *mapping_,
-//     const MPI_Comm &mpi_communicator_,
-//     const unsigned int level_)
-// {
-//   dof_handler = dof_handler_ ;
-//   fe = &(dof_handler->get_fe());
-//   mapping = mapping_ ;
-//   level = level_;
-//   // TODO
-//   //  constraints = constraints_;
-//   mpi_communicator = mpi_communicator_;
-
-//   // TODO generalize since TRILINOS allows only for double!
-//   const dealii::QGauss<1> quad (n_q_points_1d);
-//   typename dealii::MatrixFree<dim,double>::AdditionalData addit_data;
-//   addit_data.tasks_parallel_scheme = dealii::MatrixFree<dim,double>::AdditionalData::none;
-//   addit_data.tasks_block_size = 3;
-//   addit_data.level_mg_handler = level;
-// #ifndef CG
-//   addit_data.build_face_info = true;
-// #endif
-//   addit_data.mpi_communicator = mpi_communicator;
-//   dealii::ConstraintMatrix constraints;
-//   constraints.close();
-//   data.reinit (*mapping, *dof_handler, constraints, quad, addit_data);
-
-//   // TODO already done in reinit function
-// //   dealii::IndexSet locally_owned_level_dofs = dof_handler->locally_owned_mg_dofs(level);
-// //   dealii::IndexSet locally_relevant_level_dofs;
-// //   dealii::DoFTools::extract_locally_relevant_level_dofs
-// //     (*dof_handler, level, locally_relevant_level_dofs);
-// //   ghosted_src.resize(level, level);
-// // #if PARALLEL_LA == 0
-// //   ghosted_src[level].reinit(locally_owned_level_dofs.n_elements());
-// // #else
-// //   ghosted_src[level].reinit(locally_owned_level_dofs,
-// //                             locally_relevant_level_dofs,
-// //                             mpi_communicator_);
-// // #endif
-// }
-
 template <int dim, int fe_degree, int n_q_points_1d, typename number>
 void MFOperator<dim,fe_degree,n_q_points_1d,number>::reinit
 (const dealii::DoFHandler<dim> *dof_handler_,
@@ -91,7 +48,7 @@ void MFOperator<dim,fe_degree,n_q_points_1d,number>::reinit
  const MPI_Comm &mpi_communicator_,
  const unsigned int level_)
 {
-  timer->enter_subsection("LO::reinit");
+  timer->enter_subsection("MFOperator::reinit");
   // Initialize member variables
   dof_handler = dof_handler_ ;
   fe = &(dof_handler->get_fe());
@@ -99,7 +56,24 @@ void MFOperator<dim,fe_degree,n_q_points_1d,number>::reinit
   level=level_;
   constraints = constraints_;
   mpi_communicator = mpi_communicator_;
-#ifndef MATRIXFREE
+
+#ifdef MATRIXFREE
+  // Setup MatrixFree object
+  const dealii::QGauss<1> quad (n_q_points_1d);
+  typename dealii::MatrixFree<dim,double>::AdditionalData addit_data;
+  addit_data.tasks_parallel_scheme = dealii::MatrixFree<dim,double>::AdditionalData::none;
+  addit_data.tasks_block_size = 3;
+  addit_data.level_mg_handler = level;
+#ifndef CG
+  addit_data.build_face_info = true;
+#endif // CG 
+  addit_data.mpi_communicator = mpi_communicator;
+  // TODO use constraints given by Simulator --> ERROR in Simulator::setup_multigrid()
+  dealii::ConstraintMatrix dummy_constraints;
+  dummy_constraints.close();
+  data.reinit (*mapping, *dof_handler, dummy_constraints, quad, addit_data);
+
+#else // MATRIXFREE OFF
   // Setup DoFInfo & IntegrationInfoBox
   std::unique_ptr<dealii::MeshWorker::DoFInfo<dim> > tmp
   (new dealii::MeshWorker::DoFInfo<dim> {dof_handler->block_info()});
@@ -118,20 +92,8 @@ void MFOperator<dim,fe_degree,n_q_points_1d,number>::reinit
   info_box.cell_selector.add("src", true, true, false);
   info_box.boundary_selector.add("src", true, true, false);
   info_box.face_selector.add("src", true, true, false);
-  // Initialize ghosted src
-  dealii::IndexSet locally_owned_level_dofs = dof_handler->locally_owned_mg_dofs(level);
-  dealii::IndexSet locally_relevant_level_dofs;
-  dealii::DoFTools::extract_locally_relevant_level_dofs
-  (*dof_handler, level, locally_relevant_level_dofs);
-  ghosted_src.resize(level, level);
-#if PARALLEL_LA == 0
-  ghosted_src[level].reinit(locally_owned_level_dofs.n_elements());
-#else // PARALLEL_LA != 0
-  ghosted_src[level].reinit(locally_owned_level_dofs,
-                            locally_relevant_level_dofs,
-                            mpi_communicator_);
-#endif // PARALLEL_LA
-  //TODO possibly colorize iterators, assume thread-safety for the moment
+  // Setup "colorized iterators"
+  // TODO possibly colorize iterators, assume thread-safety for the moment
   std::vector<std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> >
   all_iterators(static_cast<unsigned int>(std::pow(2,dim)));
   auto i = 1 ;
@@ -149,21 +111,20 @@ void MFOperator<dim,fe_degree,n_q_points_1d,number>::reinit
     }
   colored_iterators = std::move(all_iterators);
 
-#else // MATRIXFREE ON
-  // TODO generalize since TRILINOS allows only for double!
-  const dealii::QGauss<1> quad (n_q_points_1d);
-  typename dealii::MatrixFree<dim,double>::AdditionalData addit_data;
-  addit_data.tasks_parallel_scheme = dealii::MatrixFree<dim,double>::AdditionalData::none;
-  addit_data.tasks_block_size = 3;
-  addit_data.level_mg_handler = level;
-#ifndef CG
-  addit_data.build_face_info = true;
-#endif // CG
-  addit_data.mpi_communicator = mpi_communicator;
-  dealii::ConstraintMatrix constraints;
-  constraints.close();
-  data.reinit (*mapping, *dof_handler, constraints, quad, addit_data);
-#endif // MATRIXFREE
+  // Initialize ghosted src
+  ghosted_src.resize(level, level);
+#if PARALLEL_LA != 0
+  dealii::IndexSet locally_owned_level_dofs = dof_handler->locally_owned_mg_dofs(level);
+  dealii::IndexSet locally_relevant_level_dofs;
+  dealii::DoFTools::extract_locally_relevant_level_dofs
+    (*dof_handler, level, locally_relevant_level_dofs);
+  ghosted_src[level].reinit(locally_owned_level_dofs,
+                            locally_relevant_level_dofs,
+                            mpi_communicator_);
+#else // PARALLEL_LA == 0
+  ghosted_src[level].reinit(locally_owned_level_dofs.n_elements());
+#endif // PARALLEL_LA
+#endif // MATRIXFREE OFF
   timer->leave_subsection();
 }
 
@@ -243,18 +204,6 @@ void MFOperator<dim,fe_degree,n_q_points_1d,number>::vmult_add (LA::MPI::Vector 
     const LA::MPI::Vector &src) const
 {
 #ifdef MATRIXFREE
-  // std::cout << "src Before: Level " << level << " " << src.local_size() << std::endl;
-  // src.ghost_elements().print(std::cout);
-  data.initialize_dof_vector(dst);
-
-  // LA::MPI::Vector ghosted_src;
-  // std::cout << "Before: Level " << level << " " << ghosted_src.local_size() << std::endl;
-  // ghosted_src.ghost_elements().print(std::cout);
-  // data.initialize_dof_vector(ghosted_src);
-  // std::cout << "After: Level " << level << " " << ghosted_src.local_size() << std::endl;
-  // ghosted_src.ghost_elements().print(std::cout);
-  // ghosted_src = src;
-
   Assert(dst.partitioners_are_globally_compatible(*data.get_dof_info(0).vector_partitioner), dealii::ExcInternalError());
   Assert(src.partitioners_are_globally_compatible(*data.get_dof_info(0).vector_partitioner), dealii::ExcInternalError());
 
@@ -268,23 +217,30 @@ void MFOperator<dim,fe_degree,n_q_points_1d,number>::vmult_add (LA::MPI::Vector 
    &MFIntegrator<dim,fe_degree,n_q_points_1d,1,double>::boundary,
    &mf_integrator,dst,src);
   timer->leave_subsection();
+
 #else // MATRIXFREE OFF
   timer->enter_subsection("MFOperator::initialize ("+ dealii::Utilities::int_to_string(level)+ ")");
+  // Initialize MPI vectors
+  ghosted_src[level] = std::move(src);
   dealii::IndexSet locally_owned_level_dofs = dof_handler->locally_owned_mg_dofs(level);
   dealii::IndexSet locally_relevant_level_dofs;
   dealii::DoFTools::extract_locally_relevant_level_dofs
-  (*dof_handler, level, locally_relevant_level_dofs);
-
+    (*dof_handler, level, locally_relevant_level_dofs);
+#if PARALLEL_LA == 3
+  ghosted_src[level].update_ghost_values();
+  dst.reinit(locally_owned_level_dofs,locally_relevant_level_dofs,mpi_communicator);
+#elif PARALLEL_LA == 2 
   dst.reinit(locally_owned_level_dofs,locally_relevant_level_dofs,mpi_communicator,true);
+#endif // PARALLEL_LA
+  // Setup AnyData
   dealii::AnyData dst_data;
   dst_data.add<LA::MPI::Vector *>(&dst, "dst");
-  ghosted_src[level] = std::move(src);
   dealii::AnyData src_data ;
   src_data.add<const dealii::MGLevelObject<LA::MPI::Vector >*>(&ghosted_src,"src");
   timer->leave_subsection();
-
+  
   timer->enter_subsection("MFOperator::assembler_setup ("+ dealii::Utilities::int_to_string(level)+ ")");
-  info_box.initialize(*fe, *mapping, src_data, ghosted_src, &(dof_handler->block_info()));
+  info_box.initialize(*fe, *mapping, src_data, src, &(dof_handler->block_info()));
   dealii::MeshWorker::Assembler::ResidualSimple<LA::MPI::Vector > assembler;
   assembler.initialize(dst_data);
   timer->leave_subsection();

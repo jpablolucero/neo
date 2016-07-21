@@ -34,7 +34,7 @@ int main (int argc, char *argv[])
 //  for (unsigned int l=2; l<7; ++l)
   {
     Simulator<2,false,2> dgmethod(timer, mpi_communicator, pcout);
-    dgmethod.n_levels = 5; //atoi(argv[1]) ;
+    dgmethod.n_levels = 8; //atoi(argv[1]) ;
     dgmethod.smoothing_steps = smooth_steps;
     dgmethod.run ();
   }

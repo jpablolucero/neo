@@ -34,7 +34,7 @@ Coefficient<dim>::gradient (const dealii::Point<dim> &p,
   dealii::Tensor<1,dim> return_grad;
   if (d == 0)
     for (unsigned int i=0; i<dim; ++i)
-      return_grad[i]=-p(i)/((p.square()+0.025)*(p.square()+0.025));
+      return_grad[i]=0.;/*-p(i)/((p.square()+0.025)*(p.square()+0.025));*/
 
   return return_grad;
 }

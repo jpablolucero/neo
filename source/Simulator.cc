@@ -25,18 +25,24 @@ Simulator<dim,same_diagonal,degree>::Simulator (dealii::TimerOutput &timer_,
   // initialize timer
   system_matrix.set_timer(timer);
 #if PARALLEL_LA == 0
-  pcout<< "Using deal.II parallel linear algebra" << std::endl;
+  pcout<< "Using deal.II (serial) linear algebra" << std::endl;
 #elif PARALLEL_LA == 1
   pcout<< "Using PETSc parallel linear algebra" << std::endl;
-#else
+#elif PARALLEL_LA == 2
   pcout<< "Using Trilinos parallel linear algebra" << std::endl;
-#endif
+#else
+  pcout<< "Using deal.II parallel linear algebra" << std::endl;
+#endif // PARALLEL_LA
 #ifdef CG
   pcout<< "Using FE_Q elements" << std::endl;
 #else
   pcout<< "Using FE_DGQ elements" << std::endl;
 #endif
-
+#ifdef MATRIXFREE
+  pcout << "Using deal.II's MatrixFree objects" << std::endl;
+#else
+  pcout << "Using MeshWorker-based matrix-free implementation" << std::endl;
+#endif
   dealii::GridGenerator::hyper_cube (triangulation,0.,1., true);
 
 #ifdef PERIODIC
@@ -63,7 +69,7 @@ void Simulator<dim,same_diagonal,degree>::setup_system ()
   dof_handler.distribute_dofs (fe);
   dof_handler.distribute_mg_dofs(fe);
   dof_handler.initialize_local_block_info();
-
+  
   locally_owned_dofs = dof_handler.locally_owned_dofs();
 
   /*std::cout << "locally owned dofs on process "
@@ -130,37 +136,35 @@ void Simulator<dim,same_diagonal,degree>::setup_system ()
   system_matrix.reinit (&dof_handler,&mapping,&constraints,mpi_communicator,triangulation.n_global_levels()-1);
 #endif
 
+#ifdef MATRIXFREE
+#if PARALLEL_LA == 3
+  system_matrix.initialize_dof_vector(solution);
+  system_matrix.initialize_dof_vector(solution_tmp);
+  system_matrix.initialize_dof_vector(right_hand_side);
+#elif PARALLEL_LA == 0
+  solution.reinit (locally_owned_dofs.n_elements());
+  solution_tmp.reinit (locally_owned_dofs.n_elements());
+  right_hand_side.reinit (locally_owned_dofs.n_elements());
+#else // PARALLEL_LA == 1,2
+  AssertThrow(false, dealii::ExcNotImplemented());
+#endif // PARALLEL_LA == 3
+
+#else // MATRIXFREE OFF
 #if PARALLEL_LA == 0
   solution.reinit (locally_owned_dofs.n_elements());
   solution_tmp.reinit (locally_owned_dofs.n_elements());
   right_hand_side.reinit (locally_owned_dofs.n_elements());
 #elif PARALLEL_LA == 3
-#ifdef MATRIXFREE
-  system_matrix.initialize_dof_vector(right_hand_side);
-  system_matrix.initialize_dof_vector(solution);
-  system_matrix.initialize_dof_vector(solution_tmp);
-#else // MATRIXFREE OFF
+  solution.reinit (locally_owned_dofs, locally_relevant_dofs, mpi_communicator);
+  solution_tmp.reinit (locally_owned_dofs, mpi_communicator);
+  right_hand_side.reinit (locally_owned_dofs, locally_relevant_dofs, mpi_communicator);
+#else
   solution.reinit (locally_owned_dofs, locally_relevant_dofs, mpi_communicator);
   solution_tmp.reinit (locally_owned_dofs, mpi_communicator);
   right_hand_side.reinit (locally_owned_dofs, mpi_communicator);
+#endif // PARALLEL_LA == 0
 #endif // MATRIXFREE
-#else // PARALLEL_LA = 1,2
-#ifdef MATRIXFREE
-  AssertThrow(false, dealii::ExcNotImplemented());
-#else // MATRIXFREE OFF
-  solution.reinit (locally_owned_dofs, locally_relevant_dofs, mpi_communicator);
-  solution_tmp.reinit (locally_owned_dofs, mpi_communicator);
-  right_hand_side.reinit (locally_owned_dofs, mpi_communicator);
-#endif // MATRIXFREE
-#endif // PARALLEL_LA
-  // DEBUG STUFF
-  // std::cout << "Before: Level "  << " " << right_hand_side.local_size() << std::endl;
-  // right_hand_side.ghost_elements().print(std::cout);
-  // std::cout << "After: Level "  << " " << right_hand_side.local_size() << std::endl;
-  // right_hand_side.ghost_elements().print(std::cout);
-  //  system_matrix.reinit (&dof_handler,&mapping,&constraints,mpi_communicator,triangulation.n_global_levels()-1);
 }
-
 
 template <int dim, bool same_diagonal, unsigned int degree>
 void Simulator<dim, same_diagonal, degree>::assemble_system ()
@@ -192,7 +196,7 @@ void Simulator<dim, same_diagonal, degree>::assemble_system ()
                                                  rhs_integrator, rhs_assembler);
   right_hand_side.compress(dealii::VectorOperation::add);
 #else // MATRIXFREE ON
-  // TODO
+  // TODO implement RHS from Martin's multigrid.cc
   right_hand_side = 0;
   for (int i = 0; i < right_hand_side.local_size(); ++i)
     right_hand_side.local_element(i) = 0.01;
@@ -236,7 +240,6 @@ void Simulator<dim,same_diagonal,degree>::solve ()
   // Setup Multigrid-Smoother
   typedef PSCPreconditioner<dim, LA::MPI::Vector, double, same_diagonal> Smoother;
   //typedef MFPSCPreconditioner<dim, LA::MPI::Vector, double> Smoother;
-
   Smoother::timer = &timer;
   dealii::MGLevelObject<typename Smoother::AdditionalData> smoother_data;
   smoother_data.resize(mg_matrix.min_level(), mg_matrix.max_level());
@@ -261,12 +264,15 @@ void Simulator<dim,same_diagonal,degree>::solve ()
   mg_smoother.set_steps(smoothing_steps);
 
   // Setup Multigrid-Transfer
-  dealii::MGTransferMF<dim,SystemMatrixType> mg_transfer(mg_matrix);
+#ifdef MATRIXFREE
+  dealii::MGTransferMF<dim,SystemMatrixType> mg_transfer{mg_matrix};
   mg_transfer.build(dof_handler);
-  //  dealii::MGTransferPrebuilt<LA::MPI::Vector> mg_transfer;
-  //  mg_transfer.build_matrices(dof_handler);
+#else
+  dealii::MGTransferPrebuilt<LA::MPI::Vector> mg_transfer{};
+  mg_transfer.build_matrices(dof_handler);
+#endif
 
-  // Setup Multigrid-Precondintioner
+  // Setup (Multigrid-)Precondintioner
   dealii::mg::Matrix<LA::MPI::Vector>         mglevel_matrix;
   mglevel_matrix.initialize(mg_matrix);
   dealii::Multigrid<LA::MPI::Vector> mg(dof_handler,
@@ -277,11 +283,13 @@ void Simulator<dim,same_diagonal,degree>::solve ()
                                         mg_smoother);
   mg.set_minlevel(mg_matrix.min_level());
   mg.set_maxlevel(mg_matrix.max_level());
-  // dealii::PreconditionMG<dim, LA::MPI::Vector,
-  //        dealii::MGTransferPrebuilt<LA::MPI::Vector> >
-  //        preconditioner(dof_handler, mg, mg_transfer);
+#ifdef MATRIXFREE
   dealii::PreconditionMG<dim, LA::MPI::Vector, dealii::MGTransferMF<dim,SystemMatrixType> >
-  preconditioner(dof_handler, mg, mg_transfer);
+    preconditioner(dof_handler, mg, mg_transfer);
+#else
+  dealii::PreconditionMG<dim, LA::MPI::Vector, dealii::MGTransferPrebuilt<LA::MPI::Vector> >
+    preconditioner(dof_handler, mg, mg_transfer);
+#endif
 #else // MG OFF
   dealii::PreconditionIdentity preconditioner;
 #endif // MG

@@ -37,12 +37,6 @@ public:
   MFOperator (const MFOperator &operator_);
   MFOperator &operator = (const MFOperator &) = delete;
 
-  // // TODO/? do we need an interface to modify additional data
-  // void initialize (const dealii::DoFHandler<dim> *dof_handler,
-  //                  const dealii::Mapping<dim> *mapping,
-  //                  const MPI_Comm &mpi_communicator,
-  //                  const unsigned int level = dealii::numbers::invalid_unsigned_int);
-
   void reinit (const dealii::DoFHandler<dim> *dof_handler_,
                const dealii::Mapping<dim> *mapping_,
                const dealii::ConstraintMatrix *constraints,
@@ -54,7 +48,8 @@ public:
 #endif
 
   void set_timer (dealii::TimerOutput &timer_);
-// TODO build coarse matrix in MATRIXFREE case
+
+// TODO build coarse matrix in MATRIXFREE && parallel::distributed case
 #if PARALLEL_LA < 3
   void build_coarse_matrix();
 #endif
@@ -70,7 +65,7 @@ public:
   void Tvmult_add (LA::MPI::Vector &dst,
                    const LA::MPI::Vector &src) const ;
 
-// TODO build coarse matrix in MATRIXFREE case
+// TODO build coarse matrix in MATRIXFREE && parallel::distributed case
 #if PARALLEL_LA < 3
   const LA::MPI::SparseMatrix &get_coarse_matrix() const
   {
@@ -78,12 +73,14 @@ public:
   }
 #endif
 
+#ifdef MATRIXFREE
   void
   initialize_dof_vector(LA::MPI::Vector &vector) const
   {
     if (!vector.partitioners_are_compatible(*data.get_dof_info(0).vector_partitioner))
       data.initialize_dof_vector(vector);
   }
+#endif
 
   unsigned int m() const
   {
@@ -107,6 +104,7 @@ private:
 #ifdef MATRIXFREE
   dealii::MatrixFree<dim,double>                      data;
   MFIntegrator<dim,fe_degree,n_q_points_1d,1,double>  mf_integrator;
+
 #else // MATRIXFREE OFF  
   std::unique_ptr<dealii::MeshWorker::DoFInfo<dim> >  dof_info;
   mutable dealii::MeshWorker::IntegrationInfoBox<dim> info_box;
@@ -116,6 +114,7 @@ private:
   std::vector<std::vector<level_cell_iterator> >      colored_iterators;
   ResidualIntegrator<dim>                             residual_integrator;
 #endif // MATRIXFREE
+
 #if PARALLEL_LA < 3
   dealii::SparsityPattern                             sp;
   LA::MPI::SparseMatrix                               coarse_matrix;

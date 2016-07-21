@@ -61,7 +61,7 @@ public:
   void run ();
   unsigned int n_levels ;
   unsigned int smoothing_steps ;
-private:
+ private:
   void setup_system ();
   void setup_multigrid ();
   void assemble_system ();
@@ -96,6 +96,7 @@ private:
   dealii::TimerOutput &timer;
 };
 
+#ifdef MATRIXFREE
 // Is it possible to use this or something similar for Trilinos
 namespace dealii
 {
@@ -108,7 +109,7 @@ namespace dealii
       mg_operator (op)
     {};
 
-    // Analogous to 'copy_to_mg' from MGTransferPrebuilt ???
+    // Overload of copy_to_mg from MGLevelGlobalTransfer
     template <class InVector, int spacedim>
     void
     copy_to_mg (const DoFHandler<dim,spacedim> &mg_dof,
@@ -126,6 +127,43 @@ namespace dealii
     const MGLevelObject<LOPERATOR> &mg_operator;
   };
 }
+#endif // MATRIXFREE
+
+//   template <int dim, typename VectorType>
+//   class MGTransferPrebuiltMW : public dealii::MGTransferPrebuilt<VectorType>
+//   {
+//   public:
+//     MGTransferPrebuiltMW(dealii::DoFHandler<dim> *dof_handler_,
+// 			 MPI_Comm &mpi_communicator_)
+//       :
+//       dealii::MGTransferPrebuilt<VectorType>::MGTransferPrebuilt(),
+//       dof_handler(dof_handler_),
+//       mpi_communicator(mpi_communicator_)
+//     {};
+
+//     // Overload of copy_to_mg from MGLevelGlobalTransfer
+//     template <class InVector, int spacedim>
+//     void
+//     copy_to_mg (const DoFHandler<dim,spacedim> &mg_dof,
+//                 MGLevelObject<VectorType> &dst,
+//                 const InVector &src) const
+//     {
+//       for (unsigned int level=dst.min_level(); level<=dst.max_level(); ++level)
+// 	{
+// 	  dealii::IndexSet locally_owned_level_dofs = dof_handler->locally_owned_mg_dofs(level);
+// 	  dealii::IndexSet locally_relevant_level_dofs;
+// 	  dealii::DoFTools::extract_locally_relevant_level_dofs
+// 	    (*dof_handler, level, locally_relevant_level_dofs);
+// 	  dst[level].reinit(locally_owned_level_dofs,locally_relevant_level_dofs,mpi_communicator);
+// 	}
+//       dealii::MGLevelGlobalTransfer<VectorType>::copy_to_mg(mg_dof, dst, src);
+//     }
+
+//   private:
+//     const dealii::DoFHandler<dim>   *dof_handler;
+//     const MPI_Comm                  &mpi_communicator;
+//   };
+
 
 #ifdef HEADER_IMPLEMENTATION
 #include <Simulator.cc>
