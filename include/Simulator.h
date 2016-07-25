@@ -80,7 +80,12 @@ public:
   const dealii::MappingQ1<dim>                        mapping;
   dealii::ConstraintMatrix                            constraints;
   dealii::FESystem<dim>                               fe;
+
+#ifdef MATRIXFREE
+  MFSolution<dim>                                     reference_function;
+#else 
   ReferenceFunction<dim>                              reference_function;
+#endif // MATRIXFREE
 
   dealii::DoFHandler<dim>      dof_handler;
 

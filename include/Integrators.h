@@ -24,6 +24,7 @@
 #include <EquationData.h>
 #include <GenericLinearAlgebra.h>
 
+
 template <int dim,bool same_diagonal=true>
 class MatrixIntegrator final : public dealii::MeshWorker::LocalIntegrator<dim>
 {
@@ -41,6 +42,7 @@ private:
   Coefficient<dim> diffcoeff;
 };
 
+
 template <int dim>
 class ResidualIntegrator final : public dealii::MeshWorker::LocalIntegrator<dim>
 {
@@ -57,6 +59,7 @@ public:
 private:
   Coefficient<dim> diffcoeff;
 };
+
 
 template <int dim, int fe_degree, int n_q_points_1d = fe_degree+1,
           int n_comp = 1, typename number = double >
@@ -82,6 +85,7 @@ public:
 //   Coefficient<dim> diffcoeff;
 };
 
+#ifndef MATRIXFREE
 template <int dim>
 class RHSIntegrator final : public dealii::MeshWorker::LocalIntegrator<dim>
 {
@@ -91,17 +95,37 @@ public:
   RHSIntegrator &operator = (const RHSIntegrator &) = delete;
   void cell(dealii::MeshWorker::DoFInfo<dim> &dinfo, typename dealii::MeshWorker::IntegrationInfo<dim> &info) const override;
   void boundary(dealii::MeshWorker::DoFInfo<dim> &dinfo, typename dealii::MeshWorker::IntegrationInfo<dim> &info) const override;
-  void face(dealii::MeshWorker::DoFInfo<dim> &dinfo1,
-            dealii::MeshWorker::DoFInfo<dim> &dinfo2,
-            typename dealii::MeshWorker::IntegrationInfo<dim> &info1,
-            typename dealii::MeshWorker::IntegrationInfo<dim> &info2) const override;
+  // void face(dealii::MeshWorker::DoFInfo<dim> &dinfo1,
+  //           dealii::MeshWorker::DoFInfo<dim> &dinfo2,
+  //           typename dealii::MeshWorker::IntegrationInfo<dim> &info1,
+  //           typename dealii::MeshWorker::IntegrationInfo<dim> &info2) const override;
 private:
   Coefficient<dim> diffcoeff;
   ReferenceFunction<dim> exact_solution;
 };
 
-//#ifdef HEADER_IMPLEMENTATION
-#include "../source/Integrators.cc"
-//#endif
+#else // MATRIXFREE ON
+template <int dim>
+class RHSIntegrator final : public dealii::MeshWorker::LocalIntegrator<dim>
+{
+public:
+  RHSIntegrator(unsigned int n_components);
+  RHSIntegrator (const RHSIntegrator &) = delete ;
+  RHSIntegrator &operator = (const RHSIntegrator &) = delete;
+  void cell(dealii::MeshWorker::DoFInfo<dim> &dinfo, typename dealii::MeshWorker::IntegrationInfo<dim> &info) const override;
+  void boundary(dealii::MeshWorker::DoFInfo<dim> &dinfo, typename dealii::MeshWorker::IntegrationInfo<dim> &info) const override;
+  // void face(dealii::MeshWorker::DoFInfo<dim> &dinfo1,
+  //           dealii::MeshWorker::DoFInfo<dim> &dinfo2,
+  //           typename dealii::MeshWorker::IntegrationInfo<dim> &info1,
+  //           typename dealii::MeshWorker::IntegrationInfo<dim> &info2) const override;
+private:
+  MFRightHandSide<dim> ref_rhs;
+  MFSolution<dim> ref_solution;
+};
+#endif // MATRIXFREE
+
+#ifdef HEADER_IMPLEMENTATION
+#include <Integrators.cc>
+#endif
 
 #endif // INTEGRATORS_H

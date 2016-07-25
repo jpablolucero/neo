@@ -325,10 +325,19 @@ MFIntegrator<dim,fe_degree,n_q_points_1d,n_comp,number>::boundary(const dealii::
 }
 
 // RHS INTEGRATOR
+#ifndef MATRIXFREE
 template <int dim>
 RHSIntegrator<dim>::RHSIntegrator(unsigned int n_components)
   : exact_solution(n_components)
-{}
+{
+  this->use_cell = true;
+#ifdef CG
+  this->use_boundary = false;
+#else
+  this->use_boundary = true;
+#endif
+  this->use_face = false;
+}
 
 template <int dim>
 void RHSIntegrator<dim>::cell(dealii::MeshWorker::DoFInfo<dim> &dinfo, typename dealii::MeshWorker::IntegrationInfo<dim> &info) const
@@ -407,16 +416,84 @@ void RHSIntegrator<dim>::boundary(dealii::MeshWorker::DoFInfo<dim> &dinfo, typen
                              * fev.JxW(k);
     }
 #endif
+}
 
+// template <int dim>
+// void RHSIntegrator<dim>::face(dealii::MeshWorker::DoFInfo<dim> &,
+//                               dealii::MeshWorker::DoFInfo<dim> &,
+//                               typename dealii::MeshWorker::IntegrationInfo<dim> &,
+//                               typename dealii::MeshWorker::IntegrationInfo<dim> &) const
+// {}
 
+#else // MATRIXFREE ON
+template <int dim>
+RHSIntegrator<dim>::RHSIntegrator(unsigned int n_components)
+  : 
+  ref_rhs(n_components),
+  ref_solution(n_components)
+{
+  this->use_cell = true;
+  this->use_boundary = true;
+  this->use_face = false;
 }
 
 template <int dim>
-void RHSIntegrator<dim>::face(dealii::MeshWorker::DoFInfo<dim> &,
-                              dealii::MeshWorker::DoFInfo<dim> &,
-                              typename dealii::MeshWorker::IntegrationInfo<dim> &,
-                              typename dealii::MeshWorker::IntegrationInfo<dim> &) const
-{}
+void RHSIntegrator<dim>::cell(dealii::MeshWorker::DoFInfo<dim> &dinfo,
+			      typename dealii::MeshWorker::IntegrationInfo<dim> &info) const
+{
+  const auto &fev = info.fe_values(0);
+  auto &local_dst = dinfo.vector(0).block(0);
+  const auto n_quads = fev.n_quadrature_points;
+  const auto &q_points = fev.get_quadrature_points();
+  
+  std::vector<double> rhs_values;
+  rhs_values.resize(n_quads);
+  ref_rhs.value_list(q_points, rhs_values);
+
+  for (unsigned int i=0; i<fev.dofs_per_cell; ++i)
+    {
+      double rhs_val = 0;
+      for (unsigned int q=0; q<n_quads; ++q)
+	rhs_val += (fev.shape_value(i,q) * rhs_values[q]) * fev.JxW(q);
+      local_dst(i) += rhs_val;
+    }
+}
+
+template <int dim>
+void
+RHSIntegrator<dim>::boundary(dealii::MeshWorker::DoFInfo<dim> &dinfo,
+			     typename dealii::MeshWorker::IntegrationInfo<dim> &info) const
+{
+  const auto &fev = info.fe_values(0);
+  auto &local_dst = dinfo.vector(0).block(0);
+  const auto deg = fev.get_fe().tensor_degree();
+  const auto penalty = 2. * deg * (deg+1) * dinfo.face->measure() / dinfo.cell->measure();
+  const auto n_quads = fev.n_quadrature_points;
+  const auto &q_points = fev.get_quadrature_points();
+  
+  std::vector<double> solution_values;
+  solution_values.resize(n_quads);
+  ref_solution.value_list(q_points, solution_values);
+
+  for (unsigned int i=0; i<fev.dofs_per_cell; ++i)
+    {
+      double rhs_val = 0;
+      for (unsigned int q=0; q<n_quads; ++q)
+	rhs_val += 
+	  ( penalty * fev.shape_value(i,q) 
+	    - (fev.normal_vector(q) * fev.shape_grad(i,q)) )
+	  * solution_values[q] * fev.JxW(q);
+      local_dst(i) += rhs_val;
+    }
+}
+
+// template <int dim>
+// void RHSIntegrator<dim>::face(dealii::MeshWorker::DoFInfo<dim> &,
+//                               dealii::MeshWorker::DoFInfo<dim> &,
+//                               typename dealii::MeshWorker::IntegrationInfo<dim> &,
+//                               typename dealii::MeshWorker::IntegrationInfo<dim> &) const
+// {}
+#endif // MATRIXFREE
 
 template class MatrixIntegrator<2,false>;
 template class MatrixIntegrator<3,false>;
@@ -426,5 +503,11 @@ template class ResidualIntegrator<2>;
 template class ResidualIntegrator<3>;
 template class RHSIntegrator<2>;
 template class RHSIntegrator<3>;
+
+#undef I
+#define I(D,P,C,T) template class MFIntegrator<D,P,P+1,C,T>
+I(2,1,1,double);I(2,2,1,double);I(2,3,1,double);I(2,4,1,double);
+I(3,1,1,double);I(3,2,1,double);I(3,3,1,double);I(3,4,1,double);
+#undef I
 
 #endif

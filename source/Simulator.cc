@@ -43,7 +43,7 @@ Simulator<dim,same_diagonal,degree>::Simulator (dealii::TimerOutput &timer_,
 #else
   pcout << "Using MeshWorker-based matrix-free implementation" << std::endl;
 #endif
-  dealii::GridGenerator::hyper_cube (triangulation,0.,1., true);
+  dealii::GridGenerator::hyper_cube (triangulation,-1.,1., true);
 
 #ifdef PERIODIC
   //add periodicity
@@ -140,7 +140,7 @@ void Simulator<dim,same_diagonal,degree>::setup_system ()
 #if PARALLEL_LA == 3
   system_matrix.initialize_dof_vector(solution);
   system_matrix.initialize_dof_vector(solution_tmp);
-  system_matrix.initialize_dof_vector(right_hand_side);
+  right_hand_side.reinit (locally_owned_dofs, locally_relevant_dofs, mpi_communicator);
 #elif PARALLEL_LA == 0
   solution.reinit (locally_owned_dofs.n_elements());
   solution_tmp.reinit (locally_owned_dofs.n_elements());
@@ -169,38 +169,44 @@ void Simulator<dim,same_diagonal,degree>::setup_system ()
 template <int dim, bool same_diagonal, unsigned int degree>
 void Simulator<dim, same_diagonal, degree>::assemble_system ()
 {
-#ifndef MATRIXFREE
   dealii::MeshWorker::IntegrationInfoBox<dim> info_box;
-  const unsigned int n_gauss_points = dof_handler.get_fe().degree+1;
-  info_box.initialize_gauss_quadrature(n_gauss_points,
-                                       n_gauss_points,
-                                       n_gauss_points);
+  const unsigned int n_gauss_points = degree+1;
+#ifdef CG
+  info_box.initialize_gauss_quadrature(n_gauss_points,0,0);
+#else
+  info_box.initialize_gauss_quadrature(n_gauss_points,n_gauss_points,0);
+#endif // CG
   info_box.initialize_update_flags();
   dealii::UpdateFlags update_flags = dealii::update_quadrature_points |
                                      dealii::update_values | dealii::update_gradients;
-  info_box.add_update_flags(update_flags, true, true, true, true);
-  info_box.initialize(fe, mapping, &(dof_handler.block_info()));
+  info_box.add_update_flags(update_flags, true, true, false, false);
 
-  dealii::MeshWorker::DoFInfo<dim> dof_info(dof_handler.block_info());
-  ResidualSimpleConstraints<LA::MPI::Vector > rhs_assembler;
   dealii::AnyData data;
+#ifdef MATRIXFREE
+  info_box.initialize(fe, mapping);
+  dealii::MeshWorker::DoFInfo<dim> dof_info(dof_handler);
   data.add<LA::MPI::Vector *>(&right_hand_side, "RHS");
+#else
+  info_box.initialize(fe, mapping, &(dof_handler.block_info()));
+  dealii::MeshWorker::DoFInfo<dim> dof_info(dof_handler.block_info());
+  data.add<LA::MPI::Vector *>(&right_hand_side, "RHS");
+#endif // MATRIXFREE
+
+  ResidualSimpleConstraints<LA::MPI::Vector > rhs_assembler;
   rhs_assembler.initialize(data);
 #ifdef CG
   rhs_assembler.initialize(constraints);
 #endif
   RHSIntegrator<dim> rhs_integrator(fe.n_components());
 
-  dealii::MeshWorker::integration_loop<dim, dim>(dof_handler.begin_active(), dof_handler.end(),
-                                                 dof_info, info_box,
-                                                 rhs_integrator, rhs_assembler);
+  dealii::MeshWorker::integration_loop<dim, dim>(dof_handler.begin_active(),
+						 dof_handler.end(),
+                                                 dof_info,
+						 info_box,
+                                                 rhs_integrator,
+						 rhs_assembler);
+
   right_hand_side.compress(dealii::VectorOperation::add);
-#else // MATRIXFREE ON
-  // TODO implement RHS from Martin's multigrid.cc
-  right_hand_side = 0;
-  for (int i = 0; i < right_hand_side.local_size(); ++i)
-    right_hand_side.local_element(i) = 0.01;
-#endif // MATRIXFREE
 }
 
 template <int dim,bool same_diagonal,unsigned int degree>
@@ -408,7 +414,7 @@ void Simulator<dim,same_diagonal,degree>::run ()
   timer.enter_subsection("output");
   pcout << "Output" << std::endl;
   compute_error();
-//  output_results(n_levels);
+  //  output_results(n_levels);
   timer.leave_subsection();
   timer.print_summary();
   pcout << std::endl;

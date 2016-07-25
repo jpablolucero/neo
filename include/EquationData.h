@@ -2,12 +2,12 @@
 #define EQUATIONDATA_H
 
 #include <deal.II/base/function.h>
+#include <deal.II/base/tensor_function.h>
 #include <deal.II/base/exceptions.h>
 #include <deal.II/base/subscriptor.h>
 #include <deal.II/base/logstream.h>
 #include <deal.II/base/quadrature.h>
 #include <deal.II/base/parameter_handler.h>
-#include <deal.II/lac/full_matrix.h>
 
 #include <string>
 #include <fstream>
@@ -57,6 +57,52 @@ class Angle :
 public:
   Angle(const std::string &filename);
 };
+
+//---------------------------------------------------------------------------
+//    $Id: solution.h 67 2015-03-03 11:34:17Z kronbichler $
+//    Version: $Name$
+//
+//    Copyright (C) 2013 - 2014 by Katharina Kormann and Martin Kronbichler
+//
+//---------------------------------------------------------------------------
+template <int dim>
+class SolutionBase
+{
+protected:
+  static const unsigned int n_source_centers = 3;
+  static const dealii::Point<dim>   source_centers[n_source_centers];
+  static const double       width;
+};
+
+
+// MFSolution
+template <int dim>
+class MFSolution : public dealii::Function<dim>,
+		   protected SolutionBase<dim>
+{
+public:
+  MFSolution (unsigned int n_comp) : dealii::Function<dim>(n_comp) {}
+  
+  virtual double value (const dealii::Point<dim> &p,
+			const unsigned int       component = 0) const;
+
+  virtual dealii::Tensor<1,dim> gradient (const dealii::Point<dim> &p,
+					  const unsigned int       component = 0) const;
+};
+
+
+// MFRightHandside = negative Laplacian of MFSolution
+template <int dim>
+class MFRightHandSide : public dealii::Function<dim>,
+			protected SolutionBase<dim>
+{
+public:
+  MFRightHandSide (unsigned int n_comp) : dealii::Function<dim>(n_comp) {}
+
+  virtual double value (const dealii::Point<dim>   &p,
+			const unsigned int         component = 0) const;
+};
+
 
 #ifdef HEADER_IMPLEMENTATION
 #include <EquationData.cc>

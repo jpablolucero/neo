@@ -4,9 +4,7 @@
 #undef I
 #define I(D,P,Q,T) template class MFOperator<D,P,Q,T>
 I(2,1,2,double);I(2,2,3,double);I(2,3,4,double);I(2,4,5,double);
-I(2,1,2,float);I(2,2,3,float);I(2,3,4,float);I(2,4,5,float);
 I(3,1,2,double);I(3,2,3,double);I(3,3,4,double);I(3,4,5,double);
-I(3,1,2,float);I(3,2,3,float);I(3,3,4,float);I(3,4,5,float);
 #undef I
 
 #endif // MFOPERATOR_INST
