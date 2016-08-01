@@ -15,8 +15,6 @@ public:
 //            dealii::MeshWorker::DoFInfo<dim> &dinfo2,
 //            typename dealii::MeshWorker::IntegrationInfo<dim> &info1,
 //            typename dealii::MeshWorker::IntegrationInfo<dim> &info2) const override;
-protected:
-  Coefficient<dim> diffcoeff;
 };
 
 #endif
