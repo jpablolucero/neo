@@ -337,10 +337,12 @@ void PSCPreconditioner<dim, VectorType, number, same_diagonal>::build_matrix
   //TODO possibly colorize iterators, assume thread-safety for the moment
   std::vector<std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> > colored_iterators(1, cell_range);
 
-
+  timer->enter_subsection("colored_loop");
   dealii::colored_loop<dim, dim> (colored_iterators, *dof_info, info_box, matrix_integrator, assembler,lctrl, colored_iterators[0]);
-
+  timer->leave_subsection();
+  timer->enter_subsection("copy_from");
   matrix.copy_from(mg_matrix[level]);
+  timer->leave_subsection();
 }
 
 #include "PSCPreconditioner.inst"
