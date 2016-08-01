@@ -17,6 +17,7 @@
 #include <GenericLinearAlgebra.h>
 #include <DDHandler.h>
 #include <MFOperator.h>
+#include <PSCIntegrators.h>
 
 template <int dim=2, typename VectorType=LA::MPI::Vector, typename number=double, bool same_diagonal=false>
 class PSCPreconditioner final
@@ -61,7 +62,7 @@ private:
   dealii::MeshWorker::IntegrationInfoBox<dim> info_box;
   std::unique_ptr<dealii::MeshWorker::DoFInfo<dim> >  dof_info;
 
-  MatrixIntegrator<dim,same_diagonal>                 matrix_integrator;
+  PSCMatrixIntegrator<dim,same_diagonal>                 matrix_integrator;
 
   unsigned int level;
 
