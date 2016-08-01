@@ -16,7 +16,7 @@
 #include <EquationData.h>
 
 template <int dim,bool same_diagonal=true>
-class MatrixIntegrator final : public dealii::MeshWorker::LocalIntegrator<dim>
+class MatrixIntegrator : public dealii::MeshWorker::LocalIntegrator<dim>
 {
 public:
   MatrixIntegrator();
@@ -28,7 +28,7 @@ public:
             dealii::MeshWorker::DoFInfo<dim> &dinfo2,
             typename dealii::MeshWorker::IntegrationInfo<dim> &info1,
             typename dealii::MeshWorker::IntegrationInfo<dim> &info2) const override;
-private:
+protected:
   Coefficient<dim> diffcoeff;
 };
 
