@@ -73,11 +73,11 @@ template <int dim, typename VectorType, class number, bool same_diagonal>
 class PSCPreconditioner<dim, VectorType, number, same_diagonal>::AdditionalData
 {
 public:
-  AdditionalData() : dof_handler(0), level(-1), weight(1.0), tol(0.), mapping(0), use_dictionary(false), patch_type(cell_patches) {}
+  AdditionalData() : dof_handler(0), level(-1), relaxation(1.0), tol(0.), mapping(0), use_dictionary(false), patch_type(cell_patches) {}
 
   dealii::DoFHandler<dim> *dof_handler;
   unsigned int level;
-  double weight;
+  double relaxation;
   double tol;
   const dealii::Mapping<dim> *mapping;
 

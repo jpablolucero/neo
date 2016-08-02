@@ -61,7 +61,7 @@ public:
   void run ();
   unsigned int n_levels ;
   unsigned int smoothing_steps ;
- private:
+private:
   void setup_system ();
   void setup_multigrid ();
   void assemble_system ();
@@ -83,7 +83,7 @@ public:
 
 #ifdef MATRIXFREE
   MFSolution<dim>                                     reference_function;
-#else 
+#else
   ReferenceFunction<dim>                              reference_function;
 #endif // MATRIXFREE
 
@@ -139,7 +139,7 @@ namespace dealii
 //   {
 //   public:
 //     MGTransferPrebuiltMW(dealii::DoFHandler<dim> *dof_handler_,
-// 			 MPI_Comm &mpi_communicator_)
+//       MPI_Comm &mpi_communicator_)
 //       :
 //       dealii::MGTransferPrebuilt<VectorType>::MGTransferPrebuilt(),
 //       dof_handler(dof_handler_),
@@ -154,13 +154,13 @@ namespace dealii
 //                 const InVector &src) const
 //     {
 //       for (unsigned int level=dst.min_level(); level<=dst.max_level(); ++level)
-// 	{
-// 	  dealii::IndexSet locally_owned_level_dofs = dof_handler->locally_owned_mg_dofs(level);
-// 	  dealii::IndexSet locally_relevant_level_dofs;
-// 	  dealii::DoFTools::extract_locally_relevant_level_dofs
-// 	    (*dof_handler, level, locally_relevant_level_dofs);
-// 	  dst[level].reinit(locally_owned_level_dofs,locally_relevant_level_dofs,mpi_communicator);
-// 	}
+//  {
+//    dealii::IndexSet locally_owned_level_dofs = dof_handler->locally_owned_mg_dofs(level);
+//    dealii::IndexSet locally_relevant_level_dofs;
+//    dealii::DoFTools::extract_locally_relevant_level_dofs
+//      (*dof_handler, level, locally_relevant_level_dofs);
+//    dst[level].reinit(locally_owned_level_dofs,locally_relevant_level_dofs,mpi_communicator);
+//  }
 //       dealii::MGLevelGlobalTransfer<VectorType>::copy_to_mg(mg_dof, dst, src);
 //     }
 

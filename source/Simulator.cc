@@ -69,7 +69,7 @@ void Simulator<dim,same_diagonal,degree>::setup_system ()
   dof_handler.distribute_dofs (fe);
   dof_handler.distribute_mg_dofs(fe);
   dof_handler.initialize_local_block_info();
-  
+
   locally_owned_dofs = dof_handler.locally_owned_dofs();
 
   /*std::cout << "locally owned dofs on process "
@@ -200,11 +200,11 @@ void Simulator<dim, same_diagonal, degree>::assemble_system ()
   RHSIntegrator<dim> rhs_integrator(fe.n_components());
 
   dealii::MeshWorker::integration_loop<dim, dim>(dof_handler.begin_active(),
-						 dof_handler.end(),
+                                                 dof_handler.end(),
                                                  dof_info,
-						 info_box,
+                                                 info_box,
                                                  rhs_integrator,
-						 rhs_assembler);
+                                                 rhs_assembler);
 
   right_hand_side.compress(dealii::VectorOperation::add);
 }
@@ -256,14 +256,14 @@ void Simulator<dim,same_diagonal,degree>::solve ()
       smoother_data[level].dof_handler = &dof_handler;
       smoother_data[level].level = level;
       smoother_data[level].mapping = &mapping;
-      smoother_data[level].weight = 1.0;
+      smoother_data[level].relaxation = .25;
       //      uncomment to use the dictionary
       // if(!same_diagonal)
       //  {
       //    smoother_data[level].use_dictionary = true;
       //    smoother_data[level].tol = 0.05;
       //  }
-      smoother_data[level].patch_type = Smoother::AdditionalData::cell_patches;
+      smoother_data[level].patch_type = Smoother::AdditionalData::vertex_patches;
     }
   dealii::MGSmootherPrecondition<SystemMatrixType,Smoother,LA::MPI::Vector> mg_smoother;
   mg_smoother.initialize(mg_matrix, smoother_data);
@@ -271,10 +271,10 @@ void Simulator<dim,same_diagonal,degree>::solve ()
 
   // Setup Multigrid-Transfer
 #ifdef MATRIXFREE
-  dealii::MGTransferMF<dim,SystemMatrixType> mg_transfer{mg_matrix};
+  dealii::MGTransferMF<dim,SystemMatrixType> mg_transfer {mg_matrix};
   mg_transfer.build(dof_handler);
 #else
-  dealii::MGTransferPrebuilt<LA::MPI::Vector> mg_transfer{};
+  dealii::MGTransferPrebuilt<LA::MPI::Vector> mg_transfer {};
   mg_transfer.build_matrices(dof_handler);
 #endif
 
@@ -291,10 +291,10 @@ void Simulator<dim,same_diagonal,degree>::solve ()
   mg.set_maxlevel(mg_matrix.max_level());
 #ifdef MATRIXFREE
   dealii::PreconditionMG<dim, LA::MPI::Vector, dealii::MGTransferMF<dim,SystemMatrixType> >
-    preconditioner(dof_handler, mg, mg_transfer);
+  preconditioner(dof_handler, mg, mg_transfer);
 #else
   dealii::PreconditionMG<dim, LA::MPI::Vector, dealii::MGTransferPrebuilt<LA::MPI::Vector> >
-    preconditioner(dof_handler, mg, mg_transfer);
+  preconditioner(dof_handler, mg, mg_transfer);
 #endif
 #else // MG OFF
   dealii::PreconditionIdentity preconditioner;

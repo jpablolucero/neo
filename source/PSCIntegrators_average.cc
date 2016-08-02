@@ -1,4 +1,4 @@
-#include <PSCIntegrators.h>
+#include <PSCIntegrators_average.h>
 
 // MATRIX INTEGRATOR
 template <int dim,bool same_diagonal>

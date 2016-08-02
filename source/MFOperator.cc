@@ -117,7 +117,7 @@ void MFOperator<dim,fe_degree,n_q_points_1d,number>::reinit
   dealii::IndexSet locally_owned_level_dofs = dof_handler->locally_owned_mg_dofs(level);
   dealii::IndexSet locally_relevant_level_dofs;
   dealii::DoFTools::extract_locally_relevant_level_dofs
-    (*dof_handler, level, locally_relevant_level_dofs);
+  (*dof_handler, level, locally_relevant_level_dofs);
   ghosted_src[level].reinit(locally_owned_level_dofs,
                             locally_relevant_level_dofs,
                             mpi_communicator_);
@@ -225,11 +225,11 @@ void MFOperator<dim,fe_degree,n_q_points_1d,number>::vmult_add (LA::MPI::Vector 
   dealii::IndexSet locally_owned_level_dofs = dof_handler->locally_owned_mg_dofs(level);
   dealii::IndexSet locally_relevant_level_dofs;
   dealii::DoFTools::extract_locally_relevant_level_dofs
-    (*dof_handler, level, locally_relevant_level_dofs);
+  (*dof_handler, level, locally_relevant_level_dofs);
 #if PARALLEL_LA == 3
   ghosted_src[level].update_ghost_values();
   dst.reinit(locally_owned_level_dofs,locally_relevant_level_dofs,mpi_communicator);
-#elif PARALLEL_LA == 2 
+#elif PARALLEL_LA == 2
   dst.reinit(locally_owned_level_dofs,locally_relevant_level_dofs,mpi_communicator,true);
 #endif // PARALLEL_LA
   // Setup AnyData
@@ -238,7 +238,7 @@ void MFOperator<dim,fe_degree,n_q_points_1d,number>::vmult_add (LA::MPI::Vector 
   dealii::AnyData src_data ;
   src_data.add<const dealii::MGLevelObject<LA::MPI::Vector >*>(&ghosted_src,"src");
   timer->leave_subsection();
-  
+
   timer->enter_subsection("MFOperator::assembler_setup ("+ dealii::Utilities::int_to_string(level)+ ")");
   info_box.initialize(*fe, *mapping, src_data, src, &(dof_handler->block_info()));
   dealii::MeshWorker::Assembler::ResidualSimple<LA::MPI::Vector > assembler;

@@ -78,29 +78,29 @@ protected:
 // MFSolution
 template <int dim>
 class MFSolution : public dealii::Function<dim>,
-		   protected SolutionBase<dim>
+  protected SolutionBase<dim>
 {
 public:
   MFSolution (unsigned int n_comp) : dealii::Function<dim>(n_comp) {}
-  
+
   virtual double value (const dealii::Point<dim> &p,
-			const unsigned int       component = 0) const;
+                        const unsigned int       component = 0) const;
 
   virtual dealii::Tensor<1,dim> gradient (const dealii::Point<dim> &p,
-					  const unsigned int       component = 0) const;
+                                          const unsigned int       component = 0) const;
 };
 
 
 // MFRightHandside = negative Laplacian of MFSolution
 template <int dim>
 class MFRightHandSide : public dealii::Function<dim>,
-			protected SolutionBase<dim>
+  protected SolutionBase<dim>
 {
 public:
   MFRightHandSide (unsigned int n_comp) : dealii::Function<dim>(n_comp) {}
 
   virtual double value (const dealii::Point<dim>   &p,
-			const unsigned int         component = 0) const;
+                        const unsigned int         component = 0) const;
 };
 
 

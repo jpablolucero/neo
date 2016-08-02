@@ -116,23 +116,26 @@ Angle<dim>::Angle(const std::string &filename)
 template <>
 const dealii::Point<1>
 SolutionBase<1>::source_centers[SolutionBase<1>::n_source_centers]
-= { dealii::Point<1>(-1.0 / 3.0),
-    dealii::Point<1>(0.0),
-    dealii::Point<1>(+1.0 / 3.0)   };
+  = { dealii::Point<1>(-1.0 / 3.0),
+      dealii::Point<1>(0.0),
+      dealii::Point<1>(+1.0 / 3.0)
+    };
 
 template <>
 const dealii::Point<2>
 SolutionBase<2>::source_centers[SolutionBase<2>::n_source_centers]
-= { dealii::Point<2>(-0.5, +0.5),
-    dealii::Point<2>(-0.5, -0.5),
-    dealii::Point<2>(+0.5, -0.5)   };
+  = { dealii::Point<2>(-0.5, +0.5),
+      dealii::Point<2>(-0.5, -0.5),
+      dealii::Point<2>(+0.5, -0.5)
+    };
 
 template <>
 const dealii::Point<3>
 SolutionBase<3>::source_centers[SolutionBase<3>::n_source_centers]
-= { dealii::Point<3>(-0.5, +0.5, 0.25),
-    dealii::Point<3>(-0.6, -0.5, -0.125),
-    dealii::Point<3>(+0.5, -0.5, 0.5)   };
+  = { dealii::Point<3>(-0.5, +0.5, 0.25),
+      dealii::Point<3>(-0.6, -0.5, -0.125),
+      dealii::Point<3>(+0.5, -0.5, 0.5)
+    };
 
 template <int dim>
 const double SolutionBase<dim>::width = 1./3.;
@@ -141,7 +144,7 @@ const double SolutionBase<dim>::width = 1./3.;
 //MFSolution
 template <int dim>
 double MFSolution<dim>::value (const dealii::Point<dim>   &p,
-			       const unsigned int) const
+                               const unsigned int) const
 {
   const double pi = dealii::numbers::PI;
   double return_value = 0;
@@ -149,16 +152,16 @@ double MFSolution<dim>::value (const dealii::Point<dim>   &p,
     {
       const dealii::Tensor<1,dim> x_minus_xi = p - this->source_centers[i];
       return_value += std::exp(-x_minus_xi.norm_square() /
-			       (this->width * this->width));
+                               (this->width * this->width));
     }
 
   return return_value /
-    dealii::Utilities::fixed_power<dim>(std::sqrt(2 * pi) * this->width);
+         dealii::Utilities::fixed_power<dim>(std::sqrt(2 * pi) * this->width);
 }
 
 template <int dim>
 dealii::Tensor<1,dim> MFSolution<dim>::gradient (const dealii::Point<dim>   &p,
-						 const unsigned int) const
+                                                 const unsigned int) const
 {
   const double pi = dealii::numbers::PI;
   dealii::Tensor<1,dim> return_value;
@@ -168,19 +171,19 @@ dealii::Tensor<1,dim> MFSolution<dim>::gradient (const dealii::Point<dim>   &p,
       const dealii::Tensor<1,dim> x_minus_xi = p - this->source_centers[i];
 
       return_value += (-2 / (this->width * this->width) *
-		       std::exp(-x_minus_xi.norm_square() /
-				(this->width * this->width)) *
-		       x_minus_xi);
+                       std::exp(-x_minus_xi.norm_square() /
+                                (this->width * this->width)) *
+                       x_minus_xi);
     }
 
   return return_value / dealii::Utilities::fixed_power<dim>(std::sqrt(2 * pi) *
-							    this->width);
+                                                            this->width);
 }
 
 //MFRightHandSide
 template <int dim>
 double MFRightHandSide<dim>::value (const dealii::Point<dim>   &p,
-				  const unsigned int) const
+                                    const unsigned int) const
 {
   const double pi = dealii::numbers::PI;
   double return_value = 0;
@@ -188,15 +191,15 @@ double MFRightHandSide<dim>::value (const dealii::Point<dim>   &p,
     {
       const dealii::Tensor<1,dim> x_minus_xi = p - this->source_centers[i];
 
-      return_value += 
+      return_value +=
         ( (2*dim - 4*x_minus_xi.norm_square()/(this->width * this->width) )/
-	  (this->width * this->width) *
-	  std::exp(-x_minus_xi.norm_square() /
-		   (this->width * this->width)));
+          (this->width * this->width) *
+          std::exp(-x_minus_xi.norm_square() /
+                   (this->width * this->width)));
     }
 
   return return_value / dealii::Utilities::fixed_power<dim>(std::sqrt(2 * pi) *
-							    this->width);
+                                                            this->width);
 }
 
 template class Coefficient<2>;
