@@ -84,11 +84,12 @@ void PSCPreconditioner<dim, VectorType, number, same_diagonal>::initialize(const
   dealii::UpdateFlags update_flags = dealii::update_JxW_values |
                                      dealii::update_quadrature_points |
                                      dealii::update_values |
-                                     dealii::update_gradients;
+                                     dealii::update_gradients |
+                                     dealii::update_normal_vectors;
   info_box.add_update_flags(update_flags, true, true, true, true);
   info_box.cell_selector.add("src", true, true, false);
-  info_box.boundary_selector.add("src", true, true, false);
-  info_box.face_selector.add("src", true, true, false);
+  info_box.boundary_selector.add("src", true, true, true);
+  info_box.face_selector.add("src", true, true, true);
   info_box.cell_selector.add("Newton iterate", true, true, false);
   info_box.boundary_selector.add("Newton iterate", true, true, false);
   info_box.face_selector.add("Newton iterate", true, true, false);
@@ -299,7 +300,7 @@ void PSCPreconditioner<dim, VectorType, number, same_diagonal>::vmult_add (Vecto
                             scratch_sample, copy_sample);
   }
 
-  dst *= data.weight;
+  dst *= data.relaxation;
   timer->leave_subsection();
 }
 
