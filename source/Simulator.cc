@@ -227,7 +227,7 @@ void Simulator<dim,same_diagonal,degree>::solve ()
       smoother_data[level].dof_handler = &dof_handler;
       smoother_data[level].level = level;
       smoother_data[level].mapping = &mapping;
-      smoother_data[level].relaxation = .25;
+      smoother_data[level].relaxation = .7;
       smoother_data[level].mg_constrained_dofs = mg_constrained_dofs;
       smoother_data[level].solution = &mg_solution[level];
       smoother_data[level].mpi_communicator = mpi_communicator;
@@ -237,7 +237,7 @@ void Simulator<dim,same_diagonal,degree>::solve ()
       //    smoother_data[level].use_dictionary = true;
       //    smoother_data[level].tol = 0.05;
       //  }
-      smoother_data[level].patch_type = Smoother::AdditionalData::vertex_patches;
+      smoother_data[level].patch_type = Smoother::AdditionalData::cell_patches;
     }
 
   // SmootherSetup

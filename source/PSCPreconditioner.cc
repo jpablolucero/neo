@@ -81,15 +81,18 @@ void PSCPreconditioner<dim, VectorType, number, same_diagonal>::initialize(const
                                        n_gauss_points,
                                        n_gauss_points);
   info_box.initialize_update_flags();
-  dealii::UpdateFlags update_flags = dealii::update_JxW_values |
-                                     dealii::update_quadrature_points |
-                                     dealii::update_values |
-                                     dealii::update_gradients |
-                                     dealii::update_normal_vectors;
-  info_box.add_update_flags(update_flags, true, true, true, true);
+  const dealii::UpdateFlags update_flags_cell
+    = dealii::update_JxW_values | dealii::update_quadrature_points |
+      dealii::update_values | dealii::update_gradients;
+  const dealii::UpdateFlags update_flags_face
+    = dealii::update_JxW_values | dealii::update_quadrature_points |
+      dealii::update_values | dealii::update_gradients | dealii::update_normal_vectors;
+  info_box.add_update_flags_boundary(update_flags_face);
+  info_box.add_update_flags_face(update_flags_face);
+  info_box.add_update_flags_cell(update_flags_cell);
   info_box.cell_selector.add("src", true, true, false);
-  info_box.boundary_selector.add("src", true, true, true);
-  info_box.face_selector.add("src", true, true, true);
+  info_box.boundary_selector.add("src", true, true, false);
+  info_box.face_selector.add("src", true, true, false);
   info_box.cell_selector.add("Newton iterate", true, true, false);
   info_box.boundary_selector.add("Newton iterate", true, true, false);
   info_box.face_selector.add("Newton iterate", true, true, false);
@@ -124,54 +127,37 @@ void PSCPreconditioner<dim, VectorType, number, same_diagonal>::initialize(const
         if (level==0)
           dealii::deallog << "Assembling same_diagonal Block-Jacobi-Smoother." << std::endl;
         // TODO broadcast local patch inverse instead of solving a local problem
+        // find the first interior cell if there is any and use it
+        typename std::vector<std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> >::iterator it
+          = ddh->subdomain_to_global_map.begin();
+        unsigned int subdomain = 0;
+
+        for (int i=0; it!=ddh->subdomain_to_global_map.end(); ++it, ++i)
+          {
+            bool all_interior = true;
+            typename std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator>::iterator it_cell
+              = it->begin();
+            for (; it_cell!=it->end(); ++it_cell)
+              if ((*it_cell)->at_boundary())
+                {
+                  all_interior = false;
+                  break;
+                }
+            if (all_interior)
+              {
+                subdomain = i;
+                break;
+              }
+          }
+
         const unsigned int n = fe.n_dofs_per_cell();
         patch_inverses[0].reset(new LAPACKMatrix(n));
+        build_matrix(ddh->subdomain_to_global_map[subdomain],
+                           ddh->global_dofs_on_subdomain[subdomain],
+                           ddh->all_to_unique[subdomain],
+                           *patch_inverses[0]);
+        // patch_inverses[0]->print_formatted(std::cout);
 
-        dealii::Triangulation<dim> local_triangulation;
-        dealii::DoFHandler<dim> local_dof_handler(local_triangulation);
-        if (level == 0)
-          dealii::GridGenerator::hyper_cube (local_triangulation,0., 1.);
-        else
-          dealii::GridGenerator::hyper_cube (local_triangulation,0., 2./std::pow(2., level));
-        if (level != 0) local_triangulation.refine_global(1);
-
-        local_dof_handler.distribute_dofs (fe);
-        local_dof_handler.initialize_local_block_info();
-        dealii::MeshWorker::IntegrationInfoBox<dim> local_info_box;
-        const unsigned int local_n_gauss_points = local_dof_handler.get_fe().degree+1;
-        local_info_box.initialize_gauss_quadrature(local_n_gauss_points,
-                                                   local_n_gauss_points,
-                                                   local_n_gauss_points);
-        local_info_box.initialize_update_flags();
-        dealii::UpdateFlags local_update_flags = dealii::update_quadrature_points |
-                                                 dealii::update_values |
-                                                 dealii::update_gradients;
-        local_info_box.cell_selector.add("src", true, true, false);
-        local_info_box.boundary_selector.add("src", true, true, false);
-        local_info_box.face_selector.add("src", true, true, false);
-        local_info_box.cell_selector.add("Newton iterate", true, true, false);
-        local_info_box.boundary_selector.add("Newton iterate", true, true, false);
-        local_info_box.face_selector.add("Newton iterate", true, true, false);
-        dealii::AnyData local_src_data ;
-        local_src_data.add<const LA::MPI::Vector *>(&ghosted_solution[level],"src");
-        local_src_data.add<const LA::MPI::Vector *>(&ghosted_solution[level],"Newton iterate");
-        local_info_box.add_update_flags(local_update_flags, true, true, true, true);
-        local_info_box.initialize(fe, *(data.mapping), local_src_data, ghosted_solution[level], &(local_dof_handler.block_info()));
-        dealii::MeshWorker::DoFInfo<dim> local_dof_info(local_dof_handler.block_info());
-        dealii::FullMatrix<double> dummy_matrix(local_dof_handler.n_dofs(),local_dof_handler.n_dofs());
-        dealii::MeshWorker::Assembler::MatrixSimple<dealii::FullMatrix<double> > local_assembler;
-        local_assembler.initialize(dummy_matrix);
-        MatrixIntegrator<dim,false> local_integrator ;
-        dealii::MeshWorker::integration_loop<dim, dim>
-        (local_dof_handler.begin_active(),
-         local_dof_handler.end(),
-         local_dof_info, local_info_box,
-         local_integrator,local_assembler);
-        for (unsigned int i = 0; i < n; ++i)
-          for (unsigned int j = 0; j < n; ++j)
-            {
-              (*patch_inverses[0])(i, j) = dummy_matrix(i, j);
-            }
         patch_inverses[0]->compute_inverse_svd();
         for ( unsigned int j=1; j<patch_inverses.size(); ++j )
           patch_inverses[j] = patch_inverses[0];
