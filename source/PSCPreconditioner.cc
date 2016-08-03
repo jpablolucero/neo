@@ -81,15 +81,18 @@ void PSCPreconditioner<dim,VectorType,number,same_diagonal>::initialize(const Gl
                                        n_gauss_points,
                                        n_gauss_points);
   info_box.initialize_update_flags();
-  dealii::UpdateFlags update_flags = dealii::update_JxW_values |
-                                     dealii::update_quadrature_points |
-                                     dealii::update_values |
-                                     dealii::update_gradients |
-                                     dealii::update_normal_vectors;
-  info_box.add_update_flags(update_flags, true, true, true, true);
+  const dealii::UpdateFlags update_flags_cell
+    = dealii::update_JxW_values | dealii::update_quadrature_points |
+      dealii::update_values | dealii::update_gradients;
+  const dealii::UpdateFlags update_flags_face
+    = dealii::update_JxW_values | dealii::update_quadrature_points |
+      dealii::update_values | dealii::update_gradients | dealii::update_normal_vectors;
+  info_box.add_update_flags_boundary(update_flags_face);
+  info_box.add_update_flags_face(update_flags_face);
+  info_box.add_update_flags_cell(update_flags_cell);
   info_box.cell_selector.add("src", true, true, false);
-  info_box.boundary_selector.add("src", true, true, true);
-  info_box.face_selector.add("src", true, true, true);
+  info_box.boundary_selector.add("src", true, true, false);
+  info_box.face_selector.add("src", true, true, false);
   info_box.initialize(fe, *(data.mapping), &(dof_handler.block_info()));
   dof_info.reset(new dealii::MeshWorker::DoFInfo<dim> (dof_handler.block_info()));
 
@@ -117,18 +120,6 @@ void PSCPreconditioner<dim,VectorType,number,same_diagonal>::initialize(const Gl
 
         local_dof_handler.distribute_dofs (fe);
         local_dof_handler.initialize_local_block_info();
-        dealii::MeshWorker::IntegrationInfoBox<dim> local_info_box;
-        const unsigned int local_n_gauss_points = local_dof_handler.get_fe().degree+1;
-        local_info_box.initialize_gauss_quadrature(local_n_gauss_points,
-                                                   local_n_gauss_points,
-                                                   local_n_gauss_points);
-        local_info_box.initialize_update_flags();
-        dealii::UpdateFlags local_update_flags = dealii::update_quadrature_points |
-                                                 dealii::update_values |
-                                                 dealii::update_gradients;
-        local_info_box.add_update_flags(local_update_flags, true, true, true, true);
-        local_info_box.initialize(fe, *(data.mapping), &(local_dof_handler.block_info()));
-        dealii::MeshWorker::DoFInfo<dim> local_dof_info(local_dof_handler.block_info());
         dealii::FullMatrix<double> dummy_matrix(local_dof_handler.n_dofs(),local_dof_handler.n_dofs());
         dealii::MeshWorker::Assembler::MatrixSimple<dealii::FullMatrix<double> > local_assembler;
         local_assembler.initialize(dummy_matrix);
@@ -136,7 +127,7 @@ void PSCPreconditioner<dim,VectorType,number,same_diagonal>::initialize(const Gl
         dealii::MeshWorker::integration_loop<dim, dim>
         (local_dof_handler.begin_active(),
          local_dof_handler.end(),
-         local_dof_info, local_info_box,
+         *dof_info, info_box,
          local_integrator,local_assembler);
         for (unsigned int i = 0; i < n; ++i)
           for (unsigned int j = 0; j < n; ++j)

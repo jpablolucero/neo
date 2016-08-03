@@ -43,7 +43,7 @@ Simulator<dim,same_diagonal,degree>::Simulator (dealii::TimerOutput &timer_,
 #else
   pcout << "Using MeshWorker-based matrix-free implementation" << std::endl;
 #endif
-  dealii::GridGenerator::hyper_cube (triangulation,-1.,1., true);
+  dealii::GridGenerator::hyper_cube (triangulation,0.,1., true);
 
 #ifdef PERIODIC
   //add periodicity
@@ -256,14 +256,14 @@ void Simulator<dim,same_diagonal,degree>::solve ()
       smoother_data[level].dof_handler = &dof_handler;
       smoother_data[level].level = level;
       smoother_data[level].mapping = &mapping;
-      smoother_data[level].relaxation = .25;
+      smoother_data[level].relaxation = .7;
       //      uncomment to use the dictionary
       // if(!same_diagonal)
       //  {
       //    smoother_data[level].use_dictionary = true;
       //    smoother_data[level].tol = 0.05;
       //  }
-      smoother_data[level].patch_type = Smoother::AdditionalData::vertex_patches;
+      smoother_data[level].patch_type = Smoother::AdditionalData::cell_patches;
     }
   dealii::MGSmootherPrecondition<SystemMatrixType,Smoother,LA::MPI::Vector> mg_smoother;
   mg_smoother.initialize(mg_matrix, smoother_data);
