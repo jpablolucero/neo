@@ -25,7 +25,7 @@
 #include <GenericLinearAlgebra.h>
 
 
-template <int dim,bool same_diagonal=true>
+template <int dim>
 class MatrixIntegrator : public dealii::MeshWorker::LocalIntegrator<dim>
 {
 public:

@@ -107,33 +107,36 @@ void PSCPreconditioner<dim,VectorType,number,same_diagonal>::initialize(const Gl
         if (level==0)
           dealii::deallog << "Assembling same_diagonal Block-Jacobi-Smoother." << std::endl;
         // TODO broadcast local patch inverse instead of solving a local problem
+        // find the first interior cell if there is any and use it
+        typename std::vector<std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> >::iterator it
+          = ddh->subdomain_to_global_map.begin();
+        unsigned int subdomain = 0;
+
+        for (int i; it!=ddh->subdomain_to_global_map.end(); ++it, ++i)
+          {
+            bool all_interior = true;
+            typename std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator>::iterator it_cell
+              = it->begin();
+            for (; it_cell!=it->end(); ++it_cell)
+              if ((*it_cell)->at_boundary())
+                {
+                  all_interior = false;
+                  break;
+                }
+            if (all_interior)
+              {
+                subdomain = i;
+                break;
+              }
+          }
+
         const unsigned int n = fe.n_dofs_per_cell();
         patch_inverses[0].reset(new LAPACKMatrix(n));
+        build_matrix(ddh->subdomain_to_global_map[subdomain],
+                     ddh->global_dofs_on_subdomain[subdomain],
+                     ddh->all_to_unique[subdomain],
+                     *patch_inverses[0]);
 
-        dealii::Triangulation<dim> local_triangulation;
-        dealii::DoFHandler<dim> local_dof_handler(local_triangulation);
-        if (level == 0)
-          dealii::GridGenerator::hyper_cube (local_triangulation,0., 1.);
-        else
-          dealii::GridGenerator::hyper_cube (local_triangulation,0., 2./std::pow(2., level));
-        if (level != 0) local_triangulation.refine_global(1);
-
-        local_dof_handler.distribute_dofs (fe);
-        local_dof_handler.initialize_local_block_info();
-        dealii::FullMatrix<double> dummy_matrix(local_dof_handler.n_dofs(),local_dof_handler.n_dofs());
-        dealii::MeshWorker::Assembler::MatrixSimple<dealii::FullMatrix<double> > local_assembler;
-        local_assembler.initialize(dummy_matrix);
-        MatrixIntegrator<dim,false> local_integrator ;
-        dealii::MeshWorker::integration_loop<dim, dim>
-        (local_dof_handler.begin_active(),
-         local_dof_handler.end(),
-         *dof_info, info_box,
-         local_integrator,local_assembler);
-        for (unsigned int i = 0; i < n; ++i)
-          for (unsigned int j = 0; j < n; ++j)
-            {
-              (*patch_inverses[0])(i, j) = dummy_matrix(i, j);
-            }
         patch_inverses[0]->compute_inverse_svd();
         for ( unsigned int j=1; j<patch_inverses.size(); ++j )
           patch_inverses[j] = patch_inverses[0];
