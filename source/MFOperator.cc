@@ -143,8 +143,6 @@ void MFOperator<dim,fe_degree,n_q_points_1d,number>::set_cell_range
 template <int dim, int fe_degree, int n_q_points_1d, typename number>
 void MFOperator<dim,fe_degree,n_q_points_1d,number>::build_coarse_matrix()
 {
-  // TODO allow for coarse_level != 0
-  Assert(level == 0, dealii::ExcInternalError());
   Assert(dof_handler != 0, dealii::ExcInternalError());
   info_box.initialize( *fe, *mapping, &(dof_handler->block_info()));
   dealii::MGLevelObject<LA::MPI::SparseMatrix> mg_matrix ;

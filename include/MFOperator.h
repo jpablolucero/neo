@@ -118,8 +118,7 @@ private:
 #if PARALLEL_LA < 3
   dealii::SparsityPattern                             sp;
   LA::MPI::SparseMatrix                               coarse_matrix;
-  // TODO get rid off same_diagonal in integrators
-  MatrixIntegrator<dim,false>                         matrix_integrator;
+  MatrixIntegrator<dim>                               matrix_integrator;
 #endif // PARALLEL_LA
 };
 

@@ -136,6 +136,7 @@ void PSCPreconditioner<dim,VectorType,number,same_diagonal>::initialize(const Gl
                      ddh->global_dofs_on_subdomain[subdomain],
                      ddh->all_to_unique[subdomain],
                      *patch_inverses[0]);
+        patch_inverses[0]->print_formatted(std::cout);
 
         patch_inverses[0]->compute_inverse_svd();
         for ( unsigned int j=1; j<patch_inverses.size(); ++j )

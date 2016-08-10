@@ -6,6 +6,7 @@ Simulator<dim,same_diagonal,degree>::Simulator (dealii::TimerOutput &timer_,
                                                 dealii::ConditionalOStream &pcout_)
   :
   n_levels(2),
+  min_level(0),
   smoothing_steps(1),
   mpi_communicator(mpi_communicator_),
   triangulation(mpi_communicator,dealii::Triangulation<dim>::
@@ -213,8 +214,8 @@ template <int dim,bool same_diagonal,unsigned int degree>
 void Simulator<dim,same_diagonal,degree>::setup_multigrid ()
 {
   const unsigned int n_global_levels = triangulation.n_global_levels();
-  mg_matrix.resize(0, n_global_levels-1);
-  for (unsigned int level=0; level<n_global_levels; ++level)
+  mg_matrix.resize(min_level, n_global_levels-1);
+  for (unsigned int level=min_level; level<n_global_levels; ++level)
     {
       mg_matrix[level].set_timer(timer);
       mg_matrix[level].reinit(&dof_handler,&mapping,&constraints, mpi_communicator, level);
@@ -227,19 +228,19 @@ void Simulator<dim,same_diagonal,degree>::solve ()
   timer.enter_subsection("solve::mg_initialization");
 #ifdef MG
   // Setup coarse solver
-  dealii::SolverControl coarse_solver_control (dof_handler.n_dofs(0)*10, 1e-10, false, false);
+  dealii::SolverControl coarse_solver_control (dof_handler.n_dofs(min_level)*10, 1e-10, false, false);
   dealii::SolverCG<LA::MPI::Vector> coarse_solver(coarse_solver_control);
   dealii::PreconditionIdentity id;
 #if PARALLEL_LA < 3
-  mg_matrix[0].build_coarse_matrix();
-  const LA::MPI::SparseMatrix &coarse_matrix = mg_matrix[0].get_coarse_matrix();
+  mg_matrix[min_level].build_coarse_matrix();
+  const LA::MPI::SparseMatrix &coarse_matrix = mg_matrix[min_level].get_coarse_matrix();
   dealii::MGCoarseGridLACIteration<dealii::SolverCG<LA::MPI::Vector>,LA::MPI::Vector> mg_coarse(coarse_solver,
       coarse_matrix,
       id);
 #else // PARALLEL_LA == 3
   // TODO allow for Matrix-based solver
   dealii::MGCoarseGridLACIteration<dealii::SolverCG<LA::MPI::Vector>,LA::MPI::Vector> mg_coarse(coarse_solver,
-      mg_matrix[0],
+      mg_matrix[min_level],
       id);
 #endif
 
@@ -256,14 +257,14 @@ void Simulator<dim,same_diagonal,degree>::solve ()
       smoother_data[level].dof_handler = &dof_handler;
       smoother_data[level].level = level;
       smoother_data[level].mapping = &mapping;
-      smoother_data[level].relaxation = .7;
+      smoother_data[level].relaxation = 1.;
       //      uncomment to use the dictionary
       // if(!same_diagonal)
       //  {
       //    smoother_data[level].use_dictionary = true;
       //    smoother_data[level].tol = 0.05;
       //  }
-      smoother_data[level].patch_type = Smoother::AdditionalData::cell_patches;
+      smoother_data[level].patch_type = Smoother::AdditionalData::vertex_patches;
     }
   dealii::MGSmootherPrecondition<SystemMatrixType,Smoother,LA::MPI::Vector> mg_smoother;
   mg_smoother.initialize(mg_matrix, smoother_data);
@@ -398,7 +399,7 @@ void Simulator<dim,same_diagonal,degree>::run ()
   assemble_system();
   timer.leave_subsection();
   dealii::deallog << "DoFHandler levels: ";
-  for (unsigned int l=0; l<triangulation.n_global_levels(); ++l)
+  for (unsigned int l=min_level; l<triangulation.n_global_levels(); ++l)
     dealii::deallog << ' ' << dof_handler.n_dofs(l);
   dealii::deallog << std::endl;
 #ifdef MG

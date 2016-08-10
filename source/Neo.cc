@@ -33,15 +33,17 @@ int main (int argc, char *argv[])
 
 //  for (unsigned int l=2; l<7; ++l)
   {
-    Simulator<2,false,2> dgmethod(timer, mpi_communicator, pcout);
-    dgmethod.n_levels =3; //atoi(argv[1]) ;
+    Simulator<2,false,1> dgmethod(timer, mpi_communicator, pcout);
+    dgmethod.n_levels =2; //atoi(argv[1]) ;
+    dgmethod.min_level=1;
     dgmethod.smoothing_steps = smooth_steps;
     dgmethod.run ();
   }
   {
-    Simulator<2,true,2> dgmethod(timer, mpi_communicator, pcout);
-    dgmethod.n_levels = 3; //atoi(argv[1]) ;
+    Simulator<2,true,1> dgmethod(timer, mpi_communicator, pcout);
+    dgmethod.n_levels = 2; //atoi(argv[1]) ;
     dgmethod.smoothing_steps = smooth_steps;
+    dgmethod.min_level=1;
     dgmethod.run ();
   }
 
