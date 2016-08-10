@@ -61,6 +61,7 @@ public:
   void run ();
   void run_non_linear ();
   unsigned int n_levels ;
+  unsigned int min_level;
   unsigned int smoothing_steps ;
 private:
   void setup_system ();

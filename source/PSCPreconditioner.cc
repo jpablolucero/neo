@@ -153,9 +153,9 @@ void PSCPreconditioner<dim, VectorType, number, same_diagonal>::initialize(const
         const unsigned int n = fe.n_dofs_per_cell();
         patch_inverses[0].reset(new LAPACKMatrix(n));
         build_matrix(ddh->subdomain_to_global_map[subdomain],
-                           ddh->global_dofs_on_subdomain[subdomain],
-                           ddh->all_to_unique[subdomain],
-                           *patch_inverses[0]);
+                     ddh->global_dofs_on_subdomain[subdomain],
+                     ddh->all_to_unique[subdomain],
+                     *patch_inverses[0]);
         // patch_inverses[0]->print_formatted(std::cout);
 
         patch_inverses[0]->compute_inverse_svd();

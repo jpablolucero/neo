@@ -28,8 +28,8 @@ public:
   MFOperator (const MFOperator &operator_);
   MFOperator &operator = (const MFOperator &) = delete;
 
-  void reinit (const dealii::DoFHandler<dim> *dof_handler_,
-               const dealii::MappingQ1<dim> *mapping_,
+  void reinit (const dealii::DoFHandler<dim>  *dof_handler_,
+               const dealii::Mapping<dim>     *mapping_,
                const dealii::ConstraintMatrix *constraints,
                const MPI_Comm &mpi_communicator_,
                const unsigned int level_ = dealii::numbers::invalid_unsigned_int,
@@ -76,7 +76,7 @@ private:
   unsigned int                                        level;
   const dealii::DoFHandler<dim>                       *dof_handler;
   const dealii::FiniteElement<dim>                    *fe;
-  const dealii::MappingQ1<dim>                        *mapping;
+  const dealii::Mapping<dim>                          *mapping;
   const dealii::ConstraintMatrix                      *constraints;
   const dealii::MGConstrainedDoFs                     *mg_constrained_dofs;
   std::unique_ptr<dealii::MeshWorker::DoFInfo<dim> >  dof_info;

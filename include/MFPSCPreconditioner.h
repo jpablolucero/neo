@@ -48,7 +48,7 @@ protected:
 private:
   unsigned int level;
 
-  MatrixIntegrator<dim,false>  matrix_integrator;
+  MatrixIntegrator<dim>  matrix_integrator;
   std::shared_ptr<DDHandlerBase<dim> > ddh;
 };
 

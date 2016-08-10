@@ -51,7 +51,7 @@ MFOperator<dim, fe_degree, same_diagonal>::MFOperator(const MFOperator &operator
 template <int dim, int fe_degree, bool same_diagonal>
 void MFOperator<dim, fe_degree, same_diagonal>::reinit
 (const dealii::DoFHandler<dim> *dof_handler_,
- const dealii::MappingQ1<dim> *mapping_,
+ const dealii::Mapping<dim> *mapping_,
  const dealii::ConstraintMatrix *constraints_,
  const MPI_Comm &mpi_communicator_,
  const unsigned int level_,
@@ -138,7 +138,6 @@ void MFOperator<dim, fe_degree, same_diagonal>::set_cell_range
 template <int dim, int fe_degree, bool same_diagonal>
 void MFOperator<dim, fe_degree, same_diagonal>::build_coarse_matrix()
 {
-  Assert(level == 0, dealii::ExcInternalError());
   Assert(dof_handler != 0, dealii::ExcInternalError());
 
   dealii::MGLevelObject<LA::MPI::SparseMatrix> mg_matrix ;
