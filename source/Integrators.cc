@@ -53,8 +53,8 @@ void MatrixIntegrator<dim>::face(dealii::MeshWorker::DoFInfo<dim> &dinfo1,
       const auto &fev2 = info2.fe_values(dinfo2.block_info->base_element(b));
 
       auto &RM11 = dinfo1.matrix(b*n_blocks + b,false).matrix;
-      auto &RM12 = dinfo2.matrix(b*n_blocks + b,true).matrix;
-      auto &RM21 = dinfo1.matrix(b*n_blocks + b,true).matrix;
+      auto &RM12 = dinfo1.matrix(b*n_blocks + b,true).matrix;
+      auto &RM21 = dinfo2.matrix(b*n_blocks + b,true).matrix;
       auto &RM22 = dinfo2.matrix(b*n_blocks + b,false).matrix;
       const auto n_quads = fev1.n_quadrature_points;
       const auto n_components = fev1.get_fe().n_components();
