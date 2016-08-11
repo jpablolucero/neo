@@ -62,7 +62,9 @@ private:
   dealii::MeshWorker::IntegrationInfoBox<dim> info_box;
   std::unique_ptr<dealii::MeshWorker::DoFInfo<dim> >  dof_info;
 
-  PSCMatrixIntegrator<dim>                 matrix_integrator;
+  PSCMatrixIntegrator<dim>       matrix_integrator;
+
+  mutable LA::MPI::Vector                ghosted_src;
 
   unsigned int level;
 

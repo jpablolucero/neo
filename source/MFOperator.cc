@@ -9,9 +9,7 @@ MFOperator<dim,fe_degree,n_q_points_1d,number>::MFOperator()
   mapping = nullptr;
   constraints = nullptr;
   timer = nullptr;
-#ifndef MATRIXFREE
   use_cell_range = false;
-#endif
 }
 
 template <int dim, int fe_degree, int n_q_points_1d, typename number>
@@ -172,6 +170,8 @@ void MFOperator<dim,fe_degree,n_q_points_1d,number>::build_coarse_matrix()
 #else
   coarse_matrix.copy_from(mg_matrix[level]);
 #endif
+  //std::cout<<"coarse matrix" << std::endl;
+  //coarse_matrix.print(std::cout);
 }
 #endif // PARALLEL_LA < 3
 
@@ -249,6 +249,8 @@ void MFOperator<dim,fe_degree,n_q_points_1d,number>::vmult_add (LA::MPI::Vector 
     //TODO possibly colorize iterators, assume thread-safety for the moment
     if (use_cell_range)
       {
+        //HACK
+        AssertThrow(false, dealii::ExcInternalError());
         lctrl.faces_to_ghost = dealii::MeshWorker::LoopControl::both;
         lctrl.ghost_cells = true;
         dealii::colored_loop<dim, dim> (colored_iterators,
@@ -265,8 +267,7 @@ void MFOperator<dim,fe_degree,n_q_points_1d,number>::vmult_add (LA::MPI::Vector 
                                         *dof_info,
                                         info_box,
                                         residual_integrator,
-                                        assembler,
-                                        lctrl);
+                                        assembler);
       }
   }
   timer->leave_subsection();

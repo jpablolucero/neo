@@ -70,6 +70,20 @@ void PSCPreconditioner<dim,VectorType,number,same_diagonal>::initialize(const Gl
   const dealii::DoFHandler<dim> &dof_handler = *(data.dof_handler);
   const dealii::FiniteElement<dim> &fe = dof_handler.get_fe();
 
+  // We need to be able to get the values on locally relevant dofs
+  {
+    const dealii::parallel::distributed::Triangulation<dim> *distributed_tria
+      = dynamic_cast<const dealii::parallel::distributed::Triangulation<dim>* > (&(dof_handler.get_triangulation()));
+    Assert(distributed_tria, dealii::ExcInternalError());
+    const MPI_Comm &mpi_communicator = distributed_tria->get_communicator();
+
+    dealii::IndexSet locally_owned_level_dofs = dof_handler.locally_owned_mg_dofs(level);
+    dealii::IndexSet locally_relevant_level_dofs;
+    dealii::DoFTools::extract_locally_relevant_level_dofs
+    (dof_handler, level, locally_relevant_level_dofs);
+    ghosted_src.reinit(locally_owned_level_dofs,locally_relevant_level_dofs,mpi_communicator);
+  }
+
   if (data.patch_type == AdditionalData::PatchType::cell_patches)
     ddh.reset(new DGDDHandlerCell<dim>());
   else
@@ -136,7 +150,6 @@ void PSCPreconditioner<dim,VectorType,number,same_diagonal>::initialize(const Gl
                      ddh->global_dofs_on_subdomain[subdomain],
                      ddh->all_to_unique[subdomain],
                      *patch_inverses[0]);
-        patch_inverses[0]->print_formatted(std::cout);
 
         patch_inverses[0]->compute_inverse_svd();
         for ( unsigned int j=1; j<patch_inverses.size(); ++j )
@@ -251,13 +264,16 @@ void PSCPreconditioner<dim, VectorType, number, same_diagonal>::vmult_add (Vecto
   section += std::to_string(level);
   timer->enter_subsection(section);
 
+  //TODO make sure that the source vector is ghosted
+  ghosted_src = src;
+
   {
     implementation::WorkStream::Copy<dim, VectorType, number, same_diagonal> copy_sample;
     copy_sample.dst = &dst;
     copy_sample.ddh = ddh;
 
     implementation::WorkStream::Scratch<dim, VectorType, number, same_diagonal> scratch_sample;
-    scratch_sample.src = &src;
+    scratch_sample.src = &ghosted_src;
     scratch_sample.local_inverses = &patch_inverses;
 
     dealii::WorkStream::run(ddh->colorized_iterators(),
@@ -306,6 +322,7 @@ void PSCPreconditioner<dim, VectorType, number, same_diagonal>::build_matrix
 
 
   dealii::colored_loop<dim, dim> (colored_iterators, *dof_info, info_box, matrix_integrator, assembler,lctrl, colored_iterators[0]);
+//  dealii::colored_loop<dim, dim> (colored_iterators, *dof_info, info_box, matrix_integrator, assembler);
 
   matrix.copy_from(mg_matrix[level]);
 }
