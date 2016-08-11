@@ -70,7 +70,7 @@ void Simulator<dim,same_diagonal,degree>::setup_system ()
 
   locally_owned_dofs = dof_handler.locally_owned_dofs();
 
-  /*std::cout << "locally owned dofs on process "
+  std::cout << "locally owned dofs on process "
             << dealii::Utilities::MPI::this_mpi_process(mpi_communicator)
             << std::endl;
   for (unsigned int l=0; l<triangulation.n_global_levels(); ++l)
@@ -83,13 +83,13 @@ void Simulator<dim,same_diagonal,degree>::setup_system ()
   std::cout << "n_elements(): "
             << dof_handler.locally_owned_dofs().n_elements()
             <<std::endl;
-  dof_handler.locally_owned_dofs().print(dealii::deallog);*/
+  dof_handler.locally_owned_dofs().print(dealii::deallog);
 
   dealii::DoFTools::extract_locally_relevant_dofs
   (dof_handler, locally_relevant_dofs);
-  /*std::cout << "locally relevant dofs on process "
+  std::cout << "locally relevant dofs on process "
             << dealii::Utilities::MPI::this_mpi_process(mpi_communicator) << " ";
-  locally_relevant_dofs.print(std::cout);*/
+  locally_relevant_dofs.print(std::cout);
 
   //constraints
   constraints.clear();
@@ -229,7 +229,7 @@ void Simulator<dim,same_diagonal,degree>::solve ()
       smoother_data[level].dof_handler = &dof_handler;
       smoother_data[level].level = level;
       smoother_data[level].mapping = &mapping;
-      smoother_data[level].relaxation = 1.;
+      smoother_data[level].relaxation = .25;
       smoother_data[level].mg_constrained_dofs = mg_constrained_dofs;
       smoother_data[level].solution = &mg_solution[level];
       smoother_data[level].mpi_communicator = mpi_communicator;
@@ -264,12 +264,14 @@ void Simulator<dim,same_diagonal,degree>::solve ()
          preconditioner(dof_handler, mg, mg_transfer);
 #else
   dealii::PreconditionIdentity preconditioner;
-#endif
+#endif // MG
 
+  // Setup Solver
   dealii::ReductionControl          solver_control (dof_handler.n_dofs(), 1.e-20, 1.e-10,true);
   dealii::SolverCG<LA::MPI::Vector> solver (solver_control);
-
   timer.leave_subsection();
+
+  // Solve the system
   timer.enter_subsection("solve::solve");
   constraints.set_zero(solution_tmp);
   solver.solve(system_matrix,solution_tmp,right_hand_side,preconditioner);

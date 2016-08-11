@@ -96,14 +96,14 @@ void MFOperator<dim, fe_degree, same_diagonal>::reinit
 #if PARALLEL_LA == 0
   ghosted_src[level].reinit(locally_owned_level_dofs.n_elements());
   ghosted_solution[level].reinit(locally_owned_level_dofs.n_elements());
-#else
+#else // PARALLEL_LA != 0
   ghosted_src[level].reinit(locally_owned_level_dofs,
                             locally_relevant_level_dofs,
                             mpi_communicator_);
   ghosted_solution[level].reinit(locally_owned_level_dofs,
                                  locally_relevant_level_dofs,
                                  mpi_communicator_);
-#endif
+#endif //PARALLEL_LA
   ghosted_solution[level] = solution_ ;
   //TODO possibly colorize iterators, assume thread-safety for the moment
   std::vector<std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> >
@@ -177,6 +177,8 @@ void MFOperator<dim, fe_degree, same_diagonal>::build_coarse_matrix()
 #else
   coarse_matrix.copy_from(mg_matrix[level]);
 #endif
+  //std::cout<<"coarse matrix" << std::endl;
+  //coarse_matrix.print(std::cout);
 }
 
 template <int dim, int fe_degree, bool same_diagonal>
