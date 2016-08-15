@@ -126,7 +126,7 @@ void PSCPreconditioner<dim,VectorType,number,same_diagonal>::initialize(const Gl
           = ddh->subdomain_to_global_map.begin();
         unsigned int subdomain = 0;
 
-        for (int i; it!=ddh->subdomain_to_global_map.end(); ++it, ++i)
+        for (int i=0; it!=ddh->subdomain_to_global_map.end(); ++it, ++i)
           {
             bool all_interior = true;
             typename std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator>::iterator it_cell
@@ -150,6 +150,7 @@ void PSCPreconditioner<dim,VectorType,number,same_diagonal>::initialize(const Gl
                      ddh->global_dofs_on_subdomain[subdomain],
                      ddh->all_to_unique[subdomain],
                      *patch_inverses[0]);
+        patch_inverses[0]->print_formatted(std::cout);
 
         patch_inverses[0]->compute_inverse_svd();
         for ( unsigned int j=1; j<patch_inverses.size(); ++j )
@@ -171,6 +172,8 @@ void PSCPreconditioner<dim,VectorType,number,same_diagonal>::initialize(const Gl
                            ddh->global_dofs_on_subdomain[i],
                            ddh->all_to_unique[i],
                            *patch_inverses[i]);
+              std::cout << std::endl;
+              patch_inverses[i]->print_formatted(std::cout);
               patch_inverses[i]->compute_inverse_svd();
             });
           }
@@ -315,14 +318,13 @@ void PSCPreconditioner<dim, VectorType, number, same_diagonal>::build_matrix
 
   //now assemble everything
   dealii::MeshWorker::LoopControl lctrl;
-  lctrl.faces_to_ghost = dealii::MeshWorker::LoopControl::both;
+  lctrl.faces_to_ghost = dealii::MeshWorker::LoopControl::one;
   lctrl.ghost_cells = true;
   //TODO possibly colorize iterators, assume thread-safety for the moment
   std::vector<std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> > colored_iterators(1, cell_range);
 
 
   dealii::colored_loop<dim, dim> (colored_iterators, *dof_info, info_box, matrix_integrator, assembler,lctrl, colored_iterators[0]);
-//  dealii::colored_loop<dim, dim> (colored_iterators, *dof_info, info_box, matrix_integrator, assembler);
 
   matrix.copy_from(mg_matrix[level]);
 }

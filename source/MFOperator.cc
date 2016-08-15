@@ -250,8 +250,7 @@ void MFOperator<dim,fe_degree,n_q_points_1d,number>::vmult_add (LA::MPI::Vector 
     if (use_cell_range)
       {
         //HACK
-        AssertThrow(false, dealii::ExcInternalError());
-        lctrl.faces_to_ghost = dealii::MeshWorker::LoopControl::both;
+        lctrl.faces_to_ghost = dealii::MeshWorker::LoopControl::one;
         lctrl.ghost_cells = true;
         dealii::colored_loop<dim, dim> (colored_iterators,
                                         *dof_info,

@@ -123,7 +123,7 @@ const
          dealii::ExcDimensionMismatch(dst.size(), n_subdomain_dofs(subdomain_idx)));
 
   for (unsigned int i = 0; i < n_subdomain_dofs(subdomain_idx); ++i)
-      dst[i] += src[global_dofs_on_subdomain[subdomain_idx][i]];
+    dst[i] += src[global_dofs_on_subdomain[subdomain_idx][i]];
 }
 
 
@@ -367,13 +367,13 @@ void DGDDHandlerVertex<dim>::initialize_subdomain_to_global_map()
       if (it->second.size()>0)
         {
           this->subdomain_to_global_map.push_back(it->second);
-          /*std::cout << "\nVertex: " << it->first << " ";
+          std::cout << "\nVertex: " << it->first << " ";
           for (unsigned int i=0; i<it->second.size(); ++i)
             std::cout << "Cell id: " << it->second[i]->index()
                       << " Center " << it->second[i]->center()
-                      << std::endl;*/
+                      << std::endl;
         }
-      //std::cout << std::endl;
+      std::cout << std::endl;
     }
 
 }

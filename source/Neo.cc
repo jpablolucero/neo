@@ -31,7 +31,7 @@ int main (int argc, char *argv[])
   const unsigned int smooth_steps = 1;
 
 
-  for (unsigned int l=2; l<5; ++l)
+  for (unsigned int l=2; l<3; ++l)
     {
       Simulator<2,false,1> dgmethod(timer, mpi_communicator, pcout);
       dgmethod.n_levels =l; //atoi(argv[1]) ;
@@ -40,14 +40,14 @@ int main (int argc, char *argv[])
       dgmethod.run ();
     }
 
-  for (unsigned int l=2; l<5; ++l)
-    {
-      Simulator<2,true,1> dgmethod(timer, mpi_communicator, pcout);
-      dgmethod.n_levels = l; //atoi(argv[1]) ;
-      dgmethod.smoothing_steps = smooth_steps;
-      dgmethod.min_level=0;
-      dgmethod.run ();
-    }
+  /*  for (unsigned int l=3; l<4; ++l)
+      {
+        Simulator<2,true,1> dgmethod(timer, mpi_communicator, pcout);
+        dgmethod.n_levels = l; //atoi(argv[1]) ;
+        dgmethod.smoothing_steps = smooth_steps;
+        dgmethod.min_level=0;
+        dgmethod.run ();
+      }*/
 
   /*  for (unsigned int l=2; l<7; ++l)
       {
