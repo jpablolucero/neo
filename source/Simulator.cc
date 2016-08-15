@@ -41,7 +41,14 @@ Simulator<dim,same_diagonal,degree>::Simulator (dealii::TimerOutput &timer_,
   pcout<< "Using FE_DGQ elements" << std::endl;
 #endif
 
-  dealii::GridGenerator::hyper_cube (triangulation,0.,1., true);
+  std::vector<unsigned int> subdivisions(2, 1);
+  subdivisions[0]=2;
+  dealii::Point<dim> p1;
+  dealii::Point<dim> p2;
+  p2(0)=2.;
+  for (unsigned int i=1; i<dim; ++i)
+    p2(i)=1.;
+  dealii::GridGenerator::subdivided_hyper_rectangle (triangulation,subdivisions, p1, p2, true);
 
 #ifdef PERIODIC
   //add periodicity
@@ -373,6 +380,7 @@ void Simulator<dim,same_diagonal,degree>::run ()
   setup_multigrid ();
   timer.leave_subsection();
 #endif
+  output_results(n_levels);
   timer.enter_subsection("solve");
   pcout << "Solve" << std::endl;
   solve ();

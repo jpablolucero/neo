@@ -239,7 +239,7 @@ void MFOperator<dim,fe_degree,same_diagonal>::vmult_add (LA::MPI::Vector &dst,
     //TODO possibly colorize iterators, assume thread-safety for the moment
     if (use_cell_range)
       {
-        lctrl.faces_to_ghost = dealii::MeshWorker::LoopControl::both;
+        lctrl.faces_to_ghost = dealii::MeshWorker::LoopControl::one;
         lctrl.ghost_cells = true;
         dealii::colored_loop<dim, dim> (colored_iterators, *dof_info, info_box, residual_integrator, assembler,lctrl, colored_iterators[0]);
       }

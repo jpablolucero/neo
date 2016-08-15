@@ -5,7 +5,6 @@
 
 namespace dealii
 {
-
   template<class INFOBOX, class DOFINFO, int dim, int spacedim, class ITERATOR>
   void restricted_cell_action(
     const ITERATOR &cell,
@@ -62,7 +61,7 @@ namespace dealii
           if (cell->at_boundary(face_no) && !cell->has_periodic_neighbor(face_no))
             {
               // only integrate boundary faces of own cells
-              if (integrate_boundary && own_cell)
+              if (integrate_boundary && (own_cell || loop_control.ghost_cells))
                 {
                   dof_info.interior_face_available[face_no] = true;
                   dof_info.interior[face_no].reinit(cell, face, face_no);
@@ -84,10 +83,6 @@ namespace dealii
 
               const bool own_neighbor = ignore_subdomain ||
                                         (neighbid == cell->get_triangulation().locally_owned_subdomain());
-
-              // skip all faces between two ghost cells
-              if (!own_cell && !own_neighbor)
-                continue;
 
               // skip if the user doesn't want faces between own cells
               if (own_cell && own_neighbor && loop_control.own_faces==MeshWorker::LoopControl::never)
@@ -114,7 +109,7 @@ namespace dealii
               if ((!periodic_neighbor && cell->neighbor_is_coarser(face_no))
                   || (periodic_neighbor && cell->periodic_neighbor_is_coarser(face_no)))
                 {
-                  Assert(!cell->has_children(), ExcInternalError());
+                  Assert(false/*!cell->has_children()*/, ExcInternalError());
                   Assert(!neighbor->has_children(), ExcInternalError());
 
                   // skip if only one processor needs to assemble the face
@@ -150,7 +145,7 @@ namespace dealii
                       Assert(loop_control.own_faces != MeshWorker::LoopControl::both, ExcMessage(
                                "Assembling from both sides for own_faces is not "
                                "supported with hanging nodes!"));
-                      continue;
+                      //continue;
                     }
 
                   // Now neighbor is on same level, double-check this:
@@ -159,6 +154,8 @@ namespace dealii
                   // If we own both cells only do faces from one side (unless
                   // MeshWorker::LoopControl says otherwise). Here, we rely on cell comparison
                   // that will look at cell->index().
+                  if (neighbor < cell && exterior_in_patch)
+                    continue;
                   if (own_cell && own_neighbor
                       && loop_control.own_faces == MeshWorker::LoopControl::one
                       && (neighbor < cell)
@@ -168,7 +165,7 @@ namespace dealii
                   // independent of loop_control.faces_to_ghost,
                   // we only look at faces to ghost on the same level once
                   // (only where own_cell=true and own_neighbor=false)
-                  if (!own_cell)
+                  if (!own_cell && !loop_control.ghost_cells)
                     continue;
 
                   // now only one processor assembles faces_to_ghost. We let the
@@ -176,7 +173,7 @@ namespace dealii
                   // face.
                   if (own_cell && !own_neighbor
                       && loop_control.faces_to_ghost == MeshWorker::LoopControl::one
-                      && (neighbid < csid))
+                      && !loop_control.ghost_cells)
                     continue;
 
                   const unsigned int neighbor_face_no = periodic_neighbor?

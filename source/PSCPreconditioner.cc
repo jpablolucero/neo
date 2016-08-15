@@ -192,6 +192,8 @@ void PSCPreconditioner<dim, VectorType, number, same_diagonal>::initialize(const
                            ddh->global_dofs_on_subdomain[i],
                            ddh->all_to_unique[i],
                            *patch_inverses[i]);
+              std::cout << std::endl;
+              patch_inverses[i]->print_formatted(std::cout);
               patch_inverses[i]->compute_inverse_svd();
             });
           }
@@ -336,14 +338,13 @@ void PSCPreconditioner<dim, VectorType, number, same_diagonal>::build_matrix
 
   //now assemble everything
   dealii::MeshWorker::LoopControl lctrl;
-  lctrl.faces_to_ghost = dealii::MeshWorker::LoopControl::both;
+  lctrl.faces_to_ghost = dealii::MeshWorker::LoopControl::one;
   lctrl.ghost_cells = true;
   //TODO possibly colorize iterators, assume thread-safety for the moment
   std::vector<std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> > colored_iterators(1, cell_range);
 
 
   dealii::colored_loop<dim, dim> (colored_iterators, *dof_info, info_box, matrix_integrator, assembler,lctrl, colored_iterators[0]);
-//  dealii::colored_loop<dim, dim> (colored_iterators, *dof_info, info_box, matrix_integrator, assembler);
 
   matrix.copy_from(mg_matrix[level]);
 }
