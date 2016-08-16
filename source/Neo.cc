@@ -1,5 +1,4 @@
 #include <Neo.h>
-#include <string>
 
 #ifndef BENCHMARKS
 int main (int argc, char *argv[])
