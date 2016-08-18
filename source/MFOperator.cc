@@ -177,8 +177,8 @@ void MFOperator<dim, fe_degree, same_diagonal>::build_coarse_matrix()
 #else
   coarse_matrix.copy_from(mg_matrix[level]);
 #endif
-  //std::cout<<"coarse matrix" << std::endl;
-  //coarse_matrix.print(std::cout);
+//  std::cout<<"coarse matrix" << std::endl;
+//  coarse_matrix.print(std::cout);
 }
 
 template <int dim, int fe_degree, bool same_diagonal>

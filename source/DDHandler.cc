@@ -213,10 +213,6 @@ void DDHandlerBase<dim>::initialize_global_dofs_on_subdomain()
 
       //store unique dofs
       std::unordered_set<dealii::types::global_dof_index> tmpset(all_dofs.begin(), all_dofs.end());
-      /*      for (dealii::types::global_dof_index const &gdi : tmpset)
-              {
-                std::cout << gdi << ' ';
-              }*/
       global_dofs_on_subdomain[i].assign(tmpset.begin(), tmpset.end());
 
       //fill all_to_unique
@@ -360,20 +356,19 @@ void DGDDHandlerVertex<dim>::initialize_subdomain_to_global_map()
       }
   }
 
-//  std::cout << "Filling subdomain_to_global_map" << std::endl;
   //fill subdomain_to_global_map by ignoring all vertices that don't have cells anymore
   for (auto it=vertex_to_cell.begin(); it!=vertex_to_cell.end(); ++it)
     {
       if (it->second.size()>0)
         {
           this->subdomain_to_global_map.push_back(it->second);
-          std::cout << "\nVertex: " << it->first << " ";
+          /*std::cout << "\nVertex: " << it->first << " ";
           for (unsigned int i=0; i<it->second.size(); ++i)
             std::cout << "Cell id: " << it->second[i]->index()
                       << " Center " << it->second[i]->center()
-                      << std::endl;
+                      << std::endl;*/
         }
-      std::cout << std::endl;
+      // std::cout << std::endl;
     }
 
 }

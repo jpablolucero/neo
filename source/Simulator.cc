@@ -34,12 +34,12 @@ Simulator<dim,same_diagonal,degree>::Simulator (dealii::TimerOutput &timer_,
   pcout<< "Using PETSc parallel linear algebra" << std::endl;
 #else
   pcout<< "Using Trilinos parallel linear algebra" << std::endl;
-#endif
+#endif //PARALLEL_LA
 #ifdef CG
   pcout<< "Using FE_Q elements" << std::endl;
 #else
   pcout<< "Using FE_DGQ elements" << std::endl;
-#endif
+#endif //CG
 
   std::vector<unsigned int> subdivisions(2, 1);
   subdivisions[0]=2;
@@ -77,7 +77,7 @@ void Simulator<dim,same_diagonal,degree>::setup_system ()
 
   locally_owned_dofs = dof_handler.locally_owned_dofs();
 
-  std::cout << "locally owned dofs on process "
+  /*std::cout << "locally owned dofs on process "
             << dealii::Utilities::MPI::this_mpi_process(mpi_communicator)
             << std::endl;
   for (unsigned int l=0; l<triangulation.n_global_levels(); ++l)
@@ -90,13 +90,13 @@ void Simulator<dim,same_diagonal,degree>::setup_system ()
   std::cout << "n_elements(): "
             << dof_handler.locally_owned_dofs().n_elements()
             <<std::endl;
-  dof_handler.locally_owned_dofs().print(dealii::deallog);
+  dof_handler.locally_owned_dofs().print(dealii::deallog);*/
 
   dealii::DoFTools::extract_locally_relevant_dofs
   (dof_handler, locally_relevant_dofs);
-  std::cout << "locally relevant dofs on process "
+/*  std::cout << "locally relevant dofs on process "
             << dealii::Utilities::MPI::this_mpi_process(mpi_communicator) << " ";
-  locally_relevant_dofs.print(std::cout);
+  locally_relevant_dofs.print(std::cout);*/
 
   //constraints
   constraints.clear();
@@ -220,7 +220,7 @@ void Simulator<dim,same_diagonal,degree>::solve ()
       coarse_matrix,
       id);
 
-  // Smoother setup
+  // Setup Multigrid-Smoother
   typedef PSCPreconditioner<dim, LA::MPI::Vector, double, same_diagonal> Smoother;
   //typedef MFPSCPreconditioner<dim, LA::MPI::Vector, double> Smoother;
   Smoother::timer = &timer;

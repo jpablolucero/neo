@@ -82,6 +82,9 @@ void PSCPreconditioner<dim, VectorType, number, same_diagonal>::initialize(const
     dealii::DoFTools::extract_locally_relevant_level_dofs
     (dof_handler, level, locally_relevant_level_dofs);
     ghosted_src.reinit(locally_owned_level_dofs,locally_relevant_level_dofs,mpi_communicator);
+#if PARALLEL_LA == 3
+    ghosted_dst.reinit(locally_owned_level_dofs,locally_relevant_level_dofs,mpi_communicator);
+#endif
   }
 
   if (data.patch_type == AdditionalData::PatchType::cell_patches)
@@ -192,8 +195,8 @@ void PSCPreconditioner<dim, VectorType, number, same_diagonal>::initialize(const
                            ddh->global_dofs_on_subdomain[i],
                            ddh->all_to_unique[i],
                            *patch_inverses[i]);
-              std::cout << std::endl;
-              patch_inverses[i]->print_formatted(std::cout);
+              // std::cout << std::endl;
+              // patch_inverses[i]->print_formatted(std::cout);
               patch_inverses[i]->compute_inverse_svd();
             });
           }
@@ -265,9 +268,18 @@ template <int dim, typename VectorType, class number, bool same_diagonal>
 void PSCPreconditioner<dim, VectorType, number, same_diagonal>::vmult (VectorType &dst,
     const VectorType &src) const
 {
+#if PARALLEL_LA ==3
+  ghosted_dst = 0;
+
+  vmult_add(ghosted_dst, src);
+  ghosted_dst.compress(dealii::VectorOperation::add);
+  dst = ghosted_dst;
+#else
   dst = 0;
   vmult_add(dst, src);
   dst.compress(dealii::VectorOperation::add);
+#endif //PARALLEL_LA
+  dst *= data.relaxation;
   AssertIsFinite(dst.l2_norm());
 }
 
@@ -305,7 +317,6 @@ void PSCPreconditioner<dim, VectorType, number, same_diagonal>::vmult_add (Vecto
                             scratch_sample, copy_sample);
   }
 
-  dst *= data.relaxation;
   timer->leave_subsection();
 }
 

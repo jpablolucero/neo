@@ -222,6 +222,8 @@ void ResidualIntegrator<dim>::boundary(dealii::MeshWorker::DoFInfo<dim> &dinfo,
     }
 }
 
+#ifdef MATRIXFREE
+#endif //MATRIXFREE
 // RHS INTEGRATOR
 template <int dim>
 RHSIntegrator<dim>::RHSIntegrator(unsigned int n_components)
