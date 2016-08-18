@@ -170,8 +170,8 @@ void MFOperator<dim,fe_degree,n_q_points_1d,number>::build_coarse_matrix()
 #else
   coarse_matrix.copy_from(mg_matrix[level]);
 #endif
-  //std::cout<<"coarse matrix" << std::endl;
-  //coarse_matrix.print(std::cout);
+//  std::cout<<"coarse matrix" << std::endl;
+//  coarse_matrix.print(std::cout);
 }
 #endif // PARALLEL_LA < 3
 

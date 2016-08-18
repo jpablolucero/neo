@@ -80,7 +80,7 @@ void Simulator<dim,same_diagonal,degree>::setup_system ()
 
   locally_owned_dofs = dof_handler.locally_owned_dofs();
 
-  std::cout << "locally owned dofs on process "
+  /*std::cout << "locally owned dofs on process "
             << dealii::Utilities::MPI::this_mpi_process(mpi_communicator)
             << std::endl;
   for (unsigned int l=0; l<triangulation.n_global_levels(); ++l)
@@ -93,13 +93,13 @@ void Simulator<dim,same_diagonal,degree>::setup_system ()
   std::cout << "n_elements(): "
             << dof_handler.locally_owned_dofs().n_elements()
             <<std::endl;
-  dof_handler.locally_owned_dofs().print(dealii::deallog);
+  dof_handler.locally_owned_dofs().print(dealii::deallog);*/
 
   dealii::DoFTools::extract_locally_relevant_dofs
   (dof_handler, locally_relevant_dofs);
-  std::cout << "locally relevant dofs on process "
+/*  std::cout << "locally relevant dofs on process "
             << dealii::Utilities::MPI::this_mpi_process(mpi_communicator) << " ";
-  locally_relevant_dofs.print(std::cout);
+  locally_relevant_dofs.print(std::cout);*/
 
   //constraints
   constraints.clear();
@@ -297,7 +297,7 @@ void Simulator<dim,same_diagonal,degree>::solve ()
                                         mg_smoother);
   mg.set_minlevel(mg_matrix.min_level());
   mg.set_maxlevel(mg_matrix.max_level());
-//  mg.set_debug(10);
+  // mg.set_debug(10);
 #ifdef MATRIXFREE
   dealii::PreconditionMG<dim, LA::MPI::Vector, dealii::MGTransferMF<dim,SystemMatrixType> >
   preconditioner(dof_handler, mg, mg_transfer);

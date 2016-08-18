@@ -2,7 +2,6 @@
 
 #ifndef INTEGRATORS_CC
 #define INTEGRATORS_CC
-
 // MATRIX INTEGRATOR
 template <int dim>
 MatrixIntegrator<dim>::MatrixIntegrator()
@@ -225,6 +224,7 @@ void ResidualIntegrator<dim>::boundary(dealii::MeshWorker::DoFInfo<dim> &dinfo,
     }
 }
 
+#ifdef MATRIXFREE
 // MatrixFree Integrator
 template <int dim, int fe_degree, int n_q_points_1d, int n_comp, typename number>
 MFIntegrator<dim,fe_degree,n_q_points_1d,n_comp,number>::MFIntegrator()
@@ -323,6 +323,7 @@ MFIntegrator<dim,fe_degree,n_q_points_1d,n_comp,number>::boundary(const dealii::
       fe_eval.distribute_local_to_global(dst);
     }
 }
+#endif //MATRIXFREE
 
 // RHS INTEGRATOR
 #ifndef MATRIXFREE
