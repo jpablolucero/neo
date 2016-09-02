@@ -233,6 +233,9 @@ void Simulator<dim,same_diagonal,degree>::solve ()
   dealii::mg::Matrix<LA::MPI::Vector>         mgmatrix;
   mgmatrix.initialize(mg_matrix);
   dealii::MGTransferPrebuilt<LA::MPI::Vector> mg_transfer;
+#ifdef CG
+  mg_transfer.initialize(constraints, mg_constrained_dofs);
+#endif
   mg_transfer.build_matrices(dof_handler);
   dealii::Multigrid<LA::MPI::Vector> mg(dof_handler, mgmatrix,
                                         mg_coarse, mg_transfer,

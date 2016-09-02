@@ -154,7 +154,7 @@ void MFOperator<dim, fe_degree, same_diagonal>::build_coarse_matrix()
   dealii::MeshWorker::Assembler::MGMatrixSimple<LA::MPI::SparseMatrix> assembler;
   assembler.initialize(mg_matrix);
 #ifdef CG
-  assembler.initialize(constraints);
+  assembler.initialize(*mg_constrained_dofs);
 #endif
 
   dealii::colored_loop<dim, dim> (colored_iterators, *dof_info, info_box, matrix_integrator, assembler);
@@ -193,7 +193,8 @@ template <int dim, int fe_degree, bool same_diagonal>
 void MFOperator<dim,fe_degree,same_diagonal>::vmult_add (LA::MPI::Vector &dst,
                                                          const LA::MPI::Vector &src) const
 {
-  timer->enter_subsection("LO::initialize ("+ dealii::Utilities::int_to_string(level)+ ")");
+  if (!use_cell_range)
+    timer->enter_subsection("LO::initialize ("+ dealii::Utilities::int_to_string(level)+ ")");
   dealii::IndexSet locally_owned_level_dofs = dof_handler->locally_owned_mg_dofs(level);
   dealii::IndexSet locally_relevant_level_dofs;
   dealii::DoFTools::extract_locally_relevant_level_dofs
@@ -205,15 +206,19 @@ void MFOperator<dim,fe_degree,same_diagonal>::vmult_add (LA::MPI::Vector &dst,
   ghosted_src[level] = std::move(src);
   dealii::AnyData src_data ;
   src_data.add<const dealii::MGLevelObject<LA::MPI::Vector >*>(&ghosted_src,"src");
-  timer->leave_subsection();
+  if (!use_cell_range)
+    timer->leave_subsection();
 
-  timer->enter_subsection("LO::assembler_setup ("+ dealii::Utilities::int_to_string(level)+ ")");
+  if (!use_cell_range)
+    timer->enter_subsection("LO::assembler_setup ("+ dealii::Utilities::int_to_string(level)+ ")");
   info_box.initialize(*fe, *mapping, src_data, ghosted_src, &(dof_handler->block_info()));
   dealii::MeshWorker::Assembler::ResidualSimple<LA::MPI::Vector > assembler;
   assembler.initialize(dst_data);
-  timer->leave_subsection();
+  if (!use_cell_range)
+    timer->leave_subsection();
 
-  timer->enter_subsection("LO::IntegrationLoop ("+ dealii::Utilities::int_to_string(level)+ ")");
+  if (!use_cell_range)
+    timer->enter_subsection("LO::IntegrationLoop ("+ dealii::Utilities::int_to_string(level)+ ")");
   {
     dealii::MeshWorker::LoopControl lctrl;
     //TODO possibly colorize iterators, assume thread-safety for the moment
@@ -229,7 +234,8 @@ void MFOperator<dim,fe_degree,same_diagonal>::vmult_add (LA::MPI::Vector &dst,
       }
   }
 
-  timer->leave_subsection();
+  if (!use_cell_range)
+    timer->leave_subsection();
 }
 
 template <int dim, int fe_degree, bool same_diagonal>

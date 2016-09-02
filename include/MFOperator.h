@@ -77,6 +77,7 @@ private:
   const dealii::FiniteElement<dim>                    *fe;
   const dealii::MappingQ1<dim>                        *mapping;
   const dealii::ConstraintMatrix                      *constraints;
+  const dealii::MGConstrainedDoFs                     *mg_constrained_dofs;
   std::unique_ptr<dealii::MeshWorker::DoFInfo<dim> >  dof_info;
   mutable dealii::MeshWorker::IntegrationInfoBox<dim> info_box;
   dealii::SparsityPattern                             sp;
