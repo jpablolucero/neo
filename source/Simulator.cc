@@ -217,6 +217,7 @@ void Simulator<dim,same_diagonal,degree>::solve ()
       smoother_data[level].level = level;
       smoother_data[level].mapping = &mapping;
       smoother_data[level].weight = 1.0;
+      smoother_data[level].mg_constrained_dofs = mg_constrained_dofs;
       //      uncomment to use the dictionary
       // if(!same_diagonal)
       //  {
@@ -234,7 +235,7 @@ void Simulator<dim,same_diagonal,degree>::solve ()
   mgmatrix.initialize(mg_matrix);
   dealii::MGTransferPrebuilt<LA::MPI::Vector> mg_transfer;
 #ifdef CG
-  mg_transfer.initialize(constraints, mg_constrained_dofs);
+  mg_transfer.initialize_constraints(constraints, mg_constrained_dofs);
 #endif
   mg_transfer.build_matrices(dof_handler);
   dealii::Multigrid<LA::MPI::Vector> mg(dof_handler, mgmatrix,

@@ -297,7 +297,7 @@ void PSCPreconditioner<dim, VectorType, number, same_diagonal>::build_matrix
   Assembler::MGMatrixSimpleMapped<dealii::FullMatrix<double> > assembler;
   assembler.initialize(mg_matrix);
 #ifdef CG
-  assembler.initialize(constraints);
+  assembler.initialize(data.mg_constrained_dofs);
 #endif
   assembler.initialize(all_to_unique);
 

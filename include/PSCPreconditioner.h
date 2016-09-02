@@ -87,6 +87,8 @@ public:
     vertex_patches
   };
   PatchType patch_type;
+
+  dealii::MGConstrainedDoFs  mg_constrained_dofs;
 };
 
 template <int dim, typename VectorType, class number, bool same_diagonal>
