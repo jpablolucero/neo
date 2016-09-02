@@ -8,6 +8,7 @@
 #include <deal.II/base/logstream.h>
 #include <deal.II/base/quadrature.h>
 #include <deal.II/base/parameter_handler.h>
+#include <deal.II/base/vectorization.h>
 
 #include <string>
 #include <fstream>
@@ -103,6 +104,19 @@ public:
                         const unsigned int         component = 0) const;
 };
 
+// MFDiffCoefficient
+template <int dim>
+class MFDiffCoefficient : public dealii::Function<dim>,
+  protected SolutionBase<dim>
+{
+public:
+  MFDiffCoefficient (unsigned int n_comp) : dealii::Function<dim>(n_comp) {}
+
+  virtual double value (const dealii::Point<dim>   &p,
+                        const unsigned int         component = 0) const;
+  dealii::VectorizedArray<double> value (const dealii::Point<dim,dealii::VectorizedArray<double> >  &p,
+                                         const unsigned int         component = 0) const;
+};
 
 #ifdef HEADER_IMPLEMENTATION
 #include <EquationData.cc>

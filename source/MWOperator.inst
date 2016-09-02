@@ -1,0 +1,11 @@
+#ifndef MWOPERATOR_INST
+#define MWOPERATOR_INST
+
+#undef I
+// D = dim ; P = fe degree ; T = value type
+#define I(D,P,T) template class MWOperator<D,P,T>
+I(2,1,double);I(2,2,double);I(2,3,double);I(2,4,double);
+I(3,1,double);I(3,2,double);I(3,3,double);I(3,4,double);
+#undef I
+
+#endif // MWOPERATOR_INST

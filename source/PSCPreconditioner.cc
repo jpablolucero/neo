@@ -116,7 +116,7 @@ void PSCPreconditioner<dim,VectorType,number,same_diagonal>::initialize(const Gl
   patch_inverses.resize(ddh->global_dofs_on_subdomain.size());
   //setup local matrices/inverses
   {
-    timer->enter_subsection("LO::build_patch_inverses");
+    timer->enter_subsection("PSC::build_patch_inverses");
 
     // SAME_DIAGONAL
     if (same_diagonal && !data.use_dictionary && patch_inverses.size()!=0)
@@ -220,7 +220,7 @@ void PSCPreconditioner<dim,VectorType,number,same_diagonal>::initialize(const Gl
                 S_j.diagadd(-1.);
                 // test if currently observed inverse is a good approximation of inv(A_j)
                 Assert(S_j.m() == S_j.n(), dealii::ExcInternalError());
-                const double tol_m = data.tol * S_j.m() * S_j.n();
+                const double tol_m = data.tol * S_j.m();
                 if (S_j.frobenius_norm() < tol_m)
                   {
                     patch_inverses[*j] = patch_inverses[patch_id];

@@ -40,6 +40,7 @@
 #include <deal.II/numerics/vector_tools.templates.h>
 
 #include <MFOperator.h>
+#include <MWOperator.h>
 #include <EquationData.h>
 #include <ResidualSimpleConstraints.h>
 #include <PSCPreconditioner.h>
@@ -63,15 +64,18 @@ public:
   unsigned int min_level;
   unsigned int smoothing_steps ;
 private:
+#ifdef MATRIXFREE
+  typedef MFOperator<dim,fe_degree,fe_degree+1,double> SystemMatrixType;
+#else
+  typedef MWOperator<dim,fe_degree,double> SystemMatrixType;
+#endif // MATRIXFREE
+
   void setup_system ();
   void setup_multigrid ();
   void assemble_system ();
   void solve ();
   void compute_error () const;
   void output_results (const unsigned int cycle) const;
-
-  // TODO Simulator needs interface(template) to define n_q_points_1d & number
-  typedef MFOperator<dim,fe_degree,fe_degree+1,double> SystemMatrixType;
 
   dealii::IndexSet           locally_owned_dofs;
   dealii::IndexSet           locally_relevant_dofs;

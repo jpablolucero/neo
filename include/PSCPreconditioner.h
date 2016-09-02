@@ -11,13 +11,19 @@
 #include <deal.II/base/work_stream.h>
 #include <deal.II/distributed/tria.h>
 #include <deal.II/grid/grid_generator.h>
+#include <deal.II/meshworker/loop.h>
 
 #include <functional>
 
 #include <GenericLinearAlgebra.h>
 #include <DDHandler.h>
 #include <MFOperator.h>
+#include <MWOperator.h>
 #include <PSCIntegrators.h>
+#include <integration_loop.h>
+#include <MGMatrixSimpleMapped.h>
+
+
 
 template <int dim=2, typename VectorType=LA::MPI::Vector, typename number=double, bool same_diagonal=false>
 class PSCPreconditioner final
@@ -78,7 +84,14 @@ template <int dim, typename VectorType, class number, bool same_diagonal>
 class PSCPreconditioner<dim, VectorType, number, same_diagonal>::AdditionalData
 {
 public:
-  AdditionalData() : dof_handler(0), level(-1), relaxation(1.0), tol(0.), mapping(0), use_dictionary(false), patch_type(cell_patches) {}
+  AdditionalData() : dof_handler(0),
+    level(-1),
+    relaxation(1.0),
+    tol(0.),
+    mapping(0),
+    use_dictionary(false),
+    patch_type(cell_patches)
+  {}
 
   dealii::DoFHandler<dim> *dof_handler;
   unsigned int level;

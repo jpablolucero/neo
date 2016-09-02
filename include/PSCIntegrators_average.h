@@ -1,7 +1,9 @@
-#ifndef PSC_PRECONDITIONER_H
-#define PSC_PRECONDITIONER_H
+#ifndef PSCINTEGRATORS_AVERAGE_H
+#define PSCINTEGRATORS_AVERAGE_H
+
 #include <Integrators.h>
 
+#ifndef MATRIXFREE
 template <int dim>
 class PSCMatrixIntegrator final : public MatrixIntegrator<dim>
 {
@@ -16,5 +18,6 @@ public:
                     typename dealii::MeshWorker::IntegrationInfo<dim> &info1,
                     typename dealii::MeshWorker::IntegrationInfo<dim> &info2) const override;
 };
+#endif  // MATRIXFREE
 
-#endif
+#endif // PSCINTEGRATORS_AVERAGE_H

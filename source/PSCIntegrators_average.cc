@@ -1,6 +1,6 @@
 #include <PSCIntegrators_average.h>
 
-// MATRIX INTEGRATOR
+#ifndef MATRIXFREE
 template <int dim>
 PSCMatrixIntegrator<dim>::PSCMatrixIntegrator()
 {}
@@ -130,3 +130,4 @@ void PSCMatrixIntegrator<dim>::boundary(dealii::MeshWorker::DoFInfo<dim> &dinfo,
 
 template class PSCMatrixIntegrator<2>;
 template class PSCMatrixIntegrator<3>;
+#endif // MATRIXFREE

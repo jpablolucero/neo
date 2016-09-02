@@ -1,8 +1,6 @@
 #include <Integrators.h>
 
-#ifndef INTEGRATORS_CC
-#define INTEGRATORS_CC
-// MATRIX INTEGRATOR
+#ifndef MATRIXFREE
 template <int dim>
 MatrixIntegrator<dim>::MatrixIntegrator()
 {}
@@ -101,7 +99,6 @@ void MatrixIntegrator<dim>::boundary(dealii::MeshWorker::DoFInfo<dim> &dinfo,
     }
 }
 
-// RESIDUAL INTEGRATOR
 template <int dim>
 ResidualIntegrator<dim>::ResidualIntegrator()
 {}
@@ -224,10 +221,147 @@ void ResidualIntegrator<dim>::boundary(dealii::MeshWorker::DoFInfo<dim> &dinfo,
     }
 }
 
-#ifdef MATRIXFREE
+// RHS INTEGRATOR
+template <int dim>
+RHSIntegrator<dim>::RHSIntegrator(unsigned int n_components)
+  : exact_solution(n_components)
+{
+  this->use_cell = true;
+#ifdef CG
+  this->use_boundary = false;
+#else
+  this->use_boundary = true;
+#endif
+  this->use_face = false;
+}
+
+template <int dim>
+void RHSIntegrator<dim>::cell(dealii::MeshWorker::DoFInfo<dim> &dinfo, typename dealii::MeshWorker::IntegrationInfo<dim> &info) const
+{
+  auto &result = dinfo.vector(0);
+  const auto n_blocks = result.n_blocks();
+  Assert(n_blocks>0, dealii::ExcMessage("BlockInfo not initialized!"));
+
+  typename std::remove_reference<decltype(info.values[0][0])>::type exact_laplacian;
+  typename std::remove_reference<decltype(info.gradients[0][0])>::type exact_gradients;
+  typename std::remove_reference<decltype(info.values[0][0])>::type coeffs_values;
+  typename std::remove_reference<decltype(info.gradients[0][0])>::type coeffs_gradients;
+  typename std::remove_reference<decltype(info.values[0])>::type f;
+
+  for (unsigned int b=0; b<n_blocks; ++b)
+    {
+      const auto &fev = info.fe_values(dinfo.block_info->base_element(b));
+      const auto n_quads = fev.n_quadrature_points;
+      const auto n_components = fev.get_fe().n_components();
+      const auto &q_points = fev.get_quadrature_points();
+
+      f.resize(n_components);
+      exact_laplacian.resize(n_quads);
+      exact_gradients.resize(n_quads);
+      coeffs_values.resize(n_quads);
+      coeffs_gradients.resize(n_quads);
+      unsigned int c = 0 ;
+      for (auto &component : f)
+        {
+          component.resize(n_quads);
+          exact_solution.laplacian_list(q_points, exact_laplacian, c);
+          exact_solution.gradient_list(q_points, exact_gradients, c);
+          diffcoeff.value_list(q_points,coeffs_values,c);
+          diffcoeff.gradient_list(q_points,coeffs_gradients,c);
+          for (unsigned int q = 0 ; q<component.size() ; ++q)
+            component[q] = coeffs_gradients[q]*exact_gradients[q]+coeffs_values[q]*exact_laplacian[q];
+          ++c ;
+        }
+
+      dealii::LocalIntegrators::L2::L2(result.block(b),fev,f,-1.);
+#ifdef CG
+      //we need to do the same thing as for matrix integrator
+      auto &M = dinfo.matrix(b*n_blocks + b).matrix;
+      LocalIntegrators::Diffusion::cell_matrix<dim>(M,fev,coeffs_values);
+#endif // CG
+    }
+}
+template <int dim>
+void RHSIntegrator<dim>::boundary(dealii::MeshWorker::DoFInfo<dim> &dinfo, typename dealii::MeshWorker::IntegrationInfo<dim> &info) const
+{
+#ifndef CG
+  auto &result = dinfo.vector(0);
+  const auto n_blocks = result.n_blocks();
+  Assert(n_blocks>0, dealii::ExcMessage("BlockInfo not initialized!"));
+
+  std::vector<double> coeffs;
+  std::vector<double> boundary_values;
+
+  for (unsigned int b=0; b<n_blocks; ++b)
+    {
+      const auto &fev = info.fe_values(dinfo.block_info->base_element(b));
+      auto &local_vector = dinfo.vector(0).block(b);
+      const auto deg = fev.get_fe().tensor_degree();
+      const auto penalty = 2. * deg * (deg+1) * dinfo.face->measure() / dinfo.cell->measure();
+      boundary_values.resize(fev.n_quadrature_points);
+      coeffs.resize(fev.n_quadrature_points);
+      const auto &q_points = fev.get_quadrature_points();
+      diffcoeff.value_list(q_points,coeffs,b);
+      exact_solution.value_list(q_points, boundary_values, b);
+
+      for (unsigned int k=0; k<fev.n_quadrature_points; ++k)
+        for (unsigned int i=0; i<fev.dofs_per_cell; ++i)
+          local_vector(i) += coeffs[k]
+                             * (fev.shape_value(i,k) * penalty * boundary_values[k]
+                                - (fev.normal_vector(k) * fev.shape_grad(i,k)) * boundary_values[k])
+                             * fev.JxW(k);
+    }
+#endif // CG OFF
+}
+
+#else // MATRIXFREE OFF
+template <int dim>
+void MatrixIntegrator<dim>::cell(dealii::MeshWorker::DoFInfo<dim> &dinfo,
+                                 typename dealii::MeshWorker::IntegrationInfo<dim> &info) const
+{
+  const auto &fev = info.fe_values(0);
+  auto &M = dinfo.matrix(0).matrix;
+  dealii::LocalIntegrators::Laplace::cell_matrix<dim>(M,fev);
+}
+
+template <int dim>
+void MatrixIntegrator<dim>::face(dealii::MeshWorker::DoFInfo<dim> &dinfo1,
+                                 dealii::MeshWorker::DoFInfo<dim> &dinfo2,
+                                 typename dealii::MeshWorker::IntegrationInfo<dim> &info1,
+                                 typename dealii::MeshWorker::IntegrationInfo<dim> &info2) const
+{
+  const auto deg1 = info1.fe_values(0).get_fe().tensor_degree();
+  const auto deg2 = info2.fe_values(0).get_fe().tensor_degree();
+  const auto &fev1 = info1.fe_values(0);
+  const auto &fev2 = info2.fe_values(0);
+
+  auto &RM11 = dinfo1.matrix(0,false).matrix;
+  auto &RM12 = dinfo1.matrix(0,true).matrix;
+  auto &RM21 = dinfo2.matrix(0,true).matrix;
+  auto &RM22 = dinfo2.matrix(0,false).matrix;
+  const auto penalty = dealii::LocalIntegrators::Laplace::compute_penalty(dinfo1,dinfo2,deg1,deg2);
+  dealii::LocalIntegrators::Laplace::ip_matrix<dim>
+  (RM11,RM12,RM21,RM22,fev1,fev2,penalty);
+}
+
+template <int dim>
+void MatrixIntegrator<dim>::boundary(dealii::MeshWorker::DoFInfo<dim> &dinfo,
+                                     typename dealii::MeshWorker::IntegrationInfo<dim> &info) const
+{
+  const auto &fev = info.fe_values(0);
+  const auto deg = info.fe_values(0).get_fe().tensor_degree();
+
+  auto &M = dinfo.matrix(0).matrix;
+  const auto penalty = dealii::LocalIntegrators::Laplace::compute_penalty(dinfo,dinfo,deg,deg);
+  dealii::LocalIntegrators::Laplace::nitsche_matrix<dim>
+  (M,fev,penalty);
+}
+
 // MatrixFree Integrator
 template <int dim, int fe_degree, int n_q_points_1d, int n_comp, typename number>
 MFIntegrator<dim,fe_degree,n_q_points_1d,n_comp,number>::MFIntegrator()
+  :
+  diff_coeff(n_comp)
 {}
 
 template <int dim, int fe_degree, int n_q_points_1d, int n_comp, typename number>
@@ -245,6 +379,12 @@ MFIntegrator<dim,fe_degree,n_q_points_1d,n_comp,number>::cell(const dealii::Matr
       phi.evaluate (false,true,false);
       for (unsigned int q=0; q<phi.n_q_points; ++q)
         phi.submit_gradient (phi.get_gradient(q), q);
+      // for (unsigned int q=0; q<phi.n_q_points; ++q)
+      //  {
+      //    const dealii::Tensor<1,dim,dealii::VectorizedArray<number> > diffxgrad
+      //      = phi.get_gradient(q) * diff_coeff.value(phi.quadrature_point(q));
+      //    phi.submit_gradient (diffxgrad, q);
+      //  }
       phi.integrate (false,true);
       phi.distribute_local_to_global (dst);
     }
@@ -323,110 +463,7 @@ MFIntegrator<dim,fe_degree,n_q_points_1d,n_comp,number>::boundary(const dealii::
       fe_eval.distribute_local_to_global(dst);
     }
 }
-#endif //MATRIXFREE
 
-// RHS INTEGRATOR
-#ifndef MATRIXFREE
-template <int dim>
-RHSIntegrator<dim>::RHSIntegrator(unsigned int n_components)
-  : exact_solution(n_components)
-{
-  this->use_cell = true;
-#ifdef CG
-  this->use_boundary = false;
-#else
-  this->use_boundary = true;
-#endif
-  this->use_face = false;
-}
-
-template <int dim>
-void RHSIntegrator<dim>::cell(dealii::MeshWorker::DoFInfo<dim> &dinfo, typename dealii::MeshWorker::IntegrationInfo<dim> &info) const
-{
-  auto &result = dinfo.vector(0);
-  const auto n_blocks = result.n_blocks();
-  Assert(n_blocks>0, dealii::ExcMessage("BlockInfo not initialized!"));
-
-  typename std::remove_reference<decltype(info.values[0][0])>::type exact_laplacian;
-  typename std::remove_reference<decltype(info.gradients[0][0])>::type exact_gradients;
-  typename std::remove_reference<decltype(info.values[0][0])>::type coeffs_values;
-  typename std::remove_reference<decltype(info.gradients[0][0])>::type coeffs_gradients;
-  typename std::remove_reference<decltype(info.values[0])>::type f;
-
-  for (unsigned int b=0; b<n_blocks; ++b)
-    {
-      const auto &fev = info.fe_values(dinfo.block_info->base_element(b));
-      const auto n_quads = fev.n_quadrature_points;
-      const auto n_components = fev.get_fe().n_components();
-      const auto &q_points = fev.get_quadrature_points();
-
-      f.resize(n_components);
-      exact_laplacian.resize(n_quads);
-      exact_gradients.resize(n_quads);
-      coeffs_values.resize(n_quads);
-      coeffs_gradients.resize(n_quads);
-      unsigned int c = 0 ;
-      for (auto &component : f)
-        {
-          component.resize(n_quads);
-          exact_solution.laplacian_list(q_points, exact_laplacian, c);
-          exact_solution.gradient_list(q_points, exact_gradients, c);
-          diffcoeff.value_list(q_points,coeffs_values,c);
-          diffcoeff.gradient_list(q_points,coeffs_gradients,c);
-          for (unsigned int q = 0 ; q<component.size() ; ++q)
-            component[q] = coeffs_gradients[q]*exact_gradients[q]+coeffs_values[q]*exact_laplacian[q];
-          ++c ;
-        }
-
-      dealii::LocalIntegrators::L2::L2(result.block(b),fev,f,-1.);
-#ifdef CG
-      //we need to do the same thing as for matrix integrator
-      auto &M = dinfo.matrix(b*n_blocks + b).matrix;
-      LocalIntegrators::Diffusion::cell_matrix<dim>(M,fev,coeffs_values);
-#endif
-    }
-}
-template <int dim>
-void RHSIntegrator<dim>::boundary(dealii::MeshWorker::DoFInfo<dim> &dinfo, typename dealii::MeshWorker::IntegrationInfo<dim> &info) const
-{
-#ifndef CG
-  auto &result = dinfo.vector(0);
-  const auto n_blocks = result.n_blocks();
-  Assert(n_blocks>0, dealii::ExcMessage("BlockInfo not initialized!"));
-
-  std::vector<double> coeffs;
-  std::vector<double> boundary_values;
-
-  for (unsigned int b=0; b<n_blocks; ++b)
-    {
-      const auto &fev = info.fe_values(dinfo.block_info->base_element(b));
-      auto &local_vector = dinfo.vector(0).block(b);
-      const auto deg = fev.get_fe().tensor_degree();
-      const auto penalty = 2. * deg * (deg+1) * dinfo.face->measure() / dinfo.cell->measure();
-      boundary_values.resize(fev.n_quadrature_points);
-      coeffs.resize(fev.n_quadrature_points);
-      const auto &q_points = fev.get_quadrature_points();
-      diffcoeff.value_list(q_points,coeffs,b);
-      exact_solution.value_list(q_points, boundary_values, b);
-
-      for (unsigned int k=0; k<fev.n_quadrature_points; ++k)
-        for (unsigned int i=0; i<fev.dofs_per_cell; ++i)
-          local_vector(i) += coeffs[k]
-                             * (fev.shape_value(i,k) * penalty * boundary_values[k]
-                                - (fev.normal_vector(k) * fev.shape_grad(i,k)) * boundary_values[k])
-                             * fev.JxW(k);
-    }
-#endif
-}
-
-// template <int dim>
-// void RHSIntegrator<dim>::face(dealii::MeshWorker::DoFInfo<dim> &,
-//                               dealii::MeshWorker::DoFInfo<dim> &,
-//                               typename dealii::MeshWorker::IntegrationInfo<dim> &,
-//                               typename dealii::MeshWorker::IntegrationInfo<dim> &) const
-// {}
-
-#else // MATRIXFREE ON
 template <int dim>
 RHSIntegrator<dim>::RHSIntegrator(unsigned int n_components)
   :
@@ -488,31 +525,5 @@ RHSIntegrator<dim>::boundary(dealii::MeshWorker::DoFInfo<dim> &dinfo,
     }
 }
 
-// template <int dim>
-// void RHSIntegrator<dim>::face(dealii::MeshWorker::DoFInfo<dim> &,
-//                               dealii::MeshWorker::DoFInfo<dim> &,
-//                               typename dealii::MeshWorker::IntegrationInfo<dim> &,
-//                               typename dealii::MeshWorker::IntegrationInfo<dim> &) const
-// {}
 #endif // MATRIXFREE
-
-template class MatrixIntegrator<2>;
-template class MatrixIntegrator<3>;
-template class ResidualIntegrator<2>;
-template class ResidualIntegrator<3>;
-template class RHSIntegrator<2>;
-template class RHSIntegrator<3>;
-
-#undef I
-#define I(D,P,C,T) template class MFIntegrator<D,P,P+1,C,T>
-I(2,1,1,double);
-I(2,2,1,double);
-I(2,3,1,double);
-I(2,4,1,double);
-I(3,1,1,double);
-I(3,2,1,double);
-I(3,3,1,double);
-I(3,4,1,double);
-#undef I
-
-#endif
+#include "Integrators.inst"

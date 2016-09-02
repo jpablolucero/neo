@@ -44,14 +44,15 @@ Simulator<dim,same_diagonal,degree>::Simulator (dealii::TimerOutput &timer_,
 #else
   pcout << "Using MeshWorker-based matrix-free implementation" << std::endl;
 #endif
-  std::vector<unsigned int> subdivisions(2, 1);
-  subdivisions[0]=2;
-  dealii::Point<dim> p1;
-  dealii::Point<dim> p2;
-  p2(0)=2.;
-  for (unsigned int i=1; i<dim; ++i)
-    p2(i)=1.;
-  dealii::GridGenerator::subdivided_hyper_rectangle (triangulation,subdivisions, p1, p2, true);
+  // std::vector<unsigned int> subdivisions(2, 1);
+  // subdivisions[0]=2;
+  // dealii::Point<dim> p1;
+  // dealii::Point<dim> p2;
+  // p2(0)=2.;
+  // for (unsigned int i=1; i<dim; ++i)
+  //   p2(i)=1.;
+  // dealii::GridGenerator::subdivided_hyper_rectangle (triangulation,subdivisions, p1, p2, true);
+  dealii::GridGenerator::hyper_cube(triangulation,0.,1.,true);
 
 #ifdef PERIODIC
   //add periodicity
@@ -97,9 +98,9 @@ void Simulator<dim,same_diagonal,degree>::setup_system ()
 
   dealii::DoFTools::extract_locally_relevant_dofs
   (dof_handler, locally_relevant_dofs);
-/*  std::cout << "locally relevant dofs on process "
-            << dealii::Utilities::MPI::this_mpi_process(mpi_communicator) << " ";
-  locally_relevant_dofs.print(std::cout);*/
+  /*  std::cout << "locally relevant dofs on process "
+              << dealii::Utilities::MPI::this_mpi_process(mpi_communicator) << " ";
+    locally_relevant_dofs.print(std::cout);*/
 
   //constraints
   constraints.clear();
@@ -225,7 +226,7 @@ void Simulator<dim,same_diagonal,degree>::setup_multigrid ()
   for (unsigned int level=min_level; level<n_global_levels; ++level)
     {
       mg_matrix[level].set_timer(timer);
-      mg_matrix[level].reinit(&dof_handler,&mapping,&constraints, mpi_communicator, level);
+      mg_matrix[level].reinit(&dof_handler,&mapping,&constraints,mpi_communicator,level);
     }
 }
 
@@ -253,7 +254,6 @@ void Simulator<dim,same_diagonal,degree>::solve ()
 
   // Setup Multigrid-Smoother
   typedef PSCPreconditioner<dim, LA::MPI::Vector, double, same_diagonal> Smoother;
-  //typedef MFPSCPreconditioner<dim, LA::MPI::Vector, double> Smoother;
   Smoother::timer = &timer;
   dealii::MGLevelObject<typename Smoother::AdditionalData> smoother_data;
   smoother_data.resize(mg_matrix.min_level(), mg_matrix.max_level());
@@ -264,14 +264,14 @@ void Simulator<dim,same_diagonal,degree>::solve ()
       smoother_data[level].dof_handler = &dof_handler;
       smoother_data[level].level = level;
       smoother_data[level].mapping = &mapping;
-      smoother_data[level].relaxation = .25;
+      smoother_data[level].relaxation = 0.7;
       //      uncomment to use the dictionary
       // if(!same_diagonal)
       //  {
       //    smoother_data[level].use_dictionary = true;
       //    smoother_data[level].tol = 0.05;
       //  }
-      smoother_data[level].patch_type = Smoother::AdditionalData::vertex_patches;
+      smoother_data[level].patch_type = Smoother::AdditionalData::cell_patches;
     }
   dealii::MGSmootherPrecondition<SystemMatrixType,Smoother,LA::MPI::Vector> mg_smoother;
   mg_smoother.initialize(mg_matrix, smoother_data);
@@ -286,7 +286,7 @@ void Simulator<dim,same_diagonal,degree>::solve ()
   mg_transfer.build_matrices(dof_handler);
 #endif
 
-  // Setup (Multigrid-)Precondintioner
+  // Setup (Multigrid-)Preconditioner
   dealii::mg::Matrix<LA::MPI::Vector>         mglevel_matrix;
   mglevel_matrix.initialize(mg_matrix);
   dealii::Multigrid<LA::MPI::Vector> mg(dof_handler,
@@ -416,7 +416,6 @@ void Simulator<dim,same_diagonal,degree>::run ()
   setup_multigrid ();
   timer.leave_subsection();
 #endif
-  output_results(n_levels);
   timer.enter_subsection("solve");
   pcout << "Solve" << std::endl;
   solve ();
@@ -424,7 +423,7 @@ void Simulator<dim,same_diagonal,degree>::run ()
   timer.enter_subsection("output");
   pcout << "Output" << std::endl;
   compute_error();
-  //  output_results(n_levels);
+  //output_results(n_levels);
   timer.leave_subsection();
   timer.print_summary();
   pcout << std::endl;

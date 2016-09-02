@@ -15,7 +15,7 @@
 
 #include <GenericLinearAlgebra.h>
 #include <DDHandler.h>
-#include <MFOperator.h>
+#include <MWOperator.h>
 
 template <int dim=2, typename VectorType=LA::MPI::Vector, class number=double>
 class MFPSCPreconditioner final

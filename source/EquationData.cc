@@ -13,7 +13,7 @@ double
 Coefficient<dim>::value (const dealii::Point<dim> &p,
                          const unsigned int d) const
 {
-  return (d == 0) ? 1.:1.;//1./(0.05 + 2.*p.square()) : 1.;
+  return (d == 0) ? 1. : 1.;//1./(0.05 + 2.*p.square()) : 1.;
 }
 
 template <int dim>
@@ -159,6 +159,7 @@ double MFSolution<dim>::value (const dealii::Point<dim>   &p,
 
   return return_value /
          dealii::Utilities::fixed_power<dim>(std::sqrt(2 * pi) * this->width);
+  //  return 0.;
 }
 
 template <int dim>
@@ -180,6 +181,7 @@ dealii::Tensor<1,dim> MFSolution<dim>::gradient (const dealii::Point<dim>   &p,
 
   return return_value / dealii::Utilities::fixed_power<dim>(std::sqrt(2 * pi) *
                                                             this->width);
+  //  return dealii::Tensor<1,dim>{} ;
 }
 
 //MFRightHandSide
@@ -202,6 +204,34 @@ double MFRightHandSide<dim>::value (const dealii::Point<dim>   &p,
 
   return return_value / dealii::Utilities::fixed_power<dim>(std::sqrt(2 * pi) *
                                                             this->width);
+  //  return 1.;
+}
+
+//MFDiffCoefficient
+template <int dim>
+double
+MFDiffCoefficient<dim>::value (const dealii::Point<dim>   &p,
+                               const unsigned int) const
+{
+  // double r = 0.;
+  // for(unsigned int i=0; i<dim; ++i)
+  //   r += std::abs(p(i));
+  // return (1. + r/dim * 1.e+8);
+  return 1.;
+}
+
+template <int dim>
+dealii::VectorizedArray<double>
+MFDiffCoefficient<dim>::value (const dealii::Point<dim,dealii::VectorizedArray<double> >   &p,
+                               const unsigned int) const
+{
+  static dealii::VectorizedArray<double> one = dealii::make_vectorized_array(1.);
+  // static dealii::VectorizedArray<double> eps = dealii::make_vectorized_array((double)(dim/1.e+8));
+  // dealii::VectorizedArray<double> r;
+  // for(unsigned int i=0; i<dim; ++i)
+  //   r += p(i);
+  // return (one + r * eps);
+  return one;
 }
 
 template class Coefficient<2>;
@@ -220,6 +250,9 @@ template class MFSolution<3>;
 template class MFRightHandSide<1>;
 template class MFRightHandSide<2>;
 template class MFRightHandSide<3>;
+template class MFDiffCoefficient<1>;
+template class MFDiffCoefficient<2>;
+template class MFDiffCoefficient<3>;
 
 #endif // EQUATIONDATA_CC
 
