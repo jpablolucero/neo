@@ -50,6 +50,34 @@ public:
                            const unsigned int /*component = 0*/) const;
 };
 
+template<int dim>
+class XS final
+{
+public:
+  XS();
+  XS (const XS &) = delete ;
+  XS &operator = (const XS &) = delete;
+
+  std::vector<std::vector<double> > total(const std::vector<dealii::Point<dim> > &points,
+                                          unsigned int n_angles,
+                                          unsigned int group = 0,
+                                          double factor = 1.);
+
+  std::vector<std::vector<std::vector<double> > > scattering(const std::vector<dealii::Point<dim> > &points,
+                                                             unsigned int n_angles,
+                                                             unsigned int group_in = 0,
+                                                             unsigned int group_out = 0,
+                                                             double factor = 1.);
+
+  std::vector<std::vector<double> > absorption(const std::vector<dealii::Point<dim> > &points,
+                                               const std::vector<double> &weights,
+                                               unsigned int n_angles,
+                                               unsigned int n_groups,
+                                               unsigned int bin,
+                                               double total_factor,
+                                               double scattering_factor);
+};
+
 template <int dim>
 class Angle :
   public dealii::Quadrature<dim>

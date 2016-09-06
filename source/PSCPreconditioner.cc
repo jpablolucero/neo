@@ -89,7 +89,27 @@ void PSCPreconditioner<dim, VectorType, number, same_diagonal>::initialize(const
   info_box.cell_selector.add("src", true, true, false);
   info_box.boundary_selector.add("src", true, true, false);
   info_box.face_selector.add("src", true, true, false);
-  info_box.initialize(fe, *(data.mapping), &(dof_handler.block_info()));
+  info_box.cell_selector.add("Newton iterate", true, true, false);
+  info_box.boundary_selector.add("Newton iterate", true, true, false);
+  info_box.face_selector.add("Newton iterate", true, true, false);
+  dealii::IndexSet locally_owned_level_dofs = dof_handler.locally_owned_mg_dofs(level);
+  dealii::IndexSet locally_relevant_level_dofs;
+  dealii::DoFTools::extract_locally_relevant_level_dofs
+  (dof_handler, level, locally_relevant_level_dofs);
+  ghosted_solution.resize(level, level);
+#if PARALLEL_LA == 0
+  ghosted_solution[level].reinit(locally_owned_level_dofs.n_elements());
+#else
+  ghosted_solution[level].reinit(locally_owned_level_dofs,
+                                 locally_relevant_level_dofs,
+                                 data.mpi_communicator);
+#endif
+  ghosted_solution[level] = *(data.solution);
+  dealii::AnyData src_data ;
+  src_data.add<const dealii::MGLevelObject<LA::MPI::Vector >*>(&ghosted_solution,"src");
+  src_data.add<const dealii::MGLevelObject<LA::MPI::Vector >*>(&ghosted_solution,"Newton iterate");
+  info_box.initialize(fe, *(data.mapping), src_data, ghosted_solution,&(dof_handler.block_info()));
+
   dof_info.reset(new dealii::MeshWorker::DoFInfo<dim> (dof_handler.block_info()));
 
   patch_inverses.resize(ddh->global_dofs_on_subdomain.size());
@@ -125,8 +145,17 @@ void PSCPreconditioner<dim, VectorType, number, same_diagonal>::initialize(const
         dealii::UpdateFlags local_update_flags = dealii::update_quadrature_points |
                                                  dealii::update_values |
                                                  dealii::update_gradients;
+        local_info_box.cell_selector.add("src", true, true, false);
+        local_info_box.boundary_selector.add("src", true, true, false);
+        local_info_box.face_selector.add("src", true, true, false);
+        local_info_box.cell_selector.add("Newton iterate", true, true, false);
+        local_info_box.boundary_selector.add("Newton iterate", true, true, false);
+        local_info_box.face_selector.add("Newton iterate", true, true, false);
+        dealii::AnyData local_src_data ;
+        local_src_data.add<const LA::MPI::Vector *>(&ghosted_solution[level],"src");
+        local_src_data.add<const LA::MPI::Vector *>(&ghosted_solution[level],"Newton iterate");
         local_info_box.add_update_flags(local_update_flags, true, true, true, true);
-        local_info_box.initialize(fe, *(data.mapping), &(local_dof_handler.block_info()));
+        local_info_box.initialize(fe, *(data.mapping), local_src_data, ghosted_solution[level], &(local_dof_handler.block_info()));
         dealii::MeshWorker::DoFInfo<dim> local_dof_info(local_dof_handler.block_info());
         dealii::FullMatrix<double> dummy_matrix(local_dof_handler.n_dofs(),local_dof_handler.n_dofs());
         dealii::MeshWorker::Assembler::MatrixSimple<dealii::FullMatrix<double> > local_assembler;

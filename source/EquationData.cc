@@ -77,6 +77,68 @@ ReferenceFunction<dim>::laplacian(const dealii::Point<dim> &p,
 }
 
 template <int dim>
+XS<dim>::XS()
+{}
+
+template <int dim>
+std::vector<std::vector<double> > XS<dim>::total(const std::vector<dealii::Point<dim> > &points,
+                                                 unsigned int n_angles,
+                                                 unsigned int ,
+                                                 double factor)
+{
+  std::vector<std::vector<double> > xs ;
+  xs.resize(n_angles) ;
+  for (auto &angle : xs)
+    {
+      angle.resize(points.size());
+      for (auto &point : angle)
+        point = 1. * factor + 0.01 ;
+    }
+  return xs ;
+}
+
+template <int dim>
+std::vector<std::vector<std::vector<double> > > XS<dim>::scattering(const std::vector<dealii::Point<dim> > &points,
+    unsigned int n_angles,
+    unsigned int,
+    unsigned int,
+    double factor)
+{
+  std::vector<std::vector<std::vector<double> > > xs ;
+  xs.resize(n_angles);
+  for (auto &angle_out : xs)
+    {
+      angle_out.resize(n_angles);
+      for (auto &quads : angle_out)
+        {
+          quads.resize(points.size());
+          for (auto &point : quads)
+            point = 1. * factor ;
+        }
+    }
+  return xs ;
+}
+
+template <int dim>
+std::vector<std::vector<double> > XS<dim>::absorption(const std::vector<dealii::Point<dim> > &points,
+                                                      const std::vector<double> &weights,
+                                                      unsigned int n_angles,
+                                                      unsigned int n_groups,
+                                                      unsigned int bin,
+                                                      double total_factor,
+                                                      double scattering_factor)
+{
+  auto abs = total(points,n_angles,bin,total_factor);
+  for (auto bout = 0; bout < n_groups ; ++bout)
+    for (auto cin = 0; cin < n_angles ; ++cin)
+      for (auto cout = 0; cout < n_angles ; ++cout)
+        for (auto q = 0; q < points.size() ; ++q)
+          abs[cin][q] -= weights[cout] * scattering(points,n_angles,bin,bout,scattering_factor)[cin][cout][q];
+  return abs ;
+}
+
+
+template <int dim>
 Angle<dim>::Angle(const std::string &filename)
 {
   std::ifstream file(filename.c_str());
@@ -109,3 +171,5 @@ template class ReferenceFunction<2>;
 template class ReferenceFunction<3>;
 template class Angle<2>;
 template class Angle<3>;
+template class XS<2>;
+template class XS<3>;

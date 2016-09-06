@@ -20,14 +20,17 @@ Simulator<dim,same_diagonal,degree>::Simulator (dealii::TimerOutput &timer_,
   reference_function(fe.n_components()),
   dof_handler (triangulation),
   pcout (pcout_),
-  timer(timer_)
+  timer(timer_),
+  residual(*this),
+  inverse(*this),
+  newton(residual,inverse)
 {
   // initialize timer
   system_matrix.set_timer(timer);
 #if PARALLEL_LA == 0
   pcout<< "Using deal.II parallel linear algebra" << std::endl;
 #elif PARALLEL_LA == 1
-  pcout<< "Using PETSc parallel linear algebra" << std::endl;
+  residual(*this),pcout<< "Using PETSc parallel linear algebra" << std::endl;
 #else
   pcout<< "Using Trilinos parallel linear algebra" << std::endl;
 #endif
@@ -133,10 +136,7 @@ void Simulator<dim,same_diagonal,degree>::setup_system ()
   solution_tmp.reinit (locally_owned_dofs, mpi_communicator);
   right_hand_side.reinit (locally_owned_dofs, mpi_communicator);
 #endif
-
-  system_matrix.reinit (&dof_handler,&mapping, &constraints, mpi_communicator, triangulation.n_global_levels()-1);
 }
-
 
 template <int dim, bool same_diagonal, unsigned int degree>
 void Simulator<dim, same_diagonal, degree>::assemble_system ()
@@ -151,8 +151,14 @@ void Simulator<dim, same_diagonal, degree>::assemble_system ()
   dealii::UpdateFlags update_flags = dealii::update_quadrature_points |
                                      dealii::update_values | dealii::update_gradients;
   info_box.add_update_flags(update_flags, true, true, true, true);
+  info_box.cell_selector.add("Newton iterate", true, true, false);
+  info_box.boundary_selector.add("Newton iterate", true, true, false);
+  info_box.face_selector.add("Newton iterate", true, true, false);
 
-  info_box.initialize(fe, mapping, &(dof_handler.block_info()));
+  dealii::AnyData src_data ;
+  src_data.add<const LA::MPI::Vector *>(&solution,"Newton iterate");
+
+  info_box.initialize(fe,mapping,src_data,LA::MPI::Vector {},&(dof_handler.block_info()));
 
   dealii::MeshWorker::DoFInfo<dim> dof_info(dof_handler.block_info());
 
@@ -178,10 +184,15 @@ void Simulator<dim,same_diagonal,degree>::setup_multigrid ()
 {
   const unsigned int n_global_levels = triangulation.n_global_levels();
   mg_matrix.resize(0, n_global_levels-1);
+  dealii::MGTransferPrebuilt<LA::MPI::Vector> mg_transfer;
+  mg_transfer.build_matrices(dof_handler);
+  mg_solution.resize(0, n_global_levels-1);
+  mg_transfer.copy_to_mg(dof_handler,mg_solution,solution);
+  system_matrix.reinit (&dof_handler,&mapping, &constraints, mpi_communicator, triangulation.n_global_levels()-1, solution);
   for (unsigned int level=0; level<n_global_levels; ++level)
     {
       mg_matrix[level].set_timer(timer);
-      mg_matrix[level].reinit(&dof_handler,&mapping,&constraints, mpi_communicator, level);
+      mg_matrix[level].reinit(&dof_handler,&mapping,&constraints, mpi_communicator, level, mg_solution[level]);
     }
 }
 
@@ -218,6 +229,8 @@ void Simulator<dim,same_diagonal,degree>::solve ()
       smoother_data[level].mapping = &mapping;
       smoother_data[level].weight = 1.0;
       smoother_data[level].mg_constrained_dofs = mg_constrained_dofs;
+      smoother_data[level].solution = &mg_solution[level];
+      smoother_data[level].mpi_communicator = mpi_communicator;
       //      uncomment to use the dictionary
       // if(!same_diagonal)
       //  {
@@ -363,7 +376,53 @@ void Simulator<dim,same_diagonal,degree>::run ()
   timer.enter_subsection("output");
   pcout << "Output" << std::endl;
   compute_error();
-//  output_results(n_levels);
+  output_results(n_levels);
+  timer.leave_subsection();
+  timer.print_summary();
+  pcout << std::endl;
+  // workaround regarding issue #2533
+  // GrowingVectorMemory does not destroy the vectors
+  // after this instance goes out of scope.
+  // Unfortunately, the mpi_communicators given to the
+  // remaining vectors might be invalid the next time
+  // a vector is requested. Therefore, clean up everything
+  // before going out of scope.
+  dealii::GrowingVectorMemory<LA::MPI::Vector>::release_unused_memory();
+}
+
+template <int dim,bool same_diagonal,unsigned int degree>
+void Simulator<dim,same_diagonal,degree>::run_non_linear ()
+{
+  timer.reset();
+  timer.enter_subsection("refine_global");
+  pcout << "Refine global" << std::endl;
+  triangulation.refine_global (n_levels-1);
+  timer.leave_subsection();
+  pcout << "Finite element: " << fe.get_name() << std::endl;
+  pcout << "Number of active cells: "
+        << triangulation.n_global_active_cells()
+        << std::endl;
+  timer.enter_subsection("setup_system");
+  pcout << "Setup system" << std::endl;
+  setup_system ();
+  timer.leave_subsection();
+  dealii::deallog << "DoFHandler levels: ";
+  for (unsigned int l=0; l<triangulation.n_global_levels(); ++l)
+    dealii::deallog << ' ' << dof_handler.n_dofs(l);
+  dealii::deallog << std::endl;
+  auto sol = solution_tmp ;
+  for (auto &elem : sol) elem = 1. ;
+  dealii::AnyData solution_data;
+  solution_data.add(&sol, "solution");
+  dealii::AnyData data;
+  newton.control.set_reduction(1.E-10);
+  timer.enter_subsection("solve");
+  pcout << "Solve" << std::endl;
+  newton(solution_data, data);
+  solution = *(solution_data.try_read_ptr<LA::MPI::Vector>("solution"));
+  timer.leave_subsection();
+  timer.enter_subsection("output");
+  output_results(n_levels);
   timer.leave_subsection();
   timer.print_summary();
   pcout << std::endl;

@@ -61,6 +61,7 @@ private:
   dealii::MeshWorker::IntegrationInfoBox<dim> info_box;
   std::unique_ptr<dealii::MeshWorker::DoFInfo<dim> >  dof_info;
 
+  dealii::MGLevelObject<LA::MPI::Vector>              ghosted_solution;
   MatrixIntegrator<dim,same_diagonal>                 matrix_integrator;
 
   unsigned int level;
@@ -79,6 +80,7 @@ public:
   double weight;
   double tol;
   const dealii::Mapping<dim> *mapping;
+  LA::MPI::Vector *solution;
 
   bool use_dictionary;
   enum PatchType
@@ -87,6 +89,7 @@ public:
     vertex_patches
   };
   PatchType patch_type;
+  MPI_Comm mpi_communicator;
 
   dealii::MGConstrainedDoFs  mg_constrained_dofs;
 };

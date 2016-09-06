@@ -32,7 +32,8 @@ public:
                const dealii::MappingQ1<dim> *mapping_,
                const dealii::ConstraintMatrix *constraints,
                const MPI_Comm &mpi_communicator_,
-               const unsigned int level_ = dealii::numbers::invalid_unsigned_int);
+               const unsigned int level_ = dealii::numbers::invalid_unsigned_int,
+               LA::MPI::Vector solution_ = LA::MPI::Vector {});
 
   void set_cell_range (const std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> &cell_range_);
 
@@ -85,6 +86,7 @@ private:
   MatrixIntegrator<dim,same_diagonal>                 matrix_integrator;
   ResidualIntegrator<dim>                             residual_integrator;
   mutable dealii::MGLevelObject<LA::MPI::Vector>      ghosted_src;
+  mutable dealii::MGLevelObject<LA::MPI::Vector>      ghosted_solution;
   MPI_Comm                                            mpi_communicator;
   dealii::TimerOutput                                 *timer;
   std::vector<std::vector<level_cell_iterator> >      colored_iterators;

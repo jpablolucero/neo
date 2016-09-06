@@ -2,6 +2,7 @@
 #define SIMULATOR_H
 
 #include <deal.II/algorithms/any_data.h>
+#include <deal.II/algorithms/newton.h>
 #include <deal.II/base/conditional_ostream.h>
 #include <deal.II/base/mg_level_object.h>
 #include <deal.II/base/mpi.h>
@@ -58,6 +59,7 @@ public:
   Simulator (const Simulator &) = delete ;
   Simulator &operator = (const Simulator &) = delete;
   void run ();
+  void run_non_linear ();
   unsigned int n_levels ;
   unsigned int smoothing_steps ;
 private:
@@ -88,12 +90,53 @@ private:
   LA::MPI::Vector       solution;
   LA::MPI::Vector       solution_tmp;
   LA::MPI::Vector       right_hand_side;
+  dealii::MGLevelObject<LA::MPI::Vector> mg_solution ;
 
   dealii::MGLevelObject<SystemMatrixType >            mg_matrix ;
 
   dealii::ConditionalOStream &pcout;
 
   dealii::TimerOutput &timer;
+
+  friend class Residual;
+  class Residual : public dealii::Algorithms::OperatorBase
+  {
+  public:
+    Residual(Simulator<dim,same_diagonal,degree> &sim_):sim(sim_) {} ;
+    void operator() (dealii::AnyData &out, const dealii::AnyData &in) override
+    {
+      sim.setup_system();
+      sim.solution = *(in.try_read_ptr<LA::MPI::Vector>("Newton iterate"));
+      sim.assemble_system();
+      *out.entry<LA::MPI::Vector *>(0) = sim.right_hand_side ;
+    }
+    Simulator<dim,same_diagonal,degree> &sim ;
+  } residual ;
+
+  friend class InverseDerivative ;
+  class InverseDerivative : public dealii::Algorithms::OperatorBase
+  {
+  public:
+    InverseDerivative(Simulator<dim,same_diagonal,degree> &sim_):sim(sim_) {} ;
+    void operator() (dealii::AnyData &out, const dealii::AnyData &in) override
+    {
+      sim.setup_system();
+      sim.solution = *(in.try_read_ptr<LA::MPI::Vector>("Newton iterate"));
+      sim.right_hand_side = *(in.try_read_ptr<LA::MPI::Vector>("Newton residual"));
+#ifdef MG
+      sim.timer.enter_subsection("setup_multigrid");
+      sim.pcout << "Setup multigrid" << std::endl;
+      sim.setup_multigrid ();
+      sim.timer.leave_subsection();
+#endif
+      sim.solve ();
+      *out.entry<LA::MPI::Vector *>(0) = sim.solution ;
+    }
+    Simulator<dim,same_diagonal,degree> &sim ;
+  } inverse ;
+
+  dealii::Algorithms::Newton<LA::MPI::Vector> newton;
+
 };
 #ifdef HEADER_IMPLEMENTATION
 #include <Simulator.cc>
