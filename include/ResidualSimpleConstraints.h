@@ -46,9 +46,8 @@ public:
   /**
    * Assemble both local residuals into the global residuals.
    */
-  template<class DOFINFO>
-  void assemble(const DOFINFO &info1,
-                const DOFINFO &info2);
+  using dealii::MeshWorker::Assembler::ResidualSimple<VectorType>::assemble ;
+
 private:
 
   /**
@@ -114,14 +113,4 @@ ResidualSimpleConstraints<VectorType>::assemble(const DOFINFO &info)
     }
 }
 
-
-
-template <typename VectorType>
-template <class DOFINFO>
-inline void
-ResidualSimpleConstraints<VectorType>::assemble(const DOFINFO &info1, const DOFINFO &info2)
-{
-  //Nothing different is done for flux terms
-  dealii::MeshWorker::Assembler::ResidualSimple<VectorType>::assemble(info1, info2);
-}
 #endif

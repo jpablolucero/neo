@@ -30,7 +30,7 @@ Simulator<dim,same_diagonal,degree>::Simulator (dealii::TimerOutput &timer_,
 #if PARALLEL_LA == 0
   pcout<< "Using deal.II parallel linear algebra" << std::endl;
 #elif PARALLEL_LA == 1
-  residual(*this),pcout<< "Using PETSc parallel linear algebra" << std::endl;
+  pcout<< "Using PETSc parallel linear algebra" << std::endl;
 #else
   pcout<< "Using Trilinos parallel linear algebra" << std::endl;
 #endif
