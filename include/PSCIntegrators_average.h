@@ -2,8 +2,8 @@
 #define PSC_PRECONDITIONER_H
 #include <Integrators.h>
 
-template <int dim,bool same_diagonal=true>
-class PSCMatrixIntegrator final : public MatrixIntegrator<dim, same_diagonal>
+template <int dim>
+class PSCMatrixIntegrator final : public MatrixIntegrator<dim>
 {
 public:
   PSCMatrixIntegrator();

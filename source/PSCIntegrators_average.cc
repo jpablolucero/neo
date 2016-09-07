@@ -1,13 +1,13 @@
 #include <PSCIntegrators_average.h>
 
 // MATRIX INTEGRATOR
-template <int dim,bool same_diagonal>
-PSCMatrixIntegrator<dim,same_diagonal>::PSCMatrixIntegrator()
+template <int dim>
+PSCMatrixIntegrator<dim>::PSCMatrixIntegrator()
 {}
 
-template <int dim,bool same_diagonal>
-void PSCMatrixIntegrator<dim, same_diagonal>::cell(dealii::MeshWorker::DoFInfo<dim> &dinfo,
-                                                   typename dealii::MeshWorker::IntegrationInfo<dim> &info) const
+template <int dim>
+void PSCMatrixIntegrator<dim>::cell(dealii::MeshWorker::DoFInfo<dim> &dinfo,
+                                    typename dealii::MeshWorker::IntegrationInfo<dim> &info) const
 {
   const auto n_blocks = dinfo.block_info->local().size();
   Assert(n_blocks>0, dealii::ExcMessage("BlockInfo not initialized!"));
@@ -31,11 +31,11 @@ void PSCMatrixIntegrator<dim, same_diagonal>::cell(dealii::MeshWorker::DoFInfo<d
     }
 }
 
-template <int dim,bool same_diagonal>
-void PSCMatrixIntegrator<dim,same_diagonal>::face(dealii::MeshWorker::DoFInfo<dim> &dinfo1,
-                                                  dealii::MeshWorker::DoFInfo<dim> &dinfo2,
-                                                  typename dealii::MeshWorker::IntegrationInfo<dim> &info1,
-                                                  typename dealii::MeshWorker::IntegrationInfo<dim> &info2) const
+template <int dim>
+void PSCMatrixIntegrator<dim>::face(dealii::MeshWorker::DoFInfo<dim> &dinfo1,
+                                    dealii::MeshWorker::DoFInfo<dim> &dinfo2,
+                                    typename dealii::MeshWorker::IntegrationInfo<dim> &info1,
+                                    typename dealii::MeshWorker::IntegrationInfo<dim> &info2) const
 {
   const auto n_blocks = dinfo1.block_info->local().size();
   Assert(n_blocks>0, dealii::ExcMessage("BlockInfo not initialized!"));
@@ -84,9 +84,9 @@ void PSCMatrixIntegrator<dim,same_diagonal>::face(dealii::MeshWorker::DoFInfo<di
     }
 }
 
-template <int dim,bool same_diagonal>
-void PSCMatrixIntegrator<dim,same_diagonal>::boundary(dealii::MeshWorker::DoFInfo<dim> &dinfo,
-                                                      typename dealii::MeshWorker::IntegrationInfo<dim> &info) const
+template <int dim>
+void PSCMatrixIntegrator<dim>::boundary(dealii::MeshWorker::DoFInfo<dim> &dinfo,
+                                        typename dealii::MeshWorker::IntegrationInfo<dim> &info) const
 {
   const auto n_blocks = dinfo.block_info->local().size();
   Assert(n_blocks>0, dealii::ExcMessage("BlockInfo not initialized!"));
@@ -128,7 +128,5 @@ void PSCMatrixIntegrator<dim,same_diagonal>::boundary(dealii::MeshWorker::DoFInf
     }
 }
 
-template class PSCMatrixIntegrator<2,false>;
-template class PSCMatrixIntegrator<3,false>;
-template class PSCMatrixIntegrator<2,true>;
-template class PSCMatrixIntegrator<3,true>;
+template class PSCMatrixIntegrator<2>;
+template class PSCMatrixIntegrator<3>;

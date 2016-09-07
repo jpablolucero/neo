@@ -63,7 +63,7 @@ private:
   std::unique_ptr<dealii::MeshWorker::DoFInfo<dim> >  dof_info;
 
   dealii::MGLevelObject<LA::MPI::Vector>              ghosted_solution;
-  PSCMatrixIntegrator<dim,same_diagonal>              matrix_integrator;
+  PSCMatrixIntegrator<dim>                            matrix_integrator;
   mutable LA::MPI::Vector                             ghosted_src;
 #if PARALLEL_LA==3
   mutable LA::MPI::Vector                ghosted_dst;

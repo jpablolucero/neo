@@ -1,13 +1,13 @@
 #include <Integrators.h>
 
 // MATRIX INTEGRATOR
-template <int dim,bool same_diagonal>
-MatrixIntegrator<dim,same_diagonal>::MatrixIntegrator()
+template <int dim>
+MatrixIntegrator<dim>::MatrixIntegrator()
 {}
 
-template <int dim,bool same_diagonal>
-void MatrixIntegrator<dim, same_diagonal>::cell(dealii::MeshWorker::DoFInfo<dim> &dinfo,
-                                                typename dealii::MeshWorker::IntegrationInfo<dim> &info) const
+template <int dim>
+void MatrixIntegrator<dim>::cell(dealii::MeshWorker::DoFInfo<dim> &dinfo,
+                                 typename dealii::MeshWorker::IntegrationInfo<dim> &info) const
 {
   const auto n_blocks = dinfo.block_info->local().size();
   Assert(n_blocks>0, dealii::ExcMessage("BlockInfo not initialized!"));
@@ -31,11 +31,11 @@ void MatrixIntegrator<dim, same_diagonal>::cell(dealii::MeshWorker::DoFInfo<dim>
     }
 }
 
-template <int dim,bool same_diagonal>
-void MatrixIntegrator<dim,same_diagonal>::face(dealii::MeshWorker::DoFInfo<dim> &dinfo1,
-                                               dealii::MeshWorker::DoFInfo<dim> &dinfo2,
-                                               typename dealii::MeshWorker::IntegrationInfo<dim> &info1,
-                                               typename dealii::MeshWorker::IntegrationInfo<dim> &info2) const
+template <int dim>
+void MatrixIntegrator<dim>::face(dealii::MeshWorker::DoFInfo<dim> &dinfo1,
+                                 dealii::MeshWorker::DoFInfo<dim> &dinfo2,
+                                 typename dealii::MeshWorker::IntegrationInfo<dim> &info1,
+                                 typename dealii::MeshWorker::IntegrationInfo<dim> &info2) const
 {
   const auto n_blocks = dinfo1.block_info->local().size();
   Assert(n_blocks>0, dealii::ExcMessage("BlockInfo not initialized!"));
@@ -70,9 +70,9 @@ void MatrixIntegrator<dim,same_diagonal>::face(dealii::MeshWorker::DoFInfo<dim> 
     }
 }
 
-template <int dim,bool same_diagonal>
-void MatrixIntegrator<dim,same_diagonal>::boundary(dealii::MeshWorker::DoFInfo<dim> &dinfo,
-                                                   typename dealii::MeshWorker::IntegrationInfo<dim> &info) const
+template <int dim>
+void MatrixIntegrator<dim>::boundary(dealii::MeshWorker::DoFInfo<dim> &dinfo,
+                                     typename dealii::MeshWorker::IntegrationInfo<dim> &info) const
 {
   const auto n_blocks = dinfo.block_info->local().size();
   Assert(n_blocks>0, dealii::ExcMessage("BlockInfo not initialized!"));
@@ -318,10 +318,8 @@ void RHSIntegrator<dim>::face(dealii::MeshWorker::DoFInfo<dim> &,
                               typename dealii::MeshWorker::IntegrationInfo<dim> &) const
 {}
 
-template class MatrixIntegrator<2,false>;
-template class MatrixIntegrator<3,false>;
-template class MatrixIntegrator<2,true>;
-template class MatrixIntegrator<3,true>;
+template class MatrixIntegrator<2>;
+template class MatrixIntegrator<3>;
 template class ResidualIntegrator<2>;
 template class ResidualIntegrator<3>;
 template class RHSIntegrator<2>;

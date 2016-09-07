@@ -94,9 +94,9 @@ void Simulator<dim,same_diagonal,degree>::setup_system ()
 
   dealii::DoFTools::extract_locally_relevant_dofs
   (dof_handler, locally_relevant_dofs);
-/*  std::cout << "locally relevant dofs on process "
-            << dealii::Utilities::MPI::this_mpi_process(mpi_communicator) << " ";
-  locally_relevant_dofs.print(std::cout);*/
+  /*  std::cout << "locally relevant dofs on process "
+              << dealii::Utilities::MPI::this_mpi_process(mpi_communicator) << " ";
+    locally_relevant_dofs.print(std::cout);*/
 
   //constraints
   constraints.clear();

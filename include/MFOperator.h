@@ -83,7 +83,7 @@ private:
   mutable dealii::MeshWorker::IntegrationInfoBox<dim> info_box;
   dealii::SparsityPattern                             sp;
   LA::MPI::SparseMatrix                               coarse_matrix;
-  MatrixIntegrator<dim,same_diagonal>                 matrix_integrator;
+  MatrixIntegrator<dim>                               matrix_integrator;
   ResidualIntegrator<dim>                             residual_integrator;
   mutable dealii::MGLevelObject<LA::MPI::Vector>      ghosted_src;
   mutable dealii::MGLevelObject<LA::MPI::Vector>      ghosted_solution;
