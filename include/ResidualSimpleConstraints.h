@@ -66,6 +66,7 @@ inline void
 ResidualSimpleConstraints<VectorType>::initialize(dealii::AnyData &results)
 {
   residuals = results;
+  dealii::MeshWorker::Assembler::ResidualSimple<VectorType>::initialize(results);
 }
 
 
