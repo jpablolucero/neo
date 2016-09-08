@@ -129,7 +129,7 @@ void PSCPreconditioner<dim, VectorType, number, same_diagonal>::initialize(const
   dealii::AnyData src_data ;
   src_data.add<const dealii::MGLevelObject<LA::MPI::Vector >*>(&ghosted_solution,"src");
   src_data.add<const dealii::MGLevelObject<LA::MPI::Vector >*>(&ghosted_solution,"Newton iterate");
-  info_box.initialize(fe, *(data.mapping), src_data, ghosted_solution,&(dof_handler.block_info()));
+  info_box.initialize(fe, *(data.mapping), src_data, LA::MPI::Vector {},&(dof_handler.block_info()));
 
   dof_info.reset(new dealii::MeshWorker::DoFInfo<dim> (dof_handler.block_info()));
 
