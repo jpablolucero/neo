@@ -222,8 +222,6 @@ void ResidualIntegrator<dim>::boundary(dealii::MeshWorker::DoFInfo<dim> &dinfo,
     }
 }
 
-#ifdef MATRIXFREE
-#endif //MATRIXFREE
 // RHS INTEGRATOR
 template <int dim>
 RHSIntegrator<dim>::RHSIntegrator(unsigned int n_components)
@@ -273,7 +271,7 @@ void RHSIntegrator<dim>::cell(dealii::MeshWorker::DoFInfo<dim> &dinfo, typename 
       //we need to do the same thing as for matrix integrator
       auto &M = dinfo.matrix(b*n_blocks + b).matrix;
       LocalIntegrators::Diffusion::cell_matrix<dim>(M,fev,coeffs_values);
-#endif
+#endif // CG
     }
 }
 template <int dim>

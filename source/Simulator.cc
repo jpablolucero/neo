@@ -16,7 +16,7 @@ Simulator<dim,same_diagonal,degree>::Simulator (dealii::TimerOutput &timer_,
 #ifdef CG
   fe(dealii::FE_Q<dim>(degree),1),
 #else
-  fe(dealii::FESystem<dim>(dealii::FE_DGQ<dim>(degree),1),1),
+  fe(dealii::FE_DGQ<dim>(degree),1),
 #endif
   reference_function(fe.n_components()),
   dof_handler (triangulation),
@@ -41,14 +41,7 @@ Simulator<dim,same_diagonal,degree>::Simulator (dealii::TimerOutput &timer_,
   pcout<< "Using FE_DGQ elements" << std::endl;
 #endif //CG
 
-  std::vector<unsigned int> subdivisions(2, 1);
-  subdivisions[0]=2;
-  dealii::Point<dim> p1;
-  dealii::Point<dim> p2;
-  p2(0)=2.;
-  for (unsigned int i=1; i<dim; ++i)
-    p2(i)=1.;
-  dealii::GridGenerator::subdivided_hyper_rectangle (triangulation,subdivisions, p1, p2, true);
+  dealii::GridGenerator::hyper_cube (triangulation,0.,1., true);
 
 #ifdef PERIODIC
   //add periodicity
