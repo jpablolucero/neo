@@ -28,22 +28,11 @@ int main (int argc, char *argv[])
                              dealii::TimerOutput::never,
                              dealii::TimerOutput::wall_times);
 
-  for (unsigned int l=2; l<5; ++l)
-    {
-      Simulator<2,false,2> dgmethod(timer, mpi_communicator, pcout);
-      dgmethod.n_levels = (argc > 1) ? atoi(argv[1]) : l ;
-      dgmethod.min_level=0;
-      dgmethod.smoothing_steps = (argc > 2) ? atoi(argv[2]) : 1 ;
-      dgmethod.run ();
-    }
-/*  for (unsigned int l=2; l<5; ++l)
-    {
-      Simulator<2,true,2> dgmethod(timer, mpi_communicator, pcout);
-      dgmethod.n_levels = (argc > 1) ? atoi(argv[1]) : l ;
-      dgmethod.min_level=0;
-      dgmethod.smoothing_steps = (argc > 2) ? atoi(argv[2]) : 1 ;
-      dgmethod.run ();
-    }*/
+  Simulator<2,false,2> dgmethod(timer, mpi_communicator, pcout);
+  dgmethod.n_levels = (argc > 1) ? atoi(argv[1]) : 2 ;
+  dgmethod.min_level=0;
+  dgmethod.smoothing_steps = (argc > 2) ? atoi(argv[2]) : 1 ;
+  dgmethod.run ();
   return 0;
 }
 #endif

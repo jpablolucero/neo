@@ -49,9 +49,8 @@ double
 ReferenceFunction<dim>::value(const dealii::Point<dim> &p,
                               const unsigned int /*component = 0*/) const
 {
-  /*  const double pi2 = dealii::numbers::PI;
-    return std::sin(pi2*p(0))*std::sin(pi2*p(1));*/
-  return 0.;
+  const double pi2 = dealii::numbers::PI;
+  return std::sin(pi2*p(0))*std::sin(pi2*p(1));
 }
 
 template <int dim>
@@ -60,9 +59,9 @@ ReferenceFunction<dim>::gradient (const dealii::Point<dim> &p,
                                   const unsigned int /*d*/) const
 {
   dealii::Tensor<1,dim> return_grad;
-  /*  const double pi2 = dealii::numbers::PI*4/3;
-    return_grad[0]=pi2*std::cos(pi2*p(0))*std::sin(pi2*p(1));
-    return_grad[1]=pi2*std::sin(pi2*p(0))*std::cos(pi2*p(1));*/
+  const double pi2 = dealii::numbers::PI*4/3;
+  return_grad[0]=pi2*std::cos(pi2*p(0))*std::sin(pi2*p(1));
+  return_grad[1]=pi2*std::sin(pi2*p(0))*std::cos(pi2*p(1));
 
   return return_grad;
 }
@@ -72,10 +71,9 @@ double
 ReferenceFunction<dim>::laplacian(const dealii::Point<dim> &p,
                                   const unsigned int /*component = 0*/) const
 {
-  /*  const double pi2 = dealii::numbers::PI*3/2;
-    const double return_value = -2*pi2*pi2*std::sin(pi2*p(0))*std::sin(pi2*p(1));
-    return return_value;*/
-  return -1.;
+  const double pi2 = dealii::numbers::PI*3/2;
+  const double return_value = -2*pi2*pi2*std::sin(pi2*p(0))*std::sin(pi2*p(1));
+  return return_value;
 }
 
 template <int dim>
@@ -131,10 +129,10 @@ std::vector<std::vector<double> > XS<dim>::absorption(const std::vector<dealii::
                                                       double scattering_factor)
 {
   auto abs = total(points,n_angles,bin,total_factor);
-  for (unsigned int bout = 0; bout < n_groups ; ++bout)
-    for (unsigned int cin = 0; cin < n_angles ; ++cin)
-      for (unsigned int cout = 0; cout < n_angles ; ++cout)
-        for (unsigned int q = 0; q < points.size() ; ++q)
+  for (auto bout = 0; bout < n_groups ; ++bout)
+    for (auto cin = 0; cin < n_angles ; ++cin)
+      for (auto cout = 0; cout < n_angles ; ++cout)
+        for (auto q = 0; q < points.size() ; ++q)
           abs[cin][q] -= weights[cout] * scattering(points,n_angles,bin,bout,scattering_factor)[cin][cout][q];
   return abs ;
 }

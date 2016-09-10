@@ -96,7 +96,7 @@ namespace LocalIntegrators
           for (unsigned int i=0; i<n_dofs; ++i)
             for (unsigned int j=0; j<n_dofs; ++j)
               for (unsigned int d=0; d<n_comps; ++d)
-                M(i,j) += dx * weights[d] * abs[d][q] * feT.shape_value(i,q) * std::pow(feT.shape_value(j,q),2.) ;
+                M(i,j) += dx * weights[d] * abs[d][q] * feT.shape_value(i,q) * 5.670373E-8 * std::pow(feT.shape_value(j,q),4.) ;
         }
     }
 
@@ -119,7 +119,8 @@ namespace LocalIntegrators
           for (unsigned int i=0; i<n_dofs; ++i)
             for (unsigned int j=0; j<n_dofs; ++j)
               for (unsigned int d=0; d<n_comps; ++d)
-                M(i,j) += dx * weights[d] * abs[d][q] * feT.shape_value(i,q) * 2.0 * prev[0][q] * feT.shape_value(j,q) ;
+                M(i,j) += dx * weights[d] * abs[d][q] * feT.shape_value(i,q) * 4.0 * 5.670373E-8 * std::pow(prev[0][q],3.)
+                          * feT.shape_value(j,q) ;
         }
     }
 
@@ -142,7 +143,7 @@ namespace LocalIntegrators
           for (unsigned int i=0; i<n_dofsV; ++i)
             for (unsigned int j=0; j<n_dofsT; ++j)
               for (unsigned int d=0; d<n_comps; ++d)
-                M(i,j) -= dx * abs[d][q] * feV.shape_value_component(i,q,d) * std::pow(feT.shape_value(j,q),2.) ;
+                M(i,j) -= dx * abs[d][q] * feV.shape_value_component(i,q,d) * 5.670373E-8 * std::pow(feT.shape_value(j,q),4.) ;
         }
     }
 
@@ -166,7 +167,8 @@ namespace LocalIntegrators
           for (unsigned int i=0; i<n_dofsV; ++i)
             for (unsigned int j=0; j<n_dofsT; ++j)
               for (unsigned int d=0; d<n_comps; ++d)
-                M(i,j) -= dx * abs[d][q] * feV.shape_value_component(i,q,d) * 2.0 * prev[0][q] * feT.shape_value(j,q) ;
+                M(i,j) -= dx * abs[d][q] * feV.shape_value_component(i,q,d) * 4.0 * 5.670373E-8 * std::pow(prev[0][q],3.)
+                          * feT.shape_value(j,q) ;
         }
     }
 
@@ -401,7 +403,7 @@ namespace LocalIntegrators
           const double dx = fe.JxW(q) * factor ;
           for (unsigned int i=0; i<n_dofs; ++i)
             for (unsigned int d=0; d<n_comps; ++d)
-              result(i) += dx * weights[d] * abs[d][q] * fe.shape_value(i,q) * std::pow(input[0][q],2.) ;
+              result(i) += dx * weights[d] * abs[d][q] * fe.shape_value(i,q) * 5.670373E-8 * std::pow(input[0][q],4.) ;
         }
     }
 
@@ -424,7 +426,8 @@ namespace LocalIntegrators
           const double dx = fe.JxW(q) * factor ;
           for (unsigned int i=0; i<n_dofs; ++i)
             for (unsigned int d=0; d<n_comps; ++d)
-              result(i) += dx * weights[d] * abs[d][q] * fe.shape_value(i,q) * 2.0 * prev[0][q] * input[0][q] ;
+              result(i) += dx * weights[d] * abs[d][q] * fe.shape_value(i,q) * 4.0 * 5.670373E-8 * std::pow(prev[0][q],3.) *
+                           input[0][q] ;
         }
     }
 
@@ -445,7 +448,7 @@ namespace LocalIntegrators
           const double dx = fe.JxW(q) * factor ;
           for (unsigned int i=0; i<n_dofs; ++i)
             for (unsigned int d=0; d<n_comps; ++d)
-              result(i) -= dx * abs[d][q] * fe.shape_value_component(i,q,d) * std::pow(input[0][q],2.) ;
+              result(i) -= dx * abs[d][q] * fe.shape_value_component(i,q,d) * 5.670373E-8 * std::pow(input[0][q],4.) ;
         }
     }
 
@@ -467,7 +470,8 @@ namespace LocalIntegrators
           const double dx = fe.JxW(q) * factor ;
           for (unsigned int i=0; i<n_dofs; ++i)
             for (unsigned int d=0; d<n_comps; ++d)
-              result(i) -= dx * abs[d][q] * fe.shape_value_component(i,q,d) * 2.0 * prev[0][q] * input[0][q] ;
+              result(i) -= dx * abs[d][q] * fe.shape_value_component(i,q,d) * 4.0 * 5.670373E-8 * std::pow(prev[0][q],3.)
+                           * input[0][q] ;
         }
     }
 

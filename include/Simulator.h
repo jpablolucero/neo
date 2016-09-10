@@ -22,10 +22,14 @@
 #include <deal.II/lac/precondition.h>
 #include <deal.II/lac/solver_cg.h>
 #include <deal.II/lac/solver_gmres.h>
+#include <deal.II/lac/solver_richardson.h>
 #include <deal.II/lac/solver_control.h>
 #include <deal.II/lac/vector.h>
 #include <deal.II/lac/precondition_block.h>
 #include <deal.II/lac/precondition_block.templates.h>
+#include <deal.II/grid/manifold_lib.h>
+#include <deal.II/lac/precondition.h>
+#include <deal.II/lac/trilinos_precondition.h>
 #include <deal.II/meshworker/dof_info.h>
 #include <deal.II/meshworker/integration_info.h>
 #include <deal.II/meshworker/loop.h>
