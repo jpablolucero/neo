@@ -77,7 +77,7 @@ ReferenceFunction<dim>::laplacian(const dealii::Point<dim> &p,
 }
 
 template <int dim>
-XS<dim>::XS()
+XS<dim>::XS():grid {1.E4,1.}
 {}
 
 template <int dim>
@@ -136,7 +136,6 @@ std::vector<std::vector<double> > XS<dim>::absorption(const std::vector<dealii::
           abs[cin][q] -= weights[cout] * scattering(points,n_angles,bin,bout,scattering_factor)[cin][cout][q];
   return abs ;
 }
-
 
 template <int dim>
 Angle<dim>::Angle(const std::string &filename)

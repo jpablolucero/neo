@@ -23,7 +23,7 @@ int main (int argc, char *argv[])
   std::ofstream logfile("deallog");
   dealii::deallog.attach(logfile);
   if (dealii::Utilities::MPI::this_mpi_process(mpi_communicator)==0)
-    dealii::deallog.depth_console (2);
+    dealii::deallog.depth_console (3);
   dealii::TimerOutput timer (mpi_communicator, pcout,
                              dealii::TimerOutput::never,
                              dealii::TimerOutput::wall_times);

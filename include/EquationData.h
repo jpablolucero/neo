@@ -12,6 +12,7 @@
 #include <string>
 #include <fstream>
 #include <vector>
+#include <math.h>
 
 template <int dim>
 class Coefficient final : public dealii::Function<dim>
@@ -58,6 +59,8 @@ public:
   XS (const XS &) = delete ;
   XS &operator = (const XS &) = delete;
 
+  std::vector<double> grid ;
+
   std::vector<std::vector<double> > total(const std::vector<dealii::Point<dim> > &points,
                                           unsigned int n_angles,
                                           unsigned int group = 0,
@@ -85,6 +88,79 @@ class Angle :
 public:
   Angle(const std::string &filename);
 };
+
+inline double planck_integral (double sigma, double temperature)
+{
+  //  integral of spectral radiance from sigma (cm-1) to infinity.
+  //  result is W/m2/sr.
+  //  follows Widger and Woodall, Bulletin of the American Meteorological
+  //  Society, Vol. 57, No. 10, pp. 1217
+  //  constants
+  double Planck =  6.6260693e-34 ;
+  double Boltzmann = 1.380658e-23 ;
+  double Speed_of_light = 299792458.0 ;
+  double Speed_of_light_sq = Speed_of_light * Speed_of_light ;
+
+  //  compute powers of x, the dimensionless spectral coordinate
+  double c1 =  (Planck*Speed_of_light/Boltzmann) ;
+  double x =  c1 * 100 * sigma / temperature ;
+  double x2 = x *  x  ;
+  double x3 = x *  x2 ;
+
+  //  decide how many terms of sum are needed
+  double iterations = 2.0 + 20.0/x ;
+  iterations = (iterations<512) ? iterations : 512 ;
+  int iter = int(iterations) ;
+
+  //  add up terms of sum
+  double sum = 0  ;
+  for (int n=1;  n<iter; n++)
+    {
+      double  dn = 1.0/n ;
+      sum  += exp(-n*x)*(x3 + 3.*(x2 + 2.*(x+dn)*dn)*dn)*dn;
+    }
+
+  //  return result, in units of W/m2/sr
+  double c2 =  (2.0*Planck*Speed_of_light_sq) ;
+  return c2*std::pow(temperature/c1,4)*sum  ;
+}
+
+inline double Dplanck_integral (double sigma, double temperature)
+{
+  //  integral of spectral radiance from sigma (cm-1) to infinity.
+  //  result is W/m2/sr.
+  //  follows Widger and Woodall, Bulletin of the American Meteorological
+  //  Society, Vol. 57, No. 10, pp. 1217
+  //  constants
+  double Planck =  6.6260693e-34 ;
+  double Boltzmann = 1.380658e-23 ;
+  double Speed_of_light = 299792458.0 ;
+  double Speed_of_light_sq = Speed_of_light * Speed_of_light ;
+
+  //  compute powers of x, the dimensionless spectral coordinate
+  double c1 =  (Planck*Speed_of_light/Boltzmann) ;
+  double x =  c1 * 100 * sigma / temperature ;
+  double x2 = x *  x  ;
+  double x3 = x *  x2 ;
+  double x4 = x *  x3 ;
+
+  //  decide how many terms of sum are needed
+  double iterations = 2.0 + 20.0/x ;
+  iterations = (iterations<512) ? iterations : 512 ;
+  int iter = int(iterations) ;
+
+  //  add up terms of sum
+  double sum = 0  ;
+  for (int n=1;  n<iter; n++)
+    {
+      double  dn = 1.0/n ;
+      sum  += n * exp(-n*x) * (x4 + 4.*(x3 + 3.*(x2 + 2.*(x + dn)*dn)*dn)*dn)*dn ;
+    }
+
+  //  return result, in units of W/m2/sr
+  double c2 =  (2.0*Planck*Speed_of_light_sq) ;
+  return c2/c1*std::pow(temperature/c1,3)*sum ;
+}
 
 #ifdef HEADER_IMPLEMENTATION
 #include <EquationData.cc>
