@@ -18,7 +18,7 @@ template class PSCPreconditioner<3, LA::MPI::Vector, float, false>;
 #ifndef MATRIXFREE
 // D = dim ; P = fe degree ; T = value type ; S = same diagonal
 #undef I
-#define I(D,P,T,S) template void PSCPreconditioner<D, LA::MPI::Vector, T, S>::initialize(MWOperator<D, P, T> const&, PSCPreconditioner<D, LA::MPI::Vector, T, S>::AdditionalData const&)
+#define I(D,P,T,S) template void PSCPreconditioner<D, LA::MPI::Vector, T, S>::initialize(MFOperator<D, P, T> const&, PSCPreconditioner<D, LA::MPI::Vector, T, S>::AdditionalData const&)
 
 I(2,1,double,true);I(2,2,double,true);I(2,3,double,true);I(2,4,double,true);
 I(2,1,double,false);I(2,2,double,false);I(2,3,double,false);I(2,4,double,false);
@@ -29,7 +29,7 @@ I(3,1,double,false);I(3,2,double,false);I(3,3,double,false);I(3,4,double,false);
 #else // MATRIXFREE ON
 // D = dim ; P = fe degree ; T = value type ; S = same diagonal
 #undef I
-#define I(D,P,T,S) template void PSCPreconditioner<D, LA::MPI::Vector, T, S>::initialize(MFOperator<D, P, P+1, T> const&, PSCPreconditioner<D, LA::MPI::Vector, T, S>::AdditionalData const&)
+#define I(D,P,T,S) template void PSCPreconditioner<D, LA::MPI::Vector, T, S>::initialize(MfreeOperator<D, P, P+1, T> const&, PSCPreconditioner<D, LA::MPI::Vector, T, S>::AdditionalData const&)
 
 I(2,1,double,true);I(2,2,double,true);I(2,3,double,true);I(2,4,double,true);
 I(2,1,double,false);I(2,2,double,false);I(2,3,double,false);I(2,4,double,false);

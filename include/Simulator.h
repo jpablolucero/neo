@@ -40,7 +40,7 @@
 #include <deal.II/numerics/vector_tools.templates.h>
 
 #include <MFOperator.h>
-#include <MWOperator.h>
+#include <MfreeOperator.h>
 #include <EquationData.h>
 #include <ResidualSimpleConstraints.h>
 #include <PSCPreconditioner.h>
@@ -65,9 +65,9 @@ public:
   unsigned int smoothing_steps ;
 private:
 #ifdef MATRIXFREE
-  typedef MFOperator<dim,fe_degree,fe_degree+1,double> SystemMatrixType;
+  typedef MfreeOperator<dim,fe_degree,fe_degree+1,double> SystemMatrixType;
 #else
-  typedef MWOperator<dim,fe_degree,double> SystemMatrixType;
+  typedef MFOperator<dim,fe_degree,double> SystemMatrixType;
 #endif // MATRIXFREE
 
   void setup_system ();

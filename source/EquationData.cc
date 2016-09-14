@@ -1,6 +1,3 @@
-#ifndef EQUATIONDATA_CC
-#define EQUATIONDATA_CC
-
 #include <EquationData.h>
 
 template <int dim>
@@ -253,7 +250,3 @@ template class MFRightHandSide<3>;
 template class MFDiffCoefficient<1>;
 template class MFDiffCoefficient<2>;
 template class MFDiffCoefficient<3>;
-
-#endif // EQUATIONDATA_CC
-
-

@@ -32,7 +32,7 @@ namespace implementation
 
       dealii::ReductionControl          solver_control;
       dealii::SolverCG<LA::MPI::Vector> solver;
-      MWOperator<dim,1>                 system_matrix;
+      MFOperator<dim,1>                 system_matrix;
 
       dealii::Vector<number>  local_src;
       const VectorType *src;

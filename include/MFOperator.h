@@ -1,89 +1,83 @@
 #ifndef MFOPERATOR_H
 #define MFOPERATOR_H
 
-#ifdef MATRIXFREE
+#ifndef MATRIXFREE
 
 #include <deal.II/base/std_cxx11/function.h>
 #include <deal.II/base/timer.h>
-
-#include <deal.II/dofs/dof_handler.h>
-
+#include <deal.II/base/graph_coloring.h>
+#include <deal.II/grid/tria.h>
 #include <deal.II/fe/mapping_q1.h>
 #include <deal.II/fe/fe_dgq.h>
-
-#include <deal.II/grid/tria.h>
-
+#include <deal.II/dofs/dof_handler.h>
 #include <deal.II/lac/vector.h>
-
-#include <deal.II/matrix_free/matrix_free.h>
-#include <deal.II/matrix_free/fe_evaluation.h>
+#include <deal.II/lac/full_matrix.h>
+#include <deal.II/meshworker/simple.h>
+#include <deal.II/meshworker/loop.h>
+#include <deal.II/lac/lapack_full_matrix.h>
 
 #include <GenericLinearAlgebra.h>
 #include <Integrators.h>
+#include <integration_loop.h>
+#include <MGMatrixSimpleMapped.h>
+
+#include <functional>
 
 
-
-template <int dim, int fe_degree, int n_q_points_1d=fe_degree+1, typename number=double>
+template <int dim, int fe_degree, typename number=double>
 class MFOperator final: public dealii::Subscriptor
 {
 public:
   typedef double value_type ;
   typedef LA::MPI::SparseMatrixSizeType                         size_type ;
+  typedef typename dealii::DoFHandler<dim>::level_cell_iterator level_cell_iterator ;
+  typedef typename dealii::LAPACKFullMatrix<double>             LAPACKMatrix ;
 
-  /*
-   *  Construction & Initialization
-   */
   MFOperator () ;
-
   ~MFOperator () ;
+  MFOperator (const MFOperator &operator_);
+  MFOperator &operator = (const MFOperator &) = delete;
 
-  MFOperator (const MFOperator &operator_) = delete ;
+  void reinit (const dealii::DoFHandler<dim> *dof_handler_,
+               const dealii::Mapping<dim> *mapping_,
+               const dealii::ConstraintMatrix *constraints,
+               const MPI_Comm &mpi_communicator_,
+               const unsigned int level_ = dealii::numbers::invalid_unsigned_int);
 
-  MFOperator &operator = (const MFOperator &) = delete ;
+  void set_cell_range (const std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> &cell_range_);
 
-  void
-  reinit (const dealii::DoFHandler<dim> *dof_handler_,
-          const dealii::Mapping<dim> *mapping_,
-          const dealii::ConstraintMatrix *constraints,
-          const MPI_Comm &mpi_communicator_,
-          const unsigned int level_ = dealii::numbers::invalid_unsigned_int) ;
+  void set_timer (dealii::TimerOutput &timer_);
 
-  /*
-   *  Vector multiplication
-   */
-  void
-  vmult (LA::MPI::Vector &dst,
-         const LA::MPI::Vector &src) const ;
-  void
-  vmult_add (LA::MPI::Vector &dst,
-             const LA::MPI::Vector &src) const ;
-  void
-  Tvmult (LA::MPI::Vector &dst,
-          const LA::MPI::Vector &src) const ;
-  void
-  Tvmult_add (LA::MPI::Vector &dst,
+  // TODO parallel::distributed case
+#if PARALLEL_LA < 3
+  void build_coarse_matrix();
+#endif
+
+  void clear () ;
+
+  void vmult (LA::MPI::Vector &dst,
               const LA::MPI::Vector &src) const ;
+  void Tvmult (LA::MPI::Vector &dst,
+               const LA::MPI::Vector &src) const ;
+  void vmult_add (LA::MPI::Vector &dst,
+                  const LA::MPI::Vector &src) const ;
+  void Tvmult_add (LA::MPI::Vector &dst,
+                   const LA::MPI::Vector &src) const ;
 
-  /*
-   *  Utilities
-   */
-  void
-  initialize_dof_vector (LA::MPI::Vector &vector) const;
+  // TODO parallel::distributed case
+#if PARALLEL_LA < 3
+  const LA::MPI::SparseMatrix &get_coarse_matrix() const
+  {
+    return coarse_matrix;
+  }
+#endif
 
-  void
-  set_timer (dealii::TimerOutput &timer_) ;
-
-  /*
-   *  General information
-   */
-  unsigned int
-  m() const
+  unsigned int m() const
   {
     return dof_handler->n_dofs(level);
   }
 
-  unsigned int
-  n() const
+  unsigned int n() const
   {
     return dof_handler->n_dofs(level);
   }
@@ -97,13 +91,24 @@ private:
   MPI_Comm                                            mpi_communicator;
   dealii::TimerOutput                                 *timer;
 
-  dealii::MatrixFree<dim,double>                      data;
-  MFIntegrator<dim,fe_degree,n_q_points_1d,1,double>  mf_integrator;
+  std::unique_ptr<dealii::MeshWorker::DoFInfo<dim> >  dof_info;
+  mutable dealii::MeshWorker::IntegrationInfoBox<dim> info_box;
+  mutable dealii::MGLevelObject<LA::MPI::Vector>      ghosted_src;
+  const std::vector<level_cell_iterator>              *cell_range;
+  bool                                                use_cell_range;
+  std::vector<std::vector<level_cell_iterator> >      colored_iterators;
+  ResidualIntegrator<dim>                             residual_integrator;
+
+#if PARALLEL_LA < 3
+  dealii::SparsityPattern                             sp;
+  LA::MPI::SparseMatrix                               coarse_matrix;
+  MatrixIntegrator<dim>                               matrix_integrator;
+#endif // PARALLEL_LA
 };
 
 #ifdef HEADER_IMPLEMENTATION
-#include <MFOperator.cc>
+#include <MWOperator.cc>
 #endif
 
-#endif // MATRIXFREE
+#endif // MATRIXFREE OFF
 #endif // MFOPERATOR_H

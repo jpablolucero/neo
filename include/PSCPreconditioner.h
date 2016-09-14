@@ -18,7 +18,7 @@
 #include <GenericLinearAlgebra.h>
 #include <DDHandler.h>
 #include <MFOperator.h>
-#include <MWOperator.h>
+#include <MfreeOperator.h>
 #include <PSCIntegrators.h>
 #include <integration_loop.h>
 #include <MGMatrixSimpleMapped.h>
