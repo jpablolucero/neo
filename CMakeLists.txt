@@ -13,7 +13,7 @@ ENDIF()
 DEAL_II_INITIALIZE_CACHED_VARIABLES()
 PROJECT(neo)
 
-SET(PARALLEL_LA 3 CACHE STRING "Use LinearAlgebra::deal.II (0) PETSc(1) Trilinos(2) or parallel::deal.II (3)?")
+SET(PARALLEL_LA 2 CACHE STRING "Use LinearAlgebra::deal.II (0) PETSc(1) Trilinos(2) or parallel::deal.II (3)?")
 ADD_DEFINITIONS(-DPARALLEL_LA=${PARALLEL_LA})
 
 SET(MAXTHREADS 0 CACHE STRING "Maximum number of threads used per MPI process, 0 means no limit")
@@ -24,7 +24,7 @@ IF(CG)
   ADD_DEFINITIONS(-DCG)
 ENDIF()
 
-OPTION(MATRIXFREE "Use DealII's MatrixFree objects?" ON)
+OPTION(MATRIXFREE "Use DealII's MatrixFree objects?" OFF)
 IF(MATRIXFREE)
   ADD_DEFINITIONS(-DMATRIXFREE)
 ENDIF()

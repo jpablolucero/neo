@@ -124,11 +124,6 @@ void PSCPreconditioner<dim,VectorType,number,same_diagonal>::initialize(const Gl
   info_box.cell_selector.add("Newton iterate", true, true, false);
   info_box.boundary_selector.add("Newton iterate", true, true, false);
   info_box.face_selector.add("Newton iterate", true, true, false);
-  // // TODO do we really have to do this twice?
-  // dealii::IndexSet locally_owned_level_dofs = dof_handler.locally_owned_mg_dofs(level);
-  // dealii::IndexSet locally_relevant_level_dofs;
-  // dealii::DoFTools::extract_locally_relevant_level_dofs
-  // (dof_handler, level, locally_relevant_level_dofs);
 
 #ifndef MATRIXFREE
   dealii::AnyData src_data ;
