@@ -14,22 +14,24 @@ namespace LocalIntegrators
     inline void
     cell_matrix(dealii::FullMatrix<double> &M,
                 const dealii::FEValuesBase<dim> &fe,
-                const std::vector<double> &coeff_values,
-                const double factor = 1.)
+                const std::vector<double> &factor)
     {
       const unsigned int n_dofs = fe.dofs_per_cell;
+      const unsigned int n_comps = fe.get_fe().n_components();
       const unsigned int n_quads = fe.n_quadrature_points;
 
       for (unsigned int q=0; q<n_quads; ++q)
         {
-          const double dx = coeff_values[q] * fe.JxW(q) * factor;
+          const double dx = fe.JxW(q) * factor[q];
           for (unsigned int i=0; i<n_dofs; ++i)
             {
-              M(i,i) += dx * fe.shape_grad(i,q) * fe.shape_grad(i,q);
+              for (unsigned int d=0; d<n_comps; ++d)
+                M(i,i) += dx * (fe.shape_grad_component(i,q,d) * fe.shape_grad_component(i,q,d));
               for (unsigned int j=i+1; j<n_dofs; ++j)
                 {
                   double Mij = 0.0;
-                  Mij += dx * fe.shape_grad(j,q) * fe.shape_grad(i,q);
+                  for (unsigned int d=0; d<n_comps; ++d)
+                    Mij += dx * (fe.shape_grad_component(j,q,d) * fe.shape_grad_component(i,q,d));
                   M(i,j) += Mij;
                   M(j,i) += Mij;
                 }
@@ -85,6 +87,8 @@ namespace LocalIntegrators
     {
       const unsigned int n_dofs = feINT.dofs_per_cell;
       const unsigned int n_quads = feINT.n_quadrature_points;
+      const unsigned int n_comps = feINT.get_fe().n_components();
+
       const double nuINT = int_factor;
       const double nuEXT = (ext_factor < 0) ? int_factor : ext_factor;
       const double nupenalty = .5*(nuINT+nuEXT)*penalty;
@@ -106,18 +110,21 @@ namespace LocalIntegrators
             {
               for (unsigned int j=0; j<n_dofs; ++j)
                 {
-                  const double vINT = feINT.shape_value(i,q);
-                  const double dnvINT = n * feINT.shape_grad(i,q);
-                  const double vEXT = feEXT.shape_value(i,q);
-                  const double dnvEXT = n * feEXT.shape_grad(i,q);
-                  const double uINT = feINT.shape_value(j,q);
-                  const double dnuINT = n * feINT.shape_grad(j,q);
-                  const double uEXT = feEXT.shape_value(j,q);
-                  const double dnuEXT = n * feEXT.shape_grad(j,q);
-                  M_INT_INT(i,j) += coeff_values[q]*dx*(-.5*nuINT*dnvINT*uINT-.5*nuINT*dnuINT*vINT+nupenalty*uINT*vINT);
-                  M_INT_EXT(i,j) += coeff_values[q]*dx*( .5*nuINT*dnvINT*uEXT-.5*nuEXT*dnuEXT*vINT-nupenalty*vINT*uEXT);
-                  M_EXT_INT(i,j) += coeff_values[q]*dx*(-.5*nuEXT*dnvEXT*uINT+.5*nuINT*dnuINT*vEXT-nupenalty*uINT*vEXT);
-                  M_EXT_EXT(i,j) += coeff_values[q]*dx*( .5*nuEXT*dnvEXT*uEXT+.5*nuEXT*dnuEXT*vEXT+nupenalty*uEXT*vEXT);
+                  for (unsigned int d=0; d<n_comps; ++d)
+                    {
+                      const double vINT = feINT.shape_value(i,q);
+                      const double dnvINT = n * feINT.shape_grad_component(i,q,d);
+                      const double vEXT = feEXT.shape_value(i,q);
+                      const double dnvEXT = n * feEXT.shape_grad_component(i,q,d);
+                      const double uINT = feINT.shape_value(j,q);
+                      const double dnuINT = n * feINT.shape_grad_component(j,q,d);
+                      const double uEXT = feEXT.shape_value(j,q);
+                      const double dnuEXT = n * feEXT.shape_grad_component(j,q,d);
+                      M_INT_INT(i,j) += coeff_values[q]*dx*(-.5*nuINT*dnvINT*uINT-.5*nuINT*dnuINT*vINT+nupenalty*uINT*vINT);
+                      M_INT_EXT(i,j) += coeff_values[q]*dx*( .5*nuINT*dnvINT*uEXT-.5*nuEXT*dnuEXT*vINT-nupenalty*vINT*uEXT);
+                      M_EXT_INT(i,j) += coeff_values[q]*dx*(-.5*nuEXT*dnvEXT*uINT+.5*nuINT*dnuINT*vEXT-nupenalty*uINT*vEXT);
+                      M_EXT_EXT(i,j) += coeff_values[q]*dx*( .5*nuEXT*dnvEXT*uEXT+.5*nuEXT*dnuEXT*vEXT+nupenalty*uEXT*vEXT);
+                    }
                 }
             }
         }
@@ -189,6 +196,7 @@ namespace LocalIntegrators
                     double factor = 1.)
     {
       const unsigned int n_dofs = fe.dofs_per_cell;
+      const unsigned int n_comps = fe.get_fe().n_components();
       const unsigned int n_quads = fe.n_quadrature_points;
 
       Assert (M.m() == n_dofs, dealii::ExcDimensionMismatch(M.m(), n_dofs));
@@ -200,9 +208,10 @@ namespace LocalIntegrators
           const dealii::Tensor<1,dim> n = fe.normal_vector(q);
           for (unsigned int i=0; i<n_dofs; ++i)
             for (unsigned int j=0; j<n_dofs; ++j)
-              M(i,j) += dx * (2.*penalty * fe.shape_value(i,q) * fe.shape_value(j,q)
-                              - (n * fe.shape_grad(i,q)) * fe.shape_value(j,q)
-                              - (n * fe.shape_grad(j,q)) * fe.shape_value(i,q)      );
+              for (unsigned int d=0; d<n_comps; ++d)
+                M(i,j) += dx * (2.*penalty * fe.shape_value(i,q) * fe.shape_value(j,q)
+                                - (n * fe.shape_grad_component(i,q)) * fe.shape_value(j,q)
+                                - (n * fe.shape_grad_component(j,q)) * fe.shape_value(i,q)      );
         }
     }
 
@@ -298,6 +307,8 @@ namespace LocalIntegrators
     {
       const unsigned int n_dofs = feINT.dofs_per_cell;
       const unsigned int n_quads = feINT.n_quadrature_points;
+      const unsigned int n_comps = feINT.get_fe().n_components();
+
       const double nuINT = int_factor;
       const double nuEXT = (ext_factor < 0) ? int_factor : ext_factor;
       const double nupenalty = .5 * penalty  * (nuINT + nuEXT);
@@ -314,18 +325,21 @@ namespace LocalIntegrators
 
           for (unsigned int i=0; i<n_dofs; ++i)
             {
-              const double vINT = feINT.shape_value(i,q);
-              const double dnvINT = feINT.shape_grad(i,q) * normal_vectorINT;
-              const double vEXT = feEXT.shape_value(i,q);
-              const double dnvEXT = feEXT.shape_grad(i,q) * normal_vectorINT;
-              const double uINT = inputINT[q];
-              const double dnuINT = DinputINT[q] * normal_vectorINT;
-              const double uEXT = inputEXT[q];
-              const double dnuEXT = DinputEXT[q] * normal_vectorINT;
-              resultINT(i) += dx*( nupenalty*vINT*uINT  - .5*(nuINT*dnvINT*uINT + nuINT*vINT*dnuINT) );
-              resultINT(i) += dx*( -nupenalty*vINT*uEXT + .5*(nuINT*dnvINT*uEXT - nuEXT*vINT*dnuEXT) );
-              resultEXT(i) += dx*( -nupenalty*vEXT*uINT - .5*(nuEXT*dnvEXT*uINT - nuINT*vEXT*dnuINT) );
-              resultEXT(i) += dx*( nupenalty*vEXT*uEXT  + .5*(nuEXT*dnvEXT*uEXT + nuEXT*vEXT*dnuEXT) );
+              for (unsigned int d=0; d<n_comps; ++d)
+                {
+                  const double vINT = feINT.shape_value(i,q);
+                  const double dnvINT = feINT.shape_grad_component(i,q,d) * normal_vectorINT;
+                  const double vEXT = feEXT.shape_value(i,q);
+                  const double dnvEXT = feEXT.shape_grad_component(i,q,d) * normal_vectorINT;
+                  const double uINT = inputINT[q];
+                  const double dnuINT = DinputINT[q] * normal_vectorINT;
+                  const double uEXT = inputEXT[q];
+                  const double dnuEXT = DinputEXT[q] * normal_vectorINT;
+                  resultINT(i) += dx*( nupenalty*vINT*uINT  - .5*(nuINT*dnvINT*uINT + nuINT*vINT*dnuINT) );
+                  resultINT(i) += dx*( -nupenalty*vINT*uEXT + .5*(nuINT*dnvINT*uEXT - nuEXT*vINT*dnuEXT) );
+                  resultEXT(i) += dx*( -nupenalty*vEXT*uINT - .5*(nuEXT*dnvEXT*uINT - nuINT*vEXT*dnuINT) );
+                  resultEXT(i) += dx*( nupenalty*vEXT*uEXT  + .5*(nuEXT*dnvEXT*uEXT + nuEXT*vEXT*dnuEXT) );
+                }
             }
         }
     }

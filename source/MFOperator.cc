@@ -46,7 +46,8 @@ void MFOperator<dim,fe_degree,number>::reinit
  const dealii::Mapping<dim> *mapping_,
  const dealii::ConstraintMatrix *constraints_,
  const MPI_Comm &mpi_communicator_,
- const unsigned int level_)
+ const unsigned int level_,
+ LA::MPI::Vector solution_)
 {
   timer->enter_subsection("MFOperator::reinit");
   // Initialize member variables
@@ -75,7 +76,29 @@ void MFOperator<dim,fe_degree,number>::reinit
   info_box.cell_selector.add("src", true, true, false);
   info_box.boundary_selector.add("src", true, true, false);
   info_box.face_selector.add("src", true, true, false);
-  // Setup "colorized iterators"
+  info_box.cell_selector.add("Newton iterate", true, true, false);
+  info_box.boundary_selector.add("Newton iterate", true, true, false);
+  info_box.face_selector.add("Newton iterate", true, true, false);
+
+  dealii::IndexSet locally_owned_level_dofs = dof_handler->locally_owned_mg_dofs(level);
+  dealii::IndexSet locally_relevant_level_dofs;
+  dealii::DoFTools::extract_locally_relevant_level_dofs
+  (*dof_handler, level, locally_relevant_level_dofs);
+
+  ghosted_src.resize(level, level);
+  ghosted_solution.resize(level, level);
+#if PARALLEL_LA == 0
+  ghosted_src[level].reinit(locally_owned_level_dofs.n_elements());
+  ghosted_solution[level].reinit(locally_owned_level_dofs.n_elements());
+#else // PARALLEL_LA != 0
+  ghosted_src[level].reinit(locally_owned_level_dofs,
+                            locally_relevant_level_dofs,
+                            mpi_communicator_);
+  ghosted_solution[level].reinit(locally_owned_level_dofs,
+                                 locally_relevant_level_dofs,
+                                 mpi_communicator_);
+#endif //PARALLEL_LA
+  ghosted_solution[level] = solution_ ;
   // TODO possibly colorize iterators, assume thread-safety for the moment
   std::vector<std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> >
   all_iterators(static_cast<unsigned int>(std::pow(2,dim)));
@@ -94,19 +117,6 @@ void MFOperator<dim,fe_degree,number>::reinit
     }
   colored_iterators = std::move(all_iterators);
 
-  // Initialize ghosted src
-  ghosted_src.resize(level, level);
-#if PARALLEL_LA != 0
-  dealii::IndexSet locally_owned_level_dofs = dof_handler->locally_owned_mg_dofs(level);
-  dealii::IndexSet locally_relevant_level_dofs;
-  dealii::DoFTools::extract_locally_relevant_level_dofs
-  (*dof_handler, level, locally_relevant_level_dofs);
-  ghosted_src[level].reinit(locally_owned_level_dofs,
-                            locally_relevant_level_dofs,
-                            mpi_communicator_);
-#else // PARALLEL_LA == 0
-  ghosted_src[level].reinit(locally_owned_level_dofs.n_elements());
-#endif // PARALLEL_LA
   timer->leave_subsection();
 }
 
@@ -124,12 +134,15 @@ template <int dim, int fe_degree, typename number>
 void MFOperator<dim,fe_degree,number>::build_coarse_matrix()
 {
   Assert(dof_handler != 0, dealii::ExcInternalError());
-  info_box.initialize( *fe, *mapping, &(dof_handler->block_info()));
   dealii::MGLevelObject<LA::MPI::SparseMatrix> mg_matrix ;
   mg_matrix.resize(level,level);
   dealii::IndexSet locally_relevant_level_dofs;
   dealii::DoFTools::extract_locally_relevant_level_dofs(*dof_handler,level,locally_relevant_level_dofs);
   dealii::DynamicSparsityPattern dsp(locally_relevant_level_dofs);
+  dealii::AnyData src_data ;
+  src_data.add<const dealii::MGLevelObject<LA::MPI::Vector >*>(&ghosted_src,"src");
+  src_data.add<const dealii::MGLevelObject<LA::MPI::Vector >*>(&ghosted_solution,"Newton iterate");
+  info_box.initialize(*fe, *mapping, src_data, LA::MPI::Vector {}, &(dof_handler->block_info()));
   //for the coarse matrix, we want to assemble always everything
   dealii::MGTools::make_flux_sparsity_pattern(*dof_handler,dsp,level);
 #if PARALLEL_LA == 0
@@ -143,7 +156,7 @@ void MFOperator<dim,fe_degree,number>::build_coarse_matrix()
   dealii::MeshWorker::Assembler::MGMatrixSimple<LA::MPI::SparseMatrix> assembler;
   assembler.initialize(mg_matrix);
 #ifdef CG
-  assembler.initialize(constraints);
+  assembler.initialize(*mg_constrained_dofs);
 #endif // CG
   dealii::colored_loop<dim, dim> (colored_iterators, *dof_info, info_box, matrix_integrator, assembler);
   mg_matrix[level].compress(dealii::VectorOperation::add);
@@ -152,6 +165,8 @@ void MFOperator<dim,fe_degree,number>::build_coarse_matrix()
 #else
   coarse_matrix.copy_from(mg_matrix[level]);
 #endif // PARALLEL_LA
+//  std::cout<<"coarse matrix" << std::endl;
+//  coarse_matrix.print(std::cout);
 }
 
 #endif // PARALLEL_LA < 3
@@ -182,7 +197,8 @@ template <int dim, int fe_degree, typename number>
 void MFOperator<dim,fe_degree,number>::vmult_add (LA::MPI::Vector &dst,
                                                   const LA::MPI::Vector &src) const
 {
-  timer->enter_subsection("MFOperator::initialize ("+ dealii::Utilities::int_to_string(level)+ ")");
+  if (!use_cell_range)
+    timer->enter_subsection("MFOperator::initialize ("+ dealii::Utilities::int_to_string(level)+ ")");
   // Initialize MPI vectors
   ghosted_src[level] = std::move(src);
   dealii::IndexSet locally_owned_level_dofs = dof_handler->locally_owned_mg_dofs(level);
@@ -198,23 +214,29 @@ void MFOperator<dim,fe_degree,number>::vmult_add (LA::MPI::Vector &dst,
   // Setup AnyData
   dealii::AnyData dst_data;
   dst_data.add<LA::MPI::Vector *>(&dst, "dst");
+  ghosted_src[level] = std::move(src);
   dealii::AnyData src_data ;
   src_data.add<const dealii::MGLevelObject<LA::MPI::Vector >*>(&ghosted_src,"src");
-  timer->leave_subsection();
+  src_data.add<const dealii::MGLevelObject<LA::MPI::Vector >*>(&ghosted_solution,"Newton iterate");
+  if (!use_cell_range)
+    timer->leave_subsection();
 
-  timer->enter_subsection("MFOperator::assembler_setup ("+ dealii::Utilities::int_to_string(level)+ ")");
+  if (!use_cell_range)
+    timer->enter_subsection("MFOperator::assembler_setup ("+ dealii::Utilities::int_to_string(level)+ ")");
   info_box.initialize(*fe, *mapping, src_data, src, &(dof_handler->block_info()));
   dealii::MeshWorker::Assembler::ResidualSimple<LA::MPI::Vector > assembler;
   assembler.initialize(dst_data);
-  timer->leave_subsection();
+  if (!use_cell_range)
+    timer->leave_subsection();
 
-  timer->enter_subsection("MFOperator::loop ("+ dealii::Utilities::int_to_string(level)+ ")");
+  if (!use_cell_range)
+    timer->enter_subsection("MFOperator::loop ("+ dealii::Utilities::int_to_string(level)+ ")");
   {
     dealii::MeshWorker::LoopControl lctrl;
     //TODO possibly colorize iterators, assume thread-safety for the moment
     if (use_cell_range)
       {
-        lctrl.faces_to_ghost = dealii::MeshWorker::LoopControl::both;
+        lctrl.faces_to_ghost = dealii::MeshWorker::LoopControl::one;
         lctrl.ghost_cells = true;
         dealii::colored_loop<dim, dim> (colored_iterators,
                                         *dof_info,
@@ -234,13 +256,14 @@ void MFOperator<dim,fe_degree,number>::vmult_add (LA::MPI::Vector &dst,
                                         lctrl);
       }
   }
-  timer->leave_subsection();
+  if (!use_cell_range)
+    timer->leave_subsection();
 }
 
 template <int dim, int fe_degree, typename number>
-void MFOperator<dim,fe_degree,number>::Tvmult_add
-(LA::MPI::Vector &dst,
- const LA::MPI::Vector &src) const
+void
+MFOperator<dim,fe_degree,number>::Tvmult_add (LA::MPI::Vector &dst,
+                                              const LA::MPI::Vector &src) const
 {
   vmult_add(dst, src);
 }

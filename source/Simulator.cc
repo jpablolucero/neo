@@ -21,7 +21,10 @@ Simulator<dim,same_diagonal,degree>::Simulator (dealii::TimerOutput &timer_,
   reference_function(fe.n_components()),
   dof_handler (triangulation),
   pcout (pcout_),
-  timer(timer_)
+  timer(timer_),
+  residual(*this),
+  inverse(*this),
+  newton(residual,inverse)
 {
   // initialize timer
   system_matrix.set_timer(timer);
@@ -38,20 +41,13 @@ Simulator<dim,same_diagonal,degree>::Simulator (dealii::TimerOutput &timer_,
   pcout<< "Using FE_Q elements" << std::endl;
 #else
   pcout<< "Using FE_DGQ elements" << std::endl;
-#endif
+#endif //CG
+
 #ifdef MATRIXFREE
   pcout << "Using deal.II's MatrixFree objects" << std::endl;
 #else
   pcout << "Using MeshWorker-based matrix-free implementation" << std::endl;
-#endif
-  // std::vector<unsigned int> subdivisions(2, 1);
-  // subdivisions[0]=2;
-  // dealii::Point<dim> p1;
-  // dealii::Point<dim> p2;
-  // p2(0)=2.;
-  // for (unsigned int i=1; i<dim; ++i)
-  //   p2(i)=1.;
-  // dealii::GridGenerator::subdivided_hyper_rectangle (triangulation,subdivisions, p1, p2, true);
+#endif // MATRIXFREE
   dealii::GridGenerator::hyper_cube(triangulation,0.,1.,true);
 
 #ifdef PERIODIC
@@ -181,27 +177,33 @@ void Simulator<dim, same_diagonal, degree>::assemble_system ()
   dealii::MeshWorker::IntegrationInfoBox<dim> info_box;
   const unsigned int n_gauss_points = degree+1;
 #ifdef CG
-  info_box.initialize_gauss_quadrature(n_gauss_points,0,0);
+  info_box.initialize_gauss_quadrature(n_gauss_points,n_gauss_points,n_gauss_points);
 #else
-  info_box.initialize_gauss_quadrature(n_gauss_points,n_gauss_points,0);
+  info_box.initialize_gauss_quadrature(n_gauss_points,n_gauss_points,n_gauss_points);
 #endif // CG
   info_box.initialize_update_flags();
   dealii::UpdateFlags update_flags = dealii::update_quadrature_points |
                                      dealii::update_values | dealii::update_gradients;
-  info_box.add_update_flags(update_flags, true, true, false, false);
+  info_box.add_update_flags(update_flags, true, true, true, true);
+  info_box.cell_selector.add("Newton iterate", true, true, false);
+  info_box.boundary_selector.add("Newton iterate", true, true, false);
+  info_box.face_selector.add("Newton iterate", true, true, false);
 
-  dealii::AnyData data;
+  dealii::AnyData src_data;
 #ifdef MATRIXFREE
   info_box.initialize(fe, mapping);
   dealii::MeshWorker::DoFInfo<dim> dof_info(dof_handler);
-  data.add<LA::MPI::Vector *>(&right_hand_side, "RHS");
 #else
-  info_box.initialize(fe, mapping, &(dof_handler.block_info()));
+  src_data.add<const LA::MPI::Vector *>(&solution,"Newton iterate");
+  info_box.initialize(fe,mapping,src_data,LA::MPI::Vector {},&(dof_handler.block_info()));
   dealii::MeshWorker::DoFInfo<dim> dof_info(dof_handler.block_info());
-  data.add<LA::MPI::Vector *>(&right_hand_side, "RHS");
 #endif // MATRIXFREE
 
+  dealii::AnyData data;
+  data.add<LA::MPI::Vector *>(&right_hand_side, "RHS");
+
   ResidualSimpleConstraints<LA::MPI::Vector > rhs_assembler;
+//  dealii::MeshWorker::Assembler::ResidualSimple<LA::MPI::Vector > rhs_assembler;
   rhs_assembler.initialize(data);
 #ifdef CG
   rhs_assembler.initialize(constraints);
@@ -223,11 +225,24 @@ void Simulator<dim,same_diagonal,degree>::setup_multigrid ()
 {
   const unsigned int n_global_levels = triangulation.n_global_levels();
   mg_matrix.resize(min_level, n_global_levels-1);
+#ifndef MATRIXFREE
+  dealii::MGTransferPrebuilt<LA::MPI::Vector> mg_transfer;
+  mg_transfer.build_matrices(dof_handler);
+  mg_solution.resize(min_level, n_global_levels-1);
+  mg_transfer.copy_to_mg(dof_handler,mg_solution,solution);
+  system_matrix.reinit (&dof_handler,&mapping, &constraints, mpi_communicator, triangulation.n_global_levels()-1, solution);
+  for (unsigned int level=min_level; level<n_global_levels; ++level)
+    {
+      mg_matrix[level].set_timer(timer);
+      mg_matrix[level].reinit(&dof_handler,&mapping,&constraints,mpi_communicator,level,mg_solution[level]);
+    }
+#else // MATRIXFREE ON
   for (unsigned int level=min_level; level<n_global_levels; ++level)
     {
       mg_matrix[level].set_timer(timer);
       mg_matrix[level].reinit(&dof_handler,&mapping,&constraints,mpi_communicator,level);
     }
+#endif // MATRIXFREE
 }
 
 template <int dim,bool same_diagonal,unsigned int degree>
@@ -237,23 +252,37 @@ void Simulator<dim,same_diagonal,degree>::solve ()
 #ifdef MG
   // Setup coarse solver
   dealii::SolverControl coarse_solver_control (dof_handler.n_dofs(min_level)*10, 1e-10, false, false);
-  dealii::SolverCG<LA::MPI::Vector> coarse_solver(coarse_solver_control);
   dealii::PreconditionIdentity id;
 #if PARALLEL_LA < 3
   mg_matrix[min_level].build_coarse_matrix();
   const LA::MPI::SparseMatrix &coarse_matrix = mg_matrix[min_level].get_coarse_matrix();
-  dealii::MGCoarseGridLACIteration<dealii::SolverCG<LA::MPI::Vector>,LA::MPI::Vector> mg_coarse(coarse_solver,
-      coarse_matrix,
-      id);
+  dealii::SolverGMRES<LA::MPI::Vector> coarse_solver(coarse_solver_control);
+  // CARE you need the new workaround for MGCoarseGridLACIteration in mg_coarse.h.
+  // Hopefully to be fixed soon in deal.II!
+  dealii::MGCoarseGridLACIteration<dealii::SolverGMRES<LA::MPI::Vector>,
+         LA::MPI::Vector,
+         LA::MPI::SparseMatrix,
+         dealii::PreconditionIdentity>
+         mg_coarse(coarse_solver,
+                   coarse_matrix,
+                   id);
 #else // PARALLEL_LA == 3
   // TODO allow for Matrix-based solver
-  dealii::MGCoarseGridLACIteration<dealii::SolverCG<LA::MPI::Vector>,LA::MPI::Vector> mg_coarse(coarse_solver,
-      mg_matrix[min_level],
-      id);
+  // CARE you need the new workaround for MGCoarseGridLACIteration in mg_coarse.h.
+  // Hopefully to be fixed soon in deal.II!
+  dealii::SolverCG<LA::MPI::Vector> coarse_solver(coarse_solver_control);
+  dealii::MGCoarseGridLACIteration<dealii::SolverCG<LA::MPI::Vector>,
+         LA::MPI::Vector,
+         SystemMatrixType,
+         dealii::PreconditionIdentity>
+         mg_coarse(coarse_solver,
+                   mg_matrix[min_level],
+                   id);
 #endif
 
   // Setup Multigrid-Smoother
   typedef PSCPreconditioner<dim, LA::MPI::Vector, double, same_diagonal> Smoother;
+  //typedef MFPSCPreconditioner<dim, LA::MPI::Vector, double> Smoother;
   Smoother::timer = &timer;
   dealii::MGLevelObject<typename Smoother::AdditionalData> smoother_data;
   smoother_data.resize(mg_matrix.min_level(), mg_matrix.max_level());
@@ -265,6 +294,11 @@ void Simulator<dim,same_diagonal,degree>::solve ()
       smoother_data[level].level = level;
       smoother_data[level].mapping = &mapping;
       smoother_data[level].relaxation = 0.7;
+      smoother_data[level].mg_constrained_dofs = mg_constrained_dofs;
+#ifndef MATRIXFREE
+      smoother_data[level].solution = &mg_solution[level];
+#endif // MATRIXFREE
+      smoother_data[level].mpi_communicator = mpi_communicator;
       //      uncomment to use the dictionary
       // if(!same_diagonal)
       //  {
@@ -281,10 +315,13 @@ void Simulator<dim,same_diagonal,degree>::solve ()
 #ifdef MATRIXFREE
   dealii::MGTransferMF<dim,SystemMatrixType> mg_transfer {mg_matrix};
   mg_transfer.build(dof_handler);
-#else
+#else // MATRIXFREE OFF
   dealii::MGTransferPrebuilt<LA::MPI::Vector> mg_transfer {};
+#ifdef CG
+  mg_transfer.initialize_constraints(constraints, mg_constrained_dofs);
+#endif // CG
   mg_transfer.build_matrices(dof_handler);
-#endif
+#endif // MATRIXFREE
 
   // Setup (Multigrid-)Preconditioner
   dealii::mg::Matrix<LA::MPI::Vector>         mglevel_matrix;
@@ -295,23 +332,24 @@ void Simulator<dim,same_diagonal,degree>::solve ()
                                         mg_transfer,
                                         mg_smoother,
                                         mg_smoother);
+  // mg.set_debug(10);
   mg.set_minlevel(mg_matrix.min_level());
   mg.set_maxlevel(mg_matrix.max_level());
-  // mg.set_debug(10);
 #ifdef MATRIXFREE
   dealii::PreconditionMG<dim, LA::MPI::Vector, dealii::MGTransferMF<dim,SystemMatrixType> >
   preconditioner(dof_handler, mg, mg_transfer);
 #else
   dealii::PreconditionMG<dim, LA::MPI::Vector, dealii::MGTransferPrebuilt<LA::MPI::Vector> >
   preconditioner(dof_handler, mg, mg_transfer);
-#endif
+#endif // MATRIXFREE
+
 #else // MG OFF
   dealii::PreconditionIdentity preconditioner;
 #endif // MG
 
   // Setup Solver
-  dealii::ReductionControl          solver_control (dof_handler.n_dofs(), 1.e-20, 1.e-10,true);
-  dealii::SolverCG<LA::MPI::Vector> solver (solver_control);
+  dealii::ReductionControl             solver_control (dof_handler.n_dofs(), 1.e-20, 1.e-10,true);
+  dealii::SolverGMRES<LA::MPI::Vector> solver (solver_control);
   timer.leave_subsection();
 
   // Solve the system
@@ -416,6 +454,7 @@ void Simulator<dim,same_diagonal,degree>::run ()
   setup_multigrid ();
   timer.leave_subsection();
 #endif
+  output_results(n_levels);
   timer.enter_subsection("solve");
   pcout << "Solve" << std::endl;
   solve ();
@@ -423,7 +462,53 @@ void Simulator<dim,same_diagonal,degree>::run ()
   timer.enter_subsection("output");
   pcout << "Output" << std::endl;
   compute_error();
-  //output_results(n_levels);
+  output_results(n_levels);
+  timer.leave_subsection();
+  timer.print_summary();
+  pcout << std::endl;
+  // workaround regarding issue #2533
+  // GrowingVectorMemory does not destroy the vectors
+  // after this instance goes out of scope.
+  // Unfortunately, the mpi_communicators given to the
+  // remaining vectors might be invalid the next time
+  // a vector is requested. Therefore, clean up everything
+  // before going out of scope.
+  dealii::GrowingVectorMemory<LA::MPI::Vector>::release_unused_memory();
+}
+
+template <int dim,bool same_diagonal,unsigned int degree>
+void Simulator<dim,same_diagonal,degree>::run_non_linear ()
+{
+  timer.reset();
+  timer.enter_subsection("refine_global");
+  pcout << "Refine global" << std::endl;
+  triangulation.refine_global (n_levels-1);
+  timer.leave_subsection();
+  pcout << "Finite element: " << fe.get_name() << std::endl;
+  pcout << "Number of active cells: "
+        << triangulation.n_global_active_cells()
+        << std::endl;
+  timer.enter_subsection("setup_system");
+  pcout << "Setup system" << std::endl;
+  setup_system ();
+  timer.leave_subsection();
+  dealii::deallog << "DoFHandler levels: ";
+  for (unsigned int l=0; l<triangulation.n_global_levels(); ++l)
+    dealii::deallog << ' ' << dof_handler.n_dofs(l);
+  dealii::deallog << std::endl;
+  auto sol = solution_tmp ;
+  for (auto &elem : sol) elem = 1. ;
+  dealii::AnyData solution_data;
+  solution_data.add(&sol, "solution");
+  dealii::AnyData data;
+  newton.control.set_reduction(1.E-10);
+  timer.enter_subsection("solve");
+  pcout << "Solve" << std::endl;
+  newton(solution_data, data);
+  solution = *(solution_data.try_read_ptr<LA::MPI::Vector>("solution"));
+  timer.leave_subsection();
+  timer.enter_subsection("output");
+  output_results(n_levels);
   timer.leave_subsection();
   timer.print_summary();
   pcout << std::endl;

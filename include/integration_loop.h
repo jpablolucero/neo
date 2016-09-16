@@ -188,8 +188,13 @@ namespace dealii
                   dof_info.exterior_face_available[face_no] = exterior_in_patch;
                   dof_info.interior[face_no].reinit(cell, face, face_no);
                   info.face.reinit(dof_info.interior[face_no]);
-                  dof_info.exterior[face_no].reinit(
-                    neighbor, neighbor->face(neighbor_face_no), neighbor_face_no);
+                  // HACK in case the cell is artificial, just give something valid
+                  // we are not interested in it since it is ignored later on.
+                  if (neighbor->active() && neighbor->is_artificial())
+                    dof_info.exterior[face_no].reinit(cell, face, face_no);
+                  else
+                    dof_info.exterior[face_no].reinit(
+                      neighbor, neighbor->face(neighbor_face_no), neighbor_face_no);
                   info.neighbor.reinit(dof_info.exterior[face_no]);
 
                   face_worker(dof_info.interior[face_no], dof_info.exterior[face_no],

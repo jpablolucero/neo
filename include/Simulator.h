@@ -2,6 +2,7 @@
 #define SIMULATOR_H
 
 #include <deal.II/algorithms/any_data.h>
+#include <deal.II/algorithms/newton.h>
 #include <deal.II/base/conditional_ostream.h>
 #include <deal.II/base/mg_level_object.h>
 #include <deal.II/base/mpi.h>
@@ -21,10 +22,14 @@
 #include <deal.II/lac/precondition.h>
 #include <deal.II/lac/solver_cg.h>
 #include <deal.II/lac/solver_gmres.h>
+#include <deal.II/lac/solver_richardson.h>
 #include <deal.II/lac/solver_control.h>
 #include <deal.II/lac/vector.h>
 #include <deal.II/lac/precondition_block.h>
 #include <deal.II/lac/precondition_block.templates.h>
+#include <deal.II/grid/manifold_lib.h>
+#include <deal.II/lac/precondition.h>
+#include <deal.II/lac/trilinos_precondition.h>
 #include <deal.II/meshworker/dof_info.h>
 #include <deal.II/meshworker/integration_info.h>
 #include <deal.II/meshworker/loop.h>
@@ -41,6 +46,7 @@
 
 #include <MFOperator.h>
 #include <MfreeOperator.h>
+#include <MGTransferMF.h>
 #include <EquationData.h>
 #include <ResidualSimpleConstraints.h>
 #include <PSCPreconditioner.h>
@@ -60,6 +66,7 @@ public:
   Simulator (const Simulator &) = delete ;
   Simulator &operator = (const Simulator &) = delete;
   void run ();
+  void run_non_linear ();
   unsigned int n_levels ;
   unsigned int min_level;
   unsigned int smoothing_steps ;
@@ -84,6 +91,7 @@ private:
   dealii::parallel::distributed::Triangulation<dim>   triangulation;
   const dealii::MappingQ1<dim>                        mapping;
   dealii::ConstraintMatrix                            constraints;
+  dealii::MGConstrainedDoFs                           mg_constrained_dofs;
   dealii::FESystem<dim>                               fe;
 
 #ifdef MATRIXFREE
@@ -98,82 +106,54 @@ private:
   LA::MPI::Vector       solution;
   LA::MPI::Vector       solution_tmp;
   LA::MPI::Vector       right_hand_side;
+  dealii::MGLevelObject<LA::MPI::Vector> mg_solution ;
 
   dealii::MGLevelObject<SystemMatrixType >            mg_matrix ;
 
   dealii::ConditionalOStream &pcout;
 
   dealii::TimerOutput &timer;
-};
 
-#ifdef MATRIXFREE
-// Is it possible to use this or something similar for Trilinos
-namespace dealii
-{
-  template <int dim, typename LOPERATOR>
-  class MGTransferMF : public dealii::MGTransferMatrixFree<dim, typename LOPERATOR::value_type>
+  friend class Residual;
+  class Residual : public dealii::Algorithms::OperatorBase
   {
   public:
-    MGTransferMF(const MGLevelObject<LOPERATOR> &op)
-      :
-      mg_operator (op)
-    {};
-
-    // Overload of copy_to_mg from MGLevelGlobalTransfer
-    template <class InVector, int spacedim>
-    void
-    copy_to_mg (const DoFHandler<dim,spacedim> &mg_dof,
-                MGLevelObject<dealii::parallel::distributed::Vector<typename LOPERATOR::value_type> > &dst,
-                const InVector &src) const
+    Residual(Simulator<dim,same_diagonal,fe_degree> &sim_):sim(sim_) {} ;
+    void operator() (dealii::AnyData &out, const dealii::AnyData &in) override
     {
-      for (unsigned int level=dst.min_level();
-           level<=dst.max_level(); ++level)
-        mg_operator[level].initialize_dof_vector(dst[level]);
-      dealii::MGLevelGlobalTransfer
-      <dealii::parallel::distributed::Vector<typename LOPERATOR::value_type> >::copy_to_mg(mg_dof, dst, src);
+      sim.setup_system();
+      sim.solution = *(in.try_read_ptr<LA::MPI::Vector>("Newton iterate"));
+      sim.assemble_system();
+      *out.entry<LA::MPI::Vector *>(0) = sim.right_hand_side ;
     }
+    Simulator<dim,same_diagonal,fe_degree> &sim ;
+  } residual ;
 
-  private:
-    const MGLevelObject<LOPERATOR> &mg_operator;
-  };
-}
-#endif // MATRIXFREE
+  friend class InverseDerivative ;
+  class InverseDerivative : public dealii::Algorithms::OperatorBase
+  {
+  public:
+    InverseDerivative(Simulator<dim,same_diagonal,fe_degree> &sim_):sim(sim_) {} ;
+    void operator() (dealii::AnyData &out, const dealii::AnyData &in) override
+    {
+      sim.setup_system();
+      sim.solution = *(in.try_read_ptr<LA::MPI::Vector>("Newton iterate"));
+      sim.right_hand_side = *(in.try_read_ptr<LA::MPI::Vector>("Newton residual"));
+#ifdef MG
+      sim.timer.enter_subsection("setup_multigrid");
+      sim.pcout << "Setup multigrid" << std::endl;
+      sim.setup_multigrid ();
+      sim.timer.leave_subsection();
+#endif
+      sim.solve ();
+      *out.entry<LA::MPI::Vector *>(0) = sim.solution ;
+    }
+    Simulator<dim,same_diagonal,fe_degree> &sim ;
+  } inverse ;
 
-//   template <int dim, typename VectorType>
-//   class MGTransferPrebuiltMW : public dealii::MGTransferPrebuilt<VectorType>
-//   {
-//   public:
-//     MGTransferPrebuiltMW(dealii::DoFHandler<dim> *dof_handler_,
-//       MPI_Comm &mpi_communicator_)
-//       :
-//       dealii::MGTransferPrebuilt<VectorType>::MGTransferPrebuilt(),
-//       dof_handler(dof_handler_),
-//       mpi_communicator(mpi_communicator_)
-//     {};
+  dealii::Algorithms::Newton<LA::MPI::Vector> newton;
 
-//     // Overload of copy_to_mg from MGLevelGlobalTransfer
-//     template <class InVector, int spacedim>
-//     void
-//     copy_to_mg (const DoFHandler<dim,spacedim> &mg_dof,
-//                 MGLevelObject<VectorType> &dst,
-//                 const InVector &src) const
-//     {
-//       for (unsigned int level=dst.min_level(); level<=dst.max_level(); ++level)
-//  {
-//    dealii::IndexSet locally_owned_level_dofs = dof_handler->locally_owned_mg_dofs(level);
-//    dealii::IndexSet locally_relevant_level_dofs;
-//    dealii::DoFTools::extract_locally_relevant_level_dofs
-//      (*dof_handler, level, locally_relevant_level_dofs);
-//    dst[level].reinit(locally_owned_level_dofs,locally_relevant_level_dofs,mpi_communicator);
-//  }
-//       dealii::MGLevelGlobalTransfer<VectorType>::copy_to_mg(mg_dof, dst, src);
-//     }
-
-//   private:
-//     const dealii::DoFHandler<dim>   *dof_handler;
-//     const MPI_Comm                  &mpi_communicator;
-//   };
-
+};
 
 #ifdef HEADER_IMPLEMENTATION
 #include <Simulator.cc>

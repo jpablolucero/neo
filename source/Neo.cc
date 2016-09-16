@@ -23,135 +23,16 @@ int main (int argc, char *argv[])
   std::ofstream logfile("deallog");
   dealii::deallog.attach(logfile);
   if (dealii::Utilities::MPI::this_mpi_process(mpi_communicator)==0)
-    dealii::deallog.depth_console (2);
+    dealii::deallog.depth_console (3);
   dealii::TimerOutput timer (mpi_communicator, pcout,
                              dealii::TimerOutput::never,
                              dealii::TimerOutput::wall_times);
 
-  const unsigned int smooth_steps = 1;
-
-  for (unsigned int l=3; l<9; ++l)
-    {
-      Simulator<3,false,3> dgmethod(timer, mpi_communicator, pcout);
-      dgmethod.n_levels = l ;//atoi(argv[1]) ;
-      dgmethod.min_level = 0;
-      dgmethod.smoothing_steps = smooth_steps;
-      dgmethod.run ();
-    }
-
-  // {
-  //   Simulator<2,true,1> dgmethod(timer, mpi_communicator, pcout);
-  //   dgmethod.n_levels = 2; //atoi(argv[1]) ;
-  //   dgmethod.smoothing_steps = smooth_steps;
-  //   dgmethod.min_level=1;
-  //   dgmethod.run ();
-  // }
-
-  /*  for (unsigned int l=2; l<7; ++l)
-      {
-        Simulator<3,false,1> dgmethod(timer, mpi_communicator, pcout);
-        dgmethod.n_levels = l ;
-        dgmethod.smoothing_steps = smooth_steps;
-        dgmethod.run ();
-      }*/
-  /*  for (unsigned int l=7; l<10; ++l)
-      {
-        Simulator<3,false,1> dgmethod(timer, mpi_communicator, pcout);
-        dgmethod.n_levels = l ;
-        dgmethod.smoothing_steps = smooth_steps;
-        dgmethod.run ();
-      }
-    for (unsigned int l=7; l<10; ++l)
-      {
-        Simulator<3,true,1> dgmethod(timer, mpi_communicator, pcout);
-        dgmethod.n_levels = l ;
-        dgmethod.smoothing_steps = smooth_steps;
-        dgmethod.run ();
-      }
-    for (unsigned int l=7; l<10; ++l)
-      {
-        Simulator<2,false,2> dgmethod(timer, mpi_communicator, pcout);
-        dgmethod.n_levels = l ;
-        dgmethod.smoothing_steps = smooth_steps;
-        dgmethod.run ();
-      }
-    for (unsigned int l=7; l<10; ++l)
-      {
-        Simulator<2,true,2> dgmethod(timer, mpi_communicator, pcout);
-        dgmethod.n_levels = l ;
-        dgmethod.smoothing_steps = smooth_steps;
-        dgmethod.run ();
-      }
-    for (unsigned int l=4; l<7; ++l)
-      {
-        Simulator<3,false,2> dgmethod(timer, mpi_communicator, pcout);
-        dgmethod.n_levels = l ;
-        dgmethod.smoothing_steps = smooth_steps;
-        dgmethod.run ();
-      }
-    for (unsigned int l=4; l<7; ++l)
-      {
-        Simulator<3,true,2> dgmethod(timer, mpi_communicator, pcout);
-        dgmethod.n_levels = l ;
-        dgmethod.smoothing_steps = smooth_steps;
-        dgmethod.run ();
-      }
-    for (unsigned int l=6; l<9; ++l)
-      {
-        Simulator<2,false,3> dgmethod(timer, mpi_communicator, pcout);
-        dgmethod.n_levels = l ;
-        dgmethod.smoothing_steps = smooth_steps;
-        dgmethod.run ();
-      }
-    for (unsigned int l=4; l<7; ++l)
-      {
-        Simulator<2,true,3> dgmethod(timer, mpi_communicator, pcout);
-        dgmethod.n_levels = l ;
-        dgmethod.smoothing_steps = smooth_steps;
-        dgmethod.run ();
-      }
-    for (unsigned int l=4; l<7; ++l)
-      {
-        Simulator<3,false,3> dgmethod(timer, mpi_communicator, pcout);
-        dgmethod.n_levels = l ;
-        dgmethod.smoothing_steps = smooth_steps;
-        dgmethod.run ();
-      }
-    for (unsigned int l=4; l<7; ++l)
-      {
-        Simulator<3,true,3> dgmethod(timer, mpi_communicator, pcout);
-        dgmethod.n_levels = l ;
-        dgmethod.smoothing_steps = smooth_steps;
-        dgmethod.run ();
-      }
-    for (unsigned int l=6; l<9; ++l)
-      {
-        Simulator<2,false,4> dgmethod(timer, mpi_communicator, pcout);
-        dgmethod.n_levels = l ;
-        dgmethod.smoothing_steps = smooth_steps;
-        dgmethod.run ();
-      }
-    for (unsigned int l=4; l<7; ++l)
-      {
-        Simulator<2,true,4> dgmethod(timer, mpi_communicator, pcout);
-        dgmethod.n_levels = l ;
-        dgmethod.smoothing_steps = smooth_steps;
-        dgmethod.run ();
-      }
-    for (unsigned int l=4; l<7; ++l)
-      {
-        Simulator<3,false,4> dgmethod(timer, mpi_communicator, pcout);
-        dgmethod.n_levels = l ;
-        dgmethod.smoothing_steps = smooth_steps;
-        dgmethod.run ();
-      }
-    for (unsigned int l=4; l<7; ++l)
-      {
-        Simulator<3,true,4> dgmethod(timer, mpi_communicator, pcout);
-        dgmethod.n_levels = l ;
-        dgmethod.smoothing_steps = smooth_steps;
-        dgmethod.run ();
-      }*/
+  Simulator<2,false,2> dgmethod(timer, mpi_communicator, pcout);
+  dgmethod.n_levels = (argc > 1) ? atoi(argv[1]) : 2 ;
+  dgmethod.min_level=0;
+  dgmethod.smoothing_steps = (argc > 2) ? atoi(argv[2]) : 1 ;
+  dgmethod.run ();
   return 0;
 }
 #endif

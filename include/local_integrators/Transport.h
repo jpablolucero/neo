@@ -6,6 +6,8 @@
 #include <deal.II/fe/fe_values.h>
 #include <deal.II/meshworker/dof_info.h>
 
+#include <functional>
+
 namespace LocalIntegrators
 {
   namespace Transport
@@ -27,9 +29,7 @@ namespace LocalIntegrators
           for (unsigned int i=0; i<n_dofs; ++i)
             for (unsigned int j=0; j<n_dofs; ++j)
               for (unsigned int d=0; d<n_comps; ++d)
-                M(i,j) -= dx * (angles[d] * fe.shape_grad_component(i,q,d)) *
-                          fe.shape_value_component(j,q,d);
-
+                M(i,j) -= dx * angles[d] * fe.shape_grad_component(i,q,d) * fe.shape_value_component(j,q,d);
         }
     }
 
@@ -50,8 +50,127 @@ namespace LocalIntegrators
           for (unsigned int i=0; i<n_dofs; ++i)
             for (unsigned int j=0; j<n_dofs; ++j)
               for (unsigned int d=0; d<n_comps; ++d)
-                M(i,j) += dx * total[d][q] *
-                          (fe.shape_value_component(j,q,d) * fe.shape_value_component(i,q,d));
+                M(i,j) += dx * total[d][q] * fe.shape_value_component(i,q,d) * fe.shape_value_component(j,q,d) ;
+        }
+    }
+
+    template <int dim>
+    inline void
+    T_absorption_matrix(dealii::FullMatrix<double> &M,
+                        const dealii::FEValuesBase<dim> &feT,
+                        const dealii::FEValuesBase<dim> &feV,
+                        const std::vector<double> &weights,
+                        const std::vector<std::vector<double> >  &abs,
+                        const double factor = 1.)
+    {
+      const unsigned int n_dofsT = feT.dofs_per_cell;
+      const unsigned int n_dofsV = feV.dofs_per_cell;
+      const unsigned int n_comps = feV.get_fe().n_components();
+      const unsigned int n_quads = feT.n_quadrature_points;
+
+      for (unsigned int q=0; q<n_quads; ++q)
+        {
+          const double dx = feT.JxW(q)*factor;
+          for (unsigned int i=0; i<n_dofsT; ++i)
+            for (unsigned int j=0; j<n_dofsV; ++j)
+              for (unsigned int d=0; d<n_comps; ++d)
+                M(i,j) -= dx * weights[d] * abs[d][q] * feT.shape_value(i,q) * feV.shape_value_component(j,q,d) ;
+        }
+    }
+
+    template <int dim>
+    inline void
+    T_matrix(dealii::FullMatrix<double> &M,
+             const dealii::FEValuesBase<dim> &feT,
+             const std::vector<double> &weights,
+             const std::vector<std::vector<double> >  &abs,
+             std::function<double(double)> planck,
+             const double factor = 1.)
+    {
+      const unsigned int n_dofs = feT.dofs_per_cell;
+      const unsigned int n_comps = abs.size();
+      const unsigned int n_quads = feT.n_quadrature_points;
+
+      for (unsigned int q=0; q<n_quads; ++q)
+        {
+          const double dx = feT.JxW(q)*factor;
+          for (unsigned int i=0; i<n_dofs; ++i)
+            for (unsigned int j=0; j<n_dofs; ++j)
+              for (unsigned int d=0; d<n_comps; ++d)
+                M(i,j) += dx * weights[d] * abs[d][q] * feT.shape_value(i,q) * planck(feT.shape_value(j,q)) ;
+        }
+    }
+
+    template <int dim>
+    inline void
+    DT_matrix(dealii::FullMatrix<double> &M,
+              const dealii::FEValuesBase<dim> &feT,
+              const dealii::VectorSlice<const std::vector<std::vector<double> > > &prev,
+              const std::vector<double> &weights,
+              const std::vector<std::vector<double> >  &abs,
+              std::function<double(double)> Dplanck,
+              const double factor = 1.)
+    {
+      const unsigned int n_dofs = feT.dofs_per_cell;
+      const unsigned int n_comps = abs.size();
+      const unsigned int n_quads = feT.n_quadrature_points;
+
+      for (unsigned int q=0; q<n_quads; ++q)
+        {
+          const double dx = feT.JxW(q)*factor;
+          for (unsigned int i=0; i<n_dofs; ++i)
+            for (unsigned int j=0; j<n_dofs; ++j)
+              for (unsigned int d=0; d<n_comps; ++d)
+                M(i,j) += dx * weights[d] * abs[d][q] * feT.shape_value(i,q) * Dplanck(prev[0][q]) * feT.shape_value(j,q) ;
+        }
+    }
+
+    template <int dim>
+    inline void
+    emission_matrix(dealii::FullMatrix<double> &M,
+                    const dealii::FEValuesBase<dim> &feV,
+                    const dealii::FEValuesBase<dim> &feT,
+                    const std::vector<std::vector<double> >  &abs,
+                    std::function<double(double)> planck,
+                    const double factor = 1.)
+    {
+      const unsigned int n_dofsT = feT.dofs_per_cell;
+      const unsigned int n_dofsV = feV.dofs_per_cell;
+      const unsigned int n_comps = feV.get_fe().n_components();
+      const unsigned int n_quads = feT.n_quadrature_points;
+
+      for (unsigned int q=0; q<n_quads; ++q)
+        {
+          const double dx = feV.JxW(q) * factor;
+          for (unsigned int i=0; i<n_dofsV; ++i)
+            for (unsigned int j=0; j<n_dofsT; ++j)
+              for (unsigned int d=0; d<n_comps; ++d)
+                M(i,j) -= dx * abs[d][q] * feV.shape_value_component(i,q,d) * planck(feT.shape_value(j,q)) ;
+        }
+    }
+
+    template <int dim>
+    inline void
+    Demission_matrix(dealii::FullMatrix<double> &M,
+                     const dealii::FEValuesBase<dim> &feV,
+                     const dealii::VectorSlice<const std::vector<std::vector<double> > > &prev,
+                     const dealii::FEValuesBase<dim> &feT,
+                     const std::vector<std::vector<double> >  &abs,
+                     std::function<double(double)> Dplanck,
+                     const double factor = 1.)
+    {
+      const unsigned int n_dofsT = feT.dofs_per_cell;
+      const unsigned int n_dofsV = feV.dofs_per_cell;
+      const unsigned int n_comps = feV.get_fe().n_components();
+      const unsigned int n_quads = feT.n_quadrature_points;
+
+      for (unsigned int q=0; q<n_quads; ++q)
+        {
+          const double dx = feV.JxW(q) * factor;
+          for (unsigned int i=0; i<n_dofsV; ++i)
+            for (unsigned int j=0; j<n_dofsT; ++j)
+              for (unsigned int d=0; d<n_comps; ++d)
+                M(i,j) -= dx * abs[d][q] * feV.shape_value_component(i,q,d) * Dplanck(prev[0][q]) * feT.shape_value(j,q) ;
         }
     }
 
@@ -75,7 +194,7 @@ namespace LocalIntegrators
               for (unsigned int d=0; d<n_comps; ++d)
                 for (unsigned int d0=0; d0<n_comps; ++d0)
                   M(i,j) -= dx * weights.at(d0) * redistribution[d0][d][q] *
-                            (fe.shape_value_component(j,q,d) * fe.shape_value_component(i,q,d0));
+                            fe.shape_value_component(j,q,d) * fe.shape_value_component(i,q,d0) ;
         }
     }
 
@@ -199,9 +318,7 @@ namespace LocalIntegrators
                   const double gammaa = 1.0 / std::max(1.0, gamma * sigma * diameter);
                   const double nbeta = fe.normal_vector(q) * angles.at(d);
                   if (nbeta > 0)
-                    M(i,j) += dx * gammaa * nbeta
-                              * fe.shape_value_component(i,q,d)
-                              * fe.shape_value_component(j,q,d);
+                    M(i,j) += dx * gammaa * nbeta * fe.shape_value_component(i,q,d) * fe.shape_value_component(j,q,d) ;
                 }
         }
     }
@@ -223,8 +340,7 @@ namespace LocalIntegrators
           const double dx = fe.JxW(q) * factor;
           for (unsigned int i=0; i<n_dofs; ++i)
             for (unsigned int d=0; d<n_comps; ++d)
-              result(i) -= dx * (angles[d] * fe.shape_grad_component(i,q,d)) *
-                           input[d][q];
+              result(i) -= dx * (angles[d] * fe.shape_grad_component(i,q,d)) * input[d][q] ;
         }
     }
 
@@ -245,11 +361,123 @@ namespace LocalIntegrators
           const double dx = fe.JxW(q) * factor;
           for (unsigned int i=0; i<n_dofs; ++i)
             for (unsigned int d=0; d<n_comps; ++d)
-              result(i) += dx * total[d][q] *
-                           (input[d][q] * fe.shape_value_component(i,q,d));
+              result(i) += dx * total[d][q] * fe.shape_value_component(i,q,d) * input[d][q];
         }
     }
 
+    template <int dim>
+    inline void
+    T_absorption_residual(dealii::Vector<double> &result,
+                          const dealii::FEValuesBase<dim> &fe,
+                          const dealii::VectorSlice<const std::vector<std::vector<double> > > &input,
+                          const std::vector<double> &weights,
+                          const std::vector<std::vector<double> >  &abs,
+                          const double factor = 1.)
+    {
+      const unsigned int n_dofs = fe.dofs_per_cell;
+      const unsigned int n_comps = input.size();
+      const unsigned int n_quads = fe.n_quadrature_points;
+
+      for (unsigned int q=0; q<n_quads; ++q)
+        {
+          const double dx = fe.JxW(q) * factor ;
+          for (unsigned int i=0; i<n_dofs; ++i)
+            for (unsigned int d=0; d<n_comps; ++d)
+              result(i) -= dx * weights[d] * abs[d][q] * fe.shape_value(i,q) * input[d][q] ;
+        }
+    }
+
+    template <int dim>
+    inline void
+    T_residual(dealii::Vector<double> &result,
+               const dealii::FEValuesBase<dim> &fe,
+               const dealii::VectorSlice<const std::vector<std::vector<double> > > &input,
+               const std::vector<double> &weights,
+               const std::vector<std::vector<double> >  &abs,
+               std::function<double(double)> planck,
+               const double factor = 1.)
+    {
+      const unsigned int n_dofs = fe.dofs_per_cell;
+      const unsigned int n_comps = abs.size();
+      const unsigned int n_quads = fe.n_quadrature_points;
+
+      for (unsigned int q=0; q<n_quads; ++q)
+        {
+          const double dx = fe.JxW(q) * factor ;
+          for (unsigned int i=0; i<n_dofs; ++i)
+            for (unsigned int d=0; d<n_comps; ++d)
+              result(i) += dx * weights[d] * abs[d][q] * fe.shape_value(i,q) * planck(input[0][q]) ;
+        }
+    }
+
+    template <int dim>
+    inline void
+    DT_residual(dealii::Vector<double> &result,
+                const dealii::FEValuesBase<dim> &fe,
+                const dealii::VectorSlice<const std::vector<std::vector<double> > > &prev,
+                const dealii::VectorSlice<const std::vector<std::vector<double> > > &input,
+                const std::vector<double> &weights,
+                const std::vector<std::vector<double> >  &abs,
+                std::function<double(double)> Dplanck,
+                const double factor = 1.)
+    {
+      const unsigned int n_dofs = fe.dofs_per_cell;
+      const unsigned int n_comps = abs.size();
+      const unsigned int n_quads = fe.n_quadrature_points;
+
+      for (unsigned int q=0; q<n_quads; ++q)
+        {
+          const double dx = fe.JxW(q) * factor ;
+          for (unsigned int i=0; i<n_dofs; ++i)
+            for (unsigned int d=0; d<n_comps; ++d)
+              result(i) += dx * weights[d] * abs[d][q] * fe.shape_value(i,q) * Dplanck(prev[0][q]) * input[0][q] ;
+        }
+    }
+
+    template <int dim>
+    inline void
+    emission_residual(dealii::Vector<double> &result,
+                      const dealii::FEValuesBase<dim> &fe,
+                      const dealii::VectorSlice<const std::vector<std::vector<double> > > &input,
+                      const std::vector<std::vector<double> >  &abs,
+                      std::function<double(double)> planck,
+                      const double factor = 1.)
+    {
+      const unsigned int n_dofs = fe.dofs_per_cell;
+      const unsigned int n_comps = abs.size();
+      const unsigned int n_quads = fe.n_quadrature_points;
+
+      for (unsigned int q=0; q<n_quads; ++q)
+        {
+          const double dx = fe.JxW(q) * factor ;
+          for (unsigned int i=0; i<n_dofs; ++i)
+            for (unsigned int d=0; d<n_comps; ++d)
+              result(i) -= dx * abs[d][q] * fe.shape_value_component(i,q,d) * planck(input[0][q]) ;
+        }
+    }
+
+    template <int dim>
+    inline void
+    Demission_residual(dealii::Vector<double> &result,
+                       const dealii::FEValuesBase<dim> &fe,
+                       const dealii::VectorSlice<const std::vector<std::vector<double> > > &prev,
+                       const dealii::VectorSlice<const std::vector<std::vector<double> > > &input,
+                       const std::vector<std::vector<double> >  &abs,
+                       std::function<double(double)> Dplanck,
+                       const double factor = 1.)
+    {
+      const unsigned int n_dofs = fe.dofs_per_cell;
+      const unsigned int n_comps = abs.size();
+      const unsigned int n_quads = fe.n_quadrature_points;
+
+      for (unsigned int q=0; q<n_quads; ++q)
+        {
+          const double dx = fe.JxW(q) * factor ;
+          for (unsigned int i=0; i<n_dofs; ++i)
+            for (unsigned int d=0; d<n_comps; ++d)
+              result(i) -= dx * abs[d][q] * fe.shape_value_component(i,q,d) * Dplanck(prev[0][q]) * input[0][q] ;
+        }
+    }
 
     template <int dim>
     inline void
@@ -270,8 +498,7 @@ namespace LocalIntegrators
           for (unsigned int i=0; i<n_dofs; ++i)
             for (unsigned int d=0; d<n_comps; ++d)
               for (unsigned int d0=0; d0<n_comps; ++d0)
-                result(i) -= dx * weights.at(d0) * redistribution[d0][d][q] *
-                             (input[d][q] * fe.shape_value_component(i,q,d0));
+                result(i) -= dx * weights.at(d0) * redistribution[d0][d][q] * input[d][q] * fe.shape_value_component(i,q,d0) ;
         }
     }
 

@@ -1,6 +1,6 @@
 #include <PSCPreconditioner.h>
 
-namespace implementation
+namespace
 {
   namespace WorkStream
   {
@@ -85,6 +85,17 @@ void PSCPreconditioner<dim,VectorType,number,same_diagonal>::initialize(const Gl
 #if PARALLEL_LA == 3
     ghosted_dst.reinit(locally_owned_level_dofs,locally_relevant_level_dofs,mpi_communicator);
 #endif
+#ifndef MATRIXFREE
+    ghosted_solution.resize(level, level);
+#if PARALLEL_LA == 0
+    ghosted_solution[level].reinit(locally_owned_level_dofs.n_elements());
+#else // PARALLEL_LA != 0 
+    ghosted_solution[level].reinit(locally_owned_level_dofs,
+                                   locally_relevant_level_dofs,
+                                   data.mpi_communicator);
+#endif // PARALLEL_LA
+    ghosted_solution[level] = *(data.solution);
+#endif // MATRIXFREE
   }
 
   if (data.patch_type == AdditionalData::PatchType::cell_patches)
@@ -110,8 +121,25 @@ void PSCPreconditioner<dim,VectorType,number,same_diagonal>::initialize(const Gl
   info_box.cell_selector.add("src", true, true, false);
   info_box.boundary_selector.add("src", true, true, false);
   info_box.face_selector.add("src", true, true, false);
-  info_box.initialize(fe, *(data.mapping), &(dof_handler.block_info()));
+  info_box.cell_selector.add("Newton iterate", true, true, false);
+  info_box.boundary_selector.add("Newton iterate", true, true, false);
+  info_box.face_selector.add("Newton iterate", true, true, false);
+  // // TODO do we really have to do this twice?
+  // dealii::IndexSet locally_owned_level_dofs = dof_handler.locally_owned_mg_dofs(level);
+  // dealii::IndexSet locally_relevant_level_dofs;
+  // dealii::DoFTools::extract_locally_relevant_level_dofs
+  // (dof_handler, level, locally_relevant_level_dofs);
+
+#ifndef MATRIXFREE
+  dealii::AnyData src_data ;
+  src_data.add<const dealii::MGLevelObject<LA::MPI::Vector >*>(&ghosted_solution,"src");
+  src_data.add<const dealii::MGLevelObject<LA::MPI::Vector >*>(&ghosted_solution,"Newton iterate");
+  info_box.initialize(fe, *(data.mapping), src_data, LA::MPI::Vector {},&(dof_handler.block_info()));
   dof_info.reset(new dealii::MeshWorker::DoFInfo<dim> (dof_handler.block_info()));
+#else // MATRIXFREE ON
+  info_box.initialize(fe, *(data.mapping), &(dof_handler.block_info()));
+  dof_info.reset(new dealii::MeshWorker::DoFInfo<dim> (dof_handler));
+#endif // MATRIXFREE
 
   patch_inverses.resize(ddh->global_dofs_on_subdomain.size());
   //setup local matrices/inverses
@@ -283,17 +311,17 @@ void PSCPreconditioner<dim, VectorType, number, same_diagonal>::vmult_add (Vecto
   ghosted_src = src;
 
   {
-    implementation::WorkStream::Copy<dim, VectorType, number, same_diagonal> copy_sample;
+    WorkStream::Copy<dim, VectorType, number, same_diagonal> copy_sample;
     copy_sample.dst = &dst;
     copy_sample.ddh = ddh;
 
-    implementation::WorkStream::Scratch<dim, VectorType, number, same_diagonal> scratch_sample;
+    WorkStream::Scratch<dim, VectorType, number, same_diagonal> scratch_sample;
     scratch_sample.src = &ghosted_src;
     scratch_sample.local_inverses = &patch_inverses;
 
     dealii::WorkStream::run(ddh->colorized_iterators(),
-                            implementation::WorkStream::work<dim, VectorType, number, same_diagonal>,
-                            implementation::WorkStream::assemble<dim, VectorType, number, same_diagonal>,
+                            WorkStream::work<dim, VectorType, number, same_diagonal>,
+                            WorkStream::assemble<dim, VectorType, number, same_diagonal>,
                             scratch_sample, copy_sample);
   }
 
@@ -323,7 +351,7 @@ void PSCPreconditioner<dim, VectorType, number, same_diagonal>::build_matrix
   Assembler::MGMatrixSimpleMapped<dealii::FullMatrix<double> > assembler;
   assembler.initialize(mg_matrix);
 #ifdef CG
-  assembler.initialize(constraints);
+  assembler.initialize(data.mg_constrained_dofs);
 #endif
   assembler.initialize(all_to_unique);
 

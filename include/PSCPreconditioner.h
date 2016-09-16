@@ -68,11 +68,11 @@ private:
   dealii::MeshWorker::IntegrationInfoBox<dim> info_box;
   std::unique_ptr<dealii::MeshWorker::DoFInfo<dim> >  dof_info;
 
-  PSCMatrixIntegrator<dim>       matrix_integrator;
-
-  mutable LA::MPI::Vector                ghosted_src;
+  dealii::MGLevelObject<LA::MPI::Vector>              ghosted_solution;
+  PSCMatrixIntegrator<dim>                            matrix_integrator;
+  mutable LA::MPI::Vector                             ghosted_src;
 #if PARALLEL_LA==3
-  mutable LA::MPI::Vector                ghosted_dst;
+  mutable LA::MPI::Vector                             ghosted_dst;
 #endif
 
   unsigned int level;
@@ -98,6 +98,7 @@ public:
   double relaxation;
   double tol;
   const dealii::Mapping<dim> *mapping;
+  LA::MPI::Vector *solution;
 
   bool use_dictionary;
   enum PatchType
@@ -106,6 +107,9 @@ public:
     vertex_patches
   };
   PatchType patch_type;
+  MPI_Comm mpi_communicator;
+
+  dealii::MGConstrainedDoFs  mg_constrained_dofs;
 };
 
 template <int dim, typename VectorType, class number, bool same_diagonal>

@@ -38,11 +38,12 @@ public:
   MFOperator (const MFOperator &operator_);
   MFOperator &operator = (const MFOperator &) = delete;
 
-  void reinit (const dealii::DoFHandler<dim> *dof_handler_,
-               const dealii::Mapping<dim> *mapping_,
+  void reinit (const dealii::DoFHandler<dim>  *dof_handler_,
+               const dealii::Mapping<dim>     *mapping_,
                const dealii::ConstraintMatrix *constraints,
-               const MPI_Comm &mpi_communicator_,
-               const unsigned int level_ = dealii::numbers::invalid_unsigned_int);
+               const MPI_Comm                 &mpi_communicator_,
+               const unsigned                 int level_ = dealii::numbers::invalid_unsigned_int,
+               LA::MPI::Vector                solution_ = LA::MPI::Vector {});
 
   void set_cell_range (const std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> &cell_range_);
 
@@ -89,11 +90,13 @@ private:
   const dealii::Mapping<dim>                          *mapping;
   const dealii::ConstraintMatrix                      *constraints;
   MPI_Comm                                            mpi_communicator;
+  const dealii::MGConstrainedDoFs                     *mg_constrained_dofs;
   dealii::TimerOutput                                 *timer;
 
   std::unique_ptr<dealii::MeshWorker::DoFInfo<dim> >  dof_info;
   mutable dealii::MeshWorker::IntegrationInfoBox<dim> info_box;
   mutable dealii::MGLevelObject<LA::MPI::Vector>      ghosted_src;
+  mutable dealii::MGLevelObject<LA::MPI::Vector>      ghosted_solution;
   const std::vector<level_cell_iterator>              *cell_range;
   bool                                                use_cell_range;
   std::vector<std::vector<level_cell_iterator> >      colored_iterators;
