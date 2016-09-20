@@ -28,7 +28,7 @@ void Coefficient<dim>::value_list (const std::vector<dealii::Point<dim> > &point
 
 template <int dim>
 dealii::Tensor<1,dim>
-Coefficient<dim>::gradient (const dealii::Point<dim> &p,
+Coefficient<dim>::gradient (const dealii::Point<dim> &/*p*/,
                             const unsigned int  d) const
 {
   dealii::Tensor<1,dim> return_grad;
@@ -46,7 +46,7 @@ ReferenceFunction<dim>::ReferenceFunction(unsigned int n_comp_)
 
 template <int dim>
 double
-ReferenceFunction<dim>::value(const dealii::Point<dim> &p,
+ReferenceFunction<dim>::value(const dealii::Point<dim> &/*p*/,
                               const unsigned int /*component = 0*/) const
 {
   /*  const double pi2 = dealii::numbers::PI;
@@ -56,7 +56,7 @@ ReferenceFunction<dim>::value(const dealii::Point<dim> &p,
 
 template <int dim>
 dealii::Tensor<1,dim>
-ReferenceFunction<dim>::gradient (const dealii::Point<dim> &p,
+ReferenceFunction<dim>::gradient (const dealii::Point<dim> &/*p*/,
                                   const unsigned int /*d*/) const
 {
   dealii::Tensor<1,dim> return_grad;
@@ -69,7 +69,7 @@ ReferenceFunction<dim>::gradient (const dealii::Point<dim> &p,
 
 template <int dim>
 double
-ReferenceFunction<dim>::laplacian(const dealii::Point<dim> &p,
+ReferenceFunction<dim>::laplacian(const dealii::Point<dim> &/*p*/,
                                   const unsigned int /*component = 0*/) const
 {
   /*  const double pi2 = dealii::numbers::PI*3/2;
@@ -265,33 +265,6 @@ double MFRightHandSide<dim>::value (const dealii::Point<dim>   &p,
   //  return 1.;
 }
 
-//MFDiffCoefficient
-template <int dim>
-double
-MFDiffCoefficient<dim>::value (const dealii::Point<dim>   &p,
-                               const unsigned int) const
-{
-  // double r = 0.;
-  // for(unsigned int i=0; i<dim; ++i)
-  //   r += std::abs(p(i));
-  // return (1. + r/dim * 1.e+8);
-  return 1.;
-}
-
-template <int dim>
-dealii::VectorizedArray<double>
-MFDiffCoefficient<dim>::value (const dealii::Point<dim,dealii::VectorizedArray<double> >   &p,
-                               const unsigned int) const
-{
-  static dealii::VectorizedArray<double> one = dealii::make_vectorized_array(1.);
-  // static dealii::VectorizedArray<double> eps = dealii::make_vectorized_array((double)(dim/1.e+8));
-  // dealii::VectorizedArray<double> r;
-  // for(unsigned int i=0; i<dim; ++i)
-  //   r += p(i);
-  // return (one + r * eps);
-  return one;
-}
-
 template class Coefficient<2>;
 template class Coefficient<3>;
 template class ReferenceFunction<2>;
@@ -310,6 +283,3 @@ template class MFSolution<3>;
 template class MFRightHandSide<1>;
 template class MFRightHandSide<2>;
 template class MFRightHandSide<3>;
-template class MFDiffCoefficient<1>;
-template class MFDiffCoefficient<2>;
-template class MFDiffCoefficient<3>;

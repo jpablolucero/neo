@@ -257,22 +257,18 @@ void Simulator<dim,same_diagonal,degree>::solve ()
   mg_matrix[min_level].build_coarse_matrix();
   const LA::MPI::SparseMatrix &coarse_matrix = mg_matrix[min_level].get_coarse_matrix();
   dealii::SolverGMRES<LA::MPI::Vector> coarse_solver(coarse_solver_control);
-  // CARE you need the new workaround for MGCoarseGridLACIteration in mg_coarse.h.
-  // Hopefully to be fixed soon in deal.II!
-  dealii::MGCoarseGridLACIteration<dealii::SolverGMRES<LA::MPI::Vector>,
-         LA::MPI::Vector,
+  dealii::MGCoarseGridIterativeSolver<LA::MPI::Vector,
+         dealii::SolverGMRES<LA::MPI::Vector>,
          LA::MPI::SparseMatrix,
          dealii::PreconditionIdentity>
          mg_coarse(coarse_solver,
                    coarse_matrix,
                    id);
 #else // PARALLEL_LA == 3
-  // TODO allow for Matrix-based solver
-  // CARE you need the new workaround for MGCoarseGridLACIteration in mg_coarse.h.
-  // Hopefully to be fixed soon in deal.II!
+  // TODO allow for Matrix-based solver for dealii MPI vectors
   dealii::SolverCG<LA::MPI::Vector> coarse_solver(coarse_solver_control);
-  dealii::MGCoarseGridLACIteration<dealii::SolverCG<LA::MPI::Vector>,
-         LA::MPI::Vector,
+  dealii::MGCoarseGridIterativeSolver<LA::MPI::Vector,
+         dealii::SolverCG<LA::MPI::Vector>,
          SystemMatrixType,
          dealii::PreconditionIdentity>
          mg_coarse(coarse_solver,

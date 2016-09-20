@@ -80,7 +80,7 @@ template <int dim>
 class MatrixIntegrator : public dealii::MeshWorker::LocalIntegrator<dim>
 {
 public:
-  MatrixIntegrator () : dealii::MeshWorker::LocalIntegrator<dim>::LocalIntegrator(), diff_coeff(1) {};
+  MatrixIntegrator () : dealii::MeshWorker::LocalIntegrator<dim>::LocalIntegrator() {};
   MatrixIntegrator (const MatrixIntegrator &) = delete ;
   MatrixIntegrator &operator = (const MatrixIntegrator &) = delete;
   void cell(dealii::MeshWorker::DoFInfo<dim> &dinfo, typename dealii::MeshWorker::IntegrationInfo<dim> &info) const override;
@@ -89,8 +89,6 @@ public:
             dealii::MeshWorker::DoFInfo<dim> &dinfo2,
             typename dealii::MeshWorker::IntegrationInfo<dim> &info1,
             typename dealii::MeshWorker::IntegrationInfo<dim> &info2) const override;
-private:
-  MFDiffCoefficient<dim> diff_coeff;
 };
 
 template <int dim, int fe_degree, int n_q_points_1d = fe_degree+1,
@@ -113,8 +111,6 @@ public:
             LA::MPI::Vector                            &dst,
             const LA::MPI::Vector                      &src,
             const std::pair<unsigned int,unsigned int> &face_range) const;
-private:
-  MFDiffCoefficient<dim> diff_coeff;
 };
 
 template <int dim>

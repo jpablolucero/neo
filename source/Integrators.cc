@@ -360,8 +360,6 @@ void MatrixIntegrator<dim>::boundary(dealii::MeshWorker::DoFInfo<dim> &dinfo,
 // MatrixFree Integrator
 template <int dim, int fe_degree, int n_q_points_1d, int n_comp, typename number>
 MFIntegrator<dim,fe_degree,n_q_points_1d,n_comp,number>::MFIntegrator()
-  :
-  diff_coeff(n_comp)
 {}
 
 template <int dim, int fe_degree, int n_q_points_1d, int n_comp, typename number>
@@ -379,12 +377,6 @@ MFIntegrator<dim,fe_degree,n_q_points_1d,n_comp,number>::cell(const dealii::Matr
       phi.evaluate (false,true,false);
       for (unsigned int q=0; q<phi.n_q_points; ++q)
         phi.submit_gradient (phi.get_gradient(q), q);
-      // for (unsigned int q=0; q<phi.n_q_points; ++q)
-      //  {
-      //    const dealii::Tensor<1,dim,dealii::VectorizedArray<number> > diffxgrad
-      //      = phi.get_gradient(q) * diff_coeff.value(phi.quadrature_point(q));
-      //    phi.submit_gradient (diffxgrad, q);
-      //  }
       phi.integrate (false,true);
       phi.distribute_local_to_global (dst);
     }
