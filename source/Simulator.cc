@@ -277,47 +277,82 @@ void Simulator<dim,same_diagonal,degree>::solve ()
 #endif
 
   // Setup Multigrid-Smoother
-  typedef PSCPreconditioner<dim, LA::MPI::Vector, double, same_diagonal> Smoother;
-  //typedef MFPSCPreconditioner<dim, LA::MPI::Vector, double> Smoother;
-  Smoother::timer = &timer;
-  dealii::MGLevelObject<typename Smoother::AdditionalData> smoother_data;
-  smoother_data.resize(mg_matrix.min_level(), mg_matrix.max_level());
+
+//   // SMOOTHER1: PSCPreconditioner
+//   typedef PSCPreconditioner<dim, LA::MPI::Vector, double, same_diagonal> Smoother;
+//   //typedef MFPSCPreconditioner<dim, LA::MPI::Vector, double> Smoother;
+//   Smoother::timer = &timer;
+//   dealii::MGLevelObject<typename Smoother::AdditionalData> smoother_data;
+//   smoother_data.resize(mg_matrix.min_level(), mg_matrix.max_level());
+//   for (unsigned int level = mg_matrix.min_level();
+//        level <= mg_matrix.max_level();
+//        ++level)
+//     {
+//       smoother_data[level].dof_handler = &dof_handler;
+//       smoother_data[level].level = level;
+//       smoother_data[level].mapping = &mapping;
+//       smoother_data[level].relaxation = 0.7;
+//       smoother_data[level].mg_constrained_dofs = mg_constrained_dofs;
+// #ifndef MATRIXFREE
+//       smoother_data[level].solution = &mg_solution[level];
+// #endif // MATRIXFREE
+//       smoother_data[level].mpi_communicator = mpi_communicator;
+//       //      uncomment to use the dictionary
+//       // if(!same_diagonal)
+//       //  {
+//       //    smoother_data[level].use_dictionary = true;
+//       //    smoother_data[level].tol = 0.05;
+//       //  }
+//       smoother_data[level].patch_type = Smoother::AdditionalData::cell_patches;
+//     }
+//   dealii::MGSmootherPrecondition<SystemMatrixType,Smoother,LA::MPI::Vector> mg_smoother;
+//   mg_smoother.initialize(mg_matrix, smoother_data);
+//   mg_smoother.set_steps(smoothing_steps);
+
+//   // Setup Multigrid-Transfer
+// #ifdef MATRIXFREE
+//   dealii::MGTransferMF<dim,SystemMatrixType> mg_transfer {mg_matrix};
+//   mg_transfer.build(dof_handler);
+// #else // MATRIXFREE OFF
+//   dealii::MGTransferPrebuilt<LA::MPI::Vector> mg_transfer {};
+// #ifdef CG
+//   mg_transfer.initialize_constraints(constraints, mg_constrained_dofs);
+// #endif // CG
+//   mg_transfer.build_matrices(dof_handler);
+// #endif // MATRIXFREE
+
+//   // Setup (Multigrid-)Preconditioner
+//   dealii::mg::Matrix<LA::MPI::Vector>         mglevel_matrix;
+//   mglevel_matrix.initialize(mg_matrix);
+//   dealii::Multigrid<LA::MPI::Vector> mg(dof_handler,
+//                                         mglevel_matrix,
+//                                         mg_coarse,
+//                                         mg_transfer,
+//                                         mg_smoother,
+//                                         mg_smoother);
+
+  // SMOOTHER2: DDSmoother
+#ifdef MATRIXFREE
+  typedef DDSmoother<dim,degree,LA::MPI::Vector,double,same_diagonal> DDSmoother;
+  DDSmoother::timer = &timer;
+  dealii::MGLevelObject<typename DDSmoother::AdditionalData> ddsmoother_data;
+  ddsmoother_data.resize(mg_matrix.min_level(), mg_matrix.max_level());
   for (unsigned int level = mg_matrix.min_level();
        level <= mg_matrix.max_level();
        ++level)
     {
-      smoother_data[level].dof_handler = &dof_handler;
-      smoother_data[level].level = level;
-      smoother_data[level].mapping = &mapping;
-      smoother_data[level].relaxation = 0.7;
-      smoother_data[level].mg_constrained_dofs = mg_constrained_dofs;
-#ifndef MATRIXFREE
-      smoother_data[level].solution = &mg_solution[level];
-#endif // MATRIXFREE
-      smoother_data[level].mpi_communicator = mpi_communicator;
-      //      uncomment to use the dictionary
-      // if(!same_diagonal)
-      //  {
-      //    smoother_data[level].use_dictionary = true;
-      //    smoother_data[level].tol = 0.05;
-      //  }
-      smoother_data[level].patch_type = Smoother::AdditionalData::cell_patches;
+      ddsmoother_data[level].level = level;
+      ddsmoother_data[level].relaxation = 0.7;
+      ddsmoother_data[level].mapping = &mapping;
+      ddsmoother_data[level].matrixfree_data = &mg_matrix[level].get_matrixfree_data();
     }
-  dealii::MGSmootherPrecondition<SystemMatrixType,Smoother,LA::MPI::Vector> mg_smoother;
-  mg_smoother.initialize(mg_matrix, smoother_data);
-  mg_smoother.set_steps(smoothing_steps);
+  dealii::MGSmootherPrecondition<SystemMatrixType,DDSmoother,LA::MPI::Vector> mg_ddsmoother;
+  mg_ddsmoother.initialize(mg_matrix, ddsmoother_data);
+  mg_ddsmoother.set_steps(smoothing_steps);
 
-  // Setup Multigrid-Transfer
-#ifdef MATRIXFREE
+  //  Setup Multigrid-Transfer
   dealii::MGTransferMF<dim,SystemMatrixType> mg_transfer {mg_matrix};
   mg_transfer.build(dof_handler);
-#else // MATRIXFREE OFF
-  dealii::MGTransferPrebuilt<LA::MPI::Vector> mg_transfer {};
-#ifdef CG
-  mg_transfer.initialize_constraints(constraints, mg_constrained_dofs);
-#endif // CG
-  mg_transfer.build_matrices(dof_handler);
-#endif // MATRIXFREE
 
   // Setup (Multigrid-)Preconditioner
   dealii::mg::Matrix<LA::MPI::Vector>         mglevel_matrix;
@@ -326,8 +361,10 @@ void Simulator<dim,same_diagonal,degree>::solve ()
                                         mglevel_matrix,
                                         mg_coarse,
                                         mg_transfer,
-                                        mg_smoother,
-                                        mg_smoother);
+                                        mg_ddsmoother,
+                                        mg_ddsmoother);
+#endif // MATRIXFREE
+
   // mg.set_debug(10);
   mg.set_minlevel(mg_matrix.min_level());
   mg.set_maxlevel(mg_matrix.max_level());
@@ -344,8 +381,9 @@ void Simulator<dim,same_diagonal,degree>::solve ()
 #endif // MG
 
   // Setup Solver
-  dealii::ReductionControl             solver_control (dof_handler.n_dofs(), 1.e-20, 1.e-10,true);
-  dealii::SolverGMRES<LA::MPI::Vector> solver (solver_control);
+  dealii::ReductionControl             solver_control (dof_handler.n_dofs(),1.e-20,1.e-10,true);
+  dealii::SolverCG<LA::MPI::Vector> solver (solver_control);
+  //  dealii::SolverGMRES<LA::MPI::Vector> solver (solver_control);
   timer.leave_subsection();
 
   // Solve the system
@@ -450,7 +488,7 @@ void Simulator<dim,same_diagonal,degree>::run ()
   setup_multigrid ();
   timer.leave_subsection();
 #endif
-  output_results(n_levels);
+  //  output_results(n_levels);
   timer.enter_subsection("solve");
   pcout << "Solve" << std::endl;
   solve ();
@@ -458,7 +496,7 @@ void Simulator<dim,same_diagonal,degree>::run ()
   timer.enter_subsection("output");
   pcout << "Output" << std::endl;
   compute_error();
-  output_results(n_levels);
+  //  output_results(n_levels);
   timer.leave_subsection();
   timer.print_summary();
   pcout << std::endl;

@@ -170,6 +170,7 @@ void PSCPreconditioner<dim,VectorType,number,same_diagonal>::initialize(const Gl
               }
           }
 
+        timer->enter_subsection("PSC::__assemble(same_diag)");
         const unsigned int n = fe.n_dofs_per_cell();
         patch_inverses[0].reset(new LAPACKMatrix(n));
         build_matrix(ddh->subdomain_to_global_map[subdomain],
@@ -177,10 +178,13 @@ void PSCPreconditioner<dim,VectorType,number,same_diagonal>::initialize(const Gl
                      ddh->all_to_unique[subdomain],
                      *patch_inverses[0]);
         // patch_inverses[0]->print_formatted(std::cout);
+        timer->leave_subsection();
 
+        timer->enter_subsection("PSC::__invert(same_diag)");
         patch_inverses[0]->compute_inverse_svd();
         for ( unsigned int j=1; j<patch_inverses.size(); ++j )
           patch_inverses[j] = patch_inverses[0];
+        timer->leave_subsection();
       }
 
     // FULL BLOCK JACOBI
@@ -188,22 +192,29 @@ void PSCPreconditioner<dim,VectorType,number,same_diagonal>::initialize(const Gl
       {
         if (level == 0)
           dealii::deallog << "Assembling Block-Jacobi-Smoother." << std::endl;
-        dealii::Threads::TaskGroup<> tasks;
+
+        // TODO making this thread-safe
+        // dealii::Threads::TaskGroup<> tasks;
         for (unsigned int i=0; i<ddh->subdomain_to_global_map.size(); ++i)
           {
-            tasks += dealii::Threads::new_task([i,this]()
-            {
-              patch_inverses[i].reset(new LAPACKMatrix);
-              build_matrix(ddh->subdomain_to_global_map[i],
-                           ddh->global_dofs_on_subdomain[i],
-                           ddh->all_to_unique[i],
-                           *patch_inverses[i]);
-              // std::cout << std::endl;
-              // patch_inverses[i]->print_formatted(std::cout);
-              patch_inverses[i]->compute_inverse_svd();
-            });
+            // tasks += dealii::Threads::new_task([i,this]()
+            //               {
+            timer->enter_subsection("PSC::__assemble(full)");
+            patch_inverses[i].reset(new LAPACKMatrix);
+            build_matrix(ddh->subdomain_to_global_map[i],
+                         ddh->global_dofs_on_subdomain[i],
+                         ddh->all_to_unique[i],
+                         *patch_inverses[i]);
+            timer->leave_subsection();
+            // std::cout << std::endl;
+            // patch_inverses[i]->print_formatted(std::cout);
+
+            timer->enter_subsection("PSC::__invert(full)");
+            patch_inverses[i]->compute_inverse_svd();
+            timer->leave_subsection();
+            // });
           }
-        tasks.join_all ();
+        // tasks.join_all ();
       }
 
     // DICTIONARY

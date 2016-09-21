@@ -67,6 +67,9 @@ public:
   /*
    *  Utilities
    */
+  const dealii::MatrixFree<dim,number> &
+  get_matrixfree_data () const;
+
   void
   initialize_dof_vector (LA::MPI::Vector &vector) const;
 

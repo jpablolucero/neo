@@ -120,6 +120,13 @@ MfreeOperator<dim,fe_degree,n_q_points_1d,number>::Tvmult_add (LA::MPI::Vector  
  *  Utilities
  */
 template <int dim, int fe_degree, int n_q_points_1d, typename number>
+const dealii::MatrixFree<dim,number> &
+MfreeOperator<dim,fe_degree,n_q_points_1d,number>::get_matrixfree_data () const
+{
+  return this->data;
+}
+
+template <int dim, int fe_degree, int n_q_points_1d, typename number>
 void
 MfreeOperator<dim,fe_degree,n_q_points_1d,number>::initialize_dof_vector (LA::MPI::Vector &vector) const
 {

@@ -46,6 +46,7 @@
 
 #include <MFOperator.h>
 #include <MfreeOperator.h>
+#include <DDSmoother.h>
 #include <MGTransferMF.h>
 #include <EquationData.h>
 #include <ResidualSimpleConstraints.h>

@@ -92,6 +92,28 @@ public:
 };
 
 template <int dim, int fe_degree, int n_q_points_1d = fe_degree+1,
+          int n_comp = 1, typename number = double>
+class SameDiagIntegrator final
+{
+public:
+  SameDiagIntegrator ();
+  SameDiagIntegrator (const SameDiagIntegrator &) = delete ;
+  SameDiagIntegrator &operator= (const SameDiagIntegrator &) = delete;
+  void cell (const dealii::MatrixFree<dim,number>       &data,
+             dealii::Vector<number>                     &dst,
+             const std::pair<int,int>                   &src,
+             const std::pair<unsigned int,unsigned int> &cell_range) const;
+  void boundary (const dealii::MatrixFree<dim,number>       &data,
+                 dealii::Vector<number>                     &dst,
+                 const std::pair<int,int>                   &src,
+                 const std::pair<unsigned int,unsigned int> &face_range) const;
+  void face (const dealii::MatrixFree<dim,number> &,
+             dealii::Vector<number> &,
+             const std::pair<int,int> &,
+             const std::pair<unsigned int,unsigned int> &) const {} ;
+};
+
+template <int dim, int fe_degree, int n_q_points_1d = fe_degree+1,
           int n_comp = 1, typename number = double >
 class MFIntegrator final
 {

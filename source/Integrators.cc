@@ -357,6 +357,77 @@ void MatrixIntegrator<dim>::boundary(dealii::MeshWorker::DoFInfo<dim> &dinfo,
   (M,fev,penalty);
 }
 
+// SAME DIAGONAL Integrator
+template <int dim, int fe_degree, int n_q_points_1d, int n_comp, typename number>
+SameDiagIntegrator<dim,fe_degree,n_q_points_1d,n_comp,number>::SameDiagIntegrator()
+{}
+
+template <int dim, int fe_degree, int n_q_points_1d, int n_comp, typename number>
+void
+SameDiagIntegrator<dim,fe_degree,n_q_points_1d,n_comp,number>::cell(const dealii::MatrixFree<dim,number>       &data,
+    dealii::Vector<number>                     &dst,
+    const std::pair<int,int>                   &column_level_pair,
+    const std::pair<unsigned int,unsigned int> &cell_range) const
+{
+  dealii::FEEvaluation<dim,fe_degree,n_q_points_1d,n_comp,number> feev (data);
+  for (unsigned int cell=cell_range.first; cell<cell_range.second; ++cell)
+    {
+      feev.reinit (cell);
+
+      for (unsigned int j=0; j<feev.dofs_per_cell; ++j)
+        feev.begin_dof_values()[j] = dealii::VectorizedArray<number>();
+      feev.begin_dof_values()[column_level_pair.first] = 1.;
+      feev.evaluate (false,true,false);
+      for (unsigned int q=0; q<feev.n_q_points; ++q)
+        feev.submit_gradient (feev.get_gradient(q), q);
+
+      feev.integrate (false,true);
+      feev.distribute_local_to_global (dst);
+    }
+}
+
+template <int dim, int fe_degree, int n_q_points_1d, int n_comp, typename number>
+void
+SameDiagIntegrator<dim,fe_degree,n_q_points_1d,n_comp,number>::boundary(const dealii::MatrixFree<dim,number>       &data,
+    dealii::Vector<number>                     &dst,
+    const std::pair<int,int>                   &column_level_pair,
+    const std::pair<unsigned int,unsigned int> &face_range) const
+{
+  dealii::FEFaceEvaluation<dim,fe_degree,n_q_points_1d,n_comp,number> feface (data, true);
+
+  number factor = (column_level_pair.second==1) ? 0.75 : 0.5; // 0.5 = only interior faces!
+  //  std::cout << "face_range: [" << face_range.first << "," << face_range.second << ")" << std::endl;
+  for (unsigned int face=face_range.first; face<face_range.second; face++)
+    {
+      // if(column_level_pair.second==1)
+      //  {
+      //    //    factor = ((face==0) || (face==2)) ? 1. : 0.5; // comparable to PSC
+      //  }
+
+      feface.reinit (face);
+      dealii::VectorizedArray<number> sigmaF =
+        (feface.get_normal_volume_fraction()) *
+        (number)(std::max(1,fe_degree) * (fe_degree + 1.0));
+
+      for (unsigned int j=0; j<feface.dofs_per_cell; ++j)
+        feface.begin_dof_values()[j] = dealii::VectorizedArray<number>();
+      feface.begin_dof_values()[column_level_pair.first] = 1.;
+      feface.evaluate(true,true);
+
+      for (unsigned int q=0; q<feface.n_q_points; ++q)
+        {
+          dealii::VectorizedArray<number> average_value = feface.get_value(q) * factor;
+          dealii::VectorizedArray<number> average_valgrad = -feface.get_normal_gradient(q) * factor;
+          average_valgrad += average_value * sigmaF * 2.0;
+          feface.submit_normal_gradient(-average_value,q);
+          feface.submit_value(average_valgrad,q);
+        }
+
+      feface.integrate(true,true);
+      feface.distribute_local_to_global(dst);
+    }
+}
+
 // MatrixFree Integrator
 template <int dim, int fe_degree, int n_q_points_1d, int n_comp, typename number>
 MFIntegrator<dim,fe_degree,n_q_points_1d,n_comp,number>::MFIntegrator()

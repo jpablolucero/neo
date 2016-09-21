@@ -1,0 +1,26 @@
+#ifndef DDSMOOTHER_INST
+#define DDSMOOTHER_INST
+
+#ifdef MATRIXFREE
+
+#undef I
+// D = dim ; P = fe degree ; T = value type ; S = same diagonal
+#define I(D,P,T,S) template class DDSmoother<D, P, LA::MPI::Vector, T, S>
+
+I(2,1,double,true);I(2,2,double,true);I(2,3,double,true);I(2,4,double,true);
+I(2,1,double,false);I(2,2,double,false);I(2,3,double,false);I(2,4,double,false);
+I(3,1,double,true);I(3,2,double,true);I(3,3,double,true);I(3,4,double,true);
+I(3,1,double,false);I(3,2,double,false);I(3,3,double,false);I(3,4,double,false);
+#undef I
+
+// // D = dim ; P = fe degree ; T = value type ; S = same diagonal
+#define I(D,P,T,S) template void DDSmoother<D, P, LA::MPI::Vector, T, S>::initialize(MfreeOperator<D, P, P+1, T> const&, DDSmoother<D, P,  LA::MPI::Vector, T, S>::AdditionalData const&)
+
+I(2,1,double,true);I(2,2,double,true);I(2,3,double,true);I(2,4,double,true);
+I(2,1,double,false);I(2,2,double,false);I(2,3,double,false);I(2,4,double,false);
+I(3,1,double,true);I(3,2,double,true);I(3,3,double,true);I(3,4,double,true);
+I(3,1,double,false);I(3,2,double,false);I(3,3,double,false);I(3,4,double,false);
+#undef I
+
+#endif // MATRIXFREE
+#endif // DDSMOOTHER_INST
