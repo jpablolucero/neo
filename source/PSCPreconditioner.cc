@@ -186,11 +186,13 @@ void PSCPreconditioner<dim, VectorType, number, same_diagonal>::initialize(const
         if (level == 0)
           dealii::deallog << "Assembling Block-Jacobi-Smoother." << std::endl;
         dealii::Threads::TaskGroup<> tasks;
+        const unsigned int n = fe.n_dofs_per_cell();
         for (unsigned int i=0; i<ddh->subdomain_to_global_map.size(); ++i)
           {
-            tasks += dealii::Threads::new_task([i,this]()
+
+            tasks += dealii::Threads::new_task([i,n,this]()
             {
-              patch_inverses[i].reset(new LAPACKMatrix);
+              patch_inverses[i].reset(new LAPACKMatrix(n));
               build_matrix(ddh->subdomain_to_global_map[i],
                            ddh->global_dofs_on_subdomain[i],
                            ddh->all_to_unique[i],
@@ -335,6 +337,12 @@ void PSCPreconditioner<dim, VectorType, number, same_diagonal>::build_matrix
  const std::map<dealii::types::global_dof_index, unsigned int> &all_to_unique,
  dealii::LAPACKFullMatrix<double> &matrix)
 {
+/*  {
+    std::string section = "build matrix @ level ";
+    section += std::to_string(level);
+    timer->enter_subsection(section);
+  }*/
+
   dealii::MGLevelObject<dealii::FullMatrix<double> > mg_matrix ;
   mg_matrix.resize(level,level);
 
@@ -357,7 +365,15 @@ void PSCPreconditioner<dim, VectorType, number, same_diagonal>::build_matrix
 
   dealii::colored_loop<dim, dim> (colored_iterators, *dof_info, info_box, matrix_integrator, assembler,lctrl, colored_iterators[0]);
 
-  matrix.copy_from(mg_matrix[level]);
+//  timer->leave_subsection();
+  {
+    std::string section = "Smoothing @ level ";
+    section += std::to_string(level);
+    timer->enter_subsection(section);
+  }
+
+  matrix = std::move(mg_matrix[level]);
+  timer->leave_subsection();
 }
 
 #include "PSCPreconditioner.inst"

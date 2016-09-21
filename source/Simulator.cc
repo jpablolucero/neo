@@ -14,7 +14,7 @@ Simulator<dim,same_diagonal,degree>::Simulator (dealii::TimerOutput &timer_,
                 dealii::parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy),
   mapping (),
 #ifdef CG
-  fe(dealii::FE_Q<dim>(degree),1),
+  fe(dealii::FESystem<dim>(dealii::FESystem<dim>(dealii::FE_Q<dim>(degree),1),1,dealii::FE_Q<dim>(degree-1),1)),
 #else
   fe(dealii::FE_DGQ<dim>(degree),1),
 #endif
@@ -253,12 +253,11 @@ void Simulator<dim,same_diagonal,degree>::solve ()
   mg_transfer.initialize_constraints(constraints, mg_constrained_dofs);
 #endif
   mg_transfer.build_matrices(dof_handler);
-  dealii::Multigrid<LA::MPI::Vector> mg(dof_handler, mgmatrix,
-                                        mg_coarse, mg_transfer,
-                                        mg_smoother, mg_smoother);
+  dealii::Multigrid<LA::MPI::Vector> mg(mgmatrix, mg_coarse, mg_transfer,
+                                        mg_smoother, mg_smoother,
+                                        mg_matrix.min_level(),
+                                        mg_matrix.max_level());
 //  mg.set_debug(10);
-  mg.set_minlevel(mg_matrix.min_level());
-  mg.set_maxlevel(mg_matrix.max_level());
   dealii::PreconditionMG<dim, LA::MPI::Vector,
          dealii::MGTransferPrebuilt<LA::MPI::Vector> >
          preconditioner(dof_handler, mg, mg_transfer);
@@ -360,6 +359,10 @@ void Simulator<dim,same_diagonal,degree>::run ()
   timer.enter_subsection("setup_system");
   pcout << "Setup system" << std::endl;
   setup_system ();
+#ifdef MG
+  pcout << "Setup multigrid" << std::endl;
+  setup_multigrid ();
+#endif
   pcout << "Assemble system" << std::endl;
   assemble_system();
   timer.leave_subsection();
@@ -367,12 +370,6 @@ void Simulator<dim,same_diagonal,degree>::run ()
   for (unsigned int l=min_level; l<triangulation.n_global_levels(); ++l)
     dealii::deallog << ' ' << dof_handler.n_dofs(l);
   dealii::deallog << std::endl;
-#ifdef MG
-  timer.enter_subsection("setup_multigrid");
-  pcout << "Setup multigrid" << std::endl;
-  setup_multigrid ();
-  timer.leave_subsection();
-#endif
   output_results(n_levels);
   timer.enter_subsection("solve");
   pcout << "Solve" << std::endl;
