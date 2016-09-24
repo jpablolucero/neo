@@ -94,6 +94,7 @@ private:
   SystemMatrixType             system_matrix;
   LA::MPI::Vector       solution;
   LA::MPI::Vector       solution_tmp;
+  LA::MPI::Vector       solution_boundary;
   LA::MPI::Vector       right_hand_side;
   dealii::MGLevelObject<LA::MPI::Vector> mg_solution ;
 

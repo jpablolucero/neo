@@ -337,11 +337,11 @@ void PSCPreconditioner<dim, VectorType, number, same_diagonal>::build_matrix
  const std::map<dealii::types::global_dof_index, unsigned int> &all_to_unique,
  dealii::LAPACKFullMatrix<double> &matrix)
 {
-/*  {
-    std::string section = "build matrix @ level ";
-    section += std::to_string(level);
-    timer->enter_subsection(section);
-  }*/
+  /*  {
+      std::string section = "build matrix @ level ";
+      section += std::to_string(level);
+      timer->enter_subsection(section);
+    }*/
 
   dealii::MGLevelObject<dealii::FullMatrix<double> > mg_matrix ;
   mg_matrix.resize(level,level);

@@ -15,6 +15,7 @@ Simulator<dim,same_diagonal,degree>::Simulator (dealii::TimerOutput &timer_,
   mapping (),
 #ifdef CG
   fe(dealii::FESystem<dim>(dealii::FESystem<dim>(dealii::FE_Q<dim>(degree),1),1,dealii::FE_Q<dim>(degree-1),1)),
+//fe(dealii::FESystem<dim>(dealii::FE_RaviartThomas<dim>(degree-1),1,dealii::FE_Q<dim>(degree-1),1)),
 #else
   fe(dealii::FE_DGQ<dim>(degree),1),
 #endif
@@ -95,6 +96,9 @@ void Simulator<dim,same_diagonal,degree>::setup_system ()
   constraints.clear();
   constraints.reinit(locally_relevant_dofs);
 #ifdef CG
+  mg_constrained_dofs.clear();
+  mg_constrained_dofs.initialize(dof_handler);
+  std::set<dealii::types::boundary_id> dirichlet_boundary_ids;
 #ifdef PERIODIC
   //Periodic boundary conditions
   std::vector<dealii::GridTools::PeriodicFacePair
@@ -112,36 +116,48 @@ void Simulator<dim,same_diagonal,degree>::setup_system ()
   dealii::DoFTools::make_periodicity_constraints<dealii::DoFHandler<dim> >
   (periodic_faces, constraints);
   for (unsigned int i=0; i<2*dim-2; ++i)
-    dealii::VectorTools::interpolate_boundary_values(dof_handler, i,
-                                                     reference_function,
-                                                     constraints);
+    {
+      dealii::DoFTools::make_zero_boundary_constraints(dof_handler, i,
+                                                       constraints);
+      dirichlet_boundary_ids.insert(i);
+    }
+
 #else
   for (unsigned int i=0; i<2*dim; ++i)
-    dealii::VectorTools::interpolate_boundary_values(dof_handler, i,
-                                                     reference_function,
-                                                     constraints);
+    {
+      dealii::DoFTools::make_zero_boundary_constraints(dof_handler, i,
+                                                       constraints);
+      dirichlet_boundary_ids.insert(i);
+    }
 #endif
+  mg_constrained_dofs.make_zero_boundary_constraints(dof_handler, dirichlet_boundary_ids);
 
   dealii::DoFTools::make_hanging_node_constraints
   (dof_handler, constraints);
-
 #endif
   constraints.close();
 
 #if PARALLEL_LA == 0
   solution.reinit (locally_owned_dofs.n_elements());
   solution_tmp.reinit (locally_owned_dofs.n_elements());
+  solution_boundary.reinit (locally_owned_dofs.n_elements());
   right_hand_side.reinit (locally_owned_dofs.n_elements());
 #else
   solution.reinit (locally_owned_dofs, locally_relevant_dofs, mpi_communicator);
   solution_tmp.reinit (locally_owned_dofs, mpi_communicator);
+  solution_boundary.reinit (locally_owned_dofs, mpi_communicator);
   right_hand_side.reinit (locally_owned_dofs, mpi_communicator);
+#endif
+#ifdef CG
+  dealii::VectorTools::interpolate(mapping, dof_handler,
+                                   reference_function, solution_boundary);
 #endif
 }
 
 template <int dim, bool same_diagonal, unsigned int degree>
 void Simulator<dim, same_diagonal, degree>::assemble_system ()
 {
+  //first assemble the right-hand side
   dealii::MeshWorker::IntegrationInfoBox<dim> info_box;
 
   const unsigned int n_gauss_points = dof_handler.get_fe().degree+1;
@@ -163,8 +179,8 @@ void Simulator<dim, same_diagonal, degree>::assemble_system ()
 
   dealii::MeshWorker::DoFInfo<dim> dof_info(dof_handler.block_info());
 
-  ResidualSimpleConstraints<LA::MPI::Vector > rhs_assembler;
-//  dealii::MeshWorker::Assembler::ResidualSimple<LA::MPI::Vector > rhs_assembler;
+//  ResidualSimpleConstraints<LA::MPI::Vector > rhs_assembler;
+  dealii::MeshWorker::Assembler::ResidualSimple<LA::MPI::Vector > rhs_assembler;
   dealii::AnyData data;
   data.add<LA::MPI::Vector *>(&right_hand_side, "RHS");
   rhs_assembler.initialize(data);
@@ -178,6 +194,9 @@ void Simulator<dim, same_diagonal, degree>::assemble_system ()
                                                  dof_info, info_box,
                                                  rhs_integrator, rhs_assembler);
   right_hand_side.compress(dealii::VectorOperation::add);
+  //next substract A u_b
+  system_matrix.vmult(solution_tmp, solution_boundary);
+  right_hand_side -= solution_tmp;
 }
 
 template <int dim,bool same_diagonal,unsigned int degree>
@@ -185,7 +204,7 @@ void Simulator<dim,same_diagonal,degree>::setup_multigrid ()
 {
   const unsigned int n_global_levels = triangulation.n_global_levels();
   mg_matrix.resize(min_level, n_global_levels-1);
-  dealii::MGTransferPrebuilt<LA::MPI::Vector> mg_transfer;
+  dealii::MGTransferPrebuilt<LA::MPI::Vector> mg_transfer(mg_constrained_dofs);
   mg_transfer.build_matrices(dof_handler);
   mg_solution.resize(min_level, n_global_levels-1);
   mg_transfer.copy_to_mg(dof_handler,mg_solution,solution);
@@ -250,7 +269,7 @@ void Simulator<dim,same_diagonal,degree>::solve ()
   mgmatrix.initialize(mg_matrix);
   dealii::MGTransferPrebuilt<LA::MPI::Vector> mg_transfer;
 #ifdef CG
-  mg_transfer.initialize_constraints(constraints, mg_constrained_dofs);
+  mg_transfer.initialize_constraints(mg_constrained_dofs);
 #endif
   mg_transfer.build_matrices(dof_handler);
   dealii::Multigrid<LA::MPI::Vector> mg(mgmatrix, mg_coarse, mg_transfer,
@@ -278,6 +297,7 @@ void Simulator<dim,same_diagonal,degree>::solve ()
   constraints.distribute(solution_tmp);
 #endif
   solution = solution_tmp;
+  solution += solution_boundary;
   timer.leave_subsection();
 }
 

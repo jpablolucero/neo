@@ -460,10 +460,12 @@ namespace Assembler
                  info.indices, info.indices, level);
         if (mg_constrained_dofs != 0)
           {
-            assemble_in((*interface_in)[level], info.matrix(0,false).matrix,
-                        info.indices, info.indices, level);
-            assemble_out((*interface_out)[level],info.matrix(0,false).matrix,
-                         info.indices, info.indices, level);
+            if (interface_in != 0)
+              assemble_in((*interface_in)[level], info.matrix(0,false).matrix,
+                          info.indices, info.indices, level);
+            if (interface_out != 0)
+              assemble_out((*interface_out)[level],info.matrix(0,false).matrix,
+                           info.indices, info.indices, level);
           }
       }
     else
@@ -477,10 +479,12 @@ namespace Assembler
 
           if (mg_constrained_dofs != 0)
             {
-              assemble_in((*interface_in)[level], info.matrix(k,false).matrix,
-                          info.indices_by_block[row], info.indices_by_block[column], level);
-              assemble_out((*interface_out)[level],info.matrix(k,false).matrix,
-                           info.indices_by_block[column], info.indices_by_block[row], level);
+              if (interface_in !=0 )
+                assemble_in((*interface_in)[level], info.matrix(k,false).matrix,
+                            info.indices_by_block[row], info.indices_by_block[column], level);
+              if (interface_out != 0)
+                assemble_out((*interface_out)[level],info.matrix(k,false).matrix,
+                             info.indices_by_block[column], info.indices_by_block[row], level);
             }
         }
   }
