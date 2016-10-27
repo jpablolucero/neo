@@ -64,6 +64,7 @@ private:
    dealii::LAPACKFullMatrix<double> &matrix);
 
   std::vector<std::shared_ptr<LAPACKMatrix> > patch_inverses;
+  std::vector<number>                         inverse_factors;
 
   dealii::MeshWorker::IntegrationInfoBox<dim> info_box;
   std::unique_ptr<dealii::MeshWorker::DoFInfo<dim> >  dof_info;
@@ -89,6 +90,7 @@ public:
     relaxation(1.0),
     tol(0.),
     mapping(0),
+    cell_to_factor(nullptr),
     use_dictionary(false),
     patch_type(cell_patches)
   {}
@@ -98,6 +100,7 @@ public:
   double relaxation;
   double tol;
   const dealii::Mapping<dim> *mapping;
+  std::map<typename dealii::DoFHandler<dim>::level_cell_iterator, number> *cell_to_factor;
   LA::MPI::Vector *solution;
 
   bool use_dictionary;

@@ -23,6 +23,7 @@ namespace
 
       dealii::Vector<number>  local_src;
       const VectorType *src;
+      const std::vector<number> *inverse_factors;
     };
 
     template <int dim, typename VectorType, typename number, bool same_diagonal>
@@ -48,6 +49,8 @@ namespace
       ddh.restrict_add(scratch.local_src, *(scratch.src), subdomain_idx);
       (*(scratch.local_inverses))[subdomain_idx]->vmult(copy.local_solution,
                                                         scratch.local_src);
+      if ( scratch.inverse_factors!=nullptr )
+        copy.local_solution *= scratch.inverse_factors->at(subdomain_idx);
     }
   }
 }
@@ -137,6 +140,7 @@ void PSCPreconditioner<dim,VectorType,number,same_diagonal>::initialize(const Gl
 #endif // MATRIXFREE
 
   patch_inverses.resize(ddh->global_dofs_on_subdomain.size());
+  inverse_factors.clear();
   //setup local matrices/inverses
   {
     timer->enter_subsection("PSC::build_patch_inverses");
@@ -167,6 +171,21 @@ void PSCPreconditioner<dim,VectorType,number,same_diagonal>::initialize(const Gl
               {
                 subdomain = i;
                 break;
+              }
+          }
+
+        if ( data.cell_to_factor != nullptr )
+          {
+            // debug output
+            std::cout << "setup inverse factors" << std::endl;
+            for ( auto p=ddh->subdomain_to_global_map.begin();
+                  p!=ddh->subdomain_to_global_map.end();
+                  ++p )
+              {
+                number sum = 0.;
+                for ( auto c=p->begin(); c!=p->end(); ++c )
+                  sum += data.cell_to_factor->at(*c);
+                inverse_factors.push_back((number)p->size()/sum);
               }
           }
 
@@ -313,6 +332,10 @@ void PSCPreconditioner<dim, VectorType, number, same_diagonal>::vmult_add (Vecto
     WorkStream::Scratch<dim, VectorType, number, same_diagonal> scratch_sample;
     scratch_sample.src = &ghosted_src;
     scratch_sample.local_inverses = &patch_inverses;
+    if ( inverse_factors.empty() )
+      scratch_sample.inverse_factors = nullptr;
+    else
+      scratch_sample.inverse_factors = &inverse_factors;
 
     dealii::WorkStream::run(ddh->colorized_iterators(),
                             WorkStream::work<dim, VectorType, number, same_diagonal>,

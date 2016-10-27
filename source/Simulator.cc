@@ -304,8 +304,30 @@ void Simulator<dim,same_diagonal,degree>::solve ()
       smoother_data[level].patch_type = Smoother::AdditionalData::cell_patches;
     }
   dealii::MGSmootherPrecondition<SystemMatrixType,Smoother,LA::MPI::Vector> mg_smoother;
-  mg_smoother.initialize(mg_matrix, smoother_data);
-  mg_smoother.set_steps(smoothing_steps);
+
+  {
+    // construct scale factors per cell
+    typedef typename dealii::DoFHandler<dim>::level_cell_iterator level_cell_iterator;
+    std::vector<std::map<level_cell_iterator,double> > cell_to_factor(n_levels);
+    unsigned int l = 0;
+    // for (unsigned int level = smoother_data.min_level();
+    //   level <= smoother_data.max_level();
+    //   ++level, ++l)
+    //   {
+    //  for ( auto cell=dof_handler.begin_mg(level);
+    //        cell!=dof_handler.end_mg(level);
+    //        ++cell )
+    //    cell_to_factor[l].insert ( std::pair<level_cell_iterator,double>(cell,10.) );
+    //  smoother_data[level].cell_to_factor = &(cell_to_factor[l]);
+    //   }
+    mg_smoother.initialize(mg_matrix, smoother_data);
+    mg_smoother.set_steps(smoothing_steps);
+    // avoid dangling pointers
+    for (unsigned int level = smoother_data.min_level();
+         level <= smoother_data.max_level();
+         ++level, ++l)
+      smoother_data[level].cell_to_factor = nullptr;
+  }
 
   // Setup Multigrid-Transfer
 #ifdef MATRIXFREE
@@ -450,16 +472,16 @@ void Simulator<dim,same_diagonal,degree>::run ()
   setup_multigrid ();
   timer.leave_subsection();
 #endif
-  output_results(n_levels);
+  // output_results(n_levels);
   timer.enter_subsection("solve");
   pcout << "Solve" << std::endl;
   solve ();
   timer.leave_subsection();
-  timer.enter_subsection("output");
-  pcout << "Output" << std::endl;
-  compute_error();
-  output_results(n_levels);
-  timer.leave_subsection();
+  // timer.enter_subsection("output");
+  // pcout << "Output" << std::endl;
+  // compute_error();
+  // output_results(n_levels);
+  // timer.leave_subsection();
   timer.print_summary();
   pcout << std::endl;
   // workaround regarding issue #2533
@@ -503,9 +525,9 @@ void Simulator<dim,same_diagonal,degree>::run_non_linear ()
   newton(solution_data, data);
   solution = *(solution_data.try_read_ptr<LA::MPI::Vector>("solution"));
   timer.leave_subsection();
-  timer.enter_subsection("output");
-  output_results(n_levels);
-  timer.leave_subsection();
+  // timer.enter_subsection("output");
+  // output_results(n_levels);
+  // timer.leave_subsection();
   timer.print_summary();
   pcout << std::endl;
   // workaround regarding issue #2533
