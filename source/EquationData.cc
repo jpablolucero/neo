@@ -2,15 +2,17 @@
 
 template <int dim>
 Coefficient<dim>::Coefficient()
-  : dealii::Function<dim>()
+  : dealii::Function<dim>(),
+    a (.02),
+    b (100.)
 {}
 
 template <int dim>
 double
-Coefficient<dim>::value (const dealii::Point<dim> &,
+Coefficient<dim>::value (const dealii::Point<dim> &p,
                          const unsigned int d) const
 {
-  return (d == 0) ? 1. : 1.;//1./(0.05 + 2.*p.square()) : 1.;
+  return (d == 0) ? 1./(a + b*p.square()) : 1.;
 }
 
 template <int dim>
@@ -28,13 +30,13 @@ void Coefficient<dim>::value_list (const std::vector<dealii::Point<dim> > &point
 
 template <int dim>
 dealii::Tensor<1,dim>
-Coefficient<dim>::gradient (const dealii::Point<dim> &/*p*/,
+Coefficient<dim>::gradient (const dealii::Point<dim> &p,
                             const unsigned int  d) const
 {
   dealii::Tensor<1,dim> return_grad;
   if (d == 0)
     for (unsigned int i=0; i<dim; ++i)
-      return_grad[i]=0.;/*-p(i)/((p.square()+0.025)*(p.square()+0.025));*/
+      return_grad[i]=-2.*b*p(i)/((b*p.square()+a)*(b*p.square()+a));
 
   return return_grad;
 }
@@ -46,36 +48,36 @@ ReferenceFunction<dim>::ReferenceFunction(unsigned int n_comp_)
 
 template <int dim>
 double
-ReferenceFunction<dim>::value(const dealii::Point<dim> &/*p*/,
+ReferenceFunction<dim>::value(const dealii::Point<dim> &p,
                               const unsigned int /*component = 0*/) const
 {
-  /*  const double pi2 = dealii::numbers::PI;
-    return std::sin(pi2*p(0))*std::sin(pi2*p(1));*/
-  return 0.;
+  const double pi2 = dealii::numbers::PI;
+  return std::sin(pi2*p(0))*std::sin(pi2*p(1));
+//  return 0.;
 }
 
 template <int dim>
 dealii::Tensor<1,dim>
-ReferenceFunction<dim>::gradient (const dealii::Point<dim> &/*p*/,
+ReferenceFunction<dim>::gradient (const dealii::Point<dim> &p,
                                   const unsigned int /*d*/) const
 {
   dealii::Tensor<1,dim> return_grad;
-  /*  const double pi2 = dealii::numbers::PI*4/3;
-    return_grad[0]=pi2*std::cos(pi2*p(0))*std::sin(pi2*p(1));
-    return_grad[1]=pi2*std::sin(pi2*p(0))*std::cos(pi2*p(1));*/
+  const double pi2 = dealii::numbers::PI;
+  return_grad[0]=pi2*std::cos(pi2*p(0))*std::sin(pi2*p(1));
+  return_grad[1]=pi2*std::sin(pi2*p(0))*std::cos(pi2*p(1));
 
   return return_grad;
 }
 
 template <int dim>
 double
-ReferenceFunction<dim>::laplacian(const dealii::Point<dim> &/*p*/,
+ReferenceFunction<dim>::laplacian(const dealii::Point<dim> &p,
                                   const unsigned int /*component = 0*/) const
 {
-  /*  const double pi2 = dealii::numbers::PI*3/2;
-    const double return_value = -2*pi2*pi2*std::sin(pi2*p(0))*std::sin(pi2*p(1));
-    return return_value;*/
-  return -1.;
+  const double pi2 = dealii::numbers::PI;
+  const double return_value = -2*pi2*pi2*std::sin(pi2*p(0))*std::sin(pi2*p(1));
+  return return_value;
+//  return -1.;
 }
 
 template <int dim>

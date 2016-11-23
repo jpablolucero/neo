@@ -27,7 +27,7 @@ void MatrixIntegrator<dim>::cell(dealii::MeshWorker::DoFInfo<dim> &dinfo,
           ++c ;
         }
       auto &M = dinfo.matrix(b*n_blocks + b).matrix;
-      LocalIntegrators::Diffusion::cell_matrix<dim>(M,fev,coeffs);
+      dealii::LocalIntegrators::Laplace::cell_matrix<dim>(M,fev);
     }
 }
 
@@ -64,8 +64,8 @@ void MatrixIntegrator<dim>::face(dealii::MeshWorker::DoFInfo<dim> &dinfo1,
           ++c ;
         }
 
-      LocalIntegrators::Diffusion::ip_matrix<dim>
-      (RM11,RM12,RM21,RM22,fev1,fev2,coeffs,
+      dealii::LocalIntegrators::Laplace::ip_matrix<dim>
+      (RM11,RM12,RM21,RM22,fev1,fev2,
        dealii::LocalIntegrators::Laplace::compute_penalty(dinfo1,dinfo2,deg1,deg2));
     }
 }
@@ -93,8 +93,8 @@ void MatrixIntegrator<dim>::boundary(dealii::MeshWorker::DoFInfo<dim> &dinfo,
           ++c ;
         }
       auto &M = dinfo.matrix(b*n_blocks + b).matrix;
-      LocalIntegrators::Diffusion::nitsche_matrix<dim>
-      (M,fev,coeffs,
+      dealii::LocalIntegrators::Laplace::nitsche_matrix<dim>
+      (M,fev,
        dealii::LocalIntegrators::Laplace::compute_penalty(dinfo,dinfo,deg,deg));
     }
 }

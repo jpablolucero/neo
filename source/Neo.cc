@@ -30,7 +30,7 @@ int main (int argc, char *argv[])
 
   Simulator<2,true,2> dgmethod(timer, mpi_communicator, pcout);
   dgmethod.n_levels = (argc > 1) ? atoi(argv[1]) : 2 ;
-  dgmethod.min_level = 0;
+  dgmethod.min_level = 1;
   dgmethod.smoothing_steps = (argc > 2) ? atoi(argv[2]) : 1 ;
   dgmethod.run ();
   return 0;

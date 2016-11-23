@@ -32,6 +32,9 @@ public:
 
   dealii::Tensor<1,dim> gradient (const dealii::Point<dim>  &p,
                                   const unsigned int        component = 0) const override;
+private:
+  const double a;
+  const double b;
 };
 
 template <int dim>

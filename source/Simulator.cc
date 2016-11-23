@@ -259,10 +259,10 @@ void Simulator<dim,same_diagonal,degree>::solve ()
   dealii::SolverGMRES<LA::MPI::Vector> coarse_solver(coarse_solver_control);
   dealii::MGCoarseGridIterativeSolver<LA::MPI::Vector,
          dealii::SolverGMRES<LA::MPI::Vector>,
-         LA::MPI::SparseMatrix,
+         SystemMatrixType, /*LA::MPI::SparseMatrix*/
          dealii::PreconditionIdentity>
          mg_coarse(coarse_solver,
-                   coarse_matrix,
+                   mg_matrix[min_level], /*coarse_matrix*/
                    id);
 #else // PARALLEL_LA == 3
   // TODO allow for Matrix-based solver for dealii MPI vectors
@@ -307,19 +307,20 @@ void Simulator<dim,same_diagonal,degree>::solve ()
 
   {
     // construct scale factors per cell
+    Coefficient<dim> coeff;
     typedef typename dealii::DoFHandler<dim>::level_cell_iterator level_cell_iterator;
     std::vector<std::map<level_cell_iterator,double> > cell_to_factor(n_levels);
     unsigned int l = 0;
-    // for (unsigned int level = smoother_data.min_level();
-    //   level <= smoother_data.max_level();
-    //   ++level, ++l)
-    //   {
-    //  for ( auto cell=dof_handler.begin_mg(level);
-    //        cell!=dof_handler.end_mg(level);
-    //        ++cell )
-    //    cell_to_factor[l].insert ( std::pair<level_cell_iterator,double>(cell,10.) );
-    //  smoother_data[level].cell_to_factor = &(cell_to_factor[l]);
-    //   }
+    for (unsigned int level = smoother_data.min_level();
+         level <= smoother_data.max_level();
+         ++level, ++l)
+      {
+        for ( auto cell=dof_handler.begin_mg(level);
+              cell!=dof_handler.end_mg(level);
+              ++cell )
+          cell_to_factor[l].insert ( std::pair<level_cell_iterator,double>(cell,coeff.value(cell->center())) );
+        smoother_data[level].cell_to_factor = &(cell_to_factor[l]);
+      }
     mg_smoother.initialize(mg_matrix, smoother_data);
     mg_smoother.set_steps(smoothing_steps);
     // avoid dangling pointers
@@ -349,10 +350,10 @@ void Simulator<dim,same_diagonal,degree>::solve ()
                                         mg_coarse,
                                         mg_transfer,
                                         mg_smoother,
-                                        mg_smoother);
+                                        mg_smoother,
+                                        mg_matrix.min_level(),
+                                        mg_matrix.max_level());
   // mg.set_debug(10);
-  mg.set_minlevel(mg_matrix.min_level());
-  mg.set_maxlevel(mg_matrix.max_level());
 #ifdef MATRIXFREE
   dealii::PreconditionMG<dim, LA::MPI::Vector, dealii::MGTransferMF<dim,SystemMatrixType> >
   preconditioner(dof_handler, mg, mg_transfer);
@@ -479,8 +480,8 @@ void Simulator<dim,same_diagonal,degree>::run ()
   timer.leave_subsection();
   // timer.enter_subsection("output");
   // pcout << "Output" << std::endl;
-  // compute_error();
-  // output_results(n_levels);
+  compute_error();
+  output_results(n_levels);
   // timer.leave_subsection();
   timer.print_summary();
   pcout << std::endl;
