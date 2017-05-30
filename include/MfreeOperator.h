@@ -3,7 +3,6 @@
 
 #ifdef MATRIXFREE
 
-#include <deal.II/base/std_cxx11/function.h>
 #include <deal.II/base/timer.h>
 
 #include <deal.II/dofs/dof_handler.h>

@@ -251,7 +251,7 @@ void Simulator<dim,same_diagonal,degree>::solve ()
   timer.enter_subsection("solve::mg_initialization");
 #ifdef MG
   // Setup coarse solver
-  dealii::SolverControl coarse_solver_control (dof_handler.n_dofs(min_level)*10, 1e-10, false, false);
+  dealii::SolverControl coarse_solver_control (dof_handler.n_dofs(min_level)*10, 1e-15, false, false);
   dealii::PreconditionIdentity id;
 #if PARALLEL_LA < 3
   mg_matrix[min_level].build_coarse_matrix();
@@ -327,7 +327,8 @@ void Simulator<dim,same_diagonal,degree>::solve ()
                                         mg_coarse,
                                         mg_transfer,
                                         mg_smoother,
-                                        mg_smoother);
+                                        mg_smoother,
+					min_level);
   // mg.set_debug(10);
   mg.set_minlevel(mg_matrix.min_level());
   mg.set_maxlevel(mg_matrix.max_level());

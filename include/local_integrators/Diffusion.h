@@ -40,6 +40,30 @@ namespace LocalIntegrators
     }
 
     template <int dim>
+      inline void
+      L2(dealii::FullMatrix<double> &M,
+	 const dealii::FEValuesBase<dim> &fe,
+	 const double &factor)
+      {
+	const unsigned int n_dofs = fe.dofs_per_cell;
+	const unsigned int n_comps = fe.get_fe().n_components();
+	const unsigned int n_quads = fe.n_quadrature_points;
+
+	for (unsigned int q=0; q<n_quads; ++q)
+	  {
+	    const double dx = fe.JxW(q) * factor;
+	    for (unsigned int i=0; i<n_dofs; ++i)
+	      {
+		for (unsigned int j=0; j<n_dofs; ++j)
+		  {
+		    for (unsigned int d=0; d<n_comps; ++d)
+		      M(i,j) += dx * (fe.shape_value_component(j,q,d) * fe.shape_value_component(i,q,d));
+		  }
+	      }
+	  }
+      }
+	
+    template <int dim>
     inline void
     cell_matrix(dealii::FullMatrix<double> &M,
                 const dealii::FEValuesBase<dim> &fe,
@@ -290,6 +314,29 @@ namespace LocalIntegrators
         }
     }
 
+    template <int dim>
+      inline void
+      L2(dealii::Vector<double> &result,
+	 const dealii::FEValuesBase<dim> &fe,
+	 const dealii::VectorSlice<const std::vector<std::vector<double> > > &input,
+	 double factor = 1.)
+      {
+	const unsigned int n_quads = fe.n_quadrature_points;
+	const unsigned int n_dofs = fe.dofs_per_cell;
+	const unsigned int n_comps = fe.get_fe().n_components();
+
+	AssertVectorVectorDimension(input, n_comps, n_quads);
+	Assert(result.size() == n_dofs, dealii::ExcDimensionMismatch(result.size(), n_dofs));
+
+	for (unsigned int q=0; q<n_quads; ++q)
+	  {
+	    const double dx = factor * fe.JxW(q);
+	    for (unsigned int i=0; i<n_dofs; ++i)
+	      for (unsigned int d=0; d<n_comps; ++d)
+		result(i) += dx * (input[d][q] * fe.shape_value_component(i,q,d)) ;
+	  }
+      }
+    
     template <int dim>
     inline void
     ip_residual(dealii::Vector<double> &resultINT,

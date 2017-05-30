@@ -3,7 +3,6 @@
 
 #ifndef MATRIXFREE
 
-#include <deal.II/base/std_cxx11/function.h>
 #include <deal.II/base/timer.h>
 #include <deal.II/base/graph_coloring.h>
 #include <deal.II/grid/tria.h>
