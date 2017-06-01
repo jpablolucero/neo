@@ -52,6 +52,7 @@
 #include <PSCPreconditioner.h>
 #include <MFPSCPreconditioner.h>
 #include <Mesh.h>
+#include <FiniteElement.h>
 
 #include <string>
 #include <fstream>
@@ -91,10 +92,10 @@ private:
 
   Mesh<dim>                  mesh;
 
-  const dealii::MappingQ1<dim>                        mapping;
+  FiniteElement<dim>         fe;
+  
   dealii::ConstraintMatrix                            constraints;
   dealii::MGConstrainedDoFs                           mg_constrained_dofs;
-  dealii::FESystem<dim>                               fe;
 
 #ifdef MATRIXFREE
   MFSolution<dim>                                     reference_function;

@@ -10,13 +10,8 @@ Simulator<dim,same_diagonal,degree>::Simulator (dealii::TimerOutput &timer_,
   smoothing_steps(1),
   mpi_communicator(mpi_communicator_),
   mesh(mpi_communicator_),
-  mapping (),
-#ifdef CG
-  fe(dealii::FE_Q<dim>(degree),1),
-#else
-  fe(dealii::FE_DGQ<dim>(degree),1),
-#endif
-  reference_function(fe.n_components()),
+  fe(degree),
+  reference_function(fe.fe.n_components()),
   dof_handler (mesh.triangulation),
   pcout (pcout_),
   timer(timer_),
@@ -55,8 +50,8 @@ Simulator<dim,same_diagonal,degree>::~Simulator ()
 template <int dim,bool same_diagonal,unsigned int degree>
 void Simulator<dim,same_diagonal,degree>::setup_system ()
 {
-  dof_handler.distribute_dofs (fe);
-  dof_handler.distribute_mg_dofs(fe);
+  dof_handler.distribute_dofs (fe.fe);
+  dof_handler.distribute_mg_dofs(fe.fe);
   dof_handler.initialize_local_block_info();
 
   locally_owned_dofs = dof_handler.locally_owned_dofs();
@@ -120,9 +115,9 @@ void Simulator<dim,same_diagonal,degree>::setup_system ()
   constraints.close();
 
 #ifdef MATRIXFREE
-  system_matrix.reinit (&dof_handler,&mapping,&constraints,mpi_communicator,dealii::numbers::invalid_unsigned_int);
+  system_matrix.reinit (&dof_handler,&(fe.mapping),&constraints,mpi_communicator,dealii::numbers::invalid_unsigned_int);
 #else
-  system_matrix.reinit (&dof_handler,&mapping,&constraints,mpi_communicator,mesh.triangulation.n_global_levels()-1);
+  system_matrix.reinit (&dof_handler,&(fe.mapping),&constraints,mpi_communicator,mesh.triangulation.n_global_levels()-1);
 #endif
 
 #ifdef MATRIXFREE
@@ -175,11 +170,11 @@ void Simulator<dim, same_diagonal, degree>::assemble_system ()
 
   dealii::AnyData src_data;
 #ifdef MATRIXFREE
-  info_box.initialize(fe, mapping);
+  info_box.initialize(fe.fe, fe.mapping);
   dealii::MeshWorker::DoFInfo<dim> dof_info(dof_handler);
 #else
   src_data.add<const LA::MPI::Vector *>(&solution,"Newton iterate");
-  info_box.initialize(fe,mapping,src_data,LA::MPI::Vector {},&(dof_handler.block_info()));
+  info_box.initialize(fe.fe,fe.mapping,src_data,LA::MPI::Vector {},&(dof_handler.block_info()));
   dealii::MeshWorker::DoFInfo<dim> dof_info(dof_handler.block_info());
 #endif // MATRIXFREE
 
@@ -192,7 +187,7 @@ void Simulator<dim, same_diagonal, degree>::assemble_system ()
 #ifdef CG
   rhs_assembler.initialize(constraints);
 #endif
-  RHSIntegrator<dim> rhs_integrator(fe.n_components());
+  RHSIntegrator<dim> rhs_integrator(fe.fe.n_components());
 
   dealii::MeshWorker::integration_loop<dim, dim>(dof_handler.begin_active(),
                                                  dof_handler.end(),
@@ -214,17 +209,17 @@ void Simulator<dim,same_diagonal,degree>::setup_multigrid ()
   mg_transfer.build_matrices(dof_handler);
   mg_solution.resize(min_level, n_global_levels-1);
   mg_transfer.copy_to_mg(dof_handler,mg_solution,solution);
-  system_matrix.reinit (&dof_handler,&mapping, &constraints, mpi_communicator, mesh.triangulation.n_global_levels()-1, solution);
+  system_matrix.reinit (&dof_handler,&(fe.mapping), &constraints, mpi_communicator, mesh.triangulation.n_global_levels()-1, solution);
   for (unsigned int level=min_level; level<n_global_levels; ++level)
     {
       mg_matrix[level].set_timer(timer);
-      mg_matrix[level].reinit(&dof_handler,&mapping,&constraints,mpi_communicator,level,mg_solution[level]);
+      mg_matrix[level].reinit(&dof_handler,&(fe.mapping),&constraints,mpi_communicator,level,mg_solution[level]);
     }
 #else // MATRIXFREE ON
   for (unsigned int level=min_level; level<n_global_levels; ++level)
     {
       mg_matrix[level].set_timer(timer);
-      mg_matrix[level].reinit(&dof_handler,&mapping,&constraints,mpi_communicator,level);
+      mg_matrix[level].reinit(&dof_handler,&(fe.mapping),&constraints,mpi_communicator,level);
     }
 #endif // MATRIXFREE
 }
@@ -272,7 +267,7 @@ void Simulator<dim,same_diagonal,degree>::solve ()
     {
       smoother_data[level].dof_handler = &dof_handler;
       smoother_data[level].level = level;
-      smoother_data[level].mapping = &mapping;
+      smoother_data[level].mapping = &(fe.mapping);
       smoother_data[level].relaxation = 0.7;
       smoother_data[level].mg_constrained_dofs = mg_constrained_dofs;
 #ifndef MATRIXFREE
@@ -350,7 +345,7 @@ void Simulator<dim, same_diagonal, degree>::compute_error () const
   dealii::QGauss<dim> quadrature (degree+2);
   dealii::Vector<double> local_errors;
 
-  dealii::VectorTools::integrate_difference (mapping, dof_handler,
+  dealii::VectorTools::integrate_difference (fe.mapping, dof_handler,
                                              solution,
                                              reference_function,
                                              local_errors, quadrature,
@@ -376,7 +371,7 @@ void Simulator<dim, same_diagonal, degree>::output_results (const unsigned int c
     subdomain(i) = mesh.triangulation.locally_owned_subdomain();
   data_out.add_data_vector (subdomain, "subdomain");
 
-  data_out.build_patches (fe.degree);
+  data_out.build_patches (fe.fe.degree);
 
   const unsigned int n_proc = dealii::Utilities::MPI::n_mpi_processes(mpi_communicator);
   if (n_proc>1)
@@ -414,7 +409,7 @@ void Simulator<dim,same_diagonal,degree>::run ()
   pcout << "Refine global" << std::endl;
   mesh.triangulation.refine_global (n_levels-1);
   timer.leave_subsection();
-  pcout << "Finite element: " << fe.get_name() << std::endl;
+  pcout << "Finite element: " << fe.fe.get_name() << std::endl;
   pcout << "Number of active cells: "
         << mesh.triangulation.n_global_active_cells()
         << std::endl;
@@ -464,7 +459,7 @@ void Simulator<dim,same_diagonal,degree>::run_non_linear ()
   pcout << "Refine global" << std::endl;
   mesh.triangulation.refine_global (n_levels-1);
   timer.leave_subsection();
-  pcout << "Finite element: " << fe.get_name() << std::endl;
+  pcout << "Finite element: " << fe.fe.get_name() << std::endl;
   pcout << "Number of active cells: "
         << mesh.triangulation.n_global_active_cells()
         << std::endl;
