@@ -131,10 +131,10 @@ std::vector<std::vector<double> > XS<dim>::absorption(const std::vector<dealii::
                                                       double scattering_factor)
 {
   auto abs = total(points,n_angles,bin,total_factor);
-  for (auto bout = 0; bout < n_groups ; ++bout)
-    for (auto cin = 0; cin < n_angles ; ++cin)
-      for (auto cout = 0; cout < n_angles ; ++cout)
-        for (auto q = 0; q < points.size() ; ++q)
+  for (unsigned int bout = 0; bout < n_groups ; ++bout)
+    for (unsigned int cin = 0; cin < n_angles ; ++cin)
+      for (unsigned int cout = 0; cout < n_angles ; ++cout)
+        for (unsigned int q = 0; q < points.size() ; ++q)
           abs[cin][q] -= weights[cout] * scattering(points,n_angles,bin,bout,scattering_factor)[cin][cout][q];
   return abs ;
 }

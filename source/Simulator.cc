@@ -322,8 +322,7 @@ void Simulator<dim,same_diagonal,degree>::solve ()
   // Setup (Multigrid-)Preconditioner
   dealii::mg::Matrix<LA::MPI::Vector>         mglevel_matrix;
   mglevel_matrix.initialize(mg_matrix);
-  dealii::Multigrid<LA::MPI::Vector> mg(dof_handler,
-                                        mglevel_matrix,
+  dealii::Multigrid<LA::MPI::Vector> mg(mglevel_matrix,
                                         mg_coarse,
                                         mg_transfer,
                                         mg_smoother,
