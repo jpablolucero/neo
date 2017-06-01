@@ -53,6 +53,7 @@
 #include <MFPSCPreconditioner.h>
 #include <Mesh.h>
 #include <FiniteElement.h>
+#include <Dofs.h>
 
 #include <string>
 #include <fstream>
@@ -86,24 +87,13 @@ private:
   void compute_error () const;
   void output_results (const unsigned int cycle) const;
 
-  dealii::IndexSet           locally_owned_dofs;
-  dealii::IndexSet           locally_relevant_dofs;
   MPI_Comm                   &mpi_communicator;
 
   Mesh<dim>                  mesh;
-
   FiniteElement<dim>         fe;
+  Dofs<dim>                  dofs;
   
-  dealii::ConstraintMatrix                            constraints;
   dealii::MGConstrainedDoFs                           mg_constrained_dofs;
-
-#ifdef MATRIXFREE
-  MFSolution<dim>                                     reference_function;
-#else
-  ReferenceFunction<dim>                              reference_function;
-#endif // MATRIXFREE
-
-  dealii::DoFHandler<dim>      dof_handler;
 
   SystemMatrixType             system_matrix;
   LA::MPI::Vector       solution;
