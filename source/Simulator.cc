@@ -9,9 +9,7 @@ Simulator<dim,same_diagonal,degree>::Simulator (dealii::TimerOutput &timer_,
   min_level(0),
   smoothing_steps(1),
   mpi_communicator(mpi_communicator_),
-  triangulation(mpi_communicator,dealii::Triangulation<dim>::
-                limit_level_difference_at_vertices,
-                dealii::parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy),
+  mesh(mpi_communicator_),
   mapping (),
 #ifdef CG
   fe(dealii::FE_Q<dim>(degree),1),
@@ -19,7 +17,7 @@ Simulator<dim,same_diagonal,degree>::Simulator (dealii::TimerOutput &timer_,
   fe(dealii::FE_DGQ<dim>(degree),1),
 #endif
   reference_function(fe.n_components()),
-  dof_handler (triangulation),
+  dof_handler (mesh.triangulation),
   pcout (pcout_),
   timer(timer_),
   residual(*this),
@@ -48,20 +46,6 @@ Simulator<dim,same_diagonal,degree>::Simulator (dealii::TimerOutput &timer_,
 #else
   pcout << "Using MeshWorker-based matrix-free implementation" << std::endl;
 #endif // MATRIXFREE
-  dealii::GridGenerator::hyper_cube(triangulation,0.,1.,true);
-
-#ifdef PERIODIC
-  //add periodicity
-  typedef typename dealii::Triangulation<dim>::cell_iterator CellIteratorTria;
-  std::vector<dealii::GridTools::PeriodicFacePair<CellIteratorTria> > periodic_faces;
-  const unsigned int b_id1 = 2;
-  const unsigned int b_id2 = 3;
-  const unsigned int direction = 1;
-
-  dealii::GridTools::collect_periodic_faces (triangulation, b_id1, b_id2,
-                                             direction, periodic_faces, dealii::Tensor<1,dim>());
-  triangulation.add_periodicity(periodic_faces);
-#endif
 }
 
 template <int dim,bool same_diagonal,unsigned int degree>
@@ -80,7 +64,7 @@ void Simulator<dim,same_diagonal,degree>::setup_system ()
   /*std::cout << "locally owned dofs on process "
             << dealii::Utilities::MPI::this_mpi_process(mpi_communicator)
             << std::endl;
-  for (unsigned int l=0; l<triangulation.n_global_levels(); ++l)
+  for (unsigned int l=0; l<mesh.triangulation.n_global_levels(); ++l)
     {
       std::cout << "level: " << l << " n_elements(): "
                 << dof_handler.locally_owned_mg_dofs(l).n_elements()
@@ -138,7 +122,7 @@ void Simulator<dim,same_diagonal,degree>::setup_system ()
 #ifdef MATRIXFREE
   system_matrix.reinit (&dof_handler,&mapping,&constraints,mpi_communicator,dealii::numbers::invalid_unsigned_int);
 #else
-  system_matrix.reinit (&dof_handler,&mapping,&constraints,mpi_communicator,triangulation.n_global_levels()-1);
+  system_matrix.reinit (&dof_handler,&mapping,&constraints,mpi_communicator,mesh.triangulation.n_global_levels()-1);
 #endif
 
 #ifdef MATRIXFREE
@@ -223,14 +207,14 @@ void Simulator<dim, same_diagonal, degree>::assemble_system ()
 template <int dim,bool same_diagonal,unsigned int degree>
 void Simulator<dim,same_diagonal,degree>::setup_multigrid ()
 {
-  const unsigned int n_global_levels = triangulation.n_global_levels();
+  const unsigned int n_global_levels = mesh.triangulation.n_global_levels();
   mg_matrix.resize(min_level, n_global_levels-1);
 #ifndef MATRIXFREE
   dealii::MGTransferPrebuilt<LA::MPI::Vector> mg_transfer;
   mg_transfer.build_matrices(dof_handler);
   mg_solution.resize(min_level, n_global_levels-1);
   mg_transfer.copy_to_mg(dof_handler,mg_solution,solution);
-  system_matrix.reinit (&dof_handler,&mapping, &constraints, mpi_communicator, triangulation.n_global_levels()-1, solution);
+  system_matrix.reinit (&dof_handler,&mapping, &constraints, mpi_communicator, mesh.triangulation.n_global_levels()-1, solution);
   for (unsigned int level=min_level; level<n_global_levels; ++level)
     {
       mg_matrix[level].set_timer(timer);
@@ -387,9 +371,9 @@ void Simulator<dim, same_diagonal, degree>::output_results (const unsigned int c
   dealii::DataOut<dim> data_out;
   data_out.attach_dof_handler (dof_handler);
   data_out.add_data_vector (solution, "u");
-  dealii::Vector<float> subdomain (triangulation.n_active_cells());
+  dealii::Vector<float> subdomain (mesh.triangulation.n_active_cells());
   for (unsigned int i=0; i<subdomain.size(); ++i)
-    subdomain(i) = triangulation.locally_owned_subdomain();
+    subdomain(i) = mesh.triangulation.locally_owned_subdomain();
   data_out.add_data_vector (subdomain, "subdomain");
 
   data_out.build_patches (fe.degree);
@@ -400,7 +384,7 @@ void Simulator<dim, same_diagonal, degree>::output_results (const unsigned int c
       const int n_digits = dealii::Utilities::needed_digits(n_proc);
       std::ofstream output
       ((filename + "."
-        + dealii::Utilities::int_to_string(triangulation.locally_owned_subdomain(),n_digits)
+        + dealii::Utilities::int_to_string(mesh.triangulation.locally_owned_subdomain(),n_digits)
         + ".vtu").c_str());
       data_out.write_vtu (output);
 
@@ -428,11 +412,11 @@ void Simulator<dim,same_diagonal,degree>::run ()
   timer.reset();
   timer.enter_subsection("refine_global");
   pcout << "Refine global" << std::endl;
-  triangulation.refine_global (n_levels-1);
+  mesh.triangulation.refine_global (n_levels-1);
   timer.leave_subsection();
   pcout << "Finite element: " << fe.get_name() << std::endl;
   pcout << "Number of active cells: "
-        << triangulation.n_global_active_cells()
+        << mesh.triangulation.n_global_active_cells()
         << std::endl;
   timer.enter_subsection("setup_system");
   pcout << "Setup system" << std::endl;
@@ -441,7 +425,7 @@ void Simulator<dim,same_diagonal,degree>::run ()
   assemble_system();
   timer.leave_subsection();
   dealii::deallog << "DoFHandler levels: ";
-  for (unsigned int l=min_level; l<triangulation.n_global_levels(); ++l)
+  for (unsigned int l=min_level; l<mesh.triangulation.n_global_levels(); ++l)
     dealii::deallog << ' ' << dof_handler.n_dofs(l);
   dealii::deallog << std::endl;
 #ifdef MG
@@ -478,18 +462,18 @@ void Simulator<dim,same_diagonal,degree>::run_non_linear ()
   timer.reset();
   timer.enter_subsection("refine_global");
   pcout << "Refine global" << std::endl;
-  triangulation.refine_global (n_levels-1);
+  mesh.triangulation.refine_global (n_levels-1);
   timer.leave_subsection();
   pcout << "Finite element: " << fe.get_name() << std::endl;
   pcout << "Number of active cells: "
-        << triangulation.n_global_active_cells()
+        << mesh.triangulation.n_global_active_cells()
         << std::endl;
   timer.enter_subsection("setup_system");
   pcout << "Setup system" << std::endl;
   setup_system ();
   timer.leave_subsection();
   dealii::deallog << "DoFHandler levels: ";
-  for (unsigned int l=0; l<triangulation.n_global_levels(); ++l)
+  for (unsigned int l=0; l<mesh.triangulation.n_global_levels(); ++l)
     dealii::deallog << ' ' << dof_handler.n_dofs(l);
   dealii::deallog << std::endl;
   auto sol = solution_tmp ;
