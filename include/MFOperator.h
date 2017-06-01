@@ -109,7 +109,7 @@ private:
 };
 
 #ifdef HEADER_IMPLEMENTATION
-#include <MWOperator.cc>
+#include <MFOperator.cc>
 #endif
 
 #endif // MATRIXFREE OFF
