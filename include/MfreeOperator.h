@@ -100,9 +100,10 @@ private:
   MFIntegrator<dim,fe_degree,n_q_points_1d,1,double>  mf_integrator;
 };
 
+#endif // MATRIXFREE
+
 #ifdef HEADER_IMPLEMENTATION
 #include <MFOperator.cc>
 #endif
 
-#endif // MATRIXFREE
 #endif // MFREEOPERATOR_H

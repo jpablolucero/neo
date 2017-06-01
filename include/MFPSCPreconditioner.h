@@ -101,9 +101,10 @@ template <int dim, typename VectorType, class number>
 dealii::TimerOutput *
 MFPSCPreconditioner<dim, VectorType, number>::timer;
 
+#endif // MATRIXFREE OFF
+
 #ifdef HEADER_IMPLEMENTATION
 #include <MFPSCPreconditioner.cc>
 #endif
 
-#endif // MATRIXFREE OFF
 #endif // MFPSCPRECONDITIONER_H

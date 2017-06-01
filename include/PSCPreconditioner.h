@@ -120,4 +120,4 @@ PSCPreconditioner<dim, VectorType, number, same_diagonal>::timer;
 #include <PSCPreconditioner.cc>
 #endif
 
-#endif
+#endif // PSCPRECONDITIONER_H

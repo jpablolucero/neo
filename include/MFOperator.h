@@ -108,9 +108,10 @@ private:
 #endif // PARALLEL_LA
 };
 
+#endif // MATRIXFREE OFF
+
 #ifdef HEADER_IMPLEMENTATION
 #include <MFOperator.cc>
 #endif
 
-#endif // MATRIXFREE OFF
 #endif // MFOPERATOR_H
