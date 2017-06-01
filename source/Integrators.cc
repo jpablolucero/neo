@@ -518,4 +518,8 @@ RHSIntegrator<dim>::boundary(dealii::MeshWorker::DoFInfo<dim> &dinfo,
 }
 
 #endif // MATRIXFREE
+
+#ifndef HEADER_IMPLEMENTATION
 #include "Integrators.inst"
+#endif
+

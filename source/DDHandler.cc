@@ -431,4 +431,6 @@ void DGDDHandlerVertex<dim>::initialize_max_n_overlaps()
   this->max_n_overlaps_ = this->size()!=0?*(std::max_element(overlaps.begin(), overlaps.end())):0;
 }
 
+#ifndef HEADER_IMPLEMENTATION
 #include "DDHandler.inst"
+#endif

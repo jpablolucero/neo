@@ -128,5 +128,8 @@ void MFPSCPreconditioner<dim, VectorType, number>::Tvmult_add (VectorType &/*dst
   AssertThrow(false, dealii::ExcNotImplemented());
 }
 
+#ifndef HEADER_IMPLEMENTATION
 #include "MFPSCPreconditioner.inst"
+#endif
+
 #endif // MATRIXFREE

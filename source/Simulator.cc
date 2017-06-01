@@ -518,4 +518,6 @@ void Simulator<dim,same_diagonal,degree>::run_non_linear ()
   dealii::GrowingVectorMemory<LA::MPI::Vector>::release_unused_memory();
 }
 
+#ifndef HEADER_IMPLEMENTATION
 #include "Simulator.inst"
+#endif 

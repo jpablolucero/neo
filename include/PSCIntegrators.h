@@ -38,4 +38,9 @@ public:
   //        typename dealii::MeshWorker::IntegrationInfo<dim> &info2) const override;
 };
 #endif // MATRIXFREE
+
+#ifdef HEADER_IMPLEMENTATION
+#include <PSCIntegrators.cc>
+#endif
+
 #endif // PSCINTEGRATORS

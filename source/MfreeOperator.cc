@@ -134,6 +134,8 @@ MfreeOperator<dim,fe_degree,n_q_points_1d,number>::set_timer (dealii::TimerOutpu
   timer = &timer_;
 }
 
+#ifndef HEADER_IMPLEMENTATION
 #include "MfreeOperator.inst"
+#endif
 
 #endif // MATRIXFREE

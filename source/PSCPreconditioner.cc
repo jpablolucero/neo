@@ -363,4 +363,6 @@ void PSCPreconditioner<dim, VectorType, number, same_diagonal>::build_matrix
   matrix.copy_from(mg_matrix[level]);
 }
 
+#ifndef HEADER_IMPLEMENTATION
 #include "PSCPreconditioner.inst"
+#endif
