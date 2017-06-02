@@ -101,12 +101,6 @@ void Simulator<dim,same_diagonal,degree>::setup_system ()
 #endif // MATRIXFREE
 }
 
-template <int dim, bool same_diagonal, unsigned int degree>
-void Simulator<dim, same_diagonal, degree>::assemble_rhs ()
-{
-  rhs.assemble(solution);
-}
-
 template <int dim,bool same_diagonal,unsigned int degree>
 void Simulator<dim,same_diagonal,degree>::setup_multigrid ()
 {
@@ -325,7 +319,7 @@ void Simulator<dim,same_diagonal,degree>::run ()
   pcout << "Setup system" << std::endl;
   setup_system ();
   pcout << "Assemble system" << std::endl;
-  assemble_rhs();
+  rhs.assemble(solution);
   timer.leave_subsection();
   dealii::deallog << "DoFHandler levels: ";
   for (unsigned int l=min_level; l<mesh.triangulation.n_global_levels(); ++l)

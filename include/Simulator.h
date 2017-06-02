@@ -83,7 +83,6 @@ private:
 
   void setup_system ();
   void setup_multigrid ();
-  void assemble_rhs ();
   void solve ();
   void compute_error () const;
   void output_results (const unsigned int cycle) const;
@@ -100,7 +99,7 @@ private:
   SystemMatrixType             system_matrix;
   LA::MPI::Vector       solution;
   LA::MPI::Vector       solution_tmp;
-  // LA::MPI::Vector       right_hand_side;
+
   dealii::MGLevelObject<LA::MPI::Vector> mg_solution ;
 
   dealii::MGLevelObject<SystemMatrixType >            mg_matrix ;
@@ -118,7 +117,7 @@ private:
     {
       sim.setup_system();
       sim.solution = *(in.try_read_ptr<LA::MPI::Vector>("Newton iterate"));
-      sim.assemble_rhs();
+      sim.rhs.assemble(sim.solution);
       *out.entry<LA::MPI::Vector *>(0) = sim.rhs.right_hand_side ;
     }
     Simulator<dim,same_diagonal,fe_degree> &sim ;
