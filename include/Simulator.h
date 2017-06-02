@@ -4,49 +4,20 @@
 #include <deal.II/algorithms/any_data.h>
 #include <deal.II/algorithms/newton.h>
 #include <deal.II/base/conditional_ostream.h>
-#include <deal.II/base/mg_level_object.h>
 #include <deal.II/base/mpi.h>
 #include <deal.II/base/timer.h>
 #include <deal.II/base/utilities.h>
-#include <deal.II/distributed/tria.h>
-#include <deal.II/dofs/dof_handler.h>
-#include <deal.II/dofs/dof_tools.h>
-#include <deal.II/fe/fe_dgp.h>
-#include <deal.II/fe/fe_dgq.h>
-#include <deal.II/fe/mapping_q1.h>
-#include <deal.II/fe/fe_system.h>
-#include <deal.II/grid/grid_generator.h>
-#include <deal.II/grid/grid_tools.h>
-#include <deal.II/grid/tria.h>
-#include <deal.II/lac/full_matrix.h>
 #include <deal.II/lac/precondition.h>
 #include <deal.II/lac/solver_cg.h>
 #include <deal.II/lac/solver_gmres.h>
 #include <deal.II/lac/solver_richardson.h>
 #include <deal.II/lac/solver_control.h>
 #include <deal.II/lac/vector.h>
-#include <deal.II/lac/precondition_block.h>
-#include <deal.II/lac/precondition_block.templates.h>
-#include <deal.II/grid/manifold_lib.h>
-#include <deal.II/lac/precondition.h>
 #include <deal.II/lac/trilinos_precondition.h>
-#include <deal.II/meshworker/dof_info.h>
-#include <deal.II/meshworker/integration_info.h>
-#include <deal.II/meshworker/loop.h>
-#include <deal.II/meshworker/simple.h>
-#include <deal.II/multigrid/mg_transfer.h>
-#include <deal.II/multigrid/mg_smoother.h>
-#include <deal.II/multigrid/mg_coarse.h>
-#include <deal.II/multigrid/mg_matrix.h>
-#include <deal.II/multigrid/multigrid.h>
-#include <deal.II/multigrid/mg_transfer_matrix_free.h>
 #include <deal.II/numerics/data_out.h>
-#include <deal.II/numerics/vector_tools.h>
-#include <deal.II/numerics/vector_tools.templates.h>
 
 #include <MFOperator.h>
 #include <MfreeOperator.h>
-#include <MGTransferMF.h>
 #include <EquationData.h>
 #include <ResidualSimpleConstraints.h>
 #include <PSCPreconditioner.h>
@@ -55,6 +26,7 @@
 #include <FiniteElement.h>
 #include <Dofs.h>
 #include <RHS.h>
+#include <Preconditioner.h>
 
 #include <string>
 #include <fstream>
@@ -82,30 +54,27 @@ private:
 #endif // MATRIXFREE
 
   void setup_system ();
-  void setup_multigrid ();
   void solve ();
   void compute_error () const;
   void output_results (const unsigned int cycle) const;
 
   MPI_Comm                   &mpi_communicator;
 
-  Mesh<dim>                  mesh;
-  FiniteElement<dim>         fe;
-  Dofs<dim>                  dofs;
-  RHS<dim>                   rhs;
-  
-  dealii::MGConstrainedDoFs                           mg_constrained_dofs;
+  Mesh<dim>                                        mesh;
+  FiniteElement<dim>                               fe;
+  Dofs<dim>                                        dofs;
+  RHS<dim>                                         rhs;
+#ifdef MG   
+  Preconditioner<dim,same_diagonal,fe_degree>      preconditioner;
+#else // MG OFF
+  dealii::PreconditionIdentity                     preconditioner;
+#endif // MG
 
-  SystemMatrixType             system_matrix;
+  SystemMatrixType      system_matrix;
   LA::MPI::Vector       solution;
   LA::MPI::Vector       solution_tmp;
 
-  dealii::MGLevelObject<LA::MPI::Vector> mg_solution ;
-
-  dealii::MGLevelObject<SystemMatrixType >            mg_matrix ;
-
   dealii::ConditionalOStream &pcout;
-
   dealii::TimerOutput &timer;
 
   friend class Residual;
@@ -133,12 +102,9 @@ private:
       sim.setup_system();
       sim.solution = *(in.try_read_ptr<LA::MPI::Vector>("Newton iterate"));
       sim.rhs.right_hand_side = *(in.try_read_ptr<LA::MPI::Vector>("Newton residual"));
-#ifdef MG
-      sim.timer.enter_subsection("setup_multigrid");
-      sim.pcout << "Setup multigrid" << std::endl;
-      sim.setup_multigrid ();
-      sim.timer.leave_subsection();
-#endif
+#ifdef MG           
+      sim.preconditioner.setup(sim.solution);
+#endif // MG                 
       sim.solve ();
       *out.entry<LA::MPI::Vector *>(0) = sim.solution ;
     }
