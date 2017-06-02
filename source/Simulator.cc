@@ -101,8 +101,8 @@ void Simulator<dim,same_diagonal,degree>::setup_system ()
   solution.reinit (dofs.locally_owned_dofs, dofs.locally_relevant_dofs, mpi_communicator);
   solution_tmp.reinit (dofs.locally_owned_dofs, mpi_communicator);
 #endif // PARALLEL_LA == 0
-#endif // MATRIXFREE
   system_matrix.reinit (&(dofs.dof_handler),&(fe.mapping), &(dofs.constraints), mpi_communicator, mesh.triangulation.n_global_levels()-1, solution);
+#endif // MATRIXFREE
 }
 
 template <int dim,bool same_diagonal,unsigned int degree>
