@@ -54,6 +54,7 @@
 #include <Mesh.h>
 #include <FiniteElement.h>
 #include <Dofs.h>
+#include <RHS.h>
 
 #include <string>
 #include <fstream>
@@ -82,7 +83,7 @@ private:
 
   void setup_system ();
   void setup_multigrid ();
-  void assemble_system ();
+  void assemble_rhs ();
   void solve ();
   void compute_error () const;
   void output_results (const unsigned int cycle) const;
@@ -92,13 +93,14 @@ private:
   Mesh<dim>                  mesh;
   FiniteElement<dim>         fe;
   Dofs<dim>                  dofs;
+  RHS<dim>                   rhs;
   
   dealii::MGConstrainedDoFs                           mg_constrained_dofs;
 
   SystemMatrixType             system_matrix;
   LA::MPI::Vector       solution;
   LA::MPI::Vector       solution_tmp;
-  LA::MPI::Vector       right_hand_side;
+  // LA::MPI::Vector       right_hand_side;
   dealii::MGLevelObject<LA::MPI::Vector> mg_solution ;
 
   dealii::MGLevelObject<SystemMatrixType >            mg_matrix ;
@@ -116,8 +118,8 @@ private:
     {
       sim.setup_system();
       sim.solution = *(in.try_read_ptr<LA::MPI::Vector>("Newton iterate"));
-      sim.assemble_system();
-      *out.entry<LA::MPI::Vector *>(0) = sim.right_hand_side ;
+      sim.assemble_rhs();
+      *out.entry<LA::MPI::Vector *>(0) = sim.rhs.right_hand_side ;
     }
     Simulator<dim,same_diagonal,fe_degree> &sim ;
   } residual ;
@@ -131,7 +133,7 @@ private:
     {
       sim.setup_system();
       sim.solution = *(in.try_read_ptr<LA::MPI::Vector>("Newton iterate"));
-      sim.right_hand_side = *(in.try_read_ptr<LA::MPI::Vector>("Newton residual"));
+      sim.rhs.right_hand_side = *(in.try_read_ptr<LA::MPI::Vector>("Newton residual"));
 #ifdef MG
       sim.timer.enter_subsection("setup_multigrid");
       sim.pcout << "Setup multigrid" << std::endl;
