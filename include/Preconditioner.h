@@ -30,9 +30,7 @@ class Preconditioner final
  public:
   Preconditioner (Mesh<dim> & mesh_,
 		  Dofs<dim> & dofs_,
-		  FiniteElement<dim> & fe_,
-		  dealii::TimerOutput &timer_,
-		  MPI_Comm &mpi_communicator_) ;
+		  FiniteElement<dim> & fe_) ;
 
   void setup(LA::MPI::Vector & solution);
 
@@ -44,8 +42,6 @@ class Preconditioner final
  
   int min_level ;
   int smoothing_steps ;
-  dealii::TimerOutput &timer;
-  MPI_Comm                   &mpi_communicator;
 
   Mesh<dim> &          mesh ;
   Dofs<dim> &          dofs ;

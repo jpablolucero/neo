@@ -1,15 +1,14 @@
 #include <Preconditioner.h>
 
+extern std::unique_ptr<dealii::TimerOutput>        timer ;
+extern std::unique_ptr<MPI_Comm>                   mpi_communicator ;
+
 template <int dim,bool same_diagonal,unsigned int degree>
 Preconditioner<dim,same_diagonal,degree>::Preconditioner (Mesh<dim> & mesh_,
 							  Dofs<dim> & dofs_,
-							  FiniteElement<dim> & fe_,
-							  dealii::TimerOutput &timer_,
-							  MPI_Comm &mpi_communicator_):
+							  FiniteElement<dim> & fe_):
   min_level(0),
   smoothing_steps(1),
-  timer(timer_),
-  mpi_communicator(mpi_communicator_),
   mesh(mesh_),
   dofs(dofs_),
   fe(fe_)
@@ -27,17 +26,17 @@ void Preconditioner<dim,same_diagonal,degree>::setup (LA::MPI::Vector & solution
   mg_transfer_tmp.copy_to_mg(dofs.dof_handler,mg_solution,solution);
   for (unsigned int level=min_level; level<n_global_levels; ++level)
     {
-      mg_matrix[level].set_timer(timer);
-      mg_matrix[level].reinit(&(dofs.dof_handler),&(fe.mapping),&(dofs.constraints),mpi_communicator,level,mg_solution[level]);
+      mg_matrix[level].set_timer(*timer);
+      mg_matrix[level].reinit(&(dofs.dof_handler),&(fe.mapping),&(dofs.constraints),*mpi_communicator,level,mg_solution[level]);
     }
 #else // MATRIXFREE ON
   for (unsigned int level=min_level; level<n_global_levels; ++level)
     {
-      mg_matrix[level].set_timer(timer);
-      mg_matrix[level].reinit(&(dofs.dof_handler),&(fe.mapping),&(dofs.constraints),mpi_communicator,level);
+      mg_matrix[level].set_timer(*timer);
+      mg_matrix[level].reinit(&(dofs.dof_handler),&(fe.mapping),&(dofs.constraints),*mpi_communicator,level);
     }
 #endif // MATRIXFREE
-  timer.enter_subsection("solve::mg_initialization");
+  timer->enter_subsection("solve::mg_initialization");
   // Setup coarse solver
   coarse_solver_control.reset(new dealii::SolverControl(dofs.dof_handler.n_dofs(min_level)*10, 1e-15, false, false));
   //  dealii::PreconditionIdentity id;
@@ -65,7 +64,7 @@ void Preconditioner<dim,same_diagonal,degree>::setup (LA::MPI::Vector & solution
 #endif
 
   // Setup Multigrid-Smoother
-  Smoother::timer = &timer;
+  Smoother::timer = &(*timer);
   smoother_data.resize(mg_matrix.min_level(), mg_matrix.max_level());
   for (unsigned int level = mg_matrix.min_level();
        level <= mg_matrix.max_level();
@@ -79,7 +78,7 @@ void Preconditioner<dim,same_diagonal,degree>::setup (LA::MPI::Vector & solution
 #ifndef MATRIXFREE
       smoother_data[level].solution = &mg_solution[level];
 #endif // MATRIXFREE
-      smoother_data[level].mpi_communicator = mpi_communicator;
+      smoother_data[level].mpi_communicator = *mpi_communicator;
       //      uncomment to use the dictionary
       // if(!same_diagonal)
       //  {
@@ -121,7 +120,7 @@ void Preconditioner<dim,same_diagonal,degree>::setup (LA::MPI::Vector & solution
   preconditioner.reset(new dealii::PreconditionMG<dim, LA::MPI::Vector, dealii::MGTransferPrebuilt<LA::MPI::Vector> >
 		       (dofs.dof_handler, *mg, *mg_transfer));
 #endif // MATRIXFREE
-  timer.leave_subsection();
+  timer->leave_subsection();
 }
 
 #ifndef HEADER_IMPLEMENTATION

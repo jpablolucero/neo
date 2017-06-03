@@ -14,7 +14,7 @@ Simulator<SystemMatrixType,Preconditioner,dim,degree>::Simulator ()
   dofs(mesh,fe),
   rhs(fe,dofs),
 #ifdef MG
-  preconditioner(mesh,dofs,fe,*timer,*mpi_communicator),
+  preconditioner(mesh,dofs,fe),
 #endif // MG
   residual(*this),
   inverse(*this),
