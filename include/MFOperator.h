@@ -45,8 +45,6 @@ public:
 
   void set_cell_range (const std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> &cell_range_);
 
-  void set_timer (dealii::TimerOutput &timer_);
-
   // TODO parallel::distributed case
 #if PARALLEL_LA < 3
   void build_coarse_matrix();
@@ -88,7 +86,6 @@ private:
   const dealii::Mapping<dim>                          *mapping;
   const dealii::ConstraintMatrix                      *constraints;
   const dealii::MGConstrainedDoFs                     *mg_constrained_dofs;
-  dealii::TimerOutput                                 *timer;
 
   std::unique_ptr<dealii::MeshWorker::DoFInfo<dim> >  dof_info;
   mutable dealii::MeshWorker::IntegrationInfoBox<dim> info_box;

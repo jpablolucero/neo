@@ -2,6 +2,7 @@
 
 #include <MFOperator.h>
 
+extern std::unique_ptr<dealii::TimerOutput>        timer ;
 extern std::unique_ptr<MPI_Comm>                   mpi_communicator ;
 
 template <int dim, int fe_degree, typename number>
@@ -12,14 +13,7 @@ MFOperator<dim,fe_degree,number>::MFOperator()
   fe = nullptr;
   mapping = nullptr;
   constraints = nullptr;
-  timer = nullptr;
   use_cell_range = false;
-}
-
-template <int dim, int fe_degree, typename number>
-void MFOperator<dim,fe_degree,number>::set_timer(dealii::TimerOutput &timer_)
-{
-  timer = &timer_;
 }
 
 template <int dim, int fe_degree, typename number>
@@ -34,7 +28,6 @@ template <int dim, int fe_degree, typename number>
 MFOperator<dim,fe_degree,number>::MFOperator(const MFOperator &operator_)
   : Subscriptor(operator_)
 {
-  timer = operator_.timer;
   this->reinit(operator_.dof_handler,
                operator_.mapping,
                operator_.constraints,

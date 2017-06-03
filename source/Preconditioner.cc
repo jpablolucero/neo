@@ -26,13 +26,11 @@ void Preconditioner<dim,same_diagonal,degree>::setup (LA::MPI::Vector & solution
   mg_transfer_tmp.copy_to_mg(dofs.dof_handler,mg_solution,solution);
   for (unsigned int level=min_level; level<n_global_levels; ++level)
     {
-      mg_matrix[level].set_timer(*timer);
       mg_matrix[level].reinit(&(dofs.dof_handler),&(fe.mapping),&(dofs.constraints),level,mg_solution[level]);
     }
 #else // MATRIXFREE ON
   for (unsigned int level=min_level; level<n_global_levels; ++level)
     {
-      mg_matrix[level].set_timer(*timer);
       mg_matrix[level].reinit(&(dofs.dof_handler),&(fe.mapping),&(dofs.constraints),*mpi_communicator,level);
     }
 #endif // MATRIXFREE

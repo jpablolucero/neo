@@ -20,8 +20,6 @@ Simulator<SystemMatrixType,Preconditioner,dim,degree>::Simulator ()
   inverse(*this),
   newton(residual,inverse)
 {
-  // initialize timer
-  system_matrix.set_timer(*timer);
 #ifdef CG
   *pcout<< "Using FE_Q elements" << std::endl;
 #else
