@@ -1,12 +1,12 @@
-#include <Preconditioner.h>
+#include <GMGPreconditioner.h>
 
 extern std::unique_ptr<dealii::TimerOutput>        timer ;
 extern std::unique_ptr<MPI_Comm>                   mpi_communicator ;
 
 template <int dim,bool same_diagonal,unsigned int degree>
-Preconditioner<dim,same_diagonal,degree>::Preconditioner (Mesh<dim> & mesh_,
-							  Dofs<dim> & dofs_,
-							  FiniteElement<dim> & fe_):
+GMGPreconditioner<dim,same_diagonal,degree>::GMGPreconditioner (Mesh<dim> & mesh_,
+								Dofs<dim> & dofs_,
+								FiniteElement<dim> & fe_):
   min_level(0),
   smoothing_steps(1),
   mesh(mesh_),
@@ -15,7 +15,7 @@ Preconditioner<dim,same_diagonal,degree>::Preconditioner (Mesh<dim> & mesh_,
 {}
 
 template <int dim,bool same_diagonal,unsigned int degree>
-void Preconditioner<dim,same_diagonal,degree>::setup (LA::MPI::Vector & solution)
+void GMGPreconditioner<dim,same_diagonal,degree>::setup (LA::MPI::Vector & solution)
 {
   const unsigned int n_global_levels = mesh.triangulation.n_global_levels();
   mg_matrix.resize(min_level, n_global_levels-1);
@@ -53,9 +53,9 @@ void Preconditioner<dim,same_diagonal,degree>::setup (LA::MPI::Vector & solution
   // TODO allow for Matrix-based solver for dealii MPI vectors
   coarse_solver.reset(new dealii::SolverCG<LA::MPI::Vector>(*coarse_solver_control));
   mg_coarse.reset(new dealii::MGCoarseGridIterativeSolver<LA::MPI::Vector,
-         dealii::SolverCG<LA::MPI::Vector>,
-         SystemMatrixType,
-         dealii::PreconditionIdentity>
+		  dealii::SolverCG<LA::MPI::Vector>,
+		  SystemMatrixType,
+		  dealii::PreconditionIdentity>
 		  (coarse_solver,
                    mg_matrix[min_level],
                    id));
@@ -122,5 +122,5 @@ void Preconditioner<dim,same_diagonal,degree>::setup (LA::MPI::Vector & solution
 }
 
 #ifndef HEADER_IMPLEMENTATION
-#include "Preconditioner.inst"
+#include "GMGPreconditioner.inst"
 #endif 

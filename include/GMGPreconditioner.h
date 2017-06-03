@@ -1,5 +1,5 @@
-#ifndef PRECONDITIONER_H
-#define PRECONDITIONER_H
+#ifndef GMGPRECONDITIONER_H
+#define GMGPRECONDITIONER_H
 
 #include <deal.II/distributed/tria.h>
 #include <deal.II/multigrid/mg_transfer.h>
@@ -25,13 +25,13 @@
 #include <memory>
 
 template <int dim=2,bool same_diagonal = true, unsigned int fe_degree = 1>
-class Preconditioner final
+class GMGPreconditioner final
 {
  public:
-  Preconditioner (Mesh<dim> & mesh_,
-		  Dofs<dim> & dofs_,
-		  FiniteElement<dim> & fe_) ;
-
+  GMGPreconditioner (Mesh<dim> & mesh_,
+		     Dofs<dim> & dofs_,
+		     FiniteElement<dim> & fe_) ;
+  
   void setup(LA::MPI::Vector & solution);
 
 #ifdef MATRIXFREE

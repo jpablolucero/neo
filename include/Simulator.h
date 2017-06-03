@@ -26,7 +26,7 @@
 #include <FiniteElement.h>
 #include <Dofs.h>
 #include <RHS.h>
-#include <Preconditioner.h>
+#include <GMGPreconditioner.h>
 
 #include <string>
 #include <fstream>
