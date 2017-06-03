@@ -4,8 +4,8 @@ extern std::unique_ptr<dealii::TimerOutput>        timer ;
 extern std::unique_ptr<MPI_Comm>                   mpi_communicator ;
 extern std::unique_ptr<dealii::ConditionalOStream> pcout ;
 
-template <typename SystemMatrixType,typename Preconditioner,int dim,unsigned int degree>
-Simulator<SystemMatrixType,Preconditioner,dim,degree>::Simulator ()
+template <typename SystemMatrixType,typename VectorType,typename Preconditioner,int dim,unsigned int degree>
+Simulator<SystemMatrixType,VectorType,Preconditioner,dim,degree>::Simulator ()
   :
   n_levels(2),
   min_level(0),
@@ -21,12 +21,12 @@ Simulator<SystemMatrixType,Preconditioner,dim,degree>::Simulator ()
   newton(residual,inverse)
 {}
 
-template <typename SystemMatrixType,typename Preconditioner,int dim,unsigned int degree>
-Simulator<SystemMatrixType,Preconditioner,dim,degree>::~Simulator ()
+template <typename SystemMatrixType,typename VectorType,typename Preconditioner,int dim,unsigned int degree>
+Simulator<SystemMatrixType,VectorType,Preconditioner,dim,degree>::~Simulator ()
 {}
 
-template <typename SystemMatrixType,typename Preconditioner,int dim,unsigned int degree>
-void Simulator<SystemMatrixType,Preconditioner,dim,degree>::setup_system ()
+template <typename SystemMatrixType,typename VectorType,typename Preconditioner,int dim,unsigned int degree>
+void Simulator<SystemMatrixType,VectorType,Preconditioner,dim,degree>::setup_system ()
 {
   dofs.setup();
   
@@ -62,8 +62,8 @@ void Simulator<SystemMatrixType,Preconditioner,dim,degree>::setup_system ()
 #endif // MATRIXFREE
 }
 
-template <typename SystemMatrixType,typename Preconditioner,int dim,unsigned int degree>
-void Simulator<SystemMatrixType,Preconditioner,dim,degree>::solve ()
+template <typename SystemMatrixType,typename VectorType,typename Preconditioner,int dim,unsigned int degree>
+void Simulator<SystemMatrixType,VectorType,Preconditioner,dim,degree>::solve ()
 {
 #ifdef MG
   preconditioner.setup(solution);
@@ -71,7 +71,7 @@ void Simulator<SystemMatrixType,Preconditioner,dim,degree>::solve ()
   
   // Setup Solver
   dealii::ReductionControl             solver_control (dofs.dof_handler.n_dofs(), 1.e-20, 1.e-10,true);
-  dealii::SolverGMRES<LA::MPI::Vector> solver (solver_control);
+  dealii::SolverGMRES<VectorType> solver (solver_control);
       
   // Solve the system
   timer->enter_subsection("solve::solve");
@@ -86,8 +86,8 @@ void Simulator<SystemMatrixType,Preconditioner,dim,degree>::solve ()
 }
 
 
-template <typename SystemMatrixType,typename Preconditioner,int dim,unsigned int degree>
-void Simulator<SystemMatrixType,Preconditioner,dim,degree>::compute_error () const
+template <typename SystemMatrixType,typename VectorType,typename Preconditioner,int dim,unsigned int degree>
+void Simulator<SystemMatrixType,VectorType,Preconditioner,dim,degree>::compute_error () const
 {
   dealii::QGauss<dim> quadrature (degree+2);
   dealii::Vector<double> local_errors;
@@ -105,8 +105,8 @@ void Simulator<SystemMatrixType,Preconditioner,dim,degree>::compute_error () con
   *pcout << "L2 error: " << L2_error << std::endl;
 }
 
-template <typename SystemMatrixType,typename Preconditioner,int dim,unsigned int degree>
-void Simulator<SystemMatrixType,Preconditioner,dim,degree>::output_results (const unsigned int cycle) const
+template <typename SystemMatrixType,typename VectorType,typename Preconditioner,int dim,unsigned int degree>
+void Simulator<SystemMatrixType,VectorType,Preconditioner,dim,degree>::output_results (const unsigned int cycle) const
 {
   std::string filename = "solution-"+dealii::Utilities::int_to_string(cycle,2);
 
@@ -148,8 +148,8 @@ void Simulator<SystemMatrixType,Preconditioner,dim,degree>::output_results (cons
 }
 
 
-template <typename SystemMatrixType,typename Preconditioner,int dim,unsigned int degree>
-void Simulator<SystemMatrixType,Preconditioner,dim,degree>::run ()
+template <typename SystemMatrixType,typename VectorType,typename Preconditioner,int dim,unsigned int degree>
+void Simulator<SystemMatrixType,VectorType,Preconditioner,dim,degree>::run ()
 {
   timer->reset();
   timer->enter_subsection("refine_global");
@@ -189,11 +189,11 @@ void Simulator<SystemMatrixType,Preconditioner,dim,degree>::run ()
   // remaining vectors might be invalid the next time
   // a vector is requested. Therefore, clean up everything
   // before going out of scope.
-  dealii::GrowingVectorMemory<LA::MPI::Vector>::release_unused_memory();
+  dealii::GrowingVectorMemory<VectorType>::release_unused_memory();
 }
 
-template <typename SystemMatrixType,typename Preconditioner,int dim,unsigned int degree>
-void Simulator<SystemMatrixType,Preconditioner,dim,degree>::run_non_linear ()
+template <typename SystemMatrixType,typename VectorType,typename Preconditioner,int dim,unsigned int degree>
+void Simulator<SystemMatrixType,VectorType,Preconditioner,dim,degree>::run_non_linear ()
 {
   timer->reset();
   timer->enter_subsection("refine_global");
@@ -221,7 +221,7 @@ void Simulator<SystemMatrixType,Preconditioner,dim,degree>::run_non_linear ()
   timer->enter_subsection("solve");
   *pcout << "Solve" << std::endl;
   newton(solution_data, data);
-  solution = *(solution_data.try_read_ptr<LA::MPI::Vector>("solution"));
+  solution = *(solution_data.try_read_ptr<VectorType>("solution"));
   timer->leave_subsection();
   timer->enter_subsection("output");
   output_results(n_levels);
@@ -235,5 +235,5 @@ void Simulator<SystemMatrixType,Preconditioner,dim,degree>::run_non_linear ()
   // remaining vectors might be invalid the next time
   // a vector is requested. Therefore, clean up everything
   // before going out of scope.
-  dealii::GrowingVectorMemory<LA::MPI::Vector>::release_unused_memory();
+  dealii::GrowingVectorMemory<VectorType>::release_unused_memory();
 }

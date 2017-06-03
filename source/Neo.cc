@@ -53,7 +53,7 @@ int main (int argc, char *argv[])
   typedef dealii::PreconditionIdentity          Precond;
 #endif // MG
   
-  Simulator<SystemMatrixType,Precond,d,fe_degree> dgmethod;
+  Simulator<SystemMatrixType,LA::MPI::Vector,Precond,d,fe_degree> dgmethod;
   dgmethod.n_levels = (argc > 1) ? atoi(argv[1]) : 2 ;
   dgmethod.min_level=0;
   dgmethod.smoothing_steps = (argc > 2) ? atoi(argv[2]) : 1 ;

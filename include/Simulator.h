@@ -31,7 +31,7 @@
 #include <string>
 #include <fstream>
 
-template <typename SystemMatrixType,typename Preconditioner,int dim=2,unsigned int fe_degree = 1>
+template <typename SystemMatrixType,typename VectorType,typename Preconditioner,int dim=2,unsigned int fe_degree = 1>
 class Simulator final
 {
 public:
@@ -57,48 +57,48 @@ private:
   Preconditioner        preconditioner;
   SystemMatrixType      system_matrix;
   
-  LA::MPI::Vector       solution;
-  LA::MPI::Vector       solution_tmp;
+  VectorType       solution;
+  VectorType       solution_tmp;
 
   friend class Residual;
-  template <typename SystemMatrixType_,typename Preconditioner_>
+  template <typename SystemMatrixType_,typename VectorType_,typename Preconditioner_>
   class Residual : public dealii::Algorithms::OperatorBase
   {
   public:
-    Residual(Simulator<SystemMatrixType_,Preconditioner_,dim,fe_degree> &sim_):sim(sim_) {} ;
+    Residual(Simulator<SystemMatrixType_,VectorType_,Preconditioner_,dim,fe_degree> &sim_):sim(sim_) {} ;
     void operator() (dealii::AnyData &out, const dealii::AnyData &in) override
     {
       sim.setup_system();
-      sim.solution = *(in.try_read_ptr<LA::MPI::Vector>("Newton iterate"));
+      sim.solution = *(in.try_read_ptr<VectorType_>("Newton iterate"));
       sim.rhs.assemble(sim.solution);
-      *out.entry<LA::MPI::Vector *>(0) = sim.rhs.right_hand_side ;
+      *out.entry<VectorType_ *>(0) = sim.rhs.right_hand_side ;
     }
-    Simulator<SystemMatrixType_,Preconditioner_,dim,fe_degree> &sim ;
+    Simulator<SystemMatrixType_,VectorType_,Preconditioner_,dim,fe_degree> &sim ;
   };
-  Residual<SystemMatrixType,Preconditioner> residual ;
+  Residual<SystemMatrixType,VectorType,Preconditioner> residual ;
 
   friend class InverseDerivative ;
-  template <typename SystemMatrixType_,typename Preconditioner_>
+  template <typename SystemMatrixType_,typename VectorType_,typename Preconditioner_>
   class InverseDerivative : public dealii::Algorithms::OperatorBase
   {
   public:
-    InverseDerivative(Simulator<SystemMatrixType_,Preconditioner_,dim,fe_degree> &sim_):sim(sim_) {} ;
+    InverseDerivative(Simulator<SystemMatrixType_,VectorType_,Preconditioner_,dim,fe_degree> &sim_):sim(sim_) {} ;
     void operator() (dealii::AnyData &out, const dealii::AnyData &in) override
     {
       sim.setup_system();
-      sim.solution = *(in.try_read_ptr<LA::MPI::Vector>("Newton iterate"));
-      sim.rhs.right_hand_side = *(in.try_read_ptr<LA::MPI::Vector>("Newton residual"));
+      sim.solution = *(in.try_read_ptr<VectorType_>("Newton iterate"));
+      sim.rhs.right_hand_side = *(in.try_read_ptr<VectorType_>("Newton residual"));
 #ifdef MG           
       sim.preconditioner.setup(sim.solution);
 #endif // MG                 
       sim.solve ();
-      *out.entry<LA::MPI::Vector *>(0) = sim.solution ;
+      *out.entry<VectorType_ *>(0) = sim.solution ;
     }
-    Simulator<SystemMatrixType_,Preconditioner_,dim,fe_degree> &sim ;
+    Simulator<SystemMatrixType_,VectorType_,Preconditioner_,dim,fe_degree> &sim ;
   };
-  InverseDerivative<SystemMatrixType,Preconditioner> inverse ;
+  InverseDerivative<SystemMatrixType,VectorType,Preconditioner> inverse ;
 
-  dealii::Algorithms::Newton<LA::MPI::Vector> newton;
+  dealii::Algorithms::Newton<VectorType> newton;
 
 };
 
