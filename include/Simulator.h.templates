@@ -19,13 +19,7 @@ Simulator<SystemMatrixType,Preconditioner,dim,degree>::Simulator ()
   residual(*this),
   inverse(*this),
   newton(residual,inverse)
-{
-#ifdef CG
-  *pcout<< "Using FE_Q elements" << std::endl;
-#else
-  *pcout<< "Using FE_DGQ elements" << std::endl;
-#endif //CG
-}
+{}
 
 template <typename SystemMatrixType,typename Preconditioner,int dim,unsigned int degree>
 Simulator<SystemMatrixType,Preconditioner,dim,degree>::~Simulator ()

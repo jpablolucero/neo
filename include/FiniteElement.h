@@ -1,6 +1,7 @@
 #ifndef FINITEELEMENT_H
 #define FINITEELEMENT_H
 
+#include <deal.II/base/conditional_ostream.h>
 #include <deal.II/fe/fe_dgp.h>
 #include <deal.II/fe/fe_dgq.h>
 #include <deal.II/fe/mapping_q1.h>
