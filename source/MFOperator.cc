@@ -2,6 +2,8 @@
 
 #include <MFOperator.h>
 
+extern std::unique_ptr<MPI_Comm>                   mpi_communicator ;
+
 template <int dim, int fe_degree, typename number>
 MFOperator<dim,fe_degree,number>::MFOperator()
 {
@@ -36,7 +38,6 @@ MFOperator<dim,fe_degree,number>::MFOperator(const MFOperator &operator_)
   this->reinit(operator_.dof_handler,
                operator_.mapping,
                operator_.constraints,
-               operator_.mpi_communicator,
                operator_.level);
 }
 
@@ -45,7 +46,6 @@ void MFOperator<dim,fe_degree,number>::reinit
 (const dealii::DoFHandler<dim> *dof_handler_,
  const dealii::Mapping<dim> *mapping_,
  const dealii::ConstraintMatrix *constraints_,
- const MPI_Comm &mpi_communicator_,
  const unsigned int level_,
  LA::MPI::Vector solution_)
 {
@@ -56,7 +56,6 @@ void MFOperator<dim,fe_degree,number>::reinit
   mapping = mapping_ ;
   level=level_;
   constraints = constraints_;
-  mpi_communicator = mpi_communicator_;
 
   // Setup DoFInfo & IntegrationInfoBox
   std::unique_ptr<dealii::MeshWorker::DoFInfo<dim> > tmp
@@ -93,10 +92,10 @@ void MFOperator<dim,fe_degree,number>::reinit
 #else // PARALLEL_LA != 0
   ghosted_src[level].reinit(locally_owned_level_dofs,
                             locally_relevant_level_dofs,
-                            mpi_communicator_);
+                            *mpi_communicator);
   ghosted_solution[level].reinit(locally_owned_level_dofs,
                                  locally_relevant_level_dofs,
-                                 mpi_communicator_);
+                                 *mpi_communicator);
 #endif //PARALLEL_LA
   ghosted_solution[level] = solution_ ;
   // TODO possibly colorize iterators, assume thread-safety for the moment
@@ -151,7 +150,7 @@ void MFOperator<dim,fe_degree,number>::build_coarse_matrix()
 #else
   mg_matrix[level].reinit(dof_handler->locally_owned_mg_dofs(level),
                           dof_handler->locally_owned_mg_dofs(level),
-                          dsp,mpi_communicator);
+                          dsp,*mpi_communicator);
 #endif // PARALLEL_LA
   dealii::MeshWorker::Assembler::MGMatrixSimple<LA::MPI::SparseMatrix> assembler;
   assembler.initialize(mg_matrix);
@@ -207,9 +206,9 @@ void MFOperator<dim,fe_degree,number>::vmult_add (LA::MPI::Vector &dst,
   (*dof_handler, level, locally_relevant_level_dofs);
 #if PARALLEL_LA == 3
   ghosted_src[level].update_ghost_values();
-  dst.reinit(locally_owned_level_dofs,locally_relevant_level_dofs,mpi_communicator);
+  dst.reinit(locally_owned_level_dofs,locally_relevant_level_dofs,*mpi_communicator);
 #elif PARALLEL_LA == 2
-  dst.reinit(locally_owned_level_dofs,locally_relevant_level_dofs,mpi_communicator,true);
+  dst.reinit(locally_owned_level_dofs,locally_relevant_level_dofs,*mpi_communicator,true);
 #endif // PARALLEL_LA
   // Setup AnyData
   dealii::AnyData dst_data;

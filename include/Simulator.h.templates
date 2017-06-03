@@ -41,7 +41,7 @@ void Simulator<SystemMatrixType,Preconditioner,dim,degree>::setup_system ()
 #ifdef MATRIXFREE
   system_matrix.reinit (&(dofs.dof_handler),&(fe.mapping),&(dofs.constraints),*mpi_communicator,dealii::numbers::invalid_unsigned_int);
 #else
-  system_matrix.reinit (&(dofs.dof_handler),&(fe.mapping),&(dofs.constraints),*mpi_communicator,mesh.triangulation.n_global_levels()-1);
+  system_matrix.reinit (&(dofs.dof_handler),&(fe.mapping),&(dofs.constraints),mesh.triangulation.n_global_levels()-1);
 #endif
 
 #ifdef MATRIXFREE
@@ -66,7 +66,7 @@ void Simulator<SystemMatrixType,Preconditioner,dim,degree>::setup_system ()
   solution.reinit (dofs.locally_owned_dofs, dofs.locally_relevant_dofs, *mpi_communicator);
   solution_tmp.reinit (dofs.locally_owned_dofs, *mpi_communicator);
 #endif // PARALLEL_LA == 0
-  system_matrix.reinit (&(dofs.dof_handler),&(fe.mapping), &(dofs.constraints), *mpi_communicator, mesh.triangulation.n_global_levels()-1, solution);
+  system_matrix.reinit (&(dofs.dof_handler),&(fe.mapping), &(dofs.constraints), mesh.triangulation.n_global_levels()-1, solution);
 #endif // MATRIXFREE
 }
 

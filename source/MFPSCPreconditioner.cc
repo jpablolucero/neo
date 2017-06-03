@@ -99,11 +99,9 @@ void MFPSCPreconditioner<dim, VectorType, number>::vmult_add (VectorType &dst,
     const dealii::parallel::distributed::Triangulation<dim> *distributed_tria
       = dynamic_cast<const dealii::parallel::distributed::Triangulation<dim>* > (&(dof_handler.get_triangulation()));
     Assert(distributed_tria, dealii::ExcInternalError());
-    const MPI_Comm &mpi_communicator = distributed_tria->get_communicator();
 
     scratch_sample.system_matrix.set_timer(*MFPSCPreconditioner<dim, VectorType, number>::timer);
-    scratch_sample.system_matrix.reinit (&dof_handler,&dummy_mapping, &dummy_constraints,
-                                         mpi_communicator, level);
+    scratch_sample.system_matrix.reinit (&dof_handler,&dummy_mapping, &dummy_constraints,level);
 
     const unsigned int queue = 2 * dealii::MultithreadInfo::n_threads();
     const unsigned int chunk_size = 1;

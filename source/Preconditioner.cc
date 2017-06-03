@@ -19,7 +19,7 @@ void Preconditioner<dim,same_diagonal,degree>::setup (LA::MPI::Vector & solution
 {
   const unsigned int n_global_levels = mesh.triangulation.n_global_levels();
   mg_matrix.resize(min_level, n_global_levels-1);
-  #ifndef MATRIXFREE
+#ifndef MATRIXFREE
   dealii::MGTransferPrebuilt<LA::MPI::Vector> mg_transfer_tmp;
   mg_transfer_tmp.build_matrices(dofs.dof_handler);
   mg_solution.resize(min_level, n_global_levels-1);
@@ -27,7 +27,7 @@ void Preconditioner<dim,same_diagonal,degree>::setup (LA::MPI::Vector & solution
   for (unsigned int level=min_level; level<n_global_levels; ++level)
     {
       mg_matrix[level].set_timer(*timer);
-      mg_matrix[level].reinit(&(dofs.dof_handler),&(fe.mapping),&(dofs.constraints),*mpi_communicator,level,mg_solution[level]);
+      mg_matrix[level].reinit(&(dofs.dof_handler),&(fe.mapping),&(dofs.constraints),level,mg_solution[level]);
     }
 #else // MATRIXFREE ON
   for (unsigned int level=min_level; level<n_global_levels; ++level)
