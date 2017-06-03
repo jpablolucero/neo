@@ -1,10 +1,11 @@
 #include <RHS.h>
 
+extern std::unique_ptr<MPI_Comm>                   mpi_communicator ;
+
 template <int dim>
-RHS<dim>::RHS (FiniteElement<dim> & fe_,Dofs<dim> & dofs_,MPI_Comm & mpi_communicator_):
+RHS<dim>::RHS (FiniteElement<dim> & fe_,Dofs<dim> & dofs_):
   fe(fe_),
-  dofs(dofs_),
-  mpi_communicator(mpi_communicator_)
+  dofs(dofs_)
 {}
 
 template <int dim>
@@ -12,7 +13,7 @@ void RHS<dim>::assemble(LA::MPI::Vector & solution)
 {
 #ifdef MATRIXFREE
 #if PARALLEL_LA == 3
-  right_hand_side.reinit (dofs.locally_owned_dofs, dofs.locally_relevant_dofs, mpi_communicator);
+  right_hand_side.reinit (dofs.locally_owned_dofs, dofs.locally_relevant_dofs, *mpi_communicator);
 #elif PARALLEL_LA == 0
   right_hand_side.reinit (dofs.locally_owned_dofs.n_elements());
 #else // PARALLEL_LA == 1,2
@@ -23,9 +24,9 @@ void RHS<dim>::assemble(LA::MPI::Vector & solution)
 #if PARALLEL_LA == 0
   right_hand_side.reinit (dofs.locally_owned_dofs.n_elements());
 #elif PARALLEL_LA == 3
-  right_hand_side.reinit (dofs.locally_owned_dofs, dofs.locally_relevant_dofs, mpi_communicator);
+  right_hand_side.reinit (dofs.locally_owned_dofs, dofs.locally_relevant_dofs, *mpi_communicator);
 #else
-  right_hand_side.reinit (dofs.locally_owned_dofs, mpi_communicator);
+  right_hand_side.reinit (dofs.locally_owned_dofs, *mpi_communicator);
 #endif // PARALLEL_LA == 0
 #endif // MATRIXFREE
   

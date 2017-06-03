@@ -1,8 +1,10 @@
 #include <Mesh.h>
 
+extern std::unique_ptr<MPI_Comm>                   mpi_communicator ;
+
 template <int dim>
-Mesh<dim>::Mesh(MPI_Comm & mpi_communicator_):
-  triangulation(mpi_communicator_,dealii::Triangulation<dim>::
+Mesh<dim>::Mesh():
+  triangulation(*mpi_communicator,dealii::Triangulation<dim>::
 		limit_level_difference_at_vertices,
 		dealii::parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy)
 {

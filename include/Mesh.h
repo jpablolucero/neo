@@ -10,7 +10,7 @@ template <int dim>
 class Mesh final
 {
 public:
-  Mesh (MPI_Comm & mpi_communicator_) ;
+  Mesh () ;
   dealii::parallel::distributed::Triangulation<dim>   triangulation;
 };
 

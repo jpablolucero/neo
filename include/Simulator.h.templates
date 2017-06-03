@@ -10,10 +10,9 @@ Simulator<SystemMatrixType,Preconditioner,dim,degree>::Simulator ()
   n_levels(2),
   min_level(0),
   smoothing_steps(1),
-  mesh(*mpi_communicator),
   fe(degree),
   dofs(mesh,fe),
-  rhs(fe,dofs,*mpi_communicator),
+  rhs(fe,dofs),
 #ifdef MG
   preconditioner(mesh,dofs,fe,*timer,*mpi_communicator),
 #endif // MG
