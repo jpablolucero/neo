@@ -6,6 +6,7 @@
 #include <deal.II/base/timer.h>
 
 #include <Simulator.h>
+#include <Preconditioner.h>
 
 #include <fstream>
 
