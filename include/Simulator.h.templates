@@ -76,11 +76,7 @@ void Simulator<SystemMatrixType,Preconditioner,dim,degree>::solve ()
   // Solve the system
   timer->enter_subsection("solve::solve");
   dofs.constraints.set_zero(solution_tmp);
-#ifdef MG
-  solver.solve(system_matrix,solution_tmp,rhs.right_hand_side,*(preconditioner.preconditioner));
-#else
   solver.solve(system_matrix,solution_tmp,rhs.right_hand_side,preconditioner);
-#endif //MG
   
 #ifdef CG
   dofs.constraints.distribute(solution_tmp);

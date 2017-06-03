@@ -48,7 +48,7 @@ int main (int argc, char *argv[])
   *pcout << "Using MeshWorker-based matrix-free implementation" << std::endl;
 #endif // MATRIXFREE
 #ifdef MG   
-  typedef GMGPreconditioner<d,false,fe_degree>  Precond;
+  typedef GMGPreconditioner<d>  Precond;
 #else // MG OFF
   typedef dealii::PreconditionIdentity          Precond;
 #endif // MG

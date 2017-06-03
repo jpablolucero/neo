@@ -24,7 +24,7 @@
 
 #include <memory>
 
-template <int dim=2,bool same_diagonal = true, unsigned int fe_degree = 1>
+template <int dim,typename VectorType=LA::MPI::Vector, typename number=double,bool same_diagonal = false, unsigned int fe_degree = 1>
 class GMGPreconditioner final
 {
  public:
@@ -32,12 +32,20 @@ class GMGPreconditioner final
 		     Dofs<dim> & dofs_,
 		     FiniteElement<dim> & fe_) ;
   
-  void setup(LA::MPI::Vector & solution);
+  void setup(VectorType & solution);
 
+  void vmult(VectorType &dst, const VectorType &src) const;
+
+  void Tvmult(VectorType &dst, const VectorType &src) const;
+
+  void vmult_add(VectorType &dst, const VectorType &src) const;
+
+  void Tvmult_add(VectorType &dst, const VectorType &src) const;
+  
 #ifdef MATRIXFREE
-  typedef MfreeOperator<dim,fe_degree,fe_degree+1,double> SystemMatrixType;
+  typedef MfreeOperator<dim,fe_degree,fe_degree+1,number> SystemMatrixType;
 #else
-  typedef MFOperator<dim,fe_degree,double> SystemMatrixType;
+  typedef MFOperator<dim,fe_degree,number> SystemMatrixType;
 #endif // MATRIXFREE
  
   int min_level ;
@@ -48,45 +56,45 @@ class GMGPreconditioner final
   FiniteElement<dim> & fe ;
 
   dealii::MGLevelObject<SystemMatrixType >            mg_matrix ;
-  dealii::MGLevelObject<LA::MPI::Vector>              mg_solution ;
+  dealii::MGLevelObject<VectorType>                   mg_solution ;
   dealii::MGConstrainedDoFs                           mg_constrained_dofs;
 
   std::unique_ptr<dealii::SolverControl>              coarse_solver_control;
   dealii::PreconditionIdentity id;
 
 #if PARALLEL_LA < 3
-  std::unique_ptr<dealii::SolverGMRES<LA::MPI::Vector> >              coarse_solver;
-  std::unique_ptr<dealii::MGCoarseGridIterativeSolver<LA::MPI::Vector,
-						      dealii::SolverGMRES<LA::MPI::Vector>,
+  std::unique_ptr<dealii::SolverGMRES<VectorType> >              coarse_solver;
+  std::unique_ptr<dealii::MGCoarseGridIterativeSolver<VectorType,
+						      dealii::SolverGMRES<VectorType>,
 						      LA::MPI::SparseMatrix,
 						      dealii::PreconditionIdentity> >   mg_coarse;
 #else // PARALLEL_LA == 3
-  std::unique_ptr<dealii::SolverCG<LA::MPI::Vector> >              coarse_solver;
-  std::unique_ptr<dealii::MGCoarseGridIterativeSolver<LA::MPI::Vector,
-						      dealii::SolverCG<LA::MPI::Vector>,
+  std::unique_ptr<dealii::SolverCG<VectorType> >              coarse_solver;
+  std::unique_ptr<dealii::MGCoarseGridIterativeSolver<VectorType,
+						      dealii::SolverCG<VectorType>,
 						      LA::MPI::SparseMatrix,
 						      dealii::PreconditionIdentity> >   mg_coarse;
 
 #endif
-  typedef PSCPreconditioner<dim, LA::MPI::Vector, double, same_diagonal> Smoother;
-  //typedef MFPSCPreconditioner<dim, LA::MPI::Vector, double> Smoother;
+  typedef PSCPreconditioner<dim, VectorType, number, same_diagonal> Smoother;
+  //typedef MFPSCPreconditioner<dim, VectorType, number> Smoother;
   dealii::MGLevelObject<typename Smoother::AdditionalData> smoother_data;
-  dealii::MGSmootherPrecondition<SystemMatrixType,Smoother,LA::MPI::Vector> mg_smoother;
+  dealii::MGSmootherPrecondition<SystemMatrixType,Smoother,VectorType> mg_smoother;
 
   // Setup Multigrid-Transfer
 #ifdef MATRIXFREE
   std::unique_ptr<dealii::MGTransferMF<dim,SystemMatrixType> > mg_transfer ;
 #else // MATRIXFREE OFF
-  std::unique_ptr<dealii::MGTransferPrebuilt<LA::MPI::Vector> > mg_transfer ;
+  std::unique_ptr<dealii::MGTransferPrebuilt<VectorType> > mg_transfer ;
 #endif // MATRIXFREE
 
-  dealii::mg::Matrix<LA::MPI::Vector>         mglevel_matrix;
-  std::unique_ptr<dealii::Multigrid<LA::MPI::Vector> > mg ;
+  dealii::mg::Matrix<VectorType>         mglevel_matrix;
+  std::unique_ptr<dealii::Multigrid<VectorType> > mg ;
 
 #ifdef MATRIXFREE
-  std::unique_ptr<dealii::PreconditionMG<dim, LA::MPI::Vector, dealii::MGTransferMF<dim,SystemMatrixType> > > preconditioner ;
+  std::unique_ptr<dealii::PreconditionMG<dim, VectorType, dealii::MGTransferMF<dim,SystemMatrixType> > > preconditioner ;
 #else
-  std::unique_ptr<dealii::PreconditionMG<dim, LA::MPI::Vector, dealii::MGTransferPrebuilt<LA::MPI::Vector> > > preconditioner ;
+  std::unique_ptr<dealii::PreconditionMG<dim, VectorType, dealii::MGTransferPrebuilt<VectorType> > > preconditioner ;
 #endif // MATRIXFREE
   
 };
