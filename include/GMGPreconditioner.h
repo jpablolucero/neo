@@ -100,7 +100,7 @@ class GMGPreconditioner final
 };
 
 #ifdef HEADER_IMPLEMENTATION
-#include <Preconditioner.cc>
+#include <GMGPreconditioner.cc>
 #endif
 
 #endif // PRECONDITIONER_H
