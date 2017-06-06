@@ -76,7 +76,7 @@ class GMGPreconditioner final
 						      dealii::PreconditionIdentity> >   mg_coarse;
 
 #endif
-  typedef PSCPreconditioner<dim, VectorType, number, same_diagonal> Smoother;
+  typedef PSCPreconditioner<dim, SystemMatrixType, VectorType, number, same_diagonal> Smoother;
   //typedef MFPSCPreconditioner<dim, VectorType, number> Smoother;
   dealii::MGLevelObject<typename Smoother::AdditionalData> smoother_data;
   dealii::MGSmootherPrecondition<SystemMatrixType,Smoother,VectorType> mg_smoother;
@@ -99,9 +99,7 @@ class GMGPreconditioner final
   
 };
 
-#ifdef HEADER_IMPLEMENTATION
-#include <GMGPreconditioner.cc>
-#endif
+#include <GMGPreconditioner.h.templates>
 
 #endif // PRECONDITIONER_H
 

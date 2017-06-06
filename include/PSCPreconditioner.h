@@ -23,9 +23,7 @@
 #include <integration_loop.h>
 #include <MGMatrixSimpleMapped.h>
 
-
-
-template <int dim=2, typename VectorType=LA::MPI::Vector, typename number=double, bool same_diagonal=false>
+template <int dim, typename SystemMatrixType, typename VectorType=LA::MPI::Vector, typename number=double, bool same_diagonal=false>
 class PSCPreconditioner final
 {
 public:
@@ -34,12 +32,11 @@ public:
   class AdditionalData;
 
   PSCPreconditioner();
+  ~PSCPreconditioner();
   PSCPreconditioner (const PSCPreconditioner &) = delete ;
   PSCPreconditioner &operator = (const PSCPreconditioner &) = delete;
 
-  // interface for MGSmootherPrecondition but global_operator is not used
-  template <typename GlobalOperatorType>
-  void initialize(const GlobalOperatorType &global_operator,
+  void initialize(const SystemMatrixType &system_matrix_,
                   const AdditionalData &data);
   void clear();
 
@@ -50,8 +47,6 @@ public:
   void vmult_add(VectorType &dst, const VectorType &src) const;
 
   void Tvmult_add(VectorType &dst, const VectorType &src) const;
-
-  static dealii::TimerOutput *timer;
 
 protected:
   AdditionalData data;
@@ -76,12 +71,12 @@ private:
 #endif
 
   unsigned int level;
-
   std::shared_ptr<DDHandlerBase<dim> > ddh;
+  const SystemMatrixType *system_matrix;
 };
 
-template <int dim, typename VectorType, class number, bool same_diagonal>
-class PSCPreconditioner<dim, VectorType, number, same_diagonal>::AdditionalData
+template <int dim, typename SystemMatrixType, typename VectorType, class number, bool same_diagonal>
+class PSCPreconditioner<dim, SystemMatrixType, VectorType, number, same_diagonal>::AdditionalData
 {
 public:
   AdditionalData() : dof_handler(0),
@@ -107,17 +102,10 @@ public:
     vertex_patches
   };
   PatchType patch_type;
-  MPI_Comm mpi_communicator;
 
   dealii::MGConstrainedDoFs  mg_constrained_dofs;
 };
 
-template <int dim, typename VectorType, class number, bool same_diagonal>
-dealii::TimerOutput *
-PSCPreconditioner<dim, VectorType, number, same_diagonal>::timer;
-
-#ifdef HEADER_IMPLEMENTATION
-#include <PSCPreconditioner.cc>
-#endif
+#include <PSCPreconditioner.h.templates>
 
 #endif // PSCPRECONDITIONER_H
