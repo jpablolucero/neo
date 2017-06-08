@@ -107,6 +107,7 @@ public:
   enum SmootherType
   {
     additive,
+    hybrid,
     multiplicative
   };
   SmootherType smoother_type;
