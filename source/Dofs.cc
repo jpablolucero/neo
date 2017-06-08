@@ -1,5 +1,7 @@
 #include <Dofs.h>
 
+extern std::unique_ptr<MPI_Comm>                   mpi_communicator ;
+
 template <int dim>
 Dofs<dim>::Dofs(Mesh<dim> & mesh_,FiniteElement<dim> & fe_):
   mesh(mesh_),
@@ -16,23 +18,25 @@ void Dofs<dim>::setup()
   dof_handler.initialize_local_block_info();
 
   locally_owned_dofs = dof_handler.locally_owned_dofs();
-//   /*std::cout << "locally owned dofs on process "
-//             << dealii::Utilities::MPI::this_mpi_process(mpi_communicator)
-//             << std::endl;
-//   for (unsigned int l=0; l<mesh.triangulation.n_global_levels(); ++l)
-//     {
-//       std::cout << "level: " << l << " n_elements(): "
-//                 << dof_handler.locally_owned_mg_dofs(l).n_elements()
-//                 << " index set: ";
-//       dof_handler.locally_owned_mg_dofs(l).print(std::cout);
-//     }
-//   std::cout << "n_elements(): "
-//             << dof_handler.locally_owned_dofs().n_elements()
-//             <<std::endl;
-//   dof_handler.locally_owned_dofs().print(dealii::deallog);*/
-//   /*  std::cout << "locally relevant dofs on process "
-//               << dealii::Utilities::MPI::this_mpi_process(mpi_communicator) << " ";
-//     locally_relevant_dofs.print(std::cout);*/
+
+  // std::cout << "locally owned dofs on process "
+  //           << dealii::Utilities::MPI::this_mpi_process(*mpi_communicator)
+  //           << std::endl;
+  // for (unsigned int l=0; l<mesh.triangulation.n_global_levels(); ++l)
+  //   {
+  //     std::cout << "level: " << l << " n_elements(): "
+  //               << dof_handler.locally_owned_mg_dofs(l).n_elements()
+  //               << " index set: ";
+  //     dof_handler.locally_owned_mg_dofs(l).print(std::cout);
+  //   }
+  // std::cout << "n_elements(): "
+  //           << dof_handler.locally_owned_dofs().n_elements()
+  //           <<std::endl;
+  // dof_handler.locally_owned_dofs().print(dealii::deallog);
+
+  // std::cout << "locally relevant dofs on process "
+  // 	    << dealii::Utilities::MPI::this_mpi_process(*mpi_communicator) << " ";
+  // locally_relevant_dofs.print(std::cout);
 
   dealii::DoFTools::extract_locally_relevant_dofs
   (dof_handler, locally_relevant_dofs);

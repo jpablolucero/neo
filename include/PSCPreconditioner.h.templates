@@ -314,44 +314,45 @@ void PSCPreconditioner<dim, SystemMatrixType, VectorType, number, same_diagonal>
   if (data.smoother_type == AdditionalData::SmootherType::additive)
     {
       //TODO make sure that the source vector is ghosted
+      WorkStream::Copy<dim, VectorType, number, same_diagonal> copy_sample;
+      copy_sample.dst = &dst;
+      copy_sample.ddh = ddh;
+
+      WorkStream::Scratch<dim, VectorType, number, same_diagonal> scratch_sample;
+      scratch_sample.src = &ghosted_src;
+      scratch_sample.local_inverses = &patch_inverses;
+
       ghosted_src = src;
-      {
-	WorkStream::Copy<dim, VectorType, number, same_diagonal> copy_sample;
-	copy_sample.dst = &dst;
-	copy_sample.ddh = ddh;
-
-	WorkStream::Scratch<dim, VectorType, number, same_diagonal> scratch_sample;
-	scratch_sample.src = &ghosted_src;
-	scratch_sample.local_inverses = &patch_inverses;
-
-	dealii::WorkStream::run(ddh->colorized_iterators(),
-				WorkStream::work<dim, VectorType, number, same_diagonal>,
-				WorkStream::assemble<dim, VectorType, number, same_diagonal>,
-				scratch_sample, copy_sample);
-      }
+      dealii::WorkStream::run(ddh->colorized_iterators(),
+			      WorkStream::work<dim, VectorType, number, same_diagonal>,
+			      WorkStream::assemble<dim, VectorType, number, same_diagonal>,
+			      scratch_sample, copy_sample);
     }
   else if (data.smoother_type == AdditionalData::SmootherType::hybrid)
     {
       Assert(ddh->colorized_iterators().size() == 1, dealii::ExcInternalError());
       int local_n_subdomains = ddh->subdomain_to_global_map.size() ;
-      int max_subdomains ;
+      int max_subdomains = 0;
       const int ierr = MPI_Allreduce (&local_n_subdomains, &max_subdomains, 1, MPI_INT, MPI_MAX, *mpi_communicator);
       AssertThrowMPI(ierr);
 
+      WorkStream::Copy<dim, VectorType, number, same_diagonal> copy_sample;
+      copy_sample.dst = &dst;
+      copy_sample.ddh = ddh;
+
+      WorkStream::Scratch<dim, VectorType, number, same_diagonal> scratch_sample;
+      scratch_sample.src = &ghosted_src;
+      scratch_sample.local_inverses = &patch_inverses;
+
       for (int p = 0 ; p < max_subdomains ; ++p)
 	  {
-	    system_matrix->vmult(ghosted_src,dst);
-	    ghosted_src.sadd(-1.,src);
-	    ghosted_src.compress(dealii::VectorOperation::add) ;
-
-	    WorkStream::Copy<dim, VectorType, number, same_diagonal> copy_sample;
-	    copy_sample.dst = &dst;
-	    copy_sample.ddh = ddh;
-
-	    WorkStream::Scratch<dim, VectorType, number, same_diagonal> scratch_sample;
-	    scratch_sample.src = &ghosted_src;
-	    scratch_sample.local_inverses = &patch_inverses;
-
+	    if (p==0) ghosted_src = src ;
+	    else
+	      {
+		system_matrix->vmult(ghosted_src,dst);
+		ghosted_src.sadd(-1.,src);
+		ghosted_src.compress(dealii::VectorOperation::add) ;
+	      }
 	    if ((p < local_n_subdomains) and (ddh->get_dofh().locally_owned_mg_dofs(level).n_elements() != 0))
 	      {
 		WorkStream::work(ddh->colorized_iterators()[0][p],scratch_sample,copy_sample) ;
@@ -363,27 +364,30 @@ void PSCPreconditioner<dim, SystemMatrixType, VectorType, number, same_diagonal>
     {
       Assert(ddh->colorized_iterators().size() == 1, dealii::ExcInternalError());
       int local_n_subdomains = ddh->subdomain_to_global_map.size() ;
-      int max_subdomains ;
+      int max_subdomains = 0;
       const int ierr = MPI_Allreduce (&local_n_subdomains, &max_subdomains, 1, MPI_INT, MPI_MAX, *mpi_communicator);
       AssertThrowMPI(ierr);
+
+      WorkStream::Copy<dim, VectorType, number, same_diagonal> copy_sample;
+      copy_sample.dst = &dst;
+      copy_sample.ddh = ddh;
+
+      WorkStream::Scratch<dim, VectorType, number, same_diagonal> scratch_sample;
+      scratch_sample.src = &ghosted_src;
+      scratch_sample.local_inverses = &patch_inverses;
 
       const unsigned int n_proc = dealii::Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);
 
       for (unsigned int proc = 0 ; proc < n_proc ; ++proc)
 	for (int p = 0 ; p < max_subdomains ; ++p)
 	  {
-	    system_matrix->vmult(ghosted_src,dst);
-	    ghosted_src.sadd(-1.,src);
-	    ghosted_src.compress(dealii::VectorOperation::add) ;
-
-	    WorkStream::Copy<dim, VectorType, number, same_diagonal> copy_sample;
-	    copy_sample.dst = &dst;
-	    copy_sample.ddh = ddh;
-
-	    WorkStream::Scratch<dim, VectorType, number, same_diagonal> scratch_sample;
-	    scratch_sample.src = &ghosted_src;
-	    scratch_sample.local_inverses = &patch_inverses;
-
+	    if ( (proc==0) and (p==0) ) ghosted_src = src ;
+	    else
+	      {
+		system_matrix->vmult(ghosted_src,dst);
+		ghosted_src.sadd(-1.,src);
+		ghosted_src.compress(dealii::VectorOperation::add) ;
+	      }
 	    if ((p < local_n_subdomains) and
 		(ddh->get_dofh().locally_owned_mg_dofs(level).n_elements() != 0) and
 		(dealii::Utilities::MPI::this_mpi_process(*mpi_communicator) == proc))
@@ -392,7 +396,10 @@ void PSCPreconditioner<dim, SystemMatrixType, VectorType, number, same_diagonal>
 		WorkStream::assemble(copy_sample) ;
 	      }
 	  }
-    }      
+    }
+  else
+    AssertThrow(false, dealii::ExcNotImplemented());
+
   timer->leave_subsection();
 }
 
