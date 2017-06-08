@@ -66,7 +66,6 @@ private:
   dealii::MGLevelObject<LA::MPI::Vector>              ghosted_solution;
   PSCMatrixIntegrator<dim>                            matrix_integrator;
   mutable LA::MPI::Vector                             ghosted_src;
-  mutable LA::MPI::Vector                             gh_dst;
 #if PARALLEL_LA==3
   mutable LA::MPI::Vector                             ghosted_dst;
 #endif

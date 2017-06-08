@@ -332,14 +332,17 @@ void PSCPreconditioner<dim, SystemMatrixType, VectorType, number, same_diagonal>
     }
   else
     {
-      for (auto p = ddh->colorized_iterators()[0].begin() ; p != ddh->colorized_iterators()[0].end(); ++p)
+      Assert(ddh->colorized_iterators().size() == 1, dealii::ExcInternalError());
+      int local_n_subdomains = ddh->subdomain_to_global_map.size() ;
+      int max_subdomains ;
+      const int ierr = MPI_Allreduce (&local_n_subdomains, &max_subdomains, 1, MPI_INT, MPI_MAX, *mpi_communicator);
+      AssertThrowMPI(ierr);
+      for (int p = 0 ; p < max_subdomains ; ++p)
 	{
-	  gh_dst = dst ;
-	  ghosted_src = src ;
-	  system_matrix->vmult(dst,gh_dst);
-	  dst.sadd(-1.,src);
-	  ghosted_src = dst ;
-	  dst = gh_dst ;
+	  system_matrix->vmult(ghosted_src,dst);
+	  ghosted_src.sadd(-1.,src);
+	  ghosted_src.compress(dealii::VectorOperation::add) ;
+
 	  WorkStream::Copy<dim, VectorType, number, same_diagonal> copy_sample;
 	  copy_sample.dst = &dst;
 	  copy_sample.ddh = ddh;
@@ -348,8 +351,11 @@ void PSCPreconditioner<dim, SystemMatrixType, VectorType, number, same_diagonal>
 	  scratch_sample.src = &ghosted_src;
 	  scratch_sample.local_inverses = &patch_inverses;
 
-	  WorkStream::work(*p,scratch_sample,copy_sample) ;
-	  WorkStream::assemble(copy_sample) ;
+	  if ((p < local_n_subdomains) and (ddh->get_dofh().locally_owned_mg_dofs(level).n_elements() != 0))
+	    {
+	      WorkStream::work(ddh->colorized_iterators()[0][p],scratch_sample,copy_sample) ;
+	      WorkStream::assemble(copy_sample) ;
+	    }
 	}
     }      
   timer->leave_subsection();
