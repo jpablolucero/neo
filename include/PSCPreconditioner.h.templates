@@ -344,15 +344,12 @@ void PSCPreconditioner<dim, SystemMatrixType, VectorType, number, same_diagonal>
       scratch_sample.src = &ghosted_src;
       scratch_sample.local_inverses = &patch_inverses;
 
+      ghosted_src = src ;
       for (int p = 0 ; p < max_subdomains ; ++p)
 	  {
-	    if (p==0) ghosted_src = src ;
-	    else
-	      {
-		system_matrix->vmult(ghosted_src,dst);
-		ghosted_src.sadd(-1.,src);
-		ghosted_src.compress(dealii::VectorOperation::add) ;
-	      }
+	    system_matrix->vmult(ghosted_src,dst);
+	    ghosted_src.sadd(-1.,src);
+	    ghosted_src.compress(dealii::VectorOperation::add) ;
 	    if ((p < local_n_subdomains) and (ddh->get_dofh().locally_owned_mg_dofs(level).n_elements() != 0))
 	      {
 		WorkStream::work(ddh->colorized_iterators()[0][p],scratch_sample,copy_sample) ;
@@ -363,10 +360,6 @@ void PSCPreconditioner<dim, SystemMatrixType, VectorType, number, same_diagonal>
   else if (data.smoother_type == AdditionalData::SmootherType::multiplicative)
     {
       Assert(ddh->colorized_iterators().size() == 1, dealii::ExcInternalError());
-      int local_n_subdomains = ddh->subdomain_to_global_map.size() ;
-      int max_subdomains = 0;
-      const int ierr = MPI_Allreduce (&local_n_subdomains, &max_subdomains, 1, MPI_INT, MPI_MAX, *mpi_communicator);
-      AssertThrowMPI(ierr);
 
       WorkStream::Copy<dim, VectorType, number, same_diagonal> copy_sample;
       copy_sample.dst = &dst;
@@ -376,30 +369,125 @@ void PSCPreconditioner<dim, SystemMatrixType, VectorType, number, same_diagonal>
       scratch_sample.src = &ghosted_src;
       scratch_sample.local_inverses = &patch_inverses;
 
-      const unsigned int n_proc = dealii::Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);
+      int n_local_cells = ddh->subdomain_to_global_map.size() ;
+      dealii::QGauss<dim-1> face_quadrature_formula(3);
+      dealii::FEFaceValues<dim> fe_face_values(ddh->get_dofh().get_fe(),face_quadrature_formula,dealii::update_normal_vectors);
+      std::vector<unsigned int> b_data ;
+      b_data.resize(ddh->subdomain_to_global_map.size(),0);
+      std::vector<unsigned int> p_data ;
+      p_data.resize(ddh->subdomain_to_global_map.size(),0);
+      for (int c = 0 ; c < n_local_cells ; ++c)
+	for (unsigned int f = 0 ; f < 2*dim ; ++f)
+	  if (ddh->subdomain_to_global_map[c][0]->at_boundary(f)) b_data[c] += 1;
+	  else if (ddh->subdomain_to_global_map[c][0]->neighbor(f)->level_subdomain_id()!=
+		   ddh->get_dofh().get_triangulation().locally_owned_subdomain())
+	    p_data[c] += 1;
+      std::vector<unsigned int> i_data ;
+      i_data.resize(ddh->subdomain_to_global_map.size(),0);
 
-      for (unsigned int proc = 0 ; proc < n_proc ; ++proc)
-	for (int p = 0 ; p < max_subdomains ; ++p)
-	  {
-	    if ( (proc==0) and (p==0) ) ghosted_src = src ;
-	    else
+      typedef std::vector<unsigned int>::const_iterator iterator;
+      std::vector<std::vector<iterator> > ordered_iterators;
+
+      std::function<void(int,dealii::Tensor<1,dim>,unsigned int)> smooth_cell =	[&](int c,dealii::Tensor<1,dim> dir,unsigned int gen)
+	{
+	  auto & this_c = ddh->subdomain_to_global_map[c][0] ;
+	  std::vector<unsigned int> downstream_faces ;
+	  unsigned int d_data = 0;
+	  for (unsigned int f = 0 ; f < 2*dim ; ++f)
+	    if (not (this_c->at_boundary(f)))
 	      {
-		system_matrix->vmult(ghosted_src,dst);
-		ghosted_src.sadd(-1.,src);
-		ghosted_src.compress(dealii::VectorOperation::add) ;
+		if (this_c->neighbor(f)->level_subdomain_id()==
+		    ddh->get_dofh().get_triangulation().locally_owned_subdomain())
+		  {
+		    fe_face_values.reinit(this_c,f) ;
+		    auto nor = fe_face_values.normal_vector(0);
+		    if ( dir*nor > 0 )
+		      {
+			d_data += 1;
+			downstream_faces.push_back(f);
+		      }
+		  }
 	      }
-	    if ((p < local_n_subdomains) and
+	  if (b_data[c]+p_data[c]+i_data[c]+d_data < 2*dim) return ;
+	  if (b_data[c]+p_data[c]+i_data[c]+d_data == 2*dim)
+	    {
+	      ++gen ;
+	      if (gen > ordered_iterators.size()) ordered_iterators.resize(gen);
+	      ordered_iterators[gen-1].push_back(ddh->colorized_iterators()[0][c]);
+	      for (auto f : downstream_faces)
+		{
+		  std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> v ;
+		  v.push_back(this_c->neighbor(f));
+		  int q = std::distance(ddh->subdomain_to_global_map.begin(),
+					std::find(ddh->subdomain_to_global_map.begin(),
+						  ddh->subdomain_to_global_map.end(),
+						  v)) ;
+		  i_data[q] += 1;
+		  smooth_cell(q,dir,gen);
+		}
+	    }
+	  return;
+	};
+	      
+      auto find = [&](dealii::Tensor<1,dim> dir)
+	{
+	  std::vector<int> cells ;
+	  for (int c = 0 ; c < n_local_cells ; ++c)
+	    {
+	      auto & this_c = ddh->subdomain_to_global_map[c][0] ;
+	      unsigned int d_data = 0;
+	      for (unsigned int f = 0 ; f < 2*dim ; ++f)
+		if (not (this_c->at_boundary(f)) and
+		    (this_c->neighbor(f)->level_subdomain_id()==
+		     ddh->get_dofh().get_triangulation().locally_owned_subdomain()))
+		  {
+		    fe_face_values.reinit(this_c,f) ;
+		    auto nor = fe_face_values.normal_vector(0);
+		    if ( dir*nor > 0 ) d_data += 1;
+		  }
+	      if (b_data[c]+p_data[c]+d_data == 2*dim)
+		cells.push_back(c);
+	    }
+	  return cells ;
+	};
+
+      dealii::Tensor<1,dim> dir_ ;
+      dir_[0] = 1.;
+      dir_[1] = 1.;
+      std::fill(i_data.begin(), i_data.end(), 0);
+      for (auto c : find(dir_))
+	smooth_cell(c,dir_,ordered_iterators.size());
+
+      unsigned int n_local_gen = ordered_iterators.size() ;
+      ghosted_src = src ;
+      const unsigned int n_proc = dealii::Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);
+      unsigned int * all_local_gen = new unsigned int[n_proc];
+	
+      const int ierr = MPI_Allgather(&n_local_gen,1,MPI_INT,all_local_gen,1,MPI_INT,*mpi_communicator);
+      AssertThrowMPI(ierr);
+	
+      for (unsigned int proc = 0 ; proc < n_proc  ; ++proc)
+	for (unsigned int g = 0 ; g < all_local_gen[proc] ; ++g)
+	  {
+	    system_matrix->vmult(ghosted_src,dst);
+	    ghosted_src.sadd(-1.,src);
+	    ghosted_src.compress(dealii::VectorOperation::add) ;
+	    if ((g < n_local_gen) and
 		(ddh->get_dofh().locally_owned_mg_dofs(level).n_elements() != 0) and
 		(dealii::Utilities::MPI::this_mpi_process(*mpi_communicator) == proc))
 	      {
-		WorkStream::work(ddh->colorized_iterators()[0][p],scratch_sample,copy_sample) ;
-		WorkStream::assemble(copy_sample) ;
+		for (unsigned int c = 0 ; c < ordered_iterators[g].size() ; ++c)
+		  {
+		    WorkStream::work(ordered_iterators[g][c],scratch_sample,copy_sample) ;
+		    WorkStream::assemble(copy_sample) ;
+		  }
 	      }
 	  }
+      delete [] all_local_gen ;
     }
   else
     AssertThrow(false, dealii::ExcNotImplemented());
-
+  
   timer->leave_subsection();
 }
 
