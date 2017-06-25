@@ -170,7 +170,6 @@ void Simulator<SystemMatrixType,VectorType,Preconditioner,dim,degree>::run ()
   for (unsigned int l=min_level; l<mesh.triangulation.n_global_levels(); ++l)
     dealii::deallog << ' ' << dofs.dof_handler.n_dofs(l);
   dealii::deallog << std::endl;
-  output_results(n_levels);
   timer->enter_subsection("solve");
   *pcout << "Solve" << std::endl;
   solve ();

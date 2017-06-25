@@ -36,7 +36,7 @@ void GMGPreconditioner<dim,VectorType,number,same_diagonal,degree>::setup (Vecto
 #endif // MATRIXFREE
   timer->enter_subsection("solve::mg_initialization");
   // Setup coarse solver
-  coarse_solver_control.reset(new dealii::SolverControl(dofs.dof_handler.n_dofs(min_level)*10, 1e-15, false, false));
+  coarse_solver_control.reset(new dealii::SolverControl(dofs.dof_handler.n_dofs(min_level)*10, 1e-10, false, false));
   //  dealii::PreconditionIdentity id;
 #if PARALLEL_LA < 3
   mg_matrix[min_level].build_coarse_matrix();
