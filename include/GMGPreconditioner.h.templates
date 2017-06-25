@@ -83,6 +83,7 @@ void GMGPreconditioner<dim,VectorType,number,same_diagonal,degree>::setup (Vecto
       //  }
       smoother_data[level].patch_type = Smoother::AdditionalData::cell_patches;
       smoother_data[level].smoother_type = Smoother::AdditionalData::additive;
+      // smoother_data[level].set_fullsweep();
     }
   mg_smoother.initialize(mg_matrix, smoother_data);
   mg_smoother.set_steps(smoothing_steps);

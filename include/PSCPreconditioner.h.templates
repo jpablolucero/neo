@@ -269,6 +269,15 @@ void PSCPreconditioner<dim, SystemMatrixType, VectorType, number,same_diagonal>:
                         << dict_size << " inverse(s)." << std::endl;
       }
   }
+  ordered_iterators.clear();
+  ordered_gens.clear();
+  auto & dirs = data.dirs ;
+  for (unsigned int d = 0 ; d < dirs.size() ; ++d)
+    {
+      ordered_iterators.resize(d+1);
+      ordered_gens.resize(d+1);
+      add_cell_ordering(dirs[d]);
+    }
   timer->leave_subsection();
 }
 
@@ -359,286 +368,6 @@ void PSCPreconditioner<dim, SystemMatrixType, VectorType, number, same_diagonal>
     }      
   else if (data.smoother_type == AdditionalData::SmootherType::multiplicative)
     {
-      Assert(ddh->colorized_iterators().size() == 1, dealii::ExcInternalError());
-
-      int n_local_cells = ddh->subdomain_to_global_map.size() ;
-      dealii::QGauss<dim-1> face_quadrature_formula(3);
-      dealii::FEFaceValues<dim> fe_face_values(ddh->get_dofh().get_fe(),face_quadrature_formula,dealii::update_normal_vectors);
-
-      std::vector<unsigned int> b_data ;
-      b_data.resize(ddh->subdomain_to_global_map.size(),0);
-      std::vector<unsigned int> p_data ;
-      p_data.resize(ddh->subdomain_to_global_map.size(),0);
-      std::vector<unsigned int> i_data ;
-      i_data.resize(ddh->subdomain_to_global_map.size(),0);
-      for (int c = 0 ; c < n_local_cells ; ++c)
-	for (unsigned int f = 0 ; f < 2*dim ; ++f)
-	  {
-	    if (ddh->subdomain_to_global_map[c][0]->at_boundary(f))
-	      b_data[c] += 1;
-	    else if (ddh->subdomain_to_global_map[c][0]->neighbor(f)->level_subdomain_id()!=
-		     ddh->get_dofh().get_triangulation().locally_owned_subdomain())
-	      p_data[c] += 1;
-	  }
-      	      
-      bool global_gen = false ;
-      typedef std::vector<unsigned int>::const_iterator iterator;
-      std::vector<std::vector<std::vector<iterator> > > ordered_iterators;
-      std::vector<int> ordered_gens ;
-      std::set<unsigned int> level_ghost_owners ;
-      std::set<unsigned int> upstream_procs ;
-      
-      std::function<void(int,dealii::Tensor<1,dim>,unsigned int)> smooth_cell =	[&](int c,dealii::Tensor<1,dim> dir,unsigned int gen)
-	{
-	  auto & this_c = ddh->subdomain_to_global_map[c][0] ;
-	  std::vector<unsigned int> downstream_faces ;
-	  unsigned int d_data = 0;
-	  for (unsigned int f = 0 ; f < 2*dim ; ++f)
-	    if (not (this_c->at_boundary(f)))
-	      {
-		if (this_c->neighbor(f)->level_subdomain_id()==
-		    ddh->get_dofh().get_triangulation().locally_owned_subdomain())
-		  {
-		    fe_face_values.reinit(this_c,f) ;
-		    auto nor = fe_face_values.normal_vector(0);
-		    if ( dir*nor > 0 )
-		      {
-			d_data += 1;
-			downstream_faces.push_back(f);
-		      }
-		  }
-		else
-		  {
-		    level_ghost_owners.insert(this_c->neighbor(f)->level_subdomain_id());
-		    fe_face_values.reinit(this_c,f) ;
-		    auto nor = fe_face_values.normal_vector(0);
-		    if (gen == 0)
-		      {
-			if ( dir*nor < 0 ) upstream_procs.insert(this_c->neighbor(f)->level_subdomain_id());
-			else
-			  {
-			    p_data[c] -= 1 ;
-			    d_data += 1 ;
-			  }
-		      }
-		  }		    
-	      }
-	  if (b_data[c]+p_data[c]+i_data[c]+d_data < 2*dim) return ;
-	  if (b_data[c]+p_data[c]+i_data[c]+d_data == 2*dim)
-	    {
-	      if (b_data[c]+d_data == 2*dim)
-		{
-		  global_gen = true ;
-		  ordered_gens.back() = 0;
-		}
-	      ++gen ;
-	      if (gen > ordered_iterators.back().size()) ordered_iterators.back().resize(gen);
-	      ordered_iterators.back()[gen-1].push_back(ddh->colorized_iterators()[0][c]);
-	      for (auto f : downstream_faces)
-		{
-		  std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> v ;
-		  v.push_back(this_c->neighbor(f));
-		  int q = std::distance(ddh->subdomain_to_global_map.begin(),
-					std::find(ddh->subdomain_to_global_map.begin(),
-						  ddh->subdomain_to_global_map.end(),
-						  v)) ;
-		  i_data[q] += 1;
-		  smooth_cell(q,dir,gen);
-		}
-	    }
-	  return;
-	};
-	      
-      auto find = [&](dealii::Tensor<1,dim> dir)
-	{
-	  std::vector<int> cells ;
-	  for (int c = 0 ; c < n_local_cells ; ++c)
-	    {
-	      auto & this_c = ddh->subdomain_to_global_map[c][0] ;
-	      unsigned int d_data = 0;
-	      for (unsigned int f = 0 ; f < 2*dim ; ++f)
-		if (not (this_c->at_boundary(f)) and
-		    (this_c->neighbor(f)->level_subdomain_id()== ddh->get_dofh().get_triangulation().locally_owned_subdomain()))
-		  {
-		    fe_face_values.reinit(this_c,f) ;
-		    auto nor = fe_face_values.normal_vector(0);
-		    if ( dir*nor > 0 ) d_data += 1;
-		  }
-	      if (b_data[c]+p_data[c]+d_data == 2*dim) cells.push_back(c);
-	    }
-	  return cells ;
-	};
-
-      dealii::Tensor<1,dim> dir_ ;
-      dir_[0] = 1.;
-      dir_[1] = 1.;
-      std::fill(i_data.begin(), i_data.end(), 0);
-      for (auto c : find(dir_))
-	{
-	  ordered_iterators.resize(ordered_iterators.size()+1);
-	  ordered_gens.resize(ordered_gens.size()+1,-1);
-	  smooth_cell(c,dir_,0);
-	}
-
-      const unsigned int n_proc = dealii::Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);
-      const unsigned int this_proc = dealii::Utilities::MPI::this_mpi_process(*mpi_communicator);
-
-      std::vector<std::vector<unsigned int> > outbox ;
-
-      for (unsigned int proc = 0 ; proc < n_proc ; ++proc)
-	{
-	  if (this_proc == proc)
-	    {
-	      for (auto iproc : level_ghost_owners)
-		{
-		  unsigned int n_down_req = 0 ;
-		  MPI_Recv(&n_down_req,1,MPI_INT,iproc,0,*mpi_communicator,MPI_STATUS_IGNORE);
-		  if (n_down_req != 0)
-		    {
-		      unsigned int total_data_req = 0 ;
-		      MPI_Recv(&total_data_req,1,MPI_INT,iproc,0,*mpi_communicator,MPI_STATUS_IGNORE);
-		      for (unsigned int r = 0 ; r < total_data_req ; ++r)
-			{
-			  std::vector<double> reqv(dim,0.) ;
-			  MPI_Recv(&reqv[0],dim,MPI_DOUBLE,iproc,0,*mpi_communicator,MPI_STATUS_IGNORE);
-			  unsigned int reqs = 0;
-			  MPI_Recv(&reqs,1,MPI_INT,iproc,0,*mpi_communicator,MPI_STATUS_IGNORE);
-			  for (unsigned int s = 0 ; s < ordered_gens.size() ; ++s)
-			    for (unsigned int g = 0 ; g < ordered_iterators[s].size() ; ++g)
-			      for (unsigned int c = 0 ; c < ordered_iterators[s][g].size() ; ++c)
-				{
-				  auto & this_c = ddh->subdomain_to_global_map[*(ordered_iterators[s][g][c])][0] ;
-				  double distance = 0 ;
-				  for (unsigned int d = 0 ; d < dim ; ++d) distance += std::pow(this_c->center()[d]-reqv[d],2) ;
-				  if (distance < 1.E-8 )
-				    {
-				      // std::cout << "Proc: " << this_proc << " has been req'd data from cell "
-				      //  	    << "(" << this_c->center()[0] << "," << this_c->center()[1] << ")"
-				      //  	    << " for sw " << reqs << " on proc "
-				      // 	    << iproc << std::endl << std::flush ;
-				      outbox.push_back(std::vector<unsigned int> {s,g,c,iproc,reqs});
-				    }
-				}
-			}
-		    }
-		}
-	    }
-	  else if (level_ghost_owners.find(proc) != level_ghost_owners.end()) 
-	    {
-	      unsigned int n_up_req = (upstream_procs.find(proc)!=upstream_procs.end()) ? 1 : 0 ;
-	      MPI_Send(&n_up_req,1,MPI_INT,proc,0,*mpi_communicator);
-	      if (n_up_req != 0)
-		{
-		  std::vector<std::vector<double> > req_cells ;
-		  std::vector<unsigned int> local_sweeps ;
-		  for (unsigned int s = 0 ; s < ordered_iterators.size() ; ++s)
-		    {		      
-		      auto & this_c = ddh->subdomain_to_global_map[*(ordered_iterators[s][0][0])][0] ;
-		      for (unsigned int f = 0 ; f < 2*dim ; ++f)
-			if ((not (this_c->at_boundary(f))) and (this_c->neighbor(f)->level_subdomain_id()==proc))
-			  {
-			    fe_face_values.reinit(this_c,f) ;
-			    auto nor = fe_face_values.normal_vector(0);
-			    if ( dir_*nor < 0 )
-			      {
-				std::vector<double> cell(dim,0.) ;
-				for (unsigned int d = 0 ; d < dim ; ++d) cell[d] = this_c->neighbor(f)->center()[d];
-				req_cells.push_back(cell);
-				local_sweeps.push_back(s) ;
-			      }
-			  }
-		    }
-		  unsigned int total_data_req = req_cells.size() ;
-		  MPI_Send(&total_data_req,1,MPI_INT,proc,0,*mpi_communicator);
-		  for (unsigned int r = 0 ; r < total_data_req ; ++r)
-		    {
-		      // std::cout << "Proc: " << proc << " is req data from cell "
-		      // 	    << "(" << req_cells[r][0] << "," << req_cells[r][1] << ")"
-		      // 	    << " for sw " << local_sweeps[r] << " on proc " << this_proc << std::endl << std::flush ;
-		      MPI_Send(&req_cells[r][0],dim,MPI_DOUBLE,proc,0,*mpi_communicator);
-		      MPI_Send(&local_sweeps[r],1,MPI_INT,proc,0,*mpi_communicator);
-		    }			  
-		}
-	    }
-	}
-
-      // for (unsigned int i = 0 ; i < outbox.size() ; ++i)
-      //   {
-      //     auto & this_c = ddh->subdomain_to_global_map[*(ordered_iterators[outbox[i][0]][outbox[i][1]][outbox[i][2]])][0] ;
-      //     std::cout << "Proc: " << this_proc << "(" << this_c->center()[0] << "," << this_c->center()[1]
-      // 		<< ")" << " to proc " << outbox[i][3] << " at sweep "
-      // 		<< outbox[i][4] << std::endl << std::flush ;
-      //   }
-
-      bool complete_gen_data = false ;
-      while (not complete_gen_data)
-	{
-	  for (unsigned int proc = 0 ; proc < n_proc ; ++proc)
-	    {
-	      if (this_proc == proc)
-		{
-		  for (auto iproc : level_ghost_owners)
-		    {
-		      unsigned int in_data_size = 0 ;
-		      MPI_Recv(&in_data_size,1,MPI_INT,iproc,0,*mpi_communicator,MPI_STATUS_IGNORE);
-		      for (unsigned int i = 0 ; i < in_data_size ; ++i)
-			{
-			  unsigned int ge = 0 ;
-			  unsigned int sw = 0 ;
-			  MPI_Recv(&ge,1,MPI_INT,iproc,0,*mpi_communicator,MPI_STATUS_IGNORE);
-			  MPI_Recv(&sw,1,MPI_INT,iproc,0,*mpi_communicator,MPI_STATUS_IGNORE);
-			  // if (level == 3)
-			  //   {
-			  //     auto & this_c = ddh->subdomain_to_global_map[*(ordered_iterators[sw][0][0])][0] ;
-			  //     std::cout << "Proc " << this_proc << " rec gen " << ge + 1
-			  // 		<< " for cell " << "(" << this_c->center()[0] << "," << this_c->center()[1] << ")"
-			  // 		<< " from proc " << iproc
-			  // 		<< " ord_gen[sw] " << ordered_gens[sw]
-			  // 		<< std::endl << std::flush ;
-			  //   }
-			  if (ordered_gens[sw] == -1) ordered_gens[sw] = ge + 1 ;
-			}
-		    }
-		}
-	      else if (level_ghost_owners.find(proc) != level_ghost_owners.end()) 
-		{
-		  std::vector<unsigned int> send_buf ;
-		  std::vector<unsigned int> dest_buf ;
-		  for (unsigned int s = 0 ; s < ordered_gens.size() ; ++s)
-		    if (ordered_gens[s] != -1)
-		      {
-			for (unsigned int i = 0 ; i < outbox.size() ; ++i)
-			  if ( (outbox[i][3] == proc) and (outbox[i][0] == s) )
-			    {
-			      send_buf.push_back(outbox[i][1] + ordered_gens[s]);
-			      dest_buf.push_back(outbox[i][4]);
-			    }
-		      }
-		  unsigned int out_data_size = send_buf.size() ;
-		  MPI_Send(&out_data_size,1,MPI_INT,proc,0,*mpi_communicator) ;
-		  for (unsigned int i = 0 ; i < out_data_size ; ++i)
-		    {
-		      MPI_Send(&send_buf[i],1,MPI_INT,proc,0,*mpi_communicator) ;
-		      MPI_Send(&dest_buf[i],1,MPI_INT,proc,0,*mpi_communicator) ;
-		    }
-		}
-	    }
-	  bool gen_data_is_complete = true ;
-	  for (auto & elem : ordered_gens)
-	    if (elem == -1) gen_data_is_complete = false ;
-	  const int ierr2 = MPI_Allreduce (&gen_data_is_complete, &complete_gen_data, 1, MPI_LOGICAL, MPI_LAND, *mpi_communicator);
-	  AssertThrowMPI(ierr2);
-	}
-
-      unsigned int local_max_gen = 0 ;
-      for (unsigned int s = 0 ; s < ordered_iterators.size() ; ++s)
-	if (local_max_gen < static_cast<unsigned int>(ordered_gens[s])+ordered_iterators[s].size() )
-	  local_max_gen = static_cast<unsigned int>(ordered_gens[s])+ordered_iterators[s].size() ;
-      
-      int max_gen = 0 ;
-      const int ierr3 = MPI_Allreduce (&local_max_gen, &max_gen, 1, MPI_INT, MPI_MAX, *mpi_communicator);
-      AssertThrowMPI(ierr3);
-
       WorkStream::Copy<dim, VectorType, number, same_diagonal> copy_sample;
       copy_sample.dst = &dst;
       copy_sample.ddh = ddh;
@@ -648,24 +377,23 @@ void PSCPreconditioner<dim, SystemMatrixType, VectorType, number, same_diagonal>
       scratch_sample.local_inverses = &patch_inverses;
 
       ghosted_src = src ;
-      for (int g = 0 ; g < max_gen ; ++g)
-	{
-	  system_matrix->vmult(ghosted_src,dst);
-	  ghosted_src.sadd(-1.,src);
-	  ghosted_src.compress(dealii::VectorOperation::add) ;
-	  for (unsigned int s = 0 ; s < ordered_iterators.size() ; ++s)
-	    if ( (0 <= g-static_cast<unsigned int>(ordered_gens[s])) and
-		 (g-static_cast<unsigned int>(ordered_gens[s]) < ordered_iterators[s].size()) )
-	      for (unsigned int c = 0 ; c < ordered_iterators[s][g-ordered_gens[s]].size() ; ++c)
-		{
-		  // auto & this_c = ddh->subdomain_to_global_map[*(ordered_iterators[s][g-ordered_gens[s]][c])][0] ;
-		  // if (level == 1 ) std::cout << "g" << g << "p" << this_proc
-		  // 			       << "(" << this_c->center()[0] << "," << this_c->center()[1] << ")"
-		  // 			       << std::endl << std::flush ;
-		  WorkStream::work(ordered_iterators[s][g-ordered_gens[s]][c],scratch_sample,copy_sample) ;
-		  WorkStream::assemble(copy_sample) ;
-		}
-	}
+      for (unsigned int d = 0 ; d < ordered_iterators.size() ; ++d)
+	for (unsigned int g = 0 ; g < global_last_gen ; ++g)
+	  {
+	    system_matrix->vmult(ghosted_src,dst);
+	    ghosted_src.sadd(-1.,src);
+	    ghosted_src.compress(dealii::VectorOperation::add) ;
+	    for (unsigned int s = 0 ; s < ordered_iterators[d].size() ; ++s)
+	      {
+		const unsigned int loc_g = g-ordered_gens[d][s] ;
+		if ( (0 <= loc_g) and (loc_g < ordered_iterators[d][s].size()) )
+		  for (unsigned int c = 0 ; c < ordered_iterators[d][s][loc_g].size() ; ++c)
+		    {
+		      WorkStream::work(ordered_iterators[d][s][loc_g][c],scratch_sample,copy_sample) ;
+		      WorkStream::assemble(copy_sample) ;
+		    }
+	      }
+	  }
     }
   else
     AssertThrow(false, dealii::ExcNotImplemented());
@@ -711,4 +439,260 @@ void PSCPreconditioner<dim, SystemMatrixType, VectorType, number, same_diagonal>
   dealii::colored_loop<dim, dim> (colored_iterators, *dof_info, info_box, matrix_integrator, assembler,lctrl, colored_iterators[0]);
 
   matrix.copy_from(mg_matrix[level]);
+}
+
+template <int dim, typename SystemMatrixType, typename VectorType, typename number, bool same_diagonal>
+void PSCPreconditioner<dim, SystemMatrixType, VectorType, number, same_diagonal>::add_cell_ordering(dealii::Tensor<1,dim> dir)
+{
+  Assert(ddh->colorized_iterators().size() == 1, dealii::ExcInternalError());
+  class CellVectorContainer
+  {
+  public:
+    CellVectorContainer(std::vector<std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> > &
+			subdomain_to_global_map_):
+      subdomain_to_global_map(subdomain_to_global_map_){};
+    auto & operator [](unsigned int c) {return subdomain_to_global_map[c][0];}
+    auto size() {return subdomain_to_global_map.size();}
+    auto begin() {return subdomain_to_global_map.begin();}
+    auto end() {return subdomain_to_global_map.end();}
+  private:
+    std::vector<std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> > & subdomain_to_global_map;
+  } local_cells(ddh->subdomain_to_global_map) ;
+  const unsigned int n_local_cells = local_cells.size() ;
+  auto & local_iterators = ddh->colorized_iterators()[0];
+  auto & triangulation = ddh->get_dofh().get_triangulation();
+  auto & fe = ddh->get_dofh().get_fe();
+      
+  dealii::QGauss<dim-1> face_quadrature_formula(3);
+  dealii::FEFaceValues<dim> fe_face_values(fe,face_quadrature_formula,dealii::update_normal_vectors);
+
+  std::vector<unsigned int> b_data(n_local_cells,0);
+  std::vector<unsigned int> p_data(n_local_cells,0);
+  std::vector<unsigned int> i_data(n_local_cells,0);
+
+  for (unsigned int c = 0 ; c < n_local_cells ; ++c)
+    for (unsigned int f = 0 ; f < 2*dim ; ++f)
+      {
+	if (local_cells[c]->at_boundary(f))
+	  b_data[c] += 1;
+	else if (local_cells[c]->neighbor(f)->level_subdomain_id()!=triangulation.locally_owned_subdomain())
+	  p_data[c] += 1;
+      }
+      	      
+  bool global_gen = false ;
+  std::set<unsigned int> level_ghost_owners ;
+  std::set<unsigned int> upstream_procs ;
+      
+  std::function<void(int,dealii::Tensor<1,dim>,unsigned int)> sweep = [&](int c,dealii::Tensor<1,dim> dir_,unsigned int gen)
+    {
+      std::vector<unsigned int> downstream_faces ;
+      unsigned int d_data = 0;
+      for (unsigned int f = 0 ; f < 2*dim ; ++f)
+	if (not (local_cells[c]->at_boundary(f)))
+	  {
+	    if (local_cells[c]->neighbor(f)->level_subdomain_id()==triangulation.locally_owned_subdomain())
+	      {
+		fe_face_values.reinit(local_cells[c],f) ;
+		auto nor = fe_face_values.normal_vector(0);
+		if ( dir_*nor > 0 )
+		  {
+		    d_data += 1;
+		    downstream_faces.push_back(f);
+		  }
+	      }
+	    else
+	      {
+		level_ghost_owners.insert(local_cells[c]->neighbor(f)->level_subdomain_id());
+		fe_face_values.reinit(local_cells[c],f) ;
+		auto nor = fe_face_values.normal_vector(0);
+		if (gen == 0)
+		  {
+		    if ( dir_*nor < 0 ) upstream_procs.insert(local_cells[c]->neighbor(f)->level_subdomain_id());
+		    else
+		      {
+			p_data[c] -= 1 ;
+			d_data += 1 ;
+		      }
+		  }
+	      }		    
+	  }
+      if (b_data[c]+p_data[c]+i_data[c]+d_data < 2*dim) return ;
+      if (b_data[c]+p_data[c]+i_data[c]+d_data == 2*dim)
+	{
+	  if (b_data[c]+d_data == 2*dim)
+	    {
+	      global_gen = true ;
+	      ordered_gens.back().back() = 0;
+	    }
+	  ++gen ;
+	  if (gen > ordered_iterators.back().back().size()) ordered_iterators.back().back().resize(gen);
+	  ordered_iterators.back().back()[gen-1].push_back(local_iterators[c]);
+	  for (auto f : downstream_faces)
+	    {
+	      std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> v{local_cells[c]->neighbor(f)};
+	      int q = std::distance(local_cells.begin(),std::find(local_cells.begin(),local_cells.end(),v)) ;
+	      i_data[q] += 1;
+	      sweep(q,dir_,gen);
+	    }
+	}
+      return;
+    };
+	      
+  auto find_sweep_starting_cell = [&](dealii::Tensor<1,dim> dir_)
+    {
+      std::vector<unsigned int> cells ;
+      for (unsigned int c = 0 ; c < n_local_cells ; ++c)
+	{
+	  unsigned int d_data = 0;
+	  for (unsigned int f = 0 ; f < 2*dim ; ++f)
+	    if (not (local_cells[c]->at_boundary(f)) and
+		(local_cells[c]->neighbor(f)->level_subdomain_id()==triangulation.locally_owned_subdomain()))
+	      {
+		fe_face_values.reinit(local_cells[c],f) ;
+		auto nor = fe_face_values.normal_vector(0);
+		if ( dir_*nor > 0 ) d_data += 1;
+	      }
+	  if (b_data[c]+p_data[c]+d_data == 2*dim) cells.push_back(c);
+	}
+      return cells ;
+    };
+
+  for (auto c : find_sweep_starting_cell(dir))
+    {
+      ordered_iterators.back().resize(ordered_iterators.back().size()+1);
+      ordered_gens.back().resize(ordered_gens.back().size()+1,-1);
+      sweep(c,dir,0);
+    }
+
+  const unsigned int n_proc = dealii::Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);
+  const unsigned int this_proc = dealii::Utilities::MPI::this_mpi_process(*mpi_communicator);
+
+  downstream_outbox.clear();
+  
+  for (unsigned int proc = 0 ; proc < n_proc ; ++proc)
+    {
+      if (this_proc == proc)
+	{
+	  for (auto iproc : level_ghost_owners)
+	    {
+	      bool downstream_request = 0 ;
+	      MPI_Recv(&downstream_request,1,MPI_LOGICAL,iproc,0,*mpi_communicator,MPI_STATUS_IGNORE);
+	      if (downstream_request)
+		{
+		  unsigned int n_downstream_requests = 0 ;
+		  MPI_Recv(&n_downstream_requests,1,MPI_INT,iproc,0,*mpi_communicator,MPI_STATUS_IGNORE);
+		  for (unsigned int r = 0 ; r < n_downstream_requests ; ++r)
+		    {
+		      std::vector<double> requested_cell(dim,0.) ;
+		      MPI_Recv(&requested_cell[0],dim,MPI_DOUBLE,iproc,0,*mpi_communicator,MPI_STATUS_IGNORE);
+		      unsigned int downstream_sweep = 0;
+		      MPI_Recv(&downstream_sweep,1,MPI_INT,iproc,0,*mpi_communicator,MPI_STATUS_IGNORE);
+		      for (unsigned int s = 0 ; s < ordered_iterators.back().size() ; ++s)
+			for (unsigned int g = 0 ; g < ordered_iterators.back()[s].size() ; ++g)
+			  for (unsigned int c = 0 ; c < ordered_iterators.back()[s][g].size() ; ++c)
+			    {
+			      auto & this_cell = local_cells[*(ordered_iterators.back()[s][g][c])] ;
+			      double distance = 0 ;
+			      for (unsigned int d = 0 ; d < dim ; ++d)
+				distance += std::pow(this_cell->center()[d]-requested_cell[d],2) ;
+			      if (distance < 1.E-8 )
+				downstream_outbox.push_back(std::vector<unsigned int> {s,g,c,iproc,downstream_sweep});
+			    }
+		    }
+		}
+	    }
+	}
+      else if (level_ghost_owners.find(proc) != level_ghost_owners.end()) 
+	{
+	  const bool upstream_request = (upstream_procs.find(proc)!=upstream_procs.end()) ? true : false ;
+	  MPI_Send(&upstream_request,1,MPI_LOGICAL,proc,0,*mpi_communicator);
+	  if (upstream_request)
+	    {
+	      std::vector<std::vector<double> > upstream_cell_requests ;
+	      std::vector<unsigned int> local_sweep_list ;
+	      for (unsigned int s = 0 ; s < ordered_iterators.back().size() ; ++s)
+		{		      
+		  auto & this_cell = local_cells[*(ordered_iterators.back()[s][0][0])] ;
+		  for (unsigned int f = 0 ; f < 2*dim ; ++f)
+		    if ((not (this_cell->at_boundary(f))) and (this_cell->neighbor(f)->level_subdomain_id()==proc))
+		      {
+			fe_face_values.reinit(this_cell,f) ;
+			auto nor = fe_face_values.normal_vector(0);
+			if ( dir*nor < 0 )
+			  {
+			    std::vector<double> cell(dim,0.) ;
+			    for (unsigned int d = 0 ; d < dim ; ++d) cell[d] = this_cell->neighbor(f)->center()[d];
+			    upstream_cell_requests.push_back(cell);
+			    local_sweep_list.push_back(s) ;
+			  }
+		      }
+		}
+	      const unsigned int n_upstream_requests = upstream_cell_requests.size() ;
+	      MPI_Send(&n_upstream_requests,1,MPI_INT,proc,0,*mpi_communicator);
+	      for (unsigned int r = 0 ; r < n_upstream_requests ; ++r)
+		{
+		  MPI_Send(&upstream_cell_requests[r][0],dim,MPI_DOUBLE,proc,0,*mpi_communicator);
+		  MPI_Send(&local_sweep_list[r],1,MPI_INT,proc,0,*mpi_communicator);
+		}			  
+	    }
+	}
+    }
+
+  bool complete_gen_data = false ;
+  while (not complete_gen_data)
+    {
+      for (unsigned int proc = 0 ; proc < n_proc ; ++proc)
+	{
+	  if (this_proc == proc)
+	    {
+	      for (auto iproc : level_ghost_owners)
+		{
+		  unsigned int n_generations = 0 ;
+		  MPI_Recv(&n_generations,1,MPI_INT,iproc,0,*mpi_communicator,MPI_STATUS_IGNORE);
+		  for (unsigned int i = 0 ; i < n_generations ; ++i)
+		    {
+		      unsigned int generation = 0 ;
+		      unsigned int sweep = 0 ;
+		      MPI_Recv(&generation,1,MPI_INT,iproc,0,*mpi_communicator,MPI_STATUS_IGNORE);
+		      MPI_Recv(&sweep,1,MPI_INT,iproc,0,*mpi_communicator,MPI_STATUS_IGNORE);
+		      if (ordered_gens.back()[sweep] == -1) ordered_gens.back()[sweep] = generation + 1 ;
+		    }
+		}
+	    }
+	  else if (level_ghost_owners.find(proc) != level_ghost_owners.end()) 
+	    {
+	      std::vector<unsigned int> generations ;
+	      std::vector<unsigned int> dest_sweeps ;
+	      for (unsigned int s = 0 ; s < ordered_gens.back().size() ; ++s)
+		if (ordered_gens.back()[s] != -1)
+		  {
+		    for (unsigned int i = 0 ; i < downstream_outbox.size() ; ++i)
+		      if ( (downstream_outbox[i][3] == proc) and (downstream_outbox[i][0] == s) )
+			{
+			  generations.push_back(downstream_outbox[i][1] + ordered_gens.back()[s]);
+			  dest_sweeps.push_back(downstream_outbox[i][4]);
+			}
+		  }
+	      const unsigned int n_generations = generations.size() ;
+	      MPI_Send(&n_generations,1,MPI_INT,proc,0,*mpi_communicator) ;
+	      for (unsigned int i = 0 ; i < n_generations ; ++i)
+		{
+		  MPI_Send(&generations[i],1,MPI_INT,proc,0,*mpi_communicator) ;
+		  MPI_Send(&dest_sweeps[i],1,MPI_INT,proc,0,*mpi_communicator) ;
+		}
+	    }
+	}
+      bool gen_data_is_complete = true ;
+      for (auto & elem : ordered_gens.back())
+	if (elem == -1) gen_data_is_complete = false ;
+      MPI_Allreduce (&gen_data_is_complete, &complete_gen_data, 1, MPI_LOGICAL, MPI_LAND, *mpi_communicator);
+    }
+
+  unsigned int local_last_gen = 0 ;
+  for (unsigned int s = 0 ; s < ordered_iterators.back().size() ; ++s)
+    if (local_last_gen < static_cast<unsigned int>(ordered_gens.back()[s])+ordered_iterators.back()[s].size() )
+      local_last_gen = static_cast<unsigned int>(ordered_gens.back()[s])+ordered_iterators.back()[s].size() ;
+      
+  global_last_gen = 0 ;
+  MPI_Allreduce (&local_last_gen, &global_last_gen, 1, MPI_INT, MPI_MAX, *mpi_communicator);
 }
