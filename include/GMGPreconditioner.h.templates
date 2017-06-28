@@ -36,26 +36,26 @@ void GMGPreconditioner<dim,VectorType,number,same_diagonal,degree>::setup (Vecto
 #endif // MATRIXFREE
   timer->enter_subsection("solve::mg_initialization");
   // Setup coarse solver
-  coarse_solver_control.reset(new dealii::SolverControl(dofs.dof_handler.n_dofs(min_level)*10, 1e-10, false, false));
-  //  dealii::PreconditionIdentity id;
+  coarse_solver_control.reset(new dealii::ReductionControl(dofs.dof_handler.n_dofs(min_level)*10, 1e-20, 1e-10, false, false));
 #if PARALLEL_LA < 3
   mg_matrix[min_level].build_coarse_matrix();
   const LA::MPI::SparseMatrix &coarse_matrix = mg_matrix[min_level].get_coarse_matrix();
   coarse_solver.reset(new dealii::SolverGMRES<VectorType> (*coarse_solver_control) );
+  coarse_preconditioner.initialize(coarse_matrix,1.0);
   mg_coarse.reset(new dealii::MGCoarseGridIterativeSolver<VectorType,
 		  dealii::SolverGMRES<VectorType>,
 		  LA::MPI::SparseMatrix,
-		  dealii::PreconditionIdentity>
+		  decltype(coarse_preconditioner)>
 		  (*coarse_solver,
 		   coarse_matrix,
-		   id));
+		   coarse_preconditioner));
 #else // PARALLEL_LA == 3
   // TODO allow for Matrix-based solver for dealii MPI vectors
   coarse_solver.reset(new dealii::SolverCG<VectorType>(*coarse_solver_control));
   mg_coarse.reset(new dealii::MGCoarseGridIterativeSolver<VectorType,
 		  dealii::SolverCG<VectorType>,
 		  SystemMatrixType,
-		  dealii::PreconditionIdentity>
+		  decltype(coarse_preconditioner)>
 		  (coarse_solver,
                    mg_matrix[min_level],
                    id));
