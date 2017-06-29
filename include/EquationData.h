@@ -15,45 +15,129 @@
 #include <vector>
 #include <math.h>
 
-template <int dim>
-class Coefficient final : public dealii::Function<dim>
-{
-public:
-  Coefficient();
-  Coefficient (const Coefficient &) = delete ;
-  Coefficient &operator = (const Coefficient &) = delete;
-
-  double value (const dealii::Point<dim>  &p,
-                const unsigned int        component = 0) const override;
-
-  void value_list (const std::vector<dealii::Point<dim> > &points,
-                   std::vector<double>                    &values,
-                   const unsigned int                     component = 0) const override;
-
-  dealii::Tensor<1,dim> gradient (const dealii::Point<dim>  &p,
-                                  const unsigned int        component = 0) const override;
-private:
-  const double a;
-  const double b;
-};
+#ifndef MATRIXFREE
 
 template <int dim>
-class ReferenceFunction final : public dealii::Function<dim>
+class SolutionBase ;
+template <int dim> 
+class RightHandSide ;
+
+// MFDiffCoefficient
+template <int dim>
+class Coefficient : public dealii::Function<dim>
+		  , protected SolutionBase<dim>
 {
 public:
-  ReferenceFunction(unsigned int n_comp_);
-  ReferenceFunction (const ReferenceFunction &) = delete ;
-  ReferenceFunction &operator = (const ReferenceFunction &) = delete;
+  explicit Coefficient () : dealii::Function<dim> (1) {} ;
+  
+  virtual double value (const dealii::Point<dim,double>   &p,
+                        const unsigned int         component = 0) const override;
 
-  virtual double value(const dealii::Point<dim> &p,
-                       const unsigned int /*component = 0*/) const;
+  template <typename number>
+  number value (const dealii::Point<dim,number>   &p,
+		const unsigned int         component = 0) const;
 
   virtual dealii::Tensor<1,dim> gradient (const dealii::Point<dim> &p,
-                                          const unsigned int /*d*/) const;
-
-  virtual double laplacian(const dealii::Point<dim> &p,
-                           const unsigned int /*component = 0*/) const;
+                                          const unsigned int       component = 0) const override;
 };
+
+
+template <int dim>
+class SolutionBase
+{
+protected:
+  static const unsigned int n_source_centers = 3;
+  static const dealii::Point<dim>   source_centers[n_source_centers];
+  static const double       width;
+  static const double       alpha;
+  static const double       beta;
+};
+
+
+// Explicit Solution consisting out of 3 gaussian bell curves around
+// SolutionBase::source_centers
+template <int dim>
+class Solution : public dealii::Function<dim>
+	       , protected SolutionBase<dim>
+{
+  // friend class RightHandSide<dim> ;
+
+public:
+  explicit Solution (unsigned int n_comp) : dealii::Function<dim>(n_comp)
+  {std::cout << "Solution Data:   (alpha/beta)   ("
+	     << SolutionBase<dim>::alpha << "/"
+	     << SolutionBase<dim>::beta << ")" <<  std::endl;}
+
+  virtual double value (const dealii::Point<dim> &p,
+                        const unsigned int       component = 0) const override;
+
+  virtual dealii::Tensor<1,dim> gradient (const dealii::Point<dim> &p,
+                                          const unsigned int       component = 0) const override;
+
+  virtual double laplacian ( const dealii::Point<dim>  &p,
+			     const unsigned int        component = 0) const override;
+private:
+  Coefficient<dim>   coefficient_function ;
+};
+
+
+// Explicit RightHandside = negative Laplacian of Solution
+template <int dim>
+class RightHandSide : public dealii::Function<dim>,
+  protected SolutionBase<dim>
+{
+public:
+  explicit RightHandSide (unsigned int n_comp)
+    : dealii::Function<dim> (n_comp)
+    , solution_function (n_comp)
+  {}
+
+  virtual double value (const dealii::Point<dim>   &p,
+                        const unsigned int         component = 0) const override;
+private:
+  Solution<dim>    solution_function ;
+  Coefficient<dim> coefficient_function ;
+};
+
+// // template <int dim>
+// // class Coefficient final : public dealii::Function<dim>
+// // {
+// // public:
+// //   Coefficient();
+// //   Coefficient (const Coefficient &) = delete ;
+// //   Coefficient &operator = (const Coefficient &) = delete;
+
+// //   double value (const dealii::Point<dim>  &p,
+// //                 const unsigned int        component = 0) const override;
+
+// //   void value_list (const std::vector<dealii::Point<dim> > &points,
+// //                    std::vector<double>                    &values,
+// //                    const unsigned int                     component = 0) const override;
+
+// //   dealii::Tensor<1,dim> gradient (const dealii::Point<dim>  &p,
+// //                                   const unsigned int        component = 0) const override;
+// // private:
+// //   const double a;
+// //   const double b;
+// // };
+
+// // template <int dim>
+// // class ReferenceFunction final : public dealii::Function<dim>
+// // {
+// // public:
+// //   ReferenceFunction(unsigned int n_comp_);
+// //   ReferenceFunction (const ReferenceFunction &) = delete ;
+// //   ReferenceFunction &operator = (const ReferenceFunction &) = delete;
+
+// //   virtual double value(const dealii::Point<dim> &p,
+// //                        const unsigned int /*component = 0*/) const;
+
+// //   virtual dealii::Tensor<1,dim> gradient (const dealii::Point<dim> &p,
+// //                                           const unsigned int /*d*/) const;
+
+// //   virtual double laplacian(const dealii::Point<dim> &p,
+// //                            const unsigned int /*component = 0*/) const;
+// // };
 
 template<int dim>
 class XS final
@@ -91,65 +175,6 @@ class Angle :
 {
 public:
   Angle(const std::string &filename);
-};
-
-//---------------------------------------------------------------------------
-//    $Id: solution.h 67 2015-03-03 11:34:17Z kronbichler $
-//    Version: $Name$
-//
-//    Copyright (C) 2013 - 2014 by Katharina Kormann and Martin Kronbichler
-//
-//---------------------------------------------------------------------------
-template <int dim>
-class SolutionBase
-{
-protected:
-  static const unsigned int n_source_centers = 3;
-  static const dealii::Point<dim>   source_centers[n_source_centers];
-  static const double       width;
-};
-
-
-// MFSolution
-template <int dim>
-class MFSolution : public dealii::Function<dim>,
-  protected SolutionBase<dim>
-{
-public:
-  MFSolution (unsigned int n_comp) : dealii::Function<dim>(n_comp) {}
-
-  virtual double value (const dealii::Point<dim> &p,
-                        const unsigned int       component = 0) const;
-
-  virtual dealii::Tensor<1,dim> gradient (const dealii::Point<dim> &p,
-                                          const unsigned int       component = 0) const;
-};
-
-
-// MFRightHandside = negative Laplacian of MFSolution
-template <int dim>
-class MFRightHandSide : public dealii::Function<dim>,
-  protected SolutionBase<dim>
-{
-public:
-  MFRightHandSide (unsigned int n_comp) : dealii::Function<dim>(n_comp) {}
-
-  virtual double value (const dealii::Point<dim>   &p,
-                        const unsigned int         component = 0) const;
-};
-
-// MFDiffCoefficient
-template <int dim>
-class MFDiffCoefficient : public dealii::Function<dim>,
-  protected SolutionBase<dim>
-{
-public:
-  MFDiffCoefficient (unsigned int n_comp) : dealii::Function<dim>(n_comp) {}
-
-  virtual double value (const dealii::Point<dim>   &p,
-                        const unsigned int         component = 0) const;
-  dealii::VectorizedArray<double> value (const dealii::Point<dim,dealii::VectorizedArray<double> >  &p,
-                                         const unsigned int         component = 0) const;
 };
 
 inline double planck_integral (double sigma, double temperature)
@@ -224,6 +249,68 @@ inline double Dplanck_integral (double sigma, double temperature)
   double c2 =  (2.0*Planck*Speed_of_light_sq) ;
   return c2/c1*std::pow(temperature/c1,3)*sum ;
 }
+
+#else // MATRIXFREE = 0N
+//---------------------------------------------------------------------------
+//    $Id: solution.h 67 2015-03-03 11:34:17Z kronbichler $
+//    Version: $Name$
+//
+//    Copyright (C) 2013 - 2014 by Katharina Kormann and Martin Kronbichler
+//
+//---------------------------------------------------------------------------
+template <int dim>
+class SolutionBase
+{
+protected:
+  static const unsigned int n_source_centers = 3;
+  static const dealii::Point<dim>   source_centers[n_source_centers];
+  static const double       width;
+};
+
+
+// MFSolution
+template <int dim>
+class MFSolution : public dealii::Function<dim>,
+  protected SolutionBase<dim>
+{
+public:
+  MFSolution (unsigned int n_comp) : dealii::Function<dim>(n_comp) {}
+
+  virtual double value (const dealii::Point<dim> &p,
+                        const unsigned int       component = 0) const;
+
+  virtual dealii::Tensor<1,dim> gradient (const dealii::Point<dim> &p,
+                                          const unsigned int       component = 0) const;
+};
+
+
+// MFRightHandside = negative Laplacian of MFSolution
+template <int dim>
+class MFRightHandSide : public dealii::Function<dim>,
+  protected SolutionBase<dim>
+{
+public:
+  MFRightHandSide (unsigned int n_comp) : dealii::Function<dim>(n_comp) {}
+
+  virtual double value (const dealii::Point<dim>   &p,
+                        const unsigned int         component = 0) const;
+};
+
+// MFDiffCoefficient
+template <int dim>
+class MFDiffCoefficient : public dealii::Function<dim>,
+  protected SolutionBase<dim>
+{
+public:
+  MFDiffCoefficient (unsigned int n_comp) : dealii::Function<dim>(n_comp) {}
+
+  virtual double value (const dealii::Point<dim>   &p,
+                        const unsigned int         component = 0) const;
+  dealii::VectorizedArray<double> value (const dealii::Point<dim,dealii::VectorizedArray<double> >  &p,
+                                         const unsigned int         component = 0) const;
+};
+
+#endif // MATRIXFREE
 
 #ifdef HEADER_IMPLEMENTATION
 #include <EquationData.cc>

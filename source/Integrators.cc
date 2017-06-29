@@ -27,7 +27,7 @@ void MatrixIntegrator<dim>::cell(dealii::MeshWorker::DoFInfo<dim> &dinfo,
           ++c ;
         }
       auto &M = dinfo.matrix(b*n_blocks + b).matrix;
-      dealii::LocalIntegrators::Laplace::cell_matrix<dim>(M,fev);
+      ::LocalIntegrators::Diffusion::cell_matrix<dim>(M,fev,coeffs);
     }
 }
 
@@ -64,9 +64,9 @@ void MatrixIntegrator<dim>::face(dealii::MeshWorker::DoFInfo<dim> &dinfo1,
           ++c ;
         }
 
-      dealii::LocalIntegrators::Laplace::ip_matrix<dim>
-      (RM11,RM12,RM21,RM22,fev1,fev2,
-       dealii::LocalIntegrators::Laplace::compute_penalty(dinfo1,dinfo2,deg1,deg2));
+      LocalIntegrators::Diffusion::ip_matrix<dim>
+	(RM11,RM12,RM21,RM22,fev1,fev2,coeffs,
+	 dealii::LocalIntegrators::Laplace::compute_penalty(dinfo1,dinfo2,deg1,deg2));
     }
 }
 
@@ -93,9 +93,9 @@ void MatrixIntegrator<dim>::boundary(dealii::MeshWorker::DoFInfo<dim> &dinfo,
           ++c ;
         }
       auto &M = dinfo.matrix(b*n_blocks + b).matrix;
-      dealii::LocalIntegrators::Laplace::nitsche_matrix<dim>
-      (M,fev,
-       dealii::LocalIntegrators::Laplace::compute_penalty(dinfo,dinfo,deg,deg));
+      LocalIntegrators::Diffusion::nitsche_matrix<dim>
+	(M,fev,coeffs,
+	 dealii::LocalIntegrators::Laplace::compute_penalty(dinfo,dinfo,deg,deg));
     }
 }
 
@@ -221,98 +221,98 @@ void ResidualIntegrator<dim>::boundary(dealii::MeshWorker::DoFInfo<dim> &dinfo,
     }
 }
 
-// RHS INTEGRATOR
-template <int dim>
-RHSIntegrator<dim>::RHSIntegrator(unsigned int n_components)
-  : exact_solution(n_components)
-{
-  this->use_cell = true;
-#ifdef CG
-  this->use_boundary = false;
-#else
-  this->use_boundary = true;
-#endif
-  this->use_face = false;
-}
+// // RHS INTEGRATOR
+// template <int dim>
+// RHSIntegrator<dim>::RHSIntegrator(unsigned int n_components)
+//   : exact_solution(n_components)
+// {
+//   this->use_cell = true;
+// #ifdef CG
+//   this->use_boundary = false;
+// #else
+//   this->use_boundary = true;
+// #endif
+//   this->use_face = false;
+// }
 
-template <int dim>
-void RHSIntegrator<dim>::cell(dealii::MeshWorker::DoFInfo<dim> &dinfo, typename dealii::MeshWorker::IntegrationInfo<dim> &info) const
-{
-  auto &result = dinfo.vector(0);
-  const auto n_blocks = result.n_blocks();
-  Assert(n_blocks>0, dealii::ExcMessage("BlockInfo not initialized!"));
+// template <int dim>
+// void RHSIntegrator<dim>::cell(dealii::MeshWorker::DoFInfo<dim> &dinfo, typename dealii::MeshWorker::IntegrationInfo<dim> &info) const
+// {
+//   auto &result = dinfo.vector(0);
+//   const auto n_blocks = result.n_blocks();
+//   Assert(n_blocks>0, dealii::ExcMessage("BlockInfo not initialized!"));
 
-  typename std::remove_reference<decltype(info.values[0][0])>::type exact_laplacian;
-  typename std::remove_reference<decltype(info.gradients[0][0])>::type exact_gradients;
-  typename std::remove_reference<decltype(info.values[0][0])>::type coeffs_values;
-  typename std::remove_reference<decltype(info.gradients[0][0])>::type coeffs_gradients;
-  typename std::remove_reference<decltype(info.values[0])>::type f;
+//   typename std::remove_reference<decltype(info.values[0][0])>::type exact_laplacian;
+//   typename std::remove_reference<decltype(info.gradients[0][0])>::type exact_gradients;
+//   typename std::remove_reference<decltype(info.values[0][0])>::type coeffs_values;
+//   typename std::remove_reference<decltype(info.gradients[0][0])>::type coeffs_gradients;
+//   typename std::remove_reference<decltype(info.values[0])>::type f;
 
-  for (unsigned int b=0; b<n_blocks; ++b)
-    {
-      const auto &fev = info.fe_values(dinfo.block_info->base_element(b));
-      const auto n_quads = fev.n_quadrature_points;
-      const auto n_components = fev.get_fe().n_components();
-      const auto &q_points = fev.get_quadrature_points();
+//   for (unsigned int b=0; b<n_blocks; ++b)
+//     {
+//       const auto &fev = info.fe_values(dinfo.block_info->base_element(b));
+//       const auto n_quads = fev.n_quadrature_points;
+//       const auto n_components = fev.get_fe().n_components();
+//       const auto &q_points = fev.get_quadrature_points();
 
-      f.resize(n_components);
-      exact_laplacian.resize(n_quads);
-      exact_gradients.resize(n_quads);
-      coeffs_values.resize(n_quads);
-      coeffs_gradients.resize(n_quads);
-      unsigned int c = 0 ;
-      for (auto &component : f)
-        {
-          component.resize(n_quads);
-          exact_solution.laplacian_list(q_points, exact_laplacian, c);
-          exact_solution.gradient_list(q_points, exact_gradients, c);
-          diffcoeff.value_list(q_points,coeffs_values,c);
-          diffcoeff.gradient_list(q_points,coeffs_gradients,c);
-          for (unsigned int q = 0 ; q<component.size() ; ++q)
-            component[q] = coeffs_gradients[q]*exact_gradients[q]+coeffs_values[q]*exact_laplacian[q];
-          ++c ;
-        }
+//       f.resize(n_components);
+//       exact_laplacian.resize(n_quads);
+//       exact_gradients.resize(n_quads);
+//       coeffs_values.resize(n_quads);
+//       coeffs_gradients.resize(n_quads);
+//       unsigned int c = 0 ;
+//       for (auto &component : f)
+//         {
+//           component.resize(n_quads);
+//           exact_solution.laplacian_list(q_points, exact_laplacian, c);
+//           exact_solution.gradient_list(q_points, exact_gradients, c);
+//           diffcoeff.value_list(q_points,coeffs_values,c);
+//           diffcoeff.gradient_list(q_points,coeffs_gradients,c);
+//           for (unsigned int q = 0 ; q<component.size() ; ++q)
+//             component[q] = coeffs_gradients[q]*exact_gradients[q]+coeffs_values[q]*exact_laplacian[q];
+//           ++c ;
+//         }
 
-      dealii::LocalIntegrators::L2::L2(result.block(b),fev,f,-1.);
-#ifdef CG
-      //we need to do the same thing as for matrix integrator
-      auto &M = dinfo.matrix(b*n_blocks + b).matrix;
-      LocalIntegrators::Diffusion::cell_matrix<dim>(M,fev,coeffs_values);
-#endif // CG
-    }
-}
-template <int dim>
-void RHSIntegrator<dim>::boundary(dealii::MeshWorker::DoFInfo<dim> &dinfo, typename dealii::MeshWorker::IntegrationInfo<dim> &info) const
-{
-#ifndef CG
-  auto &result = dinfo.vector(0);
-  const auto n_blocks = result.n_blocks();
-  Assert(n_blocks>0, dealii::ExcMessage("BlockInfo not initialized!"));
+//       dealii::LocalIntegrators::L2::L2(result.block(b),fev,f,-1.);
+// #ifdef CG
+//       //we need to do the same thing as for matrix integrator
+//       auto &M = dinfo.matrix(b*n_blocks + b).matrix;
+//       LocalIntegrators::Diffusion::cell_matrix<dim>(M,fev,coeffs_values);
+// #endif // CG
+//     }
+// }
+// template <int dim>
+// void RHSIntegrator<dim>::boundary(dealii::MeshWorker::DoFInfo<dim> &dinfo, typename dealii::MeshWorker::IntegrationInfo<dim> &info) const
+// {
+// #ifndef CG
+//   auto &result = dinfo.vector(0);
+//   const auto n_blocks = result.n_blocks();
+//   Assert(n_blocks>0, dealii::ExcMessage("BlockInfo not initialized!"));
 
-  std::vector<double> coeffs;
-  std::vector<double> boundary_values;
+//   std::vector<double> coeffs;
+//   std::vector<double> boundary_values;
 
-  for (unsigned int b=0; b<n_blocks; ++b)
-    {
-      const auto &fev = info.fe_values(dinfo.block_info->base_element(b));
-      auto &local_vector = dinfo.vector(0).block(b);
-      const auto deg = fev.get_fe().tensor_degree();
-      const auto penalty = 2. * deg * (deg+1) * dinfo.face->measure() / dinfo.cell->measure();
-      boundary_values.resize(fev.n_quadrature_points);
-      coeffs.resize(fev.n_quadrature_points);
-      const auto &q_points = fev.get_quadrature_points();
-      diffcoeff.value_list(q_points,coeffs,b);
-      exact_solution.value_list(q_points, boundary_values, b);
+//   for (unsigned int b=0; b<n_blocks; ++b)
+//     {
+//       const auto &fev = info.fe_values(dinfo.block_info->base_element(b));
+//       auto &local_vector = dinfo.vector(0).block(b);
+//       const auto deg = fev.get_fe().tensor_degree();
+//       const auto penalty = 2. * deg * (deg+1) * dinfo.face->measure() / dinfo.cell->measure();
+//       boundary_values.resize(fev.n_quadrature_points);
+//       coeffs.resize(fev.n_quadrature_points);
+//       const auto &q_points = fev.get_quadrature_points();
+//       diffcoeff.value_list(q_points,coeffs,b);
+//       exact_solution.value_list(q_points, boundary_values, b);
 
-      for (unsigned int k=0; k<fev.n_quadrature_points; ++k)
-        for (unsigned int i=0; i<fev.dofs_per_cell; ++i)
-          local_vector(i) += coeffs[k]
-                             * (fev.shape_value(i,k) * penalty * boundary_values[k]
-                                - (fev.normal_vector(k) * fev.shape_grad(i,k)) * boundary_values[k])
-                             * fev.JxW(k);
-    }
-#endif // CG OFF
-}
+//       for (unsigned int k=0; k<fev.n_quadrature_points; ++k)
+//         for (unsigned int i=0; i<fev.dofs_per_cell; ++i)
+//           local_vector(i) += coeffs[k]
+//                              * (fev.shape_value(i,k) * penalty * boundary_values[k]
+//                                 - (fev.normal_vector(k) * fev.shape_grad(i,k)) * boundary_values[k])
+//                              * fev.JxW(k);
+//     }
+// #endif // CG OFF
+// }
 
 #else // MATRIXFREE OFF
 template <int dim>

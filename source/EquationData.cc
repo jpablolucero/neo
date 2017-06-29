@@ -1,84 +1,233 @@
 #include <EquationData.h>
 
-template <int dim>
-Coefficient<dim>::Coefficient()
-  : dealii::Function<dim>(),
-    a (.02),
-    b (100.)
-{}
+#ifndef MATRIXFREE
+// template <>
+// const dealii::Point<1>
+// SolutionBase<1>::source_centers[SolutionBase<1>::n_source_centers]
+//   = { dealii::Point<1>(-1.0 / 3.0),
+//       dealii::Point<1>(0.0),
+//       dealii::Point<1>(+1.0 / 3.0)
+//     };
+
+template <>
+const dealii::Point<2>
+SolutionBase<2>::source_centers[SolutionBase<2>::n_source_centers]
+  = { dealii::Point<2>(-0.5, +0.5),
+      dealii::Point<2>(-0.5, -0.5),
+      dealii::Point<2>(+0.5, -0.5)
+    };
+
+template <>
+const dealii::Point<3>
+SolutionBase<3>::source_centers[SolutionBase<3>::n_source_centers]
+  = { dealii::Point<3>(-0.5, +0.5, 0.25),
+      dealii::Point<3>(-0.6, -0.5, -0.125),
+      dealii::Point<3>(+0.5, -0.5, 0.5)
+    };
 
 template <int dim>
-double
-Coefficient<dim>::value (const dealii::Point<dim> &p,
-                         const unsigned int d) const
+const double SolutionBase<dim>::width = 1./3.;
+
+template <int dim>
+const double SolutionBase<dim>::alpha = 1.;
+
+template <int dim>
+const double SolutionBase<dim>::beta = 0.;
+
+
+//Solution
+template <int dim>
+double Solution<dim>::value (const dealii::Point<dim>   &p,
+                             const unsigned int) const
 {
-  return (d == 0) ? 1./(a + b*p.square()) : 1.;
+  double val = 0;
+
+  const double pi = dealii::numbers::PI;
+  const double width = SolutionBase<dim>::width ;
+
+  for (unsigned int i=0; i<SolutionBase<dim>::n_source_centers; ++i)
+    {
+      const dealii::Tensor<1,dim> x_minus_xi = p - SolutionBase<dim>::source_centers[i];
+      
+      val += std::exp( - x_minus_xi.norm_square() / (width*width) );
+    }
+
+  return val / dealii::Utilities::fixed_power<dim>(std::sqrt(2 * pi) * width);
 }
 
 template <int dim>
-void Coefficient<dim>::value_list (const std::vector<dealii::Point<dim> > &points,
-                                   std::vector<double>                    &values,
-                                   const unsigned int                     component) const
+dealii::Tensor<1,dim> Solution<dim>::gradient (const dealii::Point<dim>   &p,
+                                               const unsigned int) const
 {
-  Assert (values.size() == points.size(),
-          dealii::ExcDimensionMismatch (values.size(), points.size()));
+  dealii::Tensor<1,dim> grad;
 
-  const unsigned int n_points = points.size();
-  for (unsigned int i=0; i<n_points; ++i)
-    values[i] = value(points[i],component);
+  const double pi = dealii::numbers::PI;
+  const double width = SolutionBase<dim>::width ;
+  
+  for (unsigned int i=0; i<SolutionBase<dim>::n_source_centers; ++i)
+    {
+      const dealii::Tensor<1,dim> x_minus_xi = p - SolutionBase<dim>::source_centers[i];
+
+      grad
+	+= -2. / (width*width)
+	* std::exp( - x_minus_xi.norm_square() / (width*width) )
+	* x_minus_xi ;
+    }
+
+  return ( grad / dealii::Utilities::fixed_power<dim>(std::sqrt(2 * pi) * width) ) ;
 }
 
 template <int dim>
-dealii::Tensor<1,dim>
-Coefficient<dim>::gradient (const dealii::Point<dim> &p,
-                            const unsigned int  d) const
+double Solution<dim>::laplacian (const dealii::Point<dim>  &x,
+				 const unsigned int) const
 {
-  dealii::Tensor<1,dim> return_grad;
-  if (d == 0)
-    for (unsigned int i=0; i<dim; ++i)
-      return_grad[i]=-2.*b*p(i)/((b*p.square()+a)*(b*p.square()+a));
+  double       lapl = 0;
 
-  return return_grad;
+  const double pi = dealii::numbers::PI;
+  const double width = SolutionBase<dim>::width ;
+  
+  for (unsigned int i=0; i<SolutionBase<dim>::n_source_centers; ++i)
+    {
+      const auto   x_minus_xi = x - SolutionBase<dim>::source_centers[i];
+      
+      lapl
+	+= ( 2. / (width*width) * (x_minus_xi*x_minus_xi) - static_cast<double>(dim) )
+	* std::exp( - x_minus_xi.norm_square() / (width*width) );
+    }
+
+  return lapl *= 2. / (width*width) / dealii::Utilities::fixed_power<dim>(std::sqrt(2 * pi) * width);
+}
+
+//RightHandSide
+template <int dim>
+double RightHandSide<dim>::value (const dealii::Point<dim>   &x,
+                                  const unsigned int) const
+{
+  double value = 0.;
+
+  value
+    -= solution_function.laplacian(x) * coefficient_function.value(x)
+    + (solution_function.gradient(x) * coefficient_function.gradient(x)) ;
+
+  return value ;
 }
 
 template <int dim>
-ReferenceFunction<dim>::ReferenceFunction(unsigned int n_comp_)
-  : dealii::Function<dim> (n_comp_)
-{}
-
-template <int dim>
-double
-ReferenceFunction<dim>::value(const dealii::Point<dim> &p,
-                              const unsigned int /*component = 0*/) const
+template <typename number>
+number Coefficient<dim>::value (const dealii::Point<dim,number>   &p,
+				const unsigned int         ) const
 {
-  const double pi2 = dealii::numbers::PI;
-  return std::sin(pi2*p(0))*std::sin(pi2*p(1));
-//  return 0.;
+  number value ;
+
+  value = 1. / (SolutionBase<dim>::alpha + SolutionBase<dim>::beta * p.square());
+
+  return  value ;
 }
 
 template <int dim>
-dealii::Tensor<1,dim>
-ReferenceFunction<dim>::gradient (const dealii::Point<dim> &p,
-                                  const unsigned int /*d*/) const
+double Coefficient<dim>::value (const dealii::Point<dim>   &p,
+				const unsigned int         comp) const
 {
-  dealii::Tensor<1,dim> return_grad;
-  const double pi2 = dealii::numbers::PI;
-  return_grad[0]=pi2*std::cos(pi2*p(0))*std::sin(pi2*p(1));
-  return_grad[1]=pi2*std::sin(pi2*p(0))*std::cos(pi2*p(1));
-
-  return return_grad;
+  return value<double>(p,comp);
 }
 
 template <int dim>
-double
-ReferenceFunction<dim>::laplacian(const dealii::Point<dim> &p,
-                                  const unsigned int /*component = 0*/) const
+dealii::Tensor<1,dim> Coefficient<dim>::gradient (const dealii::Point<dim>   &p,
+						  const unsigned int) const
 {
-  const double pi2 = dealii::numbers::PI;
-  const double return_value = -2*pi2*pi2*std::sin(pi2*p(0))*std::sin(pi2*p(1));
-  return return_value;
-//  return -1.;
+  dealii::Tensor<1,dim> grad ;
+
+  const double beta = SolutionBase<dim>::beta ;
+  const double coefficient_value = value (p) ;
+  
+  for (unsigned int d=0; d<dim; ++d)
+    grad[d] = p(d) ;
+
+  grad *= -2. * beta * coefficient_value*coefficient_value ;
+
+  return grad ;
 }
+
+
+// // // template <int dim>
+// // Coefficient<dim>::Coefficient()
+// //   : dealii::Function<dim>(),
+// //     a (.02),
+// //     b (100.)
+// // {}
+
+// // template <int dim>
+// // double
+// // Coefficient<dim>::value (const dealii::Point<dim> &p,
+// //                          const unsigned int d) const
+// // {
+// //   return (d == 0) ? 1./(a + b*p.square()) : 1.;
+// // }
+
+// // template <int dim>
+// // void Coefficient<dim>::value_list (const std::vector<dealii::Point<dim> > &points,
+// //                                    std::vector<double>                    &values,
+// //                                    const unsigned int                     component) const
+// // {
+// //   Assert (values.size() == points.size(),
+// //           dealii::ExcDimensionMismatch (values.size(), points.size()));
+
+// //   const unsigned int n_points = points.size();
+// //   for (unsigned int i=0; i<n_points; ++i)
+// //     values[i] = value(points[i],component);
+// // }
+
+// // template <int dim>
+// // dealii::Tensor<1,dim>
+// // Coefficient<dim>::gradient (const dealii::Point<dim> &p,
+// //                             const unsigned int  d) const
+// // {
+// //   dealii::Tensor<1,dim> return_grad;
+// //   if (d == 0)
+// //     for (unsigned int i=0; i<dim; ++i)
+// //       return_grad[i]=-2.*b*p(i)/((b*p.square()+a)*(b*p.square()+a));
+
+// //   return return_grad;
+// // }
+
+// // template <int dim>
+// // ReferenceFunction<dim>::ReferenceFunction(unsigned int n_comp_)
+// //   : dealii::Function<dim> (n_comp_)
+// // {}
+
+// // template <int dim>
+// // double
+// // ReferenceFunction<dim>::value(const dealii::Point<dim> &p,
+// //                               const unsigned int /*component = 0*/) const
+// // {
+// //   const double pi2 = dealii::numbers::PI;
+// //   return std::sin(pi2*p(0))*std::sin(pi2*p(1));
+// // //  return 0.;
+// // }
+
+// // template <int dim>
+// // dealii::Tensor<1,dim>
+// // ReferenceFunction<dim>::gradient (const dealii::Point<dim> &p,
+// //                                   const unsigned int /*d*/) const
+// // {
+// //   dealii::Tensor<1,dim> return_grad;
+// //   const double pi2 = dealii::numbers::PI;
+// //   return_grad[0]=pi2*std::cos(pi2*p(0))*std::sin(pi2*p(1));
+// //   return_grad[1]=pi2*std::sin(pi2*p(0))*std::cos(pi2*p(1));
+
+// //   return return_grad;
+// // }
+
+// // template <int dim>
+// // double
+// // ReferenceFunction<dim>::laplacian(const dealii::Point<dim> &p,
+// //                                   const unsigned int /*component = 0*/) const
+// // {
+// //   const double pi2 = dealii::numbers::PI;
+// //   const double return_value = -2*pi2*pi2*std::sin(pi2*p(0))*std::sin(pi2*p(1));
+// //   return return_value;
+// // //  return -1.;
+// // }
 
 template <int dim>
 XS<dim>::XS():grid {1.E4,1.}
@@ -168,6 +317,30 @@ Angle<dim>::Angle(const std::string &filename)
   dealii::Quadrature<dim>::initialize(points, weights);
 }
 
+template class SolutionBase<2>;
+template class SolutionBase<3>;
+template class Solution<2>;
+template class Solution<3>;
+template class RightHandSide<2>;
+template class RightHandSide<3>;
+template class Coefficient<2>;
+template class Coefficient<3>;
+// template class ReferenceFunction<2>;
+// template class ReferenceFunction<3>;
+template class Angle<2>;
+template class Angle<3>;
+template class XS<2>;
+template class XS<3>;
+
+
+// D = dim 
+#define I(D) template dealii::VectorizedArray<double> Coefficient<D>::value \
+  (const dealii::Point<D,dealii::VectorizedArray<double> >   &p \
+  , const unsigned int         ) const
+I(1);I(2);I(3);
+#undef I
+
+#else // MATRIXFREE = 0N
 //---------------------------------------------------------------------------
 //    $Id: solution.h 67 2015-03-03 11:34:17Z kronbichler $
 //    Version: $Name$
@@ -267,15 +440,6 @@ double MFRightHandSide<dim>::value (const dealii::Point<dim>   &p,
   //  return 1.;
 }
 
-template class Coefficient<2>;
-template class Coefficient<3>;
-template class ReferenceFunction<2>;
-template class ReferenceFunction<3>;
-template class Angle<2>;
-template class Angle<3>;
-template class XS<2>;
-template class XS<3>;
-
 template class SolutionBase<1>;
 template class SolutionBase<2>;
 template class SolutionBase<3>;
@@ -285,3 +449,6 @@ template class MFSolution<3>;
 template class MFRightHandSide<1>;
 template class MFRightHandSide<2>;
 template class MFRightHandSide<3>;
+
+#endif // MATRIXFREE
+

@@ -61,19 +61,19 @@ private:
   Coefficient<dim> diffcoeff;
 };
 
-template <int dim>
-class RHSIntegrator final : public dealii::MeshWorker::LocalIntegrator<dim>
-{
-public:
-  RHSIntegrator(unsigned int n_components);
-  RHSIntegrator (const RHSIntegrator &) = delete ;
-  RHSIntegrator &operator = (const RHSIntegrator &) = delete;
-  void cell(dealii::MeshWorker::DoFInfo<dim> &dinfo, typename dealii::MeshWorker::IntegrationInfo<dim> &info) const override;
-  void boundary(dealii::MeshWorker::DoFInfo<dim> &dinfo, typename dealii::MeshWorker::IntegrationInfo<dim> &info) const override;
-private:
-  Coefficient<dim> diffcoeff;
-  ReferenceFunction<dim> exact_solution;
-};
+// template <int dim>
+// class RHSIntegrator final : public dealii::MeshWorker::LocalIntegrator<dim>
+// {
+// public:
+//   RHSIntegrator(unsigned int n_components);
+//   RHSIntegrator (const RHSIntegrator &) = delete ;
+//   RHSIntegrator &operator = (const RHSIntegrator &) = delete;
+//   void cell(dealii::MeshWorker::DoFInfo<dim> &dinfo, typename dealii::MeshWorker::IntegrationInfo<dim> &info) const override;
+//   void boundary(dealii::MeshWorker::DoFInfo<dim> &dinfo, typename dealii::MeshWorker::IntegrationInfo<dim> &info) const override;
+// private:
+//   Coefficient<dim> diffcoeff;
+//   Solution<dim> exact_solution;
+// };
 
 #else // MATRIXFREE ON
 template <int dim>

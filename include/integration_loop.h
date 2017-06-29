@@ -14,9 +14,9 @@ namespace dealii
     const std::vector<ITERATOR> &cell_range,
     MeshWorker::DoFInfoBox<dim, DOFINFO> &dof_info,
     INFOBOX &info,
-    const std_cxx11::function<void (DOFINFO &, typename INFOBOX::CellInfo &)> &cell_worker,
-    const std_cxx11::function<void (DOFINFO &, typename INFOBOX::CellInfo &)> &boundary_worker,
-    const std_cxx11::function<void (DOFINFO &, DOFINFO &,
+    const std::function<void (DOFINFO &, typename INFOBOX::CellInfo &)> &cell_worker,
+    const std::function<void (DOFINFO &, typename INFOBOX::CellInfo &)> &boundary_worker,
+    const std::function<void (DOFINFO &, DOFINFO &,
                                     typename INFOBOX::CellInfo &,
                                     typename INFOBOX::CellInfo &)> &face_worker,
     const MeshWorker::LoopControl &loop_control)
@@ -238,29 +238,29 @@ namespace dealii
       }
 #endif
 
-    std_cxx11::function<void (DOFINFO &, typename INFOBOX::CellInfo &)>   cell_worker ;
-    std_cxx11::function<void (DOFINFO &, typename INFOBOX::CellInfo &)>   boundary_worker ;
-    std_cxx11::function<void (DOFINFO &, DOFINFO &,
+    std::function<void (DOFINFO &, typename INFOBOX::CellInfo &)>   cell_worker ;
+    std::function<void (DOFINFO &, typename INFOBOX::CellInfo &)>   boundary_worker ;
+    std::function<void (DOFINFO &, DOFINFO &,
                               typename INFOBOX::CellInfo &, typename INFOBOX::CellInfo &)>   face_worker ;
 
     // TODO: get rid of 'ifs' here to allow generic INTEGRATORs as it is designed
     if (integrator.use_cell)
-      cell_worker = std_cxx11::bind(&INTEGRATOR::cell, &integrator, std_cxx11::_1, std_cxx11::_2);
+      cell_worker = std::bind(&INTEGRATOR::cell, &integrator, std::placeholders::_1, std::placeholders::_2);
     if (integrator.use_boundary)
-      boundary_worker = std_cxx11::bind(&INTEGRATOR::boundary, &integrator, std_cxx11::_1, std_cxx11::_2);
+      boundary_worker = std::bind(&INTEGRATOR::boundary, &integrator, std::placeholders::_1, std::placeholders::_2);
     if (integrator.use_face)
-      face_worker = std_cxx11::bind(&INTEGRATOR::face, &integrator, std_cxx11::_1, std_cxx11::_2,
-                                    std_cxx11::_3, std_cxx11::_4);
+      face_worker = std::bind(&INTEGRATOR::face, &integrator, std::placeholders::_1, std::placeholders::_2,
+                                    std::placeholders::_3, std::placeholders::_4);
 
-    std_cxx11::function<void (const ITERATOR &, INFOBOX &, MeshWorker::DoFInfoBox<dim, DOFINFO>&)> cell_action;
+    std::function<void (const ITERATOR &, INFOBOX &, MeshWorker::DoFInfoBox<dim, DOFINFO>&)> cell_action;
     if (restrict_to_cell_range)
-      cell_action = std_cxx11::bind(&restricted_cell_action<INFOBOX, DOFINFO, dim, spacedim, ITERATOR>,
-                                    std_cxx11::_1, total_cell_range, std_cxx11::_3,
-                                    std_cxx11::_2, cell_worker, boundary_worker, face_worker, lctrl);
+      cell_action = std::bind(&restricted_cell_action<INFOBOX, DOFINFO, dim, spacedim, ITERATOR>,
+                                    std::placeholders::_1, total_cell_range, std::placeholders::_3,
+                                    std::placeholders::_2, cell_worker, boundary_worker, face_worker, lctrl);
 
     else
-      cell_action = std_cxx11::bind(&MeshWorker::cell_action<INFOBOX, DOFINFO, dim, spacedim, ITERATOR>,
-                                    std_cxx11::_1, std_cxx11::_3, std_cxx11::_2,
+      cell_action = std::bind(&MeshWorker::cell_action<INFOBOX, DOFINFO, dim, spacedim, ITERATOR>,
+                                    std::placeholders::_1, std::placeholders::_3, std::placeholders::_2,
                                     cell_worker, boundary_worker, face_worker, lctrl);
 
     MeshWorker::DoFInfoBox<dim, DOFINFO> dof_info_box(dof_info);
@@ -275,8 +275,8 @@ namespace dealii
     if (parallel)
       {
         WorkStream::run(colored_iterators, cell_action,
-                        std_cxx11::bind(&internal::assemble<dim,DOFINFO,ASSEMBLER>,
-                                        std_cxx11::_1, &assembler),
+                        std::bind(&internal::assemble<dim,DOFINFO,ASSEMBLER>,
+                                        std::placeholders::_1, &assembler),
                         info, dof_info_box,
                         MultithreadInfo::n_threads(),8);
       }

@@ -8,6 +8,7 @@
 #include <deal.II/base/mpi.h>
 #include <deal.II/base/timer.h>
 #include <deal.II/base/utilities.h>
+#include <deal.II/base/convergence_table.h>
 #include <deal.II/distributed/tria.h>
 #include <deal.II/dofs/dof_handler.h>
 #include <deal.II/dofs/dof_tools.h>
@@ -81,7 +82,7 @@ private:
   void setup_multigrid ();
   void assemble_system ();
   void solve ();
-  void compute_error () const;
+  void compute_error (unsigned int) ;
   void output_results (const unsigned int cycle) const;
 
   dealii::IndexSet           locally_owned_dofs;
@@ -89,7 +90,7 @@ private:
   MPI_Comm                   &mpi_communicator;
 
   dealii::parallel::distributed::Triangulation<dim>   triangulation;
-  const dealii::MappingQ1<dim>                        mapping;
+  const dealii::MappingQGeneric<dim>                        mapping;
   dealii::ConstraintMatrix                            constraints;
   dealii::MGConstrainedDoFs                           mg_constrained_dofs;
   dealii::FESystem<dim>                               fe;
@@ -97,7 +98,8 @@ private:
 #ifdef MATRIXFREE
   MFSolution<dim>                                     reference_function;
 #else
-  ReferenceFunction<dim>                              reference_function;
+//  ReferenceFunction<dim>                              reference_function;
+Solution<dim>         reference_function ;
 #endif // MATRIXFREE
 
   dealii::DoFHandler<dim>      dof_handler;
@@ -109,6 +111,12 @@ private:
   dealii::MGLevelObject<LA::MPI::Vector> mg_solution ;
 
   dealii::MGLevelObject<SystemMatrixType >            mg_matrix ;
+
+  // double L2_error ;
+  // double H1_error ;
+  // unsigned int n_dofs ;
+  // unsigned int n_active_cells ;
+  dealii::ConvergenceTable convergence_table;
 
   dealii::ConditionalOStream &pcout;
 

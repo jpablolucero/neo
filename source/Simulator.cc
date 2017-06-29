@@ -12,7 +12,7 @@ Simulator<dim,same_diagonal,degree>::Simulator (dealii::TimerOutput &timer_,
   triangulation(mpi_communicator,dealii::Triangulation<dim>::
                 limit_level_difference_at_vertices,
                 dealii::parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy),
-  mapping (),
+  mapping (degree),
 #ifdef CG
   fe(dealii::FE_Q<dim>(degree),1),
 #else
@@ -48,7 +48,21 @@ Simulator<dim,same_diagonal,degree>::Simulator (dealii::TimerOutput &timer_,
 #else
   pcout << "Using MeshWorker-based matrix-free implementation" << std::endl;
 #endif // MATRIXFREE
-  dealii::GridGenerator::hyper_cube(triangulation,0.,1.,true);
+
+
+  // const double half_width = 1. ;
+  // dealii::GridGenerator::hyper_cube (triangulation, -half_width, half_width, true);
+  // std::cout << "Physical domain:   [" << -half_width << ", " << half_width << "]^" << dim << std::endl;
+
+  // create ball domain
+  const dealii::Point<dim> center ;
+  const double             radius {1.0} ;
+  dealii::GridGenerator::hyper_ball (triangulation, center, radius) ;
+
+  static const dealii::SphericalManifold<dim> boundary_description (center);
+  triangulation.set_all_manifold_ids_on_boundary (0);
+  triangulation.set_manifold (0, boundary_description);
+
 
 #ifdef PERIODIC
   //add periodicity
@@ -188,7 +202,7 @@ void Simulator<dim, same_diagonal, degree>::assemble_system ()
   info_box.cell_selector.add("Newton iterate", true, true, false);
   info_box.boundary_selector.add("Newton iterate", true, true, false);
   info_box.face_selector.add("Newton iterate", true, true, false);
-
+  
   dealii::AnyData src_data;
 #ifdef MATRIXFREE
   info_box.initialize(fe, mapping);
@@ -199,24 +213,107 @@ void Simulator<dim, same_diagonal, degree>::assemble_system ()
   dealii::MeshWorker::DoFInfo<dim> dof_info(dof_handler.block_info());
 #endif // MATRIXFREE
 
-  dealii::AnyData data;
-  data.add<LA::MPI::Vector *>(&right_hand_side, "RHS");
+// //   dealii::AnyData data;
+// //   data.add<LA::MPI::Vector *>(&right_hand_side, "RHS");
 
-  ResidualSimpleConstraints<LA::MPI::Vector > rhs_assembler;
-//  dealii::MeshWorker::Assembler::ResidualSimple<LA::MPI::Vector > rhs_assembler;
-  rhs_assembler.initialize(data);
-#ifdef CG
-  rhs_assembler.initialize(constraints);
-#endif
-  RHSIntegrator<dim> rhs_integrator(fe.n_components());
+// //   ResidualSimpleConstraints<LA::MPI::Vector > rhs_assembler;
+// // //  dealii::MeshWorker::Assembler::ResidualSimple<LA::MPI::Vector > rhs_assembler;
+// //   rhs_assembler.initialize(data);
+// // #ifdef CG
+// //   rhs_assembler.initialize(constraints);
+// // #endif
+// //   RHSIntegrator<dim> rhs_integrator(fe.n_components());
 
-  dealii::MeshWorker::integration_loop<dim, dim>(dof_handler.begin_active(),
-                                                 dof_handler.end(),
-                                                 dof_info,
-                                                 info_box,
-                                                 rhs_integrator,
-                                                 rhs_assembler);
+// //   dealii::MeshWorker::integration_loop<dim, dim>(dof_handler.begin_active(),
+// //                                                  dof_handler.end(),
+// //                                                  dof_info,
+// //                                                  info_box,
+// //                                                  rhs_integrator,
+// //                                                  rhs_assembler);
 
+  const unsigned int fe_degree = degree ;
+  const unsigned int n_components = 1 ;
+  typedef double number ;
+    //  dealii::QGauss<dim>   quadrature_formula (n_q_points_1d);
+  dealii::QGauss<dim>   quadrature_formula (fe_degree+1);
+  dealii::QGauss<dim-1> quadrature_face (fe_degree+1);
+  dealii::FEValues<dim> fe_values (mapping
+				   , fe
+                                   , quadrature_formula
+                                   , dealii::update_values
+                                   | dealii::update_gradients
+                                   | dealii::update_JxW_values
+                                   | dealii::update_quadrature_points);
+  dealii::FEFaceValues<dim> fe_face_values (mapping
+					    , fe
+                                            , quadrature_face
+                                            , dealii::update_values
+                                            | dealii::update_gradients
+                                            | dealii::update_quadrature_points
+                                            | dealii::update_normal_vectors);
+
+  const unsigned int   dofs_per_cell = fe.dofs_per_cell;
+  const unsigned int   n_q_points = quadrature_formula.size();
+  const unsigned int   n_q_points_face = quadrature_face.size();
+    
+  dealii::Vector<number>                 cell_rhs(dofs_per_cell) ;
+  std::vector<dealii::types::global_dof_index>   local_dof_indices (dofs_per_cell);
+
+  RightHandSide<dim>    rhs_function {n_components};
+  std::vector<double>   rhs_values(n_q_points);
+  
+  Solution<dim>         g_Dirichlet {n_components};
+  std::vector<double>   bdry_values(n_q_points_face)  ;
+
+  Coefficient<dim>      coefficient_function ;
+  std::vector<double>   coeff_values(n_q_points_face) ;
+  
+  typename dealii::DoFHandler<dim>::active_cell_iterator cell = dof_handler.begin_active(),
+                                                 endc = dof_handler.end();
+  for (; cell!=endc; ++cell)
+    if (cell->is_locally_owned())
+      {
+	cell_rhs = 0. ;
+        fe_values.reinit (cell);
+
+        // CELL integral
+        rhs_function.value_list (fe_values.get_quadrature_points(), rhs_values);
+        for (unsigned int i=0; i<dofs_per_cell; ++i)
+	  for (unsigned int q=0; q<n_q_points; ++q)
+	    cell_rhs(i)
+	      += fe_values.JxW(q)
+	      * fe_values.shape_value(i,q)
+	      * rhs_values[q] ;
+
+        // BOUNDARY integral (Nitsche)
+        for (unsigned int face_no=0; face_no<dealii::GeometryInfo<dim>::faces_per_cell; ++face_no)
+          if (cell->at_boundary(face_no))
+            {
+              fe_face_values.reinit(cell, face_no);
+
+	      const unsigned int normal_dir = dealii::GeometryInfo<dim>::unit_normal_direction[face_no];
+	      const double sigmaF
+		= static_cast<double>( (fe_degree == 0) ? 1. : fe_degree * (fe_degree+1.) )
+		/ cell->extent_in_direction(normal_dir) ;
+	      
+              const auto &q_points = fe_face_values.get_quadrature_points ();
+              g_Dirichlet.value_list (q_points, bdry_values);
+	      coefficient_function.value_list (q_points, coeff_values);
+
+	      for (unsigned int i=0; i<dofs_per_cell; ++i)
+		for (unsigned int q=0; q<quadrature_face.size(); ++q)
+		  cell_rhs(i)
+		    += coeff_values[q] * fe_face_values.JxW(q)
+		    * ( 2. * sigmaF * fe_face_values.shape_value(i,q)
+			- fe_face_values.shape_grad(i,q) * fe_face_values.normal_vector(q) )
+		    * bdry_values[q] ;
+            } // is boundary face ?
+
+        cell->get_dof_indices (local_dof_indices);
+	for (unsigned int i=0; i<dofs_per_cell; ++i)
+	  right_hand_side(local_dof_indices[i]) += cell_rhs(i);
+      } // is locally owned ?
+  
   right_hand_side.compress(dealii::VectorOperation::add);
 }
 
@@ -251,19 +348,19 @@ void Simulator<dim,same_diagonal,degree>::solve ()
   timer.enter_subsection("solve::mg_initialization");
 #ifdef MG
   // Setup coarse solver
-  dealii::SolverControl coarse_solver_control (dof_handler.n_dofs(min_level)*10, 1e-10, false, false);
+  dealii::SolverControl coarse_solver_control (dof_handler.n_dofs(min_level)*10, 1e-16, false, false);
   dealii::PreconditionIdentity id;
 #if PARALLEL_LA < 3
-  mg_matrix[min_level].build_coarse_matrix();
-  const LA::MPI::SparseMatrix &coarse_matrix = mg_matrix[min_level].get_coarse_matrix();
-  dealii::SolverGMRES<LA::MPI::Vector> coarse_solver(coarse_solver_control);
+  // mg_matrix[min_level].build_coarse_matrix();
+  //  const LA::MPI::SparseMatrix &coarse_matrix = mg_matrix[min_level].get_coarse_matrix();
+  dealii::SolverCG<LA::MPI::Vector> coarse_solver(coarse_solver_control);
   dealii::MGCoarseGridIterativeSolver<LA::MPI::Vector,
-         dealii::SolverGMRES<LA::MPI::Vector>,
-         SystemMatrixType, /*LA::MPI::SparseMatrix*/
-         dealii::PreconditionIdentity>
-         mg_coarse(coarse_solver,
-                   mg_matrix[min_level], /*coarse_matrix*/
-                   id);
+				      dealii::SolverCG<LA::MPI::Vector>,
+				      SystemMatrixType, /*LA::MPI::SparseMatrix*/
+				      dealii::PreconditionIdentity>
+		  mg_coarse(coarse_solver,
+			    mg_matrix[min_level], /*coarse_matrix*/
+			    id);
 #else // PARALLEL_LA == 3
   // TODO allow for Matrix-based solver for dealii MPI vectors
   dealii::SolverCG<LA::MPI::Vector> coarse_solver(coarse_solver_control);
@@ -280,6 +377,8 @@ void Simulator<dim,same_diagonal,degree>::solve ()
   typedef PSCPreconditioner<dim, LA::MPI::Vector, double, same_diagonal> Smoother;
   //typedef MFPSCPreconditioner<dim, LA::MPI::Vector, double> Smoother;
   Smoother::timer = &timer;
+
+  const double dictionary_tolerance = 0.01 ;
   dealii::MGLevelObject<typename Smoother::AdditionalData> smoother_data;
   smoother_data.resize(mg_matrix.min_level(), mg_matrix.max_level());
   for (unsigned int level = mg_matrix.min_level();
@@ -295,39 +394,44 @@ void Simulator<dim,same_diagonal,degree>::solve ()
       smoother_data[level].solution = &mg_solution[level];
 #endif // MATRIXFREE
       smoother_data[level].mpi_communicator = mpi_communicator;
-      //      uncomment to use the dictionary
-      // if(!same_diagonal)
-      //  {
-      //    smoother_data[level].use_dictionary = true;
-      //    smoother_data[level].tol = 0.05;
-      //  }
+
+      // uncomment to use the dictionary
+      if(!same_diagonal)
+       {
+         smoother_data[level].use_dictionary = false;
+         smoother_data[level].tol = dictionary_tolerance;
+       }
+
       smoother_data[level].patch_type = Smoother::AdditionalData::cell_patches;
     }
+  std::cout << "Dictionary status:    (Tolerance)    (" << dictionary_tolerance << ")" << std::endl;
   dealii::MGSmootherPrecondition<SystemMatrixType,Smoother,LA::MPI::Vector> mg_smoother;
 
   {
-    // construct scale factors per cell
-    Coefficient<dim> coeff;
-    typedef typename dealii::DoFHandler<dim>::level_cell_iterator level_cell_iterator;
-    std::vector<std::map<level_cell_iterator,double> > cell_to_factor(n_levels);
-    unsigned int l = 0;
-    for (unsigned int level = smoother_data.min_level();
-         level <= smoother_data.max_level();
-         ++level, ++l)
-      {
-        for ( auto cell=dof_handler.begin_mg(level);
-              cell!=dof_handler.end_mg(level);
-              ++cell )
-          cell_to_factor[l].insert ( std::pair<level_cell_iterator,double>(cell,coeff.value(cell->center())) );
-        smoother_data[level].cell_to_factor = &(cell_to_factor[l]);
-      }
+    // // construct scale factors per cell
+    // Coefficient<dim> coeff;
+    // typedef typename dealii::DoFHandler<dim>::level_cell_iterator level_cell_iterator;
+    // std::vector<std::map<level_cell_iterator,double> > cell_to_factor(n_levels);
+    // unsigned int l = 0;
+    // for (unsigned int level = smoother_data.min_level();
+    //      level <= smoother_data.max_level();
+    //      ++level, ++l)
+    //   {
+    //     for ( auto cell=dof_handler.begin_mg(level);
+    //           cell!=dof_handler.end_mg(level);
+    //           ++cell )
+    //       cell_to_factor[l].insert ( std::pair<level_cell_iterator,double>(cell,coeff.value(cell->center())) );
+    //     smoother_data[level].cell_to_factor = &(cell_to_factor[l]);
+    //   }
+
     mg_smoother.initialize(mg_matrix, smoother_data);
     mg_smoother.set_steps(smoothing_steps);
-    // avoid dangling pointers
-    for (unsigned int level = smoother_data.min_level();
-         level <= smoother_data.max_level();
-         ++level, ++l)
-      smoother_data[level].cell_to_factor = nullptr;
+
+    // // avoid dangling pointers
+    // for (unsigned int level = smoother_data.min_level();
+    //      level <= smoother_data.max_level();
+    //      ++level, ++l)
+    //   smoother_data[level].cell_to_factor = nullptr;
   }
 
   // Setup Multigrid-Transfer
@@ -345,8 +449,7 @@ void Simulator<dim,same_diagonal,degree>::solve ()
   // Setup (Multigrid-)Preconditioner
   dealii::mg::Matrix<LA::MPI::Vector>         mglevel_matrix;
   mglevel_matrix.initialize(mg_matrix);
-  dealii::Multigrid<LA::MPI::Vector> mg(dof_handler,
-                                        mglevel_matrix,
+  dealii::Multigrid<LA::MPI::Vector> mg(mglevel_matrix,
                                         mg_coarse,
                                         mg_transfer,
                                         mg_smoother,
@@ -368,7 +471,7 @@ void Simulator<dim,same_diagonal,degree>::solve ()
 
   // Setup Solver
   dealii::ReductionControl             solver_control (dof_handler.n_dofs(), 1.e-20, 1.e-10,true);
-  dealii::SolverGMRES<LA::MPI::Vector> solver (solver_control);
+  dealii::SolverCG<LA::MPI::Vector> solver (solver_control);
   timer.leave_subsection();
 
   // Solve the system
@@ -384,22 +487,72 @@ void Simulator<dim,same_diagonal,degree>::solve ()
 
 
 template <int dim,bool same_diagonal,unsigned int degree>
-void Simulator<dim, same_diagonal, degree>::compute_error () const
+void Simulator<dim, same_diagonal, degree>::compute_error (unsigned int cycle)
 {
-  dealii::QGauss<dim> quadrature (degree+2);
-  dealii::Vector<double> local_errors;
+  dealii::QGauss<dim>    quadrature {degree+4} ;
+  dealii::Vector<float>  difference_per_cell_local (triangulation.n_active_cells ()) ;
 
-  dealii::VectorTools::integrate_difference (mapping, dof_handler,
-                                             solution,
-                                             reference_function,
-                                             local_errors, quadrature,
-                                             dealii::VectorTools::L2_norm);
-  const double L2_error_local = local_errors.l2_norm();
-  const double L2_error
+  dealii::VectorTools::integrate_difference (mapping
+				     , dof_handler
+				     , solution
+				     , reference_function
+				     , difference_per_cell_local
+				     , quadrature
+					     , dealii::VectorTools::L2_norm);
+  // dealii::VectorTools::integrate_difference (mapping, dof_handler,
+  //                                            solution,
+  //                                            reference_function,
+  //                                            local_errors, quadrature,
+  //                                            dealii::VectorTools::L2_norm);
+
+  const double L2_error_local = difference_per_cell_local.l2_norm();
+  const double   L2_error
     = std::sqrt(dealii::Utilities::MPI::sum(L2_error_local * L2_error_local,
                                             mpi_communicator));
+  // = VectorTools::compute_global_error (triangulation,
+  //   					 difference_per_cell_local,
+  //   					 VectorTools::L2_norm);
 
-  pcout << "L2 error: " << L2_error << std::endl;
+  difference_per_cell_local = 0.;
+  dealii::VectorTools::integrate_difference (mapping
+				     , dof_handler
+				     , solution
+				     , reference_function
+				     , difference_per_cell_local
+				     , quadrature
+					     , dealii::VectorTools::H1_seminorm);
+
+  const double H1_error_local = difference_per_cell_local.l2_norm();
+  const double H1_error
+    = std::sqrt(dealii::Utilities::MPI::sum(H1_error_local * H1_error_local,
+    					    mpi_communicator));
+    // = VectorTools::compute_global_error (triangulation,
+    // 					 difference_per_cell_local,
+    // 					 VectorTools::H1_seminorm);
+
+  //  pcout << "L2 error: " << L2_error << std::endl;
+  const unsigned int n_dofs = dof_handler.n_dofs () ;
+  const unsigned int n_active_cells = triangulation.n_active_cells () ;
+
+        convergence_table.add_value ("#levels", cycle);
+  	convergence_table.add_value ("cells", n_active_cells);
+  	convergence_table.add_value ("dofs", n_dofs);
+  	convergence_table.add_value ("L2", L2_error);
+  	convergence_table.add_value ("H1", H1_error);
+  // // dealii::QGauss<dim> quadrature (degree+2);
+  // // dealii::Vector<double> local_errors;
+
+  // // dealii::VectorTools::integrate_difference (mapping, dof_handler,
+  // //                                            solution,
+  // //                                            reference_function,
+  // //                                            local_errors, quadrature,
+  // //                                            dealii::VectorTools::L2_norm);
+  // // const double L2_error_local = local_errors.l2_norm();
+  // // const double L2_error
+  // //   = std::sqrt(dealii::Utilities::MPI::sum(L2_error_local * L2_error_local,
+  // //                                           mpi_communicator));
+
+  // // pcout << "L2 error: " << L2_error << std::endl;
 }
 
 template <int dim, bool same_diagonal, unsigned int degree>
@@ -448,15 +601,20 @@ void Simulator<dim, same_diagonal, degree>::output_results (const unsigned int c
 template <int dim,bool same_diagonal,unsigned int degree>
 void Simulator<dim,same_diagonal,degree>::run ()
 {
-  timer.reset();
-  timer.enter_subsection("refine_global");
-  pcout << "Refine global" << std::endl;
-  triangulation.refine_global (n_levels-1);
-  timer.leave_subsection();
+  for (unsigned int cycle = min_level+1; cycle < n_levels; ++cycle)
+    {
+      timer.reset();
+      timer.enter_subsection("refine_global");
+      pcout << "Refine global" << std::endl;
+      //      triangulation.refine_global (n_levels-1);
+      triangulation.refine_global ();
+      timer.leave_subsection();
+
   pcout << "Finite element: " << fe.get_name() << std::endl;
   pcout << "Number of active cells: "
         << triangulation.n_global_active_cells()
         << std::endl;
+
   timer.enter_subsection("setup_system");
   pcout << "Setup system" << std::endl;
   setup_system ();
@@ -468,11 +626,13 @@ void Simulator<dim,same_diagonal,degree>::run ()
     dealii::deallog << ' ' << dof_handler.n_dofs(l);
   dealii::deallog << std::endl;
 #ifdef MG
+
   timer.enter_subsection("setup_multigrid");
   pcout << "Setup multigrid" << std::endl;
   setup_multigrid ();
   timer.leave_subsection();
 #endif
+
   // output_results(n_levels);
   timer.enter_subsection("solve");
   pcout << "Solve" << std::endl;
@@ -480,8 +640,8 @@ void Simulator<dim,same_diagonal,degree>::run ()
   timer.leave_subsection();
   // timer.enter_subsection("output");
   // pcout << "Output" << std::endl;
-  compute_error();
-  output_results(n_levels);
+  compute_error(cycle);
+  output_results(cycle);
   // timer.leave_subsection();
   timer.print_summary();
   pcout << std::endl;
@@ -493,52 +653,75 @@ void Simulator<dim,same_diagonal,degree>::run ()
   // a vector is requested. Therefore, clean up everything
   // before going out of scope.
   dealii::GrowingVectorMemory<LA::MPI::Vector>::release_unused_memory();
+    }
+
+    convergence_table.set_precision ("L2", 3);
+    convergence_table.set_precision ("H1", 3);
+    convergence_table.set_scientific ("L2", true);
+    convergence_table.set_scientific ("H1", true);
+    
+    convergence_table.evaluate_convergence_rates("L2"
+    						 , dealii::ConvergenceTable::reduction_rate);
+    convergence_table.evaluate_convergence_rates("L2"
+    						 , "dofs"
+    						 , dealii::ConvergenceTable::reduction_rate_log2
+    						 , dim);
+    convergence_table.evaluate_convergence_rates("H1", dealii::ConvergenceTable::reduction_rate);
+    convergence_table.evaluate_convergence_rates("H1"
+    						 , "dofs"
+    						 , dealii::ConvergenceTable::reduction_rate_log2
+    						 , dim);
+    
+    std::cout << std::endl ;
+    convergence_table.write_text (std::cout) ;
+    std::cout << std::endl ;
+
 }
 
 template <int dim,bool same_diagonal,unsigned int degree>
 void Simulator<dim,same_diagonal,degree>::run_non_linear ()
 {
-  timer.reset();
-  timer.enter_subsection("refine_global");
-  pcout << "Refine global" << std::endl;
-  triangulation.refine_global (n_levels-1);
-  timer.leave_subsection();
-  pcout << "Finite element: " << fe.get_name() << std::endl;
-  pcout << "Number of active cells: "
-        << triangulation.n_global_active_cells()
-        << std::endl;
-  timer.enter_subsection("setup_system");
-  pcout << "Setup system" << std::endl;
-  setup_system ();
-  timer.leave_subsection();
-  dealii::deallog << "DoFHandler levels: ";
-  for (unsigned int l=0; l<triangulation.n_global_levels(); ++l)
-    dealii::deallog << ' ' << dof_handler.n_dofs(l);
-  dealii::deallog << std::endl;
-  auto sol = solution_tmp ;
-  for (auto &elem : sol) elem = 1. ;
-  dealii::AnyData solution_data;
-  solution_data.add(&sol, "solution");
-  dealii::AnyData data;
-  newton.control.set_reduction(1.E-10);
-  timer.enter_subsection("solve");
-  pcout << "Solve" << std::endl;
-  newton(solution_data, data);
-  solution = *(solution_data.try_read_ptr<LA::MPI::Vector>("solution"));
-  timer.leave_subsection();
-  // timer.enter_subsection("output");
-  // output_results(n_levels);
+  // timer.reset();
+  //     timer.enter_subsection("refine_global");
+  //     pcout << "Refine global" << std::endl;
+  //     triangulation.refine_global (n_levels-1);
   // timer.leave_subsection();
-  timer.print_summary();
-  pcout << std::endl;
-  // workaround regarding issue #2533
-  // GrowingVectorMemory does not destroy the vectors
-  // after this instance goes out of scope.
-  // Unfortunately, the mpi_communicators given to the
-  // remaining vectors might be invalid the next time
-  // a vector is requested. Therefore, clean up everything
-  // before going out of scope.
-  dealii::GrowingVectorMemory<LA::MPI::Vector>::release_unused_memory();
+  // pcout << "Finite element: " << fe.get_name() << std::endl;
+  // pcout << "Number of active cells: "
+  //       << triangulation.n_global_active_cells()
+  //       << std::endl;
+  // timer.enter_subsection("setup_system");
+  // pcout << "Setup system" << std::endl;
+  // setup_system ();
+  // timer.leave_subsection();
+  // dealii::deallog << "DoFHandler levels: ";
+  // for (unsigned int l=0; l<triangulation.n_global_levels(); ++l)
+  //   dealii::deallog << ' ' << dof_handler.n_dofs(l);
+  // dealii::deallog << std::endl;
+  // auto sol = solution_tmp ;
+  // for (auto &elem : sol) elem = 1. ;
+  // dealii::AnyData solution_data;
+  // solution_data.add(&sol, "solution");
+  // dealii::AnyData data;
+  // newton.control.set_reduction(1.E-10);
+  // timer.enter_subsection("solve");
+  // pcout << "Solve" << std::endl;
+  // newton(solution_data, data);
+  // solution = *(solution_data.try_read_ptr<LA::MPI::Vector>("solution"));
+  // timer.leave_subsection();
+  // // timer.enter_subsection("output");
+  // // output_results(n_levels);
+  // // timer.leave_subsection();
+  // timer.print_summary();
+  // pcout << std::endl;
+  // // workaround regarding issue #2533
+  // // GrowingVectorMemory does not destroy the vectors
+  // // after this instance goes out of scope.
+  // // Unfortunately, the mpi_communicators given to the
+  // // remaining vectors might be invalid the next time
+  // // a vector is requested. Therefore, clean up everything
+  // // before going out of scope.
+  // dealii::GrowingVectorMemory<LA::MPI::Vector>::release_unused_memory();
 }
 
 #include "Simulator.inst"

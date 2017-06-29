@@ -3,12 +3,12 @@
 
 template class MatrixIntegrator<2>;
 template class MatrixIntegrator<3>;
-template class RHSIntegrator<2>;
-template class RHSIntegrator<3>;
 
 #ifndef MATRIXFREE
 template class ResidualIntegrator<2>;
 template class ResidualIntegrator<3>;
+// template class RHSIntegrator<2>;
+// template class RHSIntegrator<3>;
 
 #else // MATRIXFREE ON
 #undef I
