@@ -32,8 +32,7 @@ namespace dealii
 
     dof_info.reset();
 
-    if ((!ignore_subdomain) && (csid == numbers::artificial_subdomain_id))
-      return;
+    if ((!ignore_subdomain) && (csid == numbers::artificial_subdomain_id)) return;
 
     dof_info.cell.reinit(cell);
     dof_info.cell_valid = true;
@@ -97,7 +96,7 @@ namespace dealii
 
               // Is this face also interior for the local patch?
               // If not, ignore all contributions to other cells.
-              bool exterior_in_patch = false;
+	      bool exterior_in_patch = false;
               for (unsigned int i=0; i<cell_range.size(); ++i)
                 if (cell_range[i]->index() == neighbor->index())
                   {
@@ -228,15 +227,6 @@ namespace dealii
   {
     bool parallel = true;
     bool restrict_to_cell_range = (total_cell_range.size()!=0);
-#ifdef DEBUG
-    if (restrict_to_cell_range)
-      {
-        unsigned int sum_colored_ranges = 0;
-        for (unsigned int color = 0; color < colored_iterators.size(); ++color)
-          sum_colored_ranges += colored_iterators[color].size();
-        Assert(sum_colored_ranges == total_cell_range.size(), ExcInternalError());
-      }
-#endif
 
     std::function<void (DOFINFO &, typename INFOBOX::CellInfo &)>   cell_worker ;
     std::function<void (DOFINFO &, typename INFOBOX::CellInfo &)>   boundary_worker ;
@@ -255,13 +245,13 @@ namespace dealii
     std::function<void (const ITERATOR &, INFOBOX &, MeshWorker::DoFInfoBox<dim, DOFINFO>&)> cell_action;
     if (restrict_to_cell_range)
       cell_action = std::bind(&restricted_cell_action<INFOBOX, DOFINFO, dim, spacedim, ITERATOR>,
-                                    std::placeholders::_1, total_cell_range, std::placeholders::_3,
-                                    std::placeholders::_2, cell_worker, boundary_worker, face_worker, lctrl);
+    			      std::placeholders::_1, total_cell_range, std::placeholders::_3,
+    			      std::placeholders::_2, cell_worker, boundary_worker, face_worker, lctrl);
 
     else
       cell_action = std::bind(&MeshWorker::cell_action<INFOBOX, DOFINFO, dim, spacedim, ITERATOR>,
-                                    std::placeholders::_1, std::placeholders::_3, std::placeholders::_2,
-                                    cell_worker, boundary_worker, face_worker, lctrl);
+			      std::placeholders::_1, std::placeholders::_3, std::placeholders::_2,
+			      cell_worker, boundary_worker, face_worker, lctrl);
 
     MeshWorker::DoFInfoBox<dim, DOFINFO> dof_info_box(dof_info);
     assembler.initialize_info(dof_info_box.cell, false);
@@ -271,24 +261,35 @@ namespace dealii
         assembler.initialize_info(dof_info_box.exterior[i], true);
       }
 
-    //  Loop over all cells
-    if (parallel)
+    if (restrict_to_cell_range)
       {
-        WorkStream::run(colored_iterators, cell_action,
-                        std::bind(&internal::assemble<dim,DOFINFO,ASSEMBLER>,
-                                        std::placeholders::_1, &assembler),
-                        info, dof_info_box,
-                        MultithreadInfo::n_threads(),8);
+	for (typename std::vector<ITERATOR>::const_iterator p = total_cell_range.begin();
+	     p != total_cell_range.end(); ++p)
+	  {
+	    cell_action(*p, info, dof_info_box);
+	    dof_info_box.assemble(assembler);
+	  }
       }
     else
       {
-        for (unsigned int color=0; color<colored_iterators.size(); ++color)
-          for (typename std::vector<ITERATOR>::const_iterator p = colored_iterators[color].begin();
-               p != colored_iterators[color].end(); ++p)
-            {
-              cell_action(*p, info, dof_info_box);
-              dof_info_box.assemble(assembler);
-            }
+	if (parallel)
+	  {
+	    WorkStream::run(colored_iterators, cell_action,
+			    std::bind(&internal::assemble<dim,DOFINFO,ASSEMBLER>,
+				      std::placeholders::_1, &assembler),
+			    info, dof_info_box,
+			    MultithreadInfo::n_threads(),8);
+	  }
+	else
+	  {
+	    for (unsigned int color=0; color<colored_iterators.size(); ++color)
+	      for (typename std::vector<ITERATOR>::const_iterator p = colored_iterators[color].begin();
+		   p != colored_iterators[color].end(); ++p)
+		{
+		  cell_action(*p, info, dof_info_box);
+		  dof_info_box.assemble(assembler);
+		}
+	  }
       }
   }
 }

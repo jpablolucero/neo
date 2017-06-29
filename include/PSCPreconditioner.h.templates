@@ -82,8 +82,10 @@ void PSCPreconditioner<dim, SystemMatrixType, VectorType, number,same_diagonal>:
 
   // We need to be able to get the values on locally relevant dofs
   {
+#ifdef DEBUG
     const dealii::parallel::distributed::Triangulation<dim> *distributed_tria
       = dynamic_cast<const dealii::parallel::distributed::Triangulation<dim>* > (&(dof_handler.get_triangulation()));
+#endif
     Assert(distributed_tria, dealii::ExcInternalError());
 
     dealii::IndexSet locally_owned_level_dofs = dof_handler.locally_owned_mg_dofs(level);
@@ -380,7 +382,25 @@ void PSCPreconditioner<dim, SystemMatrixType, VectorType, number, same_diagonal>
       for (unsigned int d = 0 ; d < ordered_iterators.size() ; ++d)
 	for (unsigned int g = 0 ; g < global_last_gen ; ++g)
 	  {
+	    std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> selected_iterators ;
+	    for (unsigned int s = 0 ; s < ordered_iterators[d].size() ; ++s)
+	      {
+	    	const unsigned int loc_g = g-ordered_gens[d][s] ;
+	    	if ( (0 <= loc_g) and (loc_g < ordered_iterators[d][s].size()) )
+		  {
+		    for (auto & cell : ordered_iterators[d][s][loc_g])
+		      selected_iterators.push_back(ddh->subdomain_to_global_map[*cell][0]);
+		    if (loc_g>0)
+		      for (auto & cell : ordered_iterators[d][s][loc_g-1])
+			selected_iterators.push_back(ddh->subdomain_to_global_map[*cell][0]);
+		  }
+		else if (loc_g == ordered_iterators[d][s].size())
+		  for (auto & cell : ordered_iterators[d][s][loc_g-1]) 
+		    selected_iterators.push_back(ddh->subdomain_to_global_map[*cell][0]); 
+	      }
+	    const_cast<SystemMatrixType*>(system_matrix)->set_cell_range(selected_iterators);
 	    system_matrix->vmult(ghosted_src,dst);
+	    const_cast<SystemMatrixType*>(system_matrix)->unset_cell_range();
 	    ghosted_src.sadd(-1.,src);
 	    ghosted_src.compress(dealii::VectorOperation::add) ;
 	    for (unsigned int s = 0 ; s < ordered_iterators[d].size() ; ++s)

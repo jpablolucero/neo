@@ -14,6 +14,7 @@ MFOperator<dim,fe_degree,number>::MFOperator()
   mapping = nullptr;
   constraints = nullptr;
   use_cell_range = false;
+  selected_iterators = nullptr;
 }
 
 template <int dim, int fe_degree, typename number>
@@ -22,6 +23,7 @@ MFOperator<dim,fe_degree,number>::~MFOperator()
   dof_handler = nullptr ;
   fe = nullptr ;
   mapping = nullptr ;
+  selected_iterators = nullptr;
 }
 
 template <int dim, int fe_degree, typename number>
@@ -108,7 +110,6 @@ void MFOperator<dim,fe_degree,number>::reinit
         }
     }
   colored_iterators = std::move(all_iterators);
-
   timer->leave_subsection();
 }
 
@@ -117,9 +118,16 @@ void MFOperator<dim,fe_degree,number>::set_cell_range
 (const std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> &cell_range_)
 {
   use_cell_range = true;
-  cell_range = &cell_range_;
-  colored_iterators[0] = *cell_range;
+  selected_iterators = &cell_range_ ;
 }
+
+template <int dim, int fe_degree, typename number>
+void MFOperator<dim,fe_degree,number>::unset_cell_range()
+{
+  use_cell_range = false;
+  selected_iterators = nullptr ;
+}
+
 
 #if PARALLEL_LA < 3
 template <int dim, int fe_degree, typename number>
@@ -189,8 +197,7 @@ template <int dim, int fe_degree, typename number>
 void MFOperator<dim,fe_degree,number>::vmult_add (LA::MPI::Vector &dst,
                                                   const LA::MPI::Vector &src) const
 {
-  if (!use_cell_range)
-    timer->enter_subsection("MFOperator::initialize ("+ dealii::Utilities::int_to_string(level)+ ")");
+  timer->enter_subsection("MFOperator::initialize ("+ dealii::Utilities::int_to_string(level)+ ")");
   // Initialize MPI vectors
   ghosted_src[level] = std::move(src);
   dealii::IndexSet locally_owned_level_dofs = dof_handler->locally_owned_mg_dofs(level);
@@ -210,33 +217,29 @@ void MFOperator<dim,fe_degree,number>::vmult_add (LA::MPI::Vector &dst,
   dealii::AnyData src_data ;
   src_data.add<const dealii::MGLevelObject<LA::MPI::Vector >*>(&ghosted_src,"src");
   src_data.add<const dealii::MGLevelObject<LA::MPI::Vector >*>(&ghosted_solution,"Newton iterate");
-  if (!use_cell_range)
-    timer->leave_subsection();
+  timer->leave_subsection();
 
-  if (!use_cell_range)
-    timer->enter_subsection("MFOperator::assembler_setup ("+ dealii::Utilities::int_to_string(level)+ ")");
+  timer->enter_subsection("MFOperator::assembler_setup ("+ dealii::Utilities::int_to_string(level)+ ")");
   info_box.initialize(*fe, *mapping, src_data, src, &(dof_handler->block_info()));
   dealii::MeshWorker::Assembler::ResidualSimple<LA::MPI::Vector > assembler;
   assembler.initialize(dst_data);
-  if (!use_cell_range)
-    timer->leave_subsection();
+  timer->leave_subsection();
 
-  if (!use_cell_range)
-    timer->enter_subsection("MFOperator::loop ("+ dealii::Utilities::int_to_string(level)+ ")");
+  timer->enter_subsection("MFOperator::loop ("+ dealii::Utilities::int_to_string(level)+ ")");
   {
     dealii::MeshWorker::LoopControl lctrl;
     //TODO possibly colorize iterators, assume thread-safety for the moment
     if (use_cell_range)
       {
-        lctrl.faces_to_ghost = dealii::MeshWorker::LoopControl::one;
-        lctrl.ghost_cells = true;
+	lctrl.faces_to_ghost = dealii::MeshWorker::LoopControl::both;
+	lctrl.own_faces = dealii::MeshWorker::LoopControl::both ;
         dealii::colored_loop<dim, dim> (colored_iterators,
                                         *dof_info,
                                         info_box,
                                         residual_integrator,
                                         assembler,
                                         lctrl,
-                                        colored_iterators[0]);
+                                        *selected_iterators);
       }
     else
       {
@@ -248,8 +251,7 @@ void MFOperator<dim,fe_degree,number>::vmult_add (LA::MPI::Vector &dst,
                                         lctrl);
       }
   }
-  if (!use_cell_range)
-    timer->leave_subsection();
+  timer->leave_subsection();
 }
 
 template <int dim, int fe_degree, typename number>

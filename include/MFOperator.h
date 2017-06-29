@@ -44,6 +44,7 @@ public:
                LA::MPI::Vector                solution_ = LA::MPI::Vector {});
 
   void set_cell_range (const std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> &cell_range_);
+  void unset_cell_range ();
 
   // TODO parallel::distributed case
 #if PARALLEL_LA < 3
@@ -94,6 +95,7 @@ private:
   const std::vector<level_cell_iterator>              *cell_range;
   bool                                                use_cell_range;
   std::vector<std::vector<level_cell_iterator> >      colored_iterators;
+  const std::vector<level_cell_iterator> *            selected_iterators;
   ResidualIntegrator<dim>                             residual_integrator;
 
 #if PARALLEL_LA < 3

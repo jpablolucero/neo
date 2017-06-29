@@ -96,8 +96,10 @@ void MFPSCPreconditioner<dim, VectorType, number>::vmult_add (VectorType &dst,
     dealii::ConstraintMatrix dummy_constraints;
     dealii::MappingQ1<dim> dummy_mapping;
     const dealii::DoFHandler<dim> &dof_handler      = ddh->get_dofh();
+#ifdef DEBUG
     const dealii::parallel::distributed::Triangulation<dim> *distributed_tria
       = dynamic_cast<const dealii::parallel::distributed::Triangulation<dim>* > (&(dof_handler.get_triangulation()));
+#endif
     Assert(distributed_tria, dealii::ExcInternalError());
 
     scratch_sample.system_matrix.reinit (&dof_handler,&dummy_mapping, &dummy_constraints,level);
