@@ -360,7 +360,6 @@ void PSCPreconditioner<dim, SystemMatrixType, VectorType, number, same_diagonal>
 	  {
 	    system_matrix->vmult(ghosted_src,dst);
 	    ghosted_src.sadd(-1.,src);
-	    ghosted_src.compress(dealii::VectorOperation::add) ;
 	    if ((p < local_n_subdomains) and (ddh->get_dofh().locally_owned_mg_dofs(level).n_elements() != 0))
 	      {
 		WorkStream::work(ddh->colorized_iterators()[0][p],scratch_sample,copy_sample) ;
@@ -395,7 +394,6 @@ void PSCPreconditioner<dim, SystemMatrixType, VectorType, number, same_diagonal>
 	    system_matrix->vmult(ghosted_src,dst);
 	    const_cast<SystemMatrixType*>(system_matrix)->unset_cell_range();
 	    ghosted_src.sadd(-1.,src);
-	    ghosted_src.compress(dealii::VectorOperation::add) ;
 	    for (unsigned int s = 0 ; s < ordered_iterators[d].size() ; ++s)
 	      {
 		const unsigned int loc_g = g-ordered_gens[d][s] ;
