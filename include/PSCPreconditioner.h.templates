@@ -385,18 +385,11 @@ void PSCPreconditioner<dim, SystemMatrixType, VectorType, number, same_diagonal>
 	    std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> selected_iterators ;
 	    for (unsigned int s = 0 ; s < ordered_iterators[d].size() ; ++s)
 	      {
-	    	const unsigned int loc_g = g-ordered_gens[d][s] ;
-	    	if ( (0 <= loc_g) and (loc_g < ordered_iterators[d][s].size()) )
-		  {
-		    for (auto & cell : ordered_iterators[d][s][loc_g])
+		int loc_g = g-ordered_gens[d][s] ;
+		for (int sm_g = loc_g-1 ; sm_g <= loc_g+1 ; ++sm_g)
+		  if ( (0 <= sm_g) and (sm_g < static_cast<int>(ordered_iterators[d][s].size())) )
+		    for (auto & cell : ordered_iterators[d][s][sm_g])
 		      selected_iterators.push_back(ddh->subdomain_to_global_map[*cell][0]);
-		    if (loc_g>0)
-		      for (auto & cell : ordered_iterators[d][s][loc_g-1])
-			selected_iterators.push_back(ddh->subdomain_to_global_map[*cell][0]);
-		  }
-		else if (loc_g == ordered_iterators[d][s].size())
-		  for (auto & cell : ordered_iterators[d][s][loc_g-1]) 
-		    selected_iterators.push_back(ddh->subdomain_to_global_map[*cell][0]); 
 	      }
 	    const_cast<SystemMatrixType*>(system_matrix)->set_cell_range(selected_iterators);
 	    system_matrix->vmult(ghosted_src,dst);
