@@ -106,7 +106,7 @@ public:
   }
   void set_fullsweep()
   {
-    dirs.resize(std::pow(dim,2));
+    dirs.resize(std::pow(2,dim));
     if (dim == 2)
       {
 	dirs[0][0] =  1. ; dirs[0][1] =  1. ; 
