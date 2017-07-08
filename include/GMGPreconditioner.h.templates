@@ -18,6 +18,13 @@ template <int dim,typename VectorType,typename number,bool same_diagonal,unsigne
 void GMGPreconditioner<dim,VectorType,number,same_diagonal,degree>::setup (VectorType & solution)
 {
   const unsigned int n_global_levels = mesh.triangulation.n_global_levels();
+  coarse_preconditioner.clear();
+  preconditioner.reset(nullptr);
+  mg.reset(nullptr);
+  mg_coarse.reset(nullptr);
+  mg_transfer.reset(nullptr);
+  mg_smoother.clear();
+  mglevel_matrix.reset();
   mg_matrix.resize(min_level, n_global_levels-1);
 #ifndef MATRIXFREE
   dealii::MGTransferPrebuilt<VectorType> mg_transfer_tmp;
