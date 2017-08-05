@@ -57,7 +57,7 @@ class GMGPreconditioner final
 
   dealii::MGLevelObject<SystemMatrixType >            mg_matrix ;
   dealii::MGLevelObject<VectorType>                   mg_solution ;
-  dealii::MGConstrainedDoFs                           mg_constrained_dofs;
+  // dealii::MGConstrainedDoFs                           mg_constrained_dofs;
 
   std::unique_ptr<dealii::ReductionControl>              coarse_solver_control;
   dealii::PreconditionIdentity id ;

@@ -78,7 +78,7 @@ void GMGPreconditioner<dim,VectorType,number,same_diagonal,degree>::setup (Vecto
       smoother_data[level].level = level;
       smoother_data[level].mapping = &(fe.mapping);
       smoother_data[level].relaxation = 0.7;
-      smoother_data[level].mg_constrained_dofs = mg_constrained_dofs;
+      // smoother_data[level].mg_constrained_dofs = mg_constrained_dofs;
 #ifndef MATRIXFREE
       smoother_data[level].solution = &mg_solution[level];
 #endif // MATRIXFREE
@@ -102,7 +102,7 @@ void GMGPreconditioner<dim,VectorType,number,same_diagonal,degree>::setup (Vecto
 #else // MATRIXFREE OFF
   mg_transfer.reset(new dealii::MGTransferPrebuilt<VectorType> {});
 #ifdef CG
-  mg_transfer->initialize_constraints(dofs.constraints, mg_constrained_dofs);
+  // mg_transfer->initialize_constraints(dofs.constraints, mg_constrained_dofs);
 #endif // CG
   mg_transfer->build_matrices(dofs.dof_handler);
 #endif // MATRIXFREE
