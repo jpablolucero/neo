@@ -16,7 +16,7 @@ PROJECT(neo)
 SET(PARALLEL_LA 2 CACHE STRING "Use LinearAlgebra::deal.II (0) PETSc(1) Trilinos(2) or parallel::deal.II (3)?")
 ADD_DEFINITIONS(-DPARALLEL_LA=${PARALLEL_LA})
 
-SET(MAXTHREADS 0 CACHE STRING "Maximum number of threads used per MPI process, 0 means no limit")
+SET(MAXTHREADS 1 CACHE STRING "Maximum number of threads used per MPI process, 0 means no limit")
 ADD_DEFINITIONS(-DMAXTHREADS=${MAXTHREADS})
 
 OPTION(CG "Use FE_Q?" OFF)
