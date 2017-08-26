@@ -66,7 +66,7 @@ template <typename SystemMatrixType,typename VectorType,typename Preconditioner,
 void Simulator<SystemMatrixType,VectorType,Preconditioner,dim,degree>::solve ()
 {
 #ifdef MG
-  preconditioner.setup(solution);
+  preconditioner.setup(solution,min_level);
 #endif // MG
   
   // Setup Solver

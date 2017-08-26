@@ -15,9 +15,10 @@ GMGPreconditioner<dim,VectorType,number,same_diagonal,degree>::GMGPreconditioner
 {}
 
 template <int dim,typename VectorType,typename number,bool same_diagonal,unsigned int degree>
-void GMGPreconditioner<dim,VectorType,number,same_diagonal,degree>::setup (VectorType & solution)
+void GMGPreconditioner<dim,VectorType,number,same_diagonal,degree>::setup (VectorType & solution, unsigned int min_level_)
 {
   const unsigned int n_global_levels = mesh.triangulation.n_global_levels();
+  min_level = min_level_ ;
   coarse_preconditioner.clear();
   preconditioner.reset(nullptr);
   mg.reset(nullptr);
