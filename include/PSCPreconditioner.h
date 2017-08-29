@@ -12,6 +12,7 @@
 #include <deal.II/distributed/tria.h>
 #include <deal.II/grid/grid_generator.h>
 #include <deal.II/meshworker/loop.h>
+#include <deal.II/multigrid/mg_transfer.h>
 
 #include <functional>
 
@@ -129,10 +130,12 @@ public:
 
   dealii::DoFHandler<dim> *dof_handler;
   unsigned int level;
+  unsigned int n_levels;
   double relaxation;
   double tol;
   const dealii::Mapping<dim> *mapping;
   LA::MPI::Vector *solution;
+  const LA::MPI::SparseMatrix *coarse_matrix;
 
   bool use_dictionary;
 
@@ -146,6 +149,7 @@ public:
   enum SmootherType
   {
     additive,
+    additive_with_coarse,
     hybrid,
     multiplicative
   };

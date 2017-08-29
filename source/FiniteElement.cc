@@ -4,7 +4,7 @@ extern std::unique_ptr<dealii::ConditionalOStream> pcout ;
 
 template <int dim>
 FiniteElement<dim>::FiniteElement(unsigned int degree):
-  mapping (),
+  mapping (degree + 1),
 #ifdef CG
   fe(dealii::FE_Q<dim>(degree),1)
 #else

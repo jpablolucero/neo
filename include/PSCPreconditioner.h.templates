@@ -339,6 +339,39 @@ void PSCPreconditioner<dim, SystemMatrixType, VectorType, number, same_diagonal>
 			      WorkStream::assemble<dim, VectorType, number, same_diagonal>,
 			      scratch_sample, copy_sample);
     }
+  else if (data.smoother_type == AdditionalData::SmootherType::additive_with_coarse)
+    {
+      ghosted_src = src;
+      const dealii::DoFHandler<dim> &dof_handler = *(data.dof_handler);
+      typedef dealii::Vector<double> VectorType2 ;
+      VectorType2 dummy1(dof_handler.n_dofs(level-1)),
+	dummy2(dof_handler.n_dofs(level-1)),
+	dummy3(dof_handler.n_dofs(level));
+      VectorType2 dummy0(ghosted_src);
+      dealii::ReductionControl control(10000, 1e-20, 1e-14, false, false) ;
+      dealii::SolverGMRES<VectorType2> coarse_solver(control);
+      dealii::MGTransferPrebuilt<VectorType2 > mg_transfer ;
+      dealii::MGLevelObject<VectorType2 > mg_solution ;
+      mg_transfer.build_matrices(*(data.dof_handler));
+      mg_transfer.restrict_and_add(data.level,dummy1,dummy0);
+      coarse_solver.solve(*(data.coarse_matrix),dummy2,dummy1,dealii::PreconditionIdentity{});
+      mg_transfer.prolongate(data.level,dummy3,dummy2);
+      dst = dummy3 ;
+      //TODO make sure that the source vector is ghosted
+      WorkStream::Copy<dim, VectorType, number, same_diagonal> copy_sample;
+      copy_sample.dst = &dst;
+      copy_sample.ddh = ddh;
+
+      WorkStream::Scratch<dim, VectorType, number, same_diagonal> scratch_sample;
+      scratch_sample.src = &ghosted_src;
+      scratch_sample.local_inverses = &patch_inverses;
+
+      ghosted_src = src;
+      dealii::WorkStream::run(ddh->colorized_iterators(),
+			      WorkStream::work<dim, VectorType, number, same_diagonal>,
+			      WorkStream::assemble<dim, VectorType, number, same_diagonal>,
+			      scratch_sample, copy_sample);
+    }
   else if (data.smoother_type == AdditionalData::SmootherType::hybrid)
     {
       Assert(ddh->colorized_iterators().size() == 1, dealii::ExcInternalError());

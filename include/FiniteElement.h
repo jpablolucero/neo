@@ -12,7 +12,7 @@ class FiniteElement final
 {
 public:
   FiniteElement (unsigned int degree) ;
-  const dealii::MappingQ1<dim>                        mapping;
+  const dealii::MappingQGeneric<dim>                  mapping;
   dealii::FESystem<dim>                               fe;
 };
 
