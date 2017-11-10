@@ -9,7 +9,7 @@ RHS<dim>::RHS (FiniteElement<dim> & fe_,Dofs<dim> & dofs_):
 {}
 
 template <int dim>
-void RHS<dim>::assemble(LA::MPI::Vector & solution)
+void RHS<dim>::assemble(const LA::MPI::Vector & solution)
 {
 #ifdef MATRIXFREE
 #if PARALLEL_LA == 3

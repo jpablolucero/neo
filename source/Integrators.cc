@@ -232,7 +232,7 @@ RHSIntegrator<dim>::RHSIntegrator(unsigned int n_components)
 #else
   this->use_boundary = true;
 #endif
-  this->use_face = false;
+  this->use_face = true;
 }
 
 template <int dim>
@@ -281,6 +281,7 @@ void RHSIntegrator<dim>::cell(dealii::MeshWorker::DoFInfo<dim> &dinfo, typename 
 #endif // CG
     }
 }
+
 template <int dim>
 void RHSIntegrator<dim>::boundary(dealii::MeshWorker::DoFInfo<dim> &dinfo, typename dealii::MeshWorker::IntegrationInfo<dim> &info) const
 {
@@ -313,6 +314,13 @@ void RHSIntegrator<dim>::boundary(dealii::MeshWorker::DoFInfo<dim> &dinfo, typen
     }
 #endif // CG OFF
 }
+
+template <int dim>
+void RHSIntegrator<dim>::face(dealii::MeshWorker::DoFInfo<dim> &,
+			      dealii::MeshWorker::DoFInfo<dim> &,
+			      typename dealii::MeshWorker::IntegrationInfo<dim> &,
+			      typename dealii::MeshWorker::IntegrationInfo<dim> &) const
+{}
 
 #else // MATRIXFREE OFF
 template <int dim>

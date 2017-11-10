@@ -32,7 +32,7 @@ class GMGPreconditioner final
 		     Dofs<dim> & dofs_,
 		     FiniteElement<dim> & fe_) ;
   
-  void setup(VectorType & solution, unsigned int min_level_ = 0);
+  void setup(const VectorType & solution, unsigned int min_level_ = 0);
 
   void vmult(VectorType &dst, const VectorType &src) const;
 
@@ -100,7 +100,7 @@ class GMGPreconditioner final
   
 };
 
-#include <GMGPreconditioner.h.templates>
+#include <GMGPreconditioner.templates.h>
 
 #endif // PRECONDITIONER_H
 

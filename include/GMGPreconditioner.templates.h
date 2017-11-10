@@ -15,7 +15,7 @@ GMGPreconditioner<dim,VectorType,number,same_diagonal,degree>::GMGPreconditioner
 {}
 
 template <int dim,typename VectorType,typename number,bool same_diagonal,unsigned int degree>
-void GMGPreconditioner<dim,VectorType,number,same_diagonal,degree>::setup (VectorType & solution, unsigned int min_level_)
+void GMGPreconditioner<dim,VectorType,number,same_diagonal,degree>::setup (const VectorType & solution, unsigned int min_level_)
 {
   const unsigned int n_global_levels = mesh.triangulation.n_global_levels();
   min_level = min_level_ ;
@@ -32,6 +32,8 @@ void GMGPreconditioner<dim,VectorType,number,same_diagonal,degree>::setup (Vecto
   mg_transfer_tmp.build_matrices(dofs.dof_handler);
   mg_solution.resize(min_level, n_global_levels-1);
   mg_transfer_tmp.copy_to_mg(dofs.dof_handler,mg_solution,solution);
+  for (auto l = n_global_levels-1 ; l > 0 ; --l)
+    mg_transfer_tmp.restrict_and_add(l,mg_solution[l-1], mg_solution[l]);
   for (unsigned int level=min_level; level<n_global_levels; ++level)
     {
       mg_matrix[level].reinit(&(dofs.dof_handler),&(fe.mapping),&(dofs.constraints),level,mg_solution[level]);
@@ -79,7 +81,7 @@ void GMGPreconditioner<dim,VectorType,number,same_diagonal,degree>::setup (Vecto
       smoother_data[level].level = level;
       smoother_data[level].n_levels = n_global_levels ;
       smoother_data[level].mapping = &(fe.mapping);
-      smoother_data[level].relaxation = 0.7;
+      smoother_data[level].relaxation = 1.;
       // smoother_data[level].mg_constrained_dofs = mg_constrained_dofs;
 #ifndef MATRIXFREE
       smoother_data[level].solution = &mg_solution[level];

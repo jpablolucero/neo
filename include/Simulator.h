@@ -3,6 +3,7 @@
 
 #include <deal.II/algorithms/any_data.h>
 #include <deal.II/algorithms/newton.h>
+#include <deal.II/algorithms/newton.templates.h>
 #include <deal.II/base/conditional_ostream.h>
 #include <deal.II/base/mpi.h>
 #include <deal.II/base/timer.h>
@@ -68,7 +69,6 @@ private:
     Residual(Simulator<SystemMatrixType_,VectorType_,Preconditioner_,dim,fe_degree> &sim_):sim(sim_) {} ;
     void operator() (dealii::AnyData &out, const dealii::AnyData &in) override
     {
-      sim.setup_system();
       sim.solution = *(in.try_read_ptr<VectorType_>("Newton iterate"));
       sim.rhs.assemble(sim.solution);
       *out.entry<VectorType_ *>(0) = sim.rhs.right_hand_side ;
@@ -83,14 +83,8 @@ private:
   {
   public:
     InverseDerivative(Simulator<SystemMatrixType_,VectorType_,Preconditioner_,dim,fe_degree> &sim_):sim(sim_) {} ;
-    void operator() (dealii::AnyData &out, const dealii::AnyData &in) override
+    void operator() (dealii::AnyData &out, const dealii::AnyData &) override
     {
-      sim.setup_system();
-      sim.solution = *(in.try_read_ptr<VectorType_>("Newton iterate"));
-      sim.rhs.right_hand_side = *(in.try_read_ptr<VectorType_>("Newton residual"));
-#ifdef MG           
-      sim.preconditioner.setup(sim.solution);
-#endif // MG                 
       sim.solve ();
       *out.entry<VectorType_ *>(0) = sim.solution ;
     }
@@ -103,7 +97,7 @@ private:
 };
 
 // #ifdef HEADER_IMPLEMENTATION
-#include <Simulator.h.templates>
+#include <Simulator.templates.h>
 // #endif
 
 #endif // SIMULATOR_H

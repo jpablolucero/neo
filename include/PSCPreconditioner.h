@@ -162,6 +162,6 @@ public:
 
 };
 
-#include <PSCPreconditioner.h.templates>
+#include <PSCPreconditioner.templates.h>
 
 #endif // PSCPRECONDITIONER_H

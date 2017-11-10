@@ -16,7 +16,7 @@ class RHS final
  public:
   RHS (FiniteElement<dim> & fe_,Dofs<dim> & dofs_) ;
   
-  void assemble(LA::MPI::Vector & solution);
+  void assemble(const LA::MPI::Vector & solution);
   
   FiniteElement<dim> & fe;
   Dofs<dim> & dofs;
