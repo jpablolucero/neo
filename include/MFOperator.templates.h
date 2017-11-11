@@ -262,8 +262,4 @@ MFOperator<dim,fe_degree,number>::Tvmult_add (LA::MPI::Vector &dst,
   vmult_add(dst, src);
 }
 
-#ifndef HEADER_IMPLEMENTATION
-#include "MFOperator.inst"
-#endif
-
 #endif // MATRIXFREE

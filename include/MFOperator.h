@@ -107,8 +107,6 @@ private:
 
 #endif // MATRIXFREE OFF
 
-#ifdef HEADER_IMPLEMENTATION
-#include <MFOperator.cc>
-#endif
+#include <MFOperator.templates.h>
 
 #endif // MFOPERATOR_H
