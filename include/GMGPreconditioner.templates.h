@@ -33,7 +33,10 @@ void GMGPreconditioner<dim,VectorType,number,same_diagonal,degree>::setup (const
   mg_solution.resize(min_level, n_global_levels-1);
   mg_transfer_tmp.copy_to_mg(dofs.dof_handler,mg_solution,solution);
   for (auto l = n_global_levels-1 ; l > 0 ; --l)
-    mg_transfer_tmp.restrict_and_add(l,mg_solution[l-1], mg_solution[l]);
+    {
+      mg_solution[l-1] = 0.;
+      mg_transfer_tmp.restrict_and_add(l,mg_solution[l-1], mg_solution[l]);
+    }
   for (unsigned int level=min_level; level<n_global_levels; ++level)
     {
       mg_matrix[level].reinit(&(dofs.dof_handler),&(fe.mapping),&(dofs.constraints),level,mg_solution[level]);
