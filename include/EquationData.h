@@ -156,6 +156,14 @@ inline double planck_integral (double sigma, double temperature)
   //  follows Widger and Woodall, Bulletin of the American Meteorological
   //  Society, Vol. 57, No. 10, pp. 1217
   //  constants
+  bool linear = false ;
+  double old_temperature = temperature ;
+  if (temperature < 10.) 
+    {
+      linear = true ;
+      old_temperature = temperature ;
+      temperature = 10.;
+    }
   double Planck =  6.6260693e-34 ;
   double Boltzmann = 1.380658e-23 ;
   double Speed_of_light = 299792458.0 ;
@@ -182,6 +190,7 @@ inline double planck_integral (double sigma, double temperature)
 
   //  return result, in units of W/m2/sr
   double c2 =  (2.0*Planck*Speed_of_light_sq) ;
+  if (linear) { return c2*std::pow(temperature/c1,4)*sum / 10. * old_temperature ; }
   return c2*std::pow(temperature/c1,4)*sum  ;
 }
 
@@ -219,6 +228,7 @@ inline double Dplanck_integral (double sigma, double temperature)
 
   //  return result, in units of W/m2/sr
   double c2 =  (2.0*Planck*Speed_of_light_sq) ;
+  if (temperature < 10.) {return planck_integral(sigma,10.)/10.;}
   return c2/c1*std::pow(temperature/c1,3)*sum ;
 }
 

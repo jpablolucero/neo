@@ -11,6 +11,9 @@ template void DDHandlerBase<2>::restrict_add(dealii::Vector<double>& dst,
 template void DDHandlerBase<2>::prolongate_add(LA::MPI::Vector & dst,
                                                const dealii::Vector<double>& src,
                                                const unsigned int subdomain_idx) const;
+template void DDHandlerBase<2>::prolongate(LA::MPI::Vector & dst,
+					   const dealii::Vector<double>& src,
+					   const unsigned int subdomain_idx) const;
 template void DDHandlerBase<2>::reinit(dealii::Vector<float>& vec,
                                   const unsigned int subdomain_idx) const;
 template void DDHandlerBase<2>::restrict_add(dealii::Vector<float>& dst,
@@ -19,6 +22,9 @@ template void DDHandlerBase<2>::restrict_add(dealii::Vector<float>& dst,
 template void DDHandlerBase<2>::prolongate_add(LA::MPI::Vector & dst,
                                                const dealii::Vector<float>& src,
                                                const unsigned int subdomain_idx) const;
+template void DDHandlerBase<2>::prolongate(LA::MPI::Vector & dst,
+					   const dealii::Vector<float>& src,
+					   const unsigned int subdomain_idx) const;
 
 template class DDHandlerBase<3>;
 template void DDHandlerBase<3>::reinit(dealii::Vector<double>& vec,
@@ -29,6 +35,9 @@ template void DDHandlerBase<3>::restrict_add(dealii::Vector<double>& dst,
 template void DDHandlerBase<3>::prolongate_add(LA::MPI::Vector & dst,
                                                const dealii::Vector<double>& src,
                                                const unsigned int subdomain_idx) const;
+template void DDHandlerBase<3>::prolongate(LA::MPI::Vector & dst,
+					   const dealii::Vector<double>& src,
+					   const unsigned int subdomain_idx) const;
 template void DDHandlerBase<3>::reinit(dealii::Vector<float>& vec,
                                   const unsigned int subdomain_idx) const;
 template void DDHandlerBase<3>::restrict_add(dealii::Vector<float>& dst,
@@ -37,6 +46,9 @@ template void DDHandlerBase<3>::restrict_add(dealii::Vector<float>& dst,
 template void DDHandlerBase<3>::prolongate_add(LA::MPI::Vector & dst,
                                                const dealii::Vector<float>& src,
                                                const unsigned int subdomain_idx) const;
+template void DDHandlerBase<3>::prolongate(LA::MPI::Vector & dst,
+					   const dealii::Vector<float>& src,
+					   const unsigned int subdomain_idx) const;
 
 template class DGDDHandlerVertex<2>;
 template class DGDDHandlerVertex<3>;

@@ -549,6 +549,104 @@ namespace Assembler
         }
   }
 
+
+  template <typename VectorType>
+  class ResidualSimpleMapped
+  {
+  public:
+
+    void initialize(dealii::AnyData &results);
+
+    void initialize(const dealii::ConstraintMatrix &constraints);
+
+    void initialize(const std::map<dealii::types::global_dof_index, unsigned int> &d);
+
+    void initialize_local_blocks(const dealii::BlockIndices &);
+
+    template <class DOFINFO>
+    void initialize_info(DOFINFO &info, bool face) const;
+
+    template <class DOFINFO>
+    void assemble(const DOFINFO &info);
+
+    template <class DOFINFO>
+    void assemble(const DOFINFO &info1,
+		  const DOFINFO &info2);
+  protected:
+    dealii::AnyData residuals;
+
+    dealii::SmartPointer<const dealii::ConstraintMatrix,ResidualSimpleMapped<VectorType> > constraints;
+
+    const std::map<dealii::types::global_dof_index, unsigned int> *dof_mapping;
+
+  };
+
+
+  template <typename VectorType>
+  inline void
+  ResidualSimpleMapped<VectorType>::initialize(dealii::AnyData &results)
+  {
+    residuals = results;
+  }
+
+  template <typename VectorType>
+  inline void
+  ResidualSimpleMapped<VectorType>::initialize(const dealii::ConstraintMatrix &c)
+  {
+    constraints = &c;
+  }
+
+  template <typename VectorType>
+  inline void
+  ResidualSimpleMapped<VectorType>::initialize(const std::map<dealii::types::global_dof_index, unsigned int> &d)
+  {
+    dof_mapping = &d;
+  }
+
+  template <typename MatrixType>
+  inline void
+  ResidualSimpleMapped<MatrixType>::initialize_local_blocks(const dealii::BlockIndices &)
+  {}
+
+
+  template <typename VectorType>
+  template <class DOFINFO>
+  inline void
+  ResidualSimpleMapped<VectorType>::initialize_info(DOFINFO &info, bool) const
+  {
+    info.initialize_vectors(residuals.size());
+  }
+
+  template <typename VectorType>
+  template <class DOFINFO>
+  inline void
+  ResidualSimpleMapped<VectorType>::assemble(const DOFINFO &info)
+  {
+    for (unsigned int k=0; k<residuals.size(); ++k)
+      {
+	VectorType *v = residuals.entry<VectorType *>(k);
+	for (unsigned int i=0; i != info.vector(k).n_blocks(); ++i)
+	  {
+	    const std::vector<dealii::types::global_dof_index>  &ldi = info.vector(k).n_blocks()==1?
+	      info.indices:
+	      info.indices_by_block[i];
+
+	    for (unsigned int j=0; j != info.vector(k).block(i).size(); ++j)
+	      (*v)(dof_mapping->at(ldi[j])) += info.vector(k).block(i)(j) ;
+	  }
+      }
+  }
+
+  template <typename VectorType>
+  template <class DOFINFO>
+  inline void
+  ResidualSimpleMapped<VectorType>::assemble(const DOFINFO &info1,
+					     const DOFINFO &info2)
+  {
+    assemble(info1);
+    assemble(info2);
+  }
+
 }
 
 

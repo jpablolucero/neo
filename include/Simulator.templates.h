@@ -215,7 +215,7 @@ void Simulator<SystemMatrixType,VectorType,Preconditioner,dim,degree>::run_non_l
     dealii::deallog << ' ' << dofs.dof_handler.n_dofs(l);
   dealii::deallog << std::endl;
   auto sol = solution_tmp ;
-  for (auto &elem : sol) elem = 1. ;
+  for (auto &elem : sol) elem = 600. ;
   dealii::AnyData solution_data;
   solution_data.add(&sol, "solution");
   dealii::AnyData data;

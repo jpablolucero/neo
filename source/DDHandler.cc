@@ -126,7 +126,6 @@ const
     dst[i] += src[global_dofs_on_subdomain[subdomain_idx][i]];
 }
 
-
 template <int dim>
 template <typename VectorType, class number>
 void DDHandlerBase<dim>::prolongate_add(VectorType &dst,
@@ -142,6 +141,23 @@ const
          dealii::ExcDimensionMismatch(src.size(), n_patch_dofs));
   for (unsigned int i = 0; i < n_patch_dofs; ++i)
     dst[global_dofs_on_subdomain[subdomain_idx][i]] += src[i];
+}
+
+template <int dim>
+template <typename VectorType, class number>
+void DDHandlerBase<dim>::prolongate(VectorType &dst,
+				    const dealii::Vector<number> &src,
+				    const unsigned int subdomain_idx)
+  const
+{
+  Assert(dst.size() == dofh->n_dofs(level),
+         dealii::ExcDimensionMismatch(dst.size(), dofh->n_dofs(level)));
+  unsigned int n_patch_dofs = n_subdomain_dofs(subdomain_idx);
+  Assert(n_patch_dofs > 0, dealii::ExcInternalError());
+  Assert(src.size() == n_patch_dofs,
+         dealii::ExcDimensionMismatch(src.size(), n_patch_dofs));
+  for (unsigned int i = 0; i < n_patch_dofs; ++i)
+    dst[global_dofs_on_subdomain[subdomain_idx][i]] = src[i];
 }
 
 template <int dim>
@@ -214,6 +230,7 @@ void DDHandlerBase<dim>::initialize_global_dofs_on_subdomain()
       //store unique dofs
       std::unordered_set<dealii::types::global_dof_index> tmpset(all_dofs.begin(), all_dofs.end());
       global_dofs_on_subdomain[i].assign(tmpset.begin(), tmpset.end());
+      std::reverse(global_dofs_on_subdomain[i].begin(),global_dofs_on_subdomain[i].end());
 
       //fill all_to_unique
       for (unsigned int k=0; k<global_dofs_on_subdomain[i].size(); ++k)

@@ -43,6 +43,11 @@ public:
                       const dealii::Vector<number> &src,
                       const unsigned int subdomain_idx) const;
 
+  template <typename VectorType, class number>
+  void prolongate(VectorType &dst,
+		  const dealii::Vector<number> &src,
+		  const unsigned int subdomain_idx) const;
+  
   std::vector<std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> > subdomain_to_global_map;
   std::vector<std::vector<dealii::types::global_dof_index> > global_dofs_on_subdomain;
   std::vector<std::map<dealii::types::global_dof_index, unsigned int> > all_to_unique;
