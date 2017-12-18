@@ -84,7 +84,7 @@ void GMGPreconditioner<dim,VectorType,number,same_diagonal,degree,Smoother>::set
       smoother_data[level].level = level;
       smoother_data[level].n_levels = n_global_levels ;
       smoother_data[level].mapping = &(fe.mapping);
-      smoother_data[level].relaxation = 1.;
+      smoother_data[level].relaxation = 0.7;
       // smoother_data[level].mg_constrained_dofs = mg_constrained_dofs;
 #ifndef MATRIXFREE
       smoother_data[level].solution = &mg_solution[level];
