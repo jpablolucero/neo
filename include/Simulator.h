@@ -33,8 +33,6 @@
 #include <string>
 #include <fstream>
 
-extern std::unique_ptr<dealii::ConditionalOStream> pcout ;
-
 template <typename SystemMatrixType,typename VectorType,typename Preconditioner,int dim=2,unsigned int fe_degree = 1>
 class Simulator final
 {
@@ -64,18 +62,31 @@ private:
   VectorType       solution;
   VectorType       solution_tmp;
 
+  bool aspin = false ;
+
   friend class Residual;
   template <typename SystemMatrixType_,typename VectorType_,typename Preconditioner_>
   class Residual : public dealii::Algorithms::OperatorBase
   {
   public:
     Residual(Simulator<SystemMatrixType_,VectorType_,Preconditioner_,dim,fe_degree> &sim_):sim(sim_) {} ;
+    double old_residual = 1.E30 ;
+    double residual = 0.;
     void operator() (dealii::AnyData &out, const dealii::AnyData &in) override
     {
       sim.solution = *(in.try_read_ptr<VectorType_>("Newton iterate"));
       sim.rhs.assemble(sim.solution);
-      dealii::deallog << "Newton Residual: " << sim.rhs.right_hand_side.l2_norm() << std::endl ;
+      residual = sim.rhs.right_hand_side.l2_norm() ;
+      if (sim.aspin)
+	dealii::deallog << "ASPIN Residual: " << residual << std::endl ;
+      else
+	dealii::deallog << "Residual: " << residual << std::endl ;
+      if ((sim.aspin == true) and (residual > old_residual / 4.))
+	sim.aspin = false ;
+      else if ((sim.aspin == false) and (residual > old_residual / 4.))
+	sim.aspin = true ;
       *out.entry<VectorType_ *>(0) = sim.rhs.right_hand_side ;
+      old_residual = residual ;
     }
     Simulator<SystemMatrixType_,VectorType_,Preconditioner_,dim,fe_degree> &sim ;
   };
@@ -89,23 +100,31 @@ private:
     InverseDerivative(Simulator<SystemMatrixType_,VectorType_,Preconditioner_,dim,fe_degree> &sim_):sim(sim_) {} ;
     void operator() (dealii::AnyData &out, const dealii::AnyData &in) override
     {
-      NLPSCPreconditioner<dim, SystemMatrixType_, VectorType_, double, false> prec ;
-      typename NLPSCPreconditioner<dim, SystemMatrixType_, VectorType_, double, false>::AdditionalData data ;
-      data.dof_handler = &(sim.dofs.dof_handler);
-      data.level = sim.n_levels-1;
-      data.n_levels = sim.n_levels ;
-      data.mapping = &(sim.fe.mapping);
-      data.relaxation = 1.;
-      data.solution = const_cast<VectorType_*>(in.try_read_ptr<VectorType_>("Newton iterate")) ;
-      data.patch_type = NLPSCPreconditioner<dim, SystemMatrixType_, VectorType_, double, false>::AdditionalData::cell_patches;
-      data.smoother_type = NLPSCPreconditioner<dim, SystemMatrixType_, VectorType_, double, false>::AdditionalData::additive;
-      // data.set_fullsweep();
-      prec.initialize(sim.system_matrix,data);
-      auto unpreconditioned_residual = *(in.try_read_ptr<VectorType_>("Newton residual"));
-      prec.vmult(*(const_cast<VectorType_*>(in.try_read_ptr<VectorType_>("Newton residual"))),
-		 unpreconditioned_residual);
-      sim.solve ();
-      *out.entry<VectorType_ *>(0) = sim.solution ;
+      
+      if (sim.aspin)
+      	{
+	  typename NLPSCPreconditioner<dim, SystemMatrixType_, VectorType_, double, false>::AdditionalData data ;
+	  data.dof_handler = &(sim.dofs.dof_handler);
+	  data.level = sim.n_levels-1;
+	  data.n_levels = sim.n_levels ;
+	  data.mapping = &(sim.fe.mapping);
+	  data.relaxation = 1.;
+	  data.solution = const_cast<VectorType_*>(in.try_read_ptr<VectorType_>("Newton iterate")) ;
+	  data.patch_type = NLPSCPreconditioner<dim, SystemMatrixType_, VectorType_, double, false>::AdditionalData::cell_patches;
+	  data.smoother_type = NLPSCPreconditioner<dim, SystemMatrixType_, VectorType_, double, false>::AdditionalData::additive;
+	  NLPSCPreconditioner<dim, SystemMatrixType_, VectorType_, double, false> prec ;
+	  prec.initialize(sim.system_matrix,data);
+	  prec.vmult(sim.solution,*(in.try_read_ptr<VectorType_>("Newton residual")));
+	  *out.entry<VectorType_ *>(0) = sim.solution ;
+      	}
+      else
+      	{
+	  sim.solution = *(in.try_read_ptr<VectorType_>("Newton iterate"));
+	  sim.solution_tmp = 0.;
+	  sim.solve ();
+	  *out.entry<VectorType_ *>(0) = sim.solution ;
+      	}
+
     }
     Simulator<SystemMatrixType_,VectorType_,Preconditioner_,dim,fe_degree> &sim ;
   };
