@@ -136,8 +136,8 @@ namespace
       residual(res,u);
       double resnorm = res.l2_norm();
       const unsigned int n_stepsize_iterations = 21;
-      bool print = true ;
-      while(resnorm >= 1.E-8)
+      const double resnorm0 = resnorm ;
+      while(resnorm/resnorm0 > 1.E-2)
       {
         Du.reinit(u);
       	inverse_derivative(Du,res);
@@ -258,7 +258,7 @@ void NLPSCPreconditioner<dim, SystemMatrixType, VectorType, number, same_diagona
   dst.compress(dealii::VectorOperation::add);
 #endif //PARALLEL_LA
   dst *= data.relaxation;
-  AssertIsFinite(dst.l2_norm());
+  // AssertIsFinite(dst.l2_norm());
 }
 
 template <int dim, typename SystemMatrixType, typename VectorType, typename number, bool same_diagonal>
@@ -279,7 +279,7 @@ void NLPSCPreconditioner<dim, SystemMatrixType, VectorType, number, same_diagona
 
   if (data.smoother_type == AdditionalData::SmootherType::additive)
     {
-      //TODO make sure that the source vector is ghosted
+      // TODO make sure that the source vector is ghosted
       NLWorkStream::Copy<dim, VectorType, number, same_diagonal> copy_sample;
       copy_sample.dst = &dst;
       copy_sample.ddh = ddh;
@@ -295,20 +295,7 @@ void NLPSCPreconditioner<dim, SystemMatrixType, VectorType, number, same_diagona
 			      NLWorkStream::assemble<dim, VectorType, number, same_diagonal>,
 			      scratch_sample, copy_sample);
     }
-  else if (data.smoother_type == AdditionalData::SmootherType::additive_with_coarse)
-    {
-      AssertThrow(false, dealii::ExcNotImplemented());
-    }
-  else if (data.smoother_type == AdditionalData::SmootherType::hybrid)
-    {
-      AssertThrow(false, dealii::ExcNotImplemented());
-    }      
-  else if (data.smoother_type == AdditionalData::SmootherType::multiplicative)
-    {
-      AssertThrow(false, dealii::ExcNotImplemented());
-    }
-  else
-    AssertThrow(false, dealii::ExcNotImplemented());
+  else AssertThrow(false, dealii::ExcNotImplemented());
   
   timer->leave_subsection();
 }
