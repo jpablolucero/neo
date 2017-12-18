@@ -24,7 +24,12 @@
 
 #include <memory>
 
-template <int dim,typename VectorType=LA::MPI::Vector, typename number=double,bool same_diagonal = false, unsigned int fe_degree = 1>
+template <int dim,
+	  typename VectorType=LA::MPI::Vector,
+	  typename number=double,
+	  bool same_diagonal=false,
+	  unsigned int fe_degree = 1,
+	  typename Smoother=PSCPreconditioner<dim,MFOperator<dim,fe_degree,number> > >
 class GMGPreconditioner final
 {
  public:
@@ -77,7 +82,6 @@ class GMGPreconditioner final
 						      id> >   mg_coarse;
 
 #endif
-  typedef PSCPreconditioner<dim, SystemMatrixType, VectorType, number, same_diagonal> Smoother;
   //typedef MFPSCPreconditioner<dim, VectorType, number> Smoother;
   dealii::MGLevelObject<typename Smoother::AdditionalData> smoother_data;
   dealii::MGSmootherPrecondition<SystemMatrixType,Smoother,VectorType> mg_smoother;

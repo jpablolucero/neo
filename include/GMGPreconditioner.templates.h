@@ -3,10 +3,10 @@
 extern std::unique_ptr<dealii::TimerOutput>        timer ;
 extern std::unique_ptr<MPI_Comm>                   mpi_communicator ;
 
-template <int dim,typename VectorType,typename number,bool same_diagonal,unsigned int degree>
-GMGPreconditioner<dim,VectorType,number,same_diagonal,degree>::GMGPreconditioner (Mesh<dim> & mesh_,
-										  Dofs<dim> & dofs_,
-										  FiniteElement<dim> & fe_):
+template <int dim,typename VectorType,typename number,bool same_diagonal,unsigned int degree, typename Smoother>
+GMGPreconditioner<dim,VectorType,number,same_diagonal,degree,Smoother>::GMGPreconditioner (Mesh<dim> & mesh_,
+											   Dofs<dim> & dofs_,
+											   FiniteElement<dim> & fe_):
   min_level(0),
   smoothing_steps(1),
   mesh(mesh_),
@@ -14,8 +14,8 @@ GMGPreconditioner<dim,VectorType,number,same_diagonal,degree>::GMGPreconditioner
   fe(fe_)
 {}
 
-template <int dim,typename VectorType,typename number,bool same_diagonal,unsigned int degree>
-void GMGPreconditioner<dim,VectorType,number,same_diagonal,degree>::setup (const VectorType & solution, unsigned int min_level_)
+template <int dim,typename VectorType,typename number,bool same_diagonal,unsigned int degree, typename Smoother>
+void GMGPreconditioner<dim,VectorType,number,same_diagonal,degree,Smoother>::setup (const VectorType & solution, unsigned int min_level_)
 {
   const unsigned int n_global_levels = mesh.triangulation.n_global_levels();
   min_level = min_level_ ;
@@ -49,7 +49,7 @@ void GMGPreconditioner<dim,VectorType,number,same_diagonal,degree>::setup (const
 #endif // MATRIXFREE
   timer->enter_subsection("solve::mg_initialization");
   // Setup coarse solver
-  coarse_solver_control.reset(new dealii::ReductionControl(dofs.dof_handler.n_dofs(min_level)*10, 1e-20, 1e-10, false, false));
+  coarse_solver_control.reset(new dealii::ReductionControl(dofs.dof_handler.n_dofs(min_level)*10, 1.e-20, 1.e-10, false, false));
 #if PARALLEL_LA < 3
   mg_matrix[min_level].build_coarse_matrix();
   const LA::MPI::SparseMatrix &coarse_matrix = mg_matrix[min_level].get_coarse_matrix();
@@ -97,7 +97,6 @@ void GMGPreconditioner<dim,VectorType,number,same_diagonal,degree>::setup (const
       //  }
       smoother_data[level].patch_type = Smoother::AdditionalData::cell_patches;
       smoother_data[level].smoother_type = Smoother::AdditionalData::additive;
-      // smoother_data[level].set_fullsweep();
     }
   mg_smoother.initialize(mg_matrix, smoother_data);
   mg_smoother.set_steps(smoothing_steps);
@@ -135,30 +134,30 @@ void GMGPreconditioner<dim,VectorType,number,same_diagonal,degree>::setup (const
   timer->leave_subsection();
 }
 
-template <int dim,typename VectorType,typename number,bool same_diagonal,unsigned int degree>
-void GMGPreconditioner<dim,VectorType,number,same_diagonal,degree>::vmult (VectorType &dst,
-									   const VectorType &src) const
+template <int dim,typename VectorType,typename number,bool same_diagonal,unsigned int degree, typename Smoother>
+void GMGPreconditioner<dim,VectorType,number,same_diagonal,degree,Smoother>::vmult (VectorType &dst,
+										    const VectorType &src) const
 {
   preconditioner->vmult(dst,src);
 }
 
-template <int dim,typename VectorType,typename number,bool same_diagonal,unsigned int degree>
-void GMGPreconditioner<dim,VectorType,number,same_diagonal,degree>::Tvmult (VectorType &/*dst*/,
-									    const VectorType &/*src*/) const
+template <int dim,typename VectorType,typename number,bool same_diagonal,unsigned int degree, typename Smoother>
+void GMGPreconditioner<dim,VectorType,number,same_diagonal,degree,Smoother>::Tvmult (VectorType &/*dst*/,
+										     const VectorType &/*src*/) const
 {
   AssertThrow(false, dealii::ExcNotImplemented());
 }
 
-template <int dim,typename VectorType,typename number,bool same_diagonal,unsigned int degree>
-void GMGPreconditioner<dim,VectorType,number,same_diagonal,degree>::vmult_add (VectorType &dst,
-									       const VectorType &src) const
+template <int dim,typename VectorType,typename number,bool same_diagonal,unsigned int degree, typename Smoother>
+void GMGPreconditioner<dim,VectorType,number,same_diagonal,degree,Smoother>::vmult_add (VectorType &dst,
+											const VectorType &src) const
 {
   preconditioner->vmult_add(dst,src);
 }
 
-template <int dim,typename VectorType,typename number,bool same_diagonal,unsigned int degree>
-void GMGPreconditioner<dim,VectorType,number,same_diagonal,degree>::Tvmult_add (VectorType &/*dst*/,
-										const VectorType &/*src*/) const
+template <int dim,typename VectorType,typename number,bool same_diagonal,unsigned int degree, typename Smoother>
+void GMGPreconditioner<dim,VectorType,number,same_diagonal,degree,Smoother>::Tvmult_add (VectorType &/*dst*/,
+											 const VectorType &/*src*/) const
 {
   AssertThrow(false, dealii::ExcNotImplemented());
 }
