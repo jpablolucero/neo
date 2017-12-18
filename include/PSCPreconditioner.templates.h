@@ -155,8 +155,6 @@ void PSCPreconditioner<dim, SystemMatrixType, VectorType, number,same_diagonal>:
     // SAME_DIAGONAL
     if (same_diagonal && !data.use_dictionary && patch_inverses.size()!=0)
       {
-        if (level==0)
-          dealii::deallog << "Assembling same_diagonal Block-Jacobi-Smoother." << std::endl;
         // TODO broadcast local patch inverse instead of solving a local problem
         // find the first interior cell if there is any and use it
         typename std::vector<std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> >::iterator it
@@ -197,8 +195,6 @@ void PSCPreconditioner<dim, SystemMatrixType, VectorType, number,same_diagonal>:
     // FULL BLOCK JACOBI
     else if (!same_diagonal && !data.use_dictionary && patch_inverses.size()!=0)
       {
-        if (level == 0)
-          dealii::deallog << "Assembling Block-Jacobi-Smoother." << std::endl;
         dealii::Threads::TaskGroup<> tasks;
         for (unsigned int i=0; i<ddh->subdomain_to_global_map.size(); ++i)
           {
@@ -220,8 +216,6 @@ void PSCPreconditioner<dim, SystemMatrixType, VectorType, number,same_diagonal>:
     // DICTIONARY
     else if (!same_diagonal && data.use_dictionary && patch_inverses.size()!=0)
       {
-        if (level == 0)
-          dealii::deallog << "Assembling Block-Jacobi-Dictionary." << std::endl;
         Assert(data.tol > 0., dealii::ExcInternalError());
         std::vector<unsigned int> id_range;
         for ( unsigned int id=0; id<ddh->global_dofs_on_subdomain.size(); ++id)
