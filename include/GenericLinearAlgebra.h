@@ -130,6 +130,7 @@ namespace dealii
 #endif//PARALLEL_LA
 
 #include <deal.II/lac/parallel_vector.h>
+#include <deal.II/lac/parallel_block_vector.h>
 
 namespace dealii
 {
@@ -141,8 +142,14 @@ namespace dealii
     namespace MPI
     {
       // TODO allow for float
-      typedef parallel::distributed::Vector<double> Vector;
-      typedef types::global_dof_index               SparseMatrixSizeType ;
+      typedef dealii::parallel::distributed::Vector<double> Vector;
+      typedef dealii::parallel::distributed::BlockVector<double> BlockVector;
+
+      typedef dealii::SparseMatrix<double> SparseMatrix;
+      typedef dealii::BlockSparseMatrix<double> BlockSparseMatrix;
+
+      typedef dealii::SparseMatrix<double>::const_iterator SparseMatrixConstIterator;
+      typedef dealii::SparseMatrix<double>::size_type      SparseMatrixSizeType ;
       // more stuff here
     }
   }

@@ -9,6 +9,7 @@
 #include <Dofs.h>
 #include <ResidualSimpleConstraints.h>
 #include <Integrators.h>
+#include <integration_loop.h>
 
 template <int dim>
 class RHS final

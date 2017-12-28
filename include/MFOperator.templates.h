@@ -148,10 +148,13 @@ void MFOperator<dim,fe_degree,number>::build_coarse_matrix()
 #if PARALLEL_LA == 0
   sp.copy_from (dsp);
   mg_matrix[level].reinit(sp);
-#else
+#elif PARALLEL_LA < 3
   mg_matrix[level].reinit(dof_handler->locally_owned_mg_dofs(level),
                           dof_handler->locally_owned_mg_dofs(level),
                           dsp,*mpi_communicator);
+#else
+  sp.copy_from (dsp);
+  mg_matrix[level].reinit(sp);
 #endif // PARALLEL_LA
   dealii::MeshWorker::Assembler::MGMatrixSimple<LA::MPI::SparseMatrix> assembler;
   assembler.initialize(mg_matrix);
@@ -161,6 +164,8 @@ void MFOperator<dim,fe_degree,number>::build_coarse_matrix()
   dealii::colored_loop<dim, dim> (colored_iterators, *dof_info, info_box, matrix_integrator, assembler);
   mg_matrix[level].compress(dealii::VectorOperation::add);
 #if PARALLEL_LA==0
+  coarse_matrix = std::move(mg_matrix[level]);
+#elif PARALLEL_LA==3
   coarse_matrix = std::move(mg_matrix[level]);
 #else
   coarse_matrix.copy_from(mg_matrix[level]);
@@ -206,6 +211,7 @@ void MFOperator<dim,fe_degree,number>::vmult_add (LA::MPI::Vector &dst,
   (*dof_handler, level, locally_relevant_level_dofs);
 #if PARALLEL_LA == 3
   ghosted_src[level].update_ghost_values();
+  ghosted_solution[level].update_ghost_values();
   dst.reinit(locally_owned_level_dofs,locally_relevant_level_dofs,*mpi_communicator);
 #elif PARALLEL_LA == 2
   dst.reinit(locally_owned_level_dofs,locally_relevant_level_dofs,*mpi_communicator,true);

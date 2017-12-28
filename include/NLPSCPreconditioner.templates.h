@@ -209,10 +209,14 @@ void NLPSCPreconditioner<dim, SystemMatrixType, VectorType, number,same_diagonal
     ghosted_solution.resize(level, level);
 #if PARALLEL_LA == 0
     ghosted_solution[level].reinit(locally_owned_level_dofs.n_elements());
-#else // PARALLEL_LA != 0 
+#elif PARALLEL_LA < 3
     ghosted_solution[level].reinit(locally_owned_level_dofs,
                                    locally_relevant_level_dofs,
                                    *mpi_communicator,true);
+#else
+    ghosted_solution[level].reinit(locally_owned_level_dofs,
+                                   locally_relevant_level_dofs,
+                                   *mpi_communicator);
 #endif // PARALLEL_LA
     ghosted_solution[level] = *(data.solution);
 #endif // MATRIXFREE
@@ -245,18 +249,11 @@ template <int dim, typename SystemMatrixType, typename VectorType, typename numb
 void NLPSCPreconditioner<dim, SystemMatrixType, VectorType, number, same_diagonal>::vmult (VectorType &dst,
     const VectorType &src) const
 {
-#if PARALLEL_LA ==3
-  ghosted_dst = 0;
-  vmult_add(ghosted_dst, src);
-  ghosted_dst.compress(dealii::VectorOperation::add);
-  dst = ghosted_dst;
-#else
   dst = 0;
   ghosted_solution[level] = *(data.solution) ;
   dst = *(data.solution) ;
   vmult_add(dst, src);
   dst.compress(dealii::VectorOperation::add);
-#endif //PARALLEL_LA
   dst *= data.relaxation;
   // AssertIsFinite(dst.l2_norm());
 }

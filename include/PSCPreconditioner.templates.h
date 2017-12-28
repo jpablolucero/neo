@@ -337,7 +337,11 @@ void PSCPreconditioner<dim, SystemMatrixType, VectorType, number, same_diagonal>
     {
       ghosted_src = src;
       const dealii::DoFHandler<dim> &dof_handler = *(data.dof_handler);
+#if PARALLEL_LA < 3
       typedef dealii::Vector<double> VectorType2 ;
+#else
+      typedef LA::MPI::Vector  VectorType2 ;
+#endif
       VectorType2 dummy1(dof_handler.n_dofs(level-1)),
 	dummy2(dof_handler.n_dofs(level-1)),
 	dummy3(dof_handler.n_dofs(level));

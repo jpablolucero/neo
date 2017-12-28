@@ -65,7 +65,6 @@ class GMGPreconditioner final
   // dealii::MGConstrainedDoFs                           mg_constrained_dofs;
 
   std::unique_ptr<dealii::ReductionControl>              coarse_solver_control;
-  dealii::PreconditionIdentity id ;
 
 #if PARALLEL_LA < 3
   dealii::TrilinosWrappers::PreconditionSSOR coarse_preconditioner ;
@@ -75,11 +74,12 @@ class GMGPreconditioner final
 						      LA::MPI::SparseMatrix,
 						      decltype(coarse_preconditioner)> >   mg_coarse;
 #else // PARALLEL_LA == 3
-  std::unique_ptr<dealii::SolverCG<VectorType> >              coarse_solver;
+  dealii::PreconditionIdentity id ;
+  std::unique_ptr<dealii::SolverGMRES<VectorType> >              coarse_solver;
   std::unique_ptr<dealii::MGCoarseGridIterativeSolver<VectorType,
-						      dealii::SolverCG<VectorType>,
-						      LA::MPI::SparseMatrix,
-						      id> >   mg_coarse;
+						      dealii::SolverGMRES<VectorType>,
+						      SystemMatrixType,
+						      decltype(id)> >   mg_coarse;
 
 #endif
   //typedef MFPSCPreconditioner<dim, VectorType, number> Smoother;
