@@ -243,7 +243,7 @@ void NLPSCPreconditioner<dim, SystemMatrixType, VectorType, number, same_diagona
   ghosted_solution[level] = *(data.solution) ;
   dst = *(data.solution) ;
   vmult_add(dst, src);
-  dst.compress(dealii::VectorOperation::add);
+  dst.update_ghost_values();
   dst *= data.relaxation;
   // AssertIsFinite(dst.l2_norm());
 }
