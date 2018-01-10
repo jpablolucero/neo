@@ -29,19 +29,20 @@ template <typename SystemMatrixType,typename VectorType,typename Preconditioner,
 void Simulator<SystemMatrixType,VectorType,Preconditioner,dim,degree>::setup_system ()
 {
   dofs.setup();
-  system_matrix.reinit (&(dofs.dof_handler),&(fe.mapping),&(dofs.constraints),mesh.triangulation.n_global_levels()-1);
-  solution.reinit (dofs.locally_owned_dofs, dofs.locally_relevant_dofs, *mpi_communicator);
-  solution_tmp.reinit (dofs.locally_owned_dofs, *mpi_communicator);
-  system_matrix.reinit (&(dofs.dof_handler),&(fe.mapping), &(dofs.constraints), mesh.triangulation.n_global_levels()-1, solution);
+  ghosted_solution.reinit (dofs.locally_owned_dofs, dofs.locally_relevant_dofs, *mpi_communicator);
+  solution.reinit (dofs.locally_owned_dofs, *mpi_communicator);
+  system_matrix.reinit (&(dofs.dof_handler),&(fe.mapping), &(dofs.constraints), mesh.triangulation.n_global_levels()-1,
+			ghosted_solution);
 }
 
 template <typename SystemMatrixType,typename VectorType,typename Preconditioner,int dim,unsigned int degree>
 void Simulator<SystemMatrixType,VectorType,Preconditioner,dim,degree>::solve ()
 {
-  system_matrix.reinit (&(dofs.dof_handler),&(fe.mapping), &(dofs.constraints), mesh.triangulation.n_global_levels()-1, solution);
+  system_matrix.reinit (&(dofs.dof_handler),&(fe.mapping), &(dofs.constraints), mesh.triangulation.n_global_levels()-1,
+			ghosted_solution);
   
 #ifdef MG
-  preconditioner.setup(solution,min_level);
+  preconditioner.setup(ghosted_solution,min_level);
 #endif // MG
   
   // Setup Solver
@@ -51,13 +52,14 @@ void Simulator<SystemMatrixType,VectorType,Preconditioner,dim,degree>::solve ()
       
   // Solve the system
   timer->enter_subsection("solve::solve");
-  dofs.constraints.set_zero(solution_tmp);
-  solver.solve(system_matrix,solution_tmp,rhs.right_hand_side,preconditioner);
+  dofs.constraints.set_zero(solution);
+  solver.solve(system_matrix,solution,rhs.right_hand_side,preconditioner);
   
 #ifdef CG
-  dofs.constraints.distribute(solution_tmp);
+  dofs.constraints.distribute(solution);
 #endif
-  solution = solution_tmp;
+  ghosted_solution = solution;
+  ghosted_solution.update_ghost_values();
   timer->leave_subsection();
 }
 
@@ -69,7 +71,7 @@ void Simulator<SystemMatrixType,VectorType,Preconditioner,dim,degree>::compute_e
   dealii::Vector<double> local_errors;
 
   dealii::VectorTools::integrate_difference (fe.mapping, dofs.dof_handler,
-                                             solution,
+                                             ghosted_solution,
                                              dofs.reference_function,
                                              local_errors, quadrature,
                                              dealii::VectorTools::L2_norm);
@@ -88,7 +90,7 @@ void Simulator<SystemMatrixType,VectorType,Preconditioner,dim,degree>::output_re
 
   dealii::DataOut<dim> data_out;
   data_out.attach_dof_handler (dofs.dof_handler);
-  data_out.add_data_vector (solution, "u");
+  data_out.add_data_vector (ghosted_solution, "u");
   dealii::Vector<float> subdomain (mesh.triangulation.n_active_cells());
   for (unsigned int i=0; i<subdomain.size(); ++i)
     subdomain(i) = mesh.triangulation.locally_owned_subdomain();
@@ -140,7 +142,7 @@ void Simulator<SystemMatrixType,VectorType,Preconditioner,dim,degree>::run ()
   *pcout << "Setup system" << std::endl;
   setup_system ();
   *pcout << "Assemble system" << std::endl;
-  rhs.assemble(solution);
+  rhs.assemble(ghosted_solution);
   timer->leave_subsection();
   dealii::deallog << "DoFHandler levels: ";
   for (unsigned int l=min_level; l<mesh.triangulation.n_global_levels(); ++l)
@@ -187,7 +189,7 @@ void Simulator<SystemMatrixType,VectorType,Preconditioner,dim,degree>::run_non_l
   for (unsigned int l=0; l<mesh.triangulation.n_global_levels(); ++l)
     dealii::deallog << ' ' << dofs.dof_handler.n_dofs(l);
   dealii::deallog << std::endl;
-  auto sol = solution_tmp ;
+  auto sol = solution ;
   for (auto &elem : sol) elem = 600. ;
   dealii::AnyData solution_data;
   solution_data.add(&sol, "solution");
@@ -196,7 +198,8 @@ void Simulator<SystemMatrixType,VectorType,Preconditioner,dim,degree>::run_non_l
   timer->enter_subsection("solve");
   *pcout << "Solve" << std::endl;
   newton(solution_data, data);
-  solution = *(solution_data.try_read_ptr<VectorType>("solution"));
+  ghosted_solution = *(solution_data.try_read_ptr<VectorType>("solution"));
+  ghosted_solution.update_ghost_values();
   timer->leave_subsection();
   timer->enter_subsection("output");
   output_results(n_levels);
