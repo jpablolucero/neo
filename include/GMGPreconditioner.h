@@ -25,7 +25,7 @@
 #include <memory>
 
 template <int dim,
-	  typename VectorType=LA::MPI::Vector,
+	  typename VectorType=dealii::parallel::distributed::Vector<double>,
 	  typename number=double,
 	  bool same_diagonal=false,
 	  unsigned int fe_degree = 1,
@@ -66,14 +66,6 @@ class GMGPreconditioner final
 
   std::unique_ptr<dealii::ReductionControl>              coarse_solver_control;
 
-#if PARALLEL_LA < 3
-  dealii::TrilinosWrappers::PreconditionSSOR coarse_preconditioner ;
-  std::unique_ptr<dealii::SolverGMRES<VectorType> >              coarse_solver;
-  std::unique_ptr<dealii::MGCoarseGridIterativeSolver<VectorType,
-						      dealii::SolverGMRES<VectorType>,
-						      LA::MPI::SparseMatrix,
-						      decltype(coarse_preconditioner)> >   mg_coarse;
-#else // PARALLEL_LA == 3
   dealii::PreconditionIdentity id ;
   std::unique_ptr<dealii::SolverGMRES<VectorType> >              coarse_solver;
   std::unique_ptr<dealii::MGCoarseGridIterativeSolver<VectorType,
@@ -81,7 +73,6 @@ class GMGPreconditioner final
 						      SystemMatrixType,
 						      decltype(id)> >   mg_coarse;
 
-#endif
   //typedef MFPSCPreconditioner<dim, VectorType, number> Smoother;
   dealii::MGLevelObject<typename Smoother::AdditionalData> smoother_data;
   dealii::MGSmootherPrecondition<SystemMatrixType,Smoother,VectorType> mg_smoother;

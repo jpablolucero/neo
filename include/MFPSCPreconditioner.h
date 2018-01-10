@@ -10,14 +10,16 @@
 #include <deal.II/dofs/dof_tools.h>
 #include <deal.II/base/work_stream.h>
 #include <deal.II/distributed/tria.h>
+#include <deal.II/lac/solver_control.h>
+#include <deal.II/lac/solver_cg.h>
+#include <deal.II/lac/precondition.h>
 
 #include <functional>
 
-#include <GenericLinearAlgebra.h>
 #include <DDHandler.h>
 #include <MFOperator.h>
 
-template <int dim=2, typename VectorType=LA::MPI::Vector, class number=double>
+template <int dim=2, typename VectorType=dealii::parallel::distributed::Vector<double>, class number=double>
 class MFPSCPreconditioner final
 {
 public:

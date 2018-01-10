@@ -93,18 +93,12 @@ void PSCPreconditioner<dim, SystemMatrixType, VectorType, number,same_diagonal>:
     dealii::DoFTools::extract_locally_relevant_level_dofs
     (dof_handler, level, locally_relevant_level_dofs);
     ghosted_src.reinit(locally_owned_level_dofs,locally_relevant_level_dofs,*mpi_communicator);
-#if PARALLEL_LA == 3
     ghosted_dst.reinit(locally_owned_level_dofs,locally_relevant_level_dofs,*mpi_communicator);
-#endif
 #ifndef MATRIXFREE
     ghosted_solution.resize(level, level);
-#if PARALLEL_LA == 0
-    ghosted_solution[level].reinit(locally_owned_level_dofs.n_elements());
-#else // PARALLEL_LA != 0 
     ghosted_solution[level].reinit(locally_owned_level_dofs,
                                    locally_relevant_level_dofs,
                                    *mpi_communicator);
-#endif // PARALLEL_LA
     ghosted_solution[level] = *(data.solution);
 #endif // MATRIXFREE
   }
@@ -138,9 +132,9 @@ void PSCPreconditioner<dim, SystemMatrixType, VectorType, number,same_diagonal>:
 
 #ifndef MATRIXFREE
   dealii::AnyData src_data ;
-  src_data.add<const dealii::MGLevelObject<LA::MPI::Vector >*>(&ghosted_solution,"src");
-  src_data.add<const dealii::MGLevelObject<LA::MPI::Vector >*>(&ghosted_solution,"Newton iterate");
-  info_box.initialize(fe, *(data.mapping), src_data, LA::MPI::Vector {},&(dof_handler.block_info()));
+  src_data.add<const dealii::MGLevelObject<VectorType >*>(&ghosted_solution,"src");
+  src_data.add<const dealii::MGLevelObject<VectorType >*>(&ghosted_solution,"Newton iterate");
+  info_box.initialize(fe, *(data.mapping), src_data, VectorType {},&(dof_handler.block_info()));
   dof_info.reset(new dealii::MeshWorker::DoFInfo<dim> (dof_handler.block_info()));
 #else // MATRIXFREE ON
   info_box.initialize(fe, *(data.mapping), &(dof_handler.block_info()));
@@ -285,17 +279,10 @@ template <int dim, typename SystemMatrixType, typename VectorType, typename numb
 void PSCPreconditioner<dim, SystemMatrixType, VectorType, number, same_diagonal>::vmult (VectorType &dst,
     const VectorType &src) const
 {
-#if PARALLEL_LA ==3
   ghosted_dst = 0;
-
   vmult_add(ghosted_dst, src);
   ghosted_dst.compress(dealii::VectorOperation::add);
   dst = ghosted_dst;
-#else
-  dst = 0;
-  vmult_add(dst, src);
-  dst.compress(dealii::VectorOperation::add);
-#endif //PARALLEL_LA
   dst *= data.relaxation;
   AssertIsFinite(dst.l2_norm());
 }
@@ -337,19 +324,14 @@ void PSCPreconditioner<dim, SystemMatrixType, VectorType, number, same_diagonal>
     {
       ghosted_src = src;
       const dealii::DoFHandler<dim> &dof_handler = *(data.dof_handler);
-#if PARALLEL_LA < 3
-      typedef dealii::Vector<double> VectorType2 ;
-#else
-      typedef LA::MPI::Vector  VectorType2 ;
-#endif
-      VectorType2 dummy1(dof_handler.n_dofs(level-1)),
+      VectorType dummy1(dof_handler.n_dofs(level-1)),
 	dummy2(dof_handler.n_dofs(level-1)),
 	dummy3(dof_handler.n_dofs(level));
-      VectorType2 dummy0(ghosted_src);
+      VectorType dummy0(ghosted_src);
       dealii::ReductionControl control(10000, 1e-20, 1e-14, false, false) ;
-      dealii::SolverGMRES<VectorType2> coarse_solver(control);
-      dealii::MGTransferPrebuilt<VectorType2 > mg_transfer ;
-      dealii::MGLevelObject<VectorType2 > mg_solution ;
+      dealii::SolverGMRES<VectorType> coarse_solver(control);
+      dealii::MGTransferPrebuilt<VectorType > mg_transfer ;
+      dealii::MGLevelObject<VectorType > mg_solution ;
       mg_transfer.build_matrices(*(data.dof_handler));
       mg_transfer.restrict_and_add(data.level,dummy1,dummy0);
       coarse_solver.solve(*(data.coarse_matrix),dummy2,dummy1,dealii::PreconditionIdentity{});

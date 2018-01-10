@@ -22,7 +22,6 @@
 #include <Diffusion.h>
 #include <Transport.h>
 #include <EquationData.h>
-#include <GenericLinearAlgebra.h>
 
 
 
@@ -104,16 +103,16 @@ public:
   MFIntegrator (const MFIntegrator &) = delete ;
   MFIntegrator &operator= (const MFIntegrator &) = delete;
   void cell(const dealii::MatrixFree<dim,number>       &data,
-            LA::MPI::Vector                            &dst,
-            const LA::MPI::Vector                      &src,
+            dealii::parallel::distributed::Vector<double>                            &dst,
+            const dealii::parallel::distributed::Vector<double>                      &src,
             const std::pair<unsigned int,unsigned int> &cell_range) const;
   void boundary(const dealii::MatrixFree<dim,number>       &data,
-                LA::MPI::Vector                            &dst,
-                const LA::MPI::Vector                      &src,
+                dealii::parallel::distributed::Vector<double>                            &dst,
+                const dealii::parallel::distributed::Vector<double>                      &src,
                 const std::pair<unsigned int,unsigned int> &face_range) const;
   void face(const dealii::MatrixFree<dim,number>       &data,
-            LA::MPI::Vector                            &dst,
-            const LA::MPI::Vector                      &src,
+            dealii::parallel::distributed::Vector<double>                            &dst,
+            const dealii::parallel::distributed::Vector<double>                      &src,
             const std::pair<unsigned int,unsigned int> &face_range) const;
 };
 

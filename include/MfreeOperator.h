@@ -17,17 +17,17 @@
 #include <deal.II/matrix_free/matrix_free.h>
 #include <deal.II/matrix_free/fe_evaluation.h>
 
-#include <GenericLinearAlgebra.h>
 #include <Integrators.h>
 
 
 
-template <int dim, int fe_degree, int n_q_points_1d=fe_degree+1, typename number=double>
+template <int dim, int fe_degree, int n_q_points_1d=fe_degree+1, typename number=double,
+	  typename VectorType=dealii::parallel::distributed::Vector<double> >
 class MfreeOperator final: public dealii::Subscriptor
 {
 public:
   typedef double value_type ;
-  typedef LA::MPI::SparseMatrixSizeType                         size_type ;
+  typedef dealii::SparseMatrix<double>::size_type               size_type ;
 
   /*
    *  Construction & Initialization
@@ -51,23 +51,23 @@ public:
    *  Vector multiplication
    */
   void
-  vmult (LA::MPI::Vector &dst,
-         const LA::MPI::Vector &src) const ;
+  vmult (VectorType &dst,
+         const VectorType &src) const ;
   void
-  vmult_add (LA::MPI::Vector &dst,
-             const LA::MPI::Vector &src) const ;
+  vmult_add (VectorType &dst,
+             const VectorType &src) const ;
   void
-  Tvmult (LA::MPI::Vector &dst,
-          const LA::MPI::Vector &src) const ;
+  Tvmult (VectorType &dst,
+          const VectorType &src) const ;
   void
-  Tvmult_add (LA::MPI::Vector &dst,
-              const LA::MPI::Vector &src) const ;
+  Tvmult_add (VectorType &dst,
+              const VectorType &src) const ;
 
   /*
    *  Utilities
    */
   void
-  initialize_dof_vector (LA::MPI::Vector &vector) const;
+  initialize_dof_vector (VectorType &vector) const;
 
   void
   set_timer (dealii::TimerOutput &timer_) ;

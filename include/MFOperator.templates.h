@@ -5,8 +5,8 @@
 extern std::unique_ptr<dealii::TimerOutput>        timer ;
 extern std::unique_ptr<MPI_Comm>                   mpi_communicator ;
 
-template <int dim, int fe_degree, typename number>
-MFOperator<dim,fe_degree,number>::MFOperator()
+template <int dim, int fe_degree, typename number, typename VectorType>
+MFOperator<dim,fe_degree,number,VectorType>::MFOperator()
 {
   level = 0;
   dof_handler = nullptr;
@@ -17,8 +17,8 @@ MFOperator<dim,fe_degree,number>::MFOperator()
   selected_iterators = nullptr;
 }
 
-template <int dim, int fe_degree, typename number>
-MFOperator<dim,fe_degree,number>::~MFOperator()
+template <int dim, int fe_degree, typename number, typename VectorType>
+MFOperator<dim,fe_degree,number,VectorType>::~MFOperator()
 {
   dof_handler = nullptr ;
   fe = nullptr ;
@@ -26,8 +26,8 @@ MFOperator<dim,fe_degree,number>::~MFOperator()
   selected_iterators = nullptr;
 }
 
-template <int dim, int fe_degree, typename number>
-MFOperator<dim,fe_degree,number>::MFOperator(const MFOperator &operator_)
+template <int dim, int fe_degree, typename number, typename VectorType>
+MFOperator<dim,fe_degree,number,VectorType>::MFOperator(const MFOperator &operator_)
   : Subscriptor(operator_)
 {
   this->reinit(operator_.dof_handler,
@@ -36,13 +36,13 @@ MFOperator<dim,fe_degree,number>::MFOperator(const MFOperator &operator_)
                operator_.level);
 }
 
-template <int dim, int fe_degree, typename number>
-void MFOperator<dim,fe_degree,number>::reinit
+template <int dim, int fe_degree, typename number, typename VectorType>
+void MFOperator<dim,fe_degree,number,VectorType>::reinit
 (const dealii::DoFHandler<dim> *dof_handler_,
  const dealii::Mapping<dim> *mapping_,
  const dealii::ConstraintMatrix *constraints_,
  const unsigned int level_,
- LA::MPI::Vector solution_)
+ VectorType solution_)
 {
   timer->enter_subsection("MFOperator::reinit");
   // Initialize member variables
@@ -81,17 +81,12 @@ void MFOperator<dim,fe_degree,number>::reinit
 
   ghosted_src.resize(level, level);
   ghosted_solution.resize(level, level);
-#if PARALLEL_LA == 0
-  ghosted_src[level].reinit(locally_owned_level_dofs.n_elements());
-  ghosted_solution[level].reinit(locally_owned_level_dofs.n_elements());
-#else // PARALLEL_LA != 0
   ghosted_src[level].reinit(locally_owned_level_dofs,
                             locally_relevant_level_dofs,
                             *mpi_communicator);
   ghosted_solution[level].reinit(locally_owned_level_dofs,
                                  locally_relevant_level_dofs,
                                  *mpi_communicator);
-#endif //PARALLEL_LA
   ghosted_solution[level] = solution_ ;
   // TODO possibly colorize iterators, assume thread-safety for the moment
   std::vector<std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> >
@@ -113,72 +108,52 @@ void MFOperator<dim,fe_degree,number>::reinit
   timer->leave_subsection();
 }
 
-template <int dim, int fe_degree, typename number>
-void MFOperator<dim,fe_degree,number>::set_cell_range
+template <int dim, int fe_degree, typename number, typename VectorType>
+void MFOperator<dim,fe_degree,number,VectorType>::set_cell_range
 (const std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> &cell_range_)
 {
   use_cell_range = true;
   selected_iterators = &cell_range_ ;
 }
 
-template <int dim, int fe_degree, typename number>
-void MFOperator<dim,fe_degree,number>::unset_cell_range()
+template <int dim, int fe_degree, typename number, typename VectorType>
+void MFOperator<dim,fe_degree,number,VectorType>::unset_cell_range()
 {
   use_cell_range = false;
   selected_iterators = nullptr ;
 }
 
 
-#if PARALLEL_LA < 3
-template <int dim, int fe_degree, typename number>
-void MFOperator<dim,fe_degree,number>::build_coarse_matrix()
+template <int dim, int fe_degree, typename number, typename VectorType>
+void MFOperator<dim,fe_degree,number,VectorType>::build_coarse_matrix()
 {
   Assert(dof_handler != 0, dealii::ExcInternalError());
-  dealii::MGLevelObject<LA::MPI::SparseMatrix> mg_matrix ;
+  dealii::MGLevelObject<dealii::SparseMatrix<double> > mg_matrix ;
   mg_matrix.resize(level,level);
   dealii::IndexSet locally_relevant_level_dofs;
   dealii::DoFTools::extract_locally_relevant_level_dofs(*dof_handler,level,locally_relevant_level_dofs);
   dealii::DynamicSparsityPattern dsp(locally_relevant_level_dofs);
   dealii::AnyData src_data ;
-  src_data.add<const dealii::MGLevelObject<LA::MPI::Vector >*>(&ghosted_src,"src");
-  src_data.add<const dealii::MGLevelObject<LA::MPI::Vector >*>(&ghosted_solution,"Newton iterate");
-  info_box.initialize(*fe, *mapping, src_data, LA::MPI::Vector {}, &(dof_handler->block_info()));
+  src_data.add<const dealii::MGLevelObject<VectorType >*>(&ghosted_src,"src");
+  src_data.add<const dealii::MGLevelObject<VectorType >*>(&ghosted_solution,"Newton iterate");
+  info_box.initialize(*fe, *mapping, src_data, VectorType {}, &(dof_handler->block_info()));
   //for the coarse matrix, we want to assemble always everything
   dealii::MGTools::make_flux_sparsity_pattern(*dof_handler,dsp,level);
-#if PARALLEL_LA == 0
   sp.copy_from (dsp);
   mg_matrix[level].reinit(sp);
-#elif PARALLEL_LA < 3
-  mg_matrix[level].reinit(dof_handler->locally_owned_mg_dofs(level),
-                          dof_handler->locally_owned_mg_dofs(level),
-                          dsp,*mpi_communicator);
-#else
-  sp.copy_from (dsp);
-  mg_matrix[level].reinit(sp);
-#endif // PARALLEL_LA
-  dealii::MeshWorker::Assembler::MGMatrixSimple<LA::MPI::SparseMatrix> assembler;
+  dealii::MeshWorker::Assembler::MGMatrixSimple<dealii::SparseMatrix<double> > assembler;
   assembler.initialize(mg_matrix);
 #ifdef CG
   assembler.initialize(*mg_constrained_dofs);
 #endif // CG
   dealii::colored_loop<dim, dim> (colored_iterators, *dof_info, info_box, matrix_integrator, assembler);
   mg_matrix[level].compress(dealii::VectorOperation::add);
-#if PARALLEL_LA==0
   coarse_matrix = std::move(mg_matrix[level]);
-#elif PARALLEL_LA==3
-  coarse_matrix = std::move(mg_matrix[level]);
-#else
-  coarse_matrix.copy_from(mg_matrix[level]);
-#endif // PARALLEL_LA
-//  std::cout<<"coarse matrix" << std::endl;
-//  coarse_matrix.print(std::cout);
 }
 
-#endif // PARALLEL_LA < 3
-
-template <int dim, int fe_degree, typename number>
-void MFOperator<dim,fe_degree,number>::vmult (LA::MPI::Vector &dst,
-                                              const LA::MPI::Vector &src) const
+template <int dim, int fe_degree, typename number, typename VectorType>
+void MFOperator<dim,fe_degree,number,VectorType>::vmult (VectorType &dst,
+                                              const VectorType &src) const
 {
   dst = 0;
   dst.compress(dealii::VectorOperation::insert);
@@ -187,9 +162,9 @@ void MFOperator<dim,fe_degree,number>::vmult (LA::MPI::Vector &dst,
   AssertIsFinite(dst.l2_norm());
 }
 
-template <int dim, int fe_degree, typename number>
-void MFOperator<dim,fe_degree,number>::Tvmult (LA::MPI::Vector &dst,
-                                               const LA::MPI::Vector &src) const
+template <int dim, int fe_degree, typename number, typename VectorType>
+void MFOperator<dim,fe_degree,number,VectorType>::Tvmult (VectorType &dst,
+                                               const VectorType &src) const
 {
   dst = 0;
   dst.compress(dealii::VectorOperation::insert);
@@ -198,9 +173,9 @@ void MFOperator<dim,fe_degree,number>::Tvmult (LA::MPI::Vector &dst,
   AssertIsFinite(dst.l2_norm());
 }
 
-template <int dim, int fe_degree, typename number>
-void MFOperator<dim,fe_degree,number>::vmult_add (LA::MPI::Vector &dst,
-                                                  const LA::MPI::Vector &src) const
+template <int dim, int fe_degree, typename number, typename VectorType>
+void MFOperator<dim,fe_degree,number,VectorType>::vmult_add (VectorType &dst,
+                                                  const VectorType &src) const
 {
   timer->enter_subsection("MFOperator::initialize ("+ dealii::Utilities::int_to_string(level)+ ")");
   // Initialize MPI vectors
@@ -209,25 +184,21 @@ void MFOperator<dim,fe_degree,number>::vmult_add (LA::MPI::Vector &dst,
   dealii::IndexSet locally_relevant_level_dofs;
   dealii::DoFTools::extract_locally_relevant_level_dofs
   (*dof_handler, level, locally_relevant_level_dofs);
-#if PARALLEL_LA == 3
   ghosted_src[level].update_ghost_values();
   ghosted_solution[level].update_ghost_values();
   dst.reinit(locally_owned_level_dofs,locally_relevant_level_dofs,*mpi_communicator);
-#elif PARALLEL_LA == 2
-  dst.reinit(locally_owned_level_dofs,locally_relevant_level_dofs,*mpi_communicator,true);
-#endif // PARALLEL_LA
   // Setup AnyData
   dealii::AnyData dst_data;
-  dst_data.add<LA::MPI::Vector *>(&dst, "dst");
+  dst_data.add<VectorType *>(&dst, "dst");
   ghosted_src[level] = std::move(src);
   dealii::AnyData src_data ;
-  src_data.add<const dealii::MGLevelObject<LA::MPI::Vector >*>(&ghosted_src,"src");
-  src_data.add<const dealii::MGLevelObject<LA::MPI::Vector >*>(&ghosted_solution,"Newton iterate");
+  src_data.add<const dealii::MGLevelObject<VectorType >*>(&ghosted_src,"src");
+  src_data.add<const dealii::MGLevelObject<VectorType >*>(&ghosted_solution,"Newton iterate");
   timer->leave_subsection();
 
   timer->enter_subsection("MFOperator::assembler_setup ("+ dealii::Utilities::int_to_string(level)+ ")");
   info_box.initialize(*fe, *mapping, src_data, src, &(dof_handler->block_info()));
-  dealii::MeshWorker::Assembler::ResidualSimple<LA::MPI::Vector > assembler;
+  dealii::MeshWorker::Assembler::ResidualSimple<VectorType > assembler;
   assembler.initialize(dst_data);
   timer->leave_subsection();
 
@@ -260,10 +231,10 @@ void MFOperator<dim,fe_degree,number>::vmult_add (LA::MPI::Vector &dst,
   timer->leave_subsection();
 }
 
-template <int dim, int fe_degree, typename number>
+template <int dim, int fe_degree, typename number, typename VectorType>
 void
-MFOperator<dim,fe_degree,number>::Tvmult_add (LA::MPI::Vector &dst,
-                                              const LA::MPI::Vector &src) const
+MFOperator<dim,fe_degree,number,VectorType>::Tvmult_add (VectorType &dst,
+                                              const VectorType &src) const
 {
   vmult_add(dst, src);
 }

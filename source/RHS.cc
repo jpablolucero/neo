@@ -9,30 +9,16 @@ RHS<dim>::RHS (FiniteElement<dim> & fe_,Dofs<dim> & dofs_):
 {}
 
 template <int dim>
-void RHS<dim>::assemble(const LA::MPI::Vector & solution)
+void RHS<dim>::assemble(const dealii::parallel::distributed::Vector<double> & solution)
 {
 #ifdef MATRIXFREE
-#if PARALLEL_LA == 3
   right_hand_side.reinit (dofs.locally_owned_dofs, dofs.locally_relevant_dofs, *mpi_communicator);
-#elif PARALLEL_LA == 0
-  right_hand_side.reinit (dofs.locally_owned_dofs.n_elements());
-#else // PARALLEL_LA == 1,2
-  AssertThrow(false, dealii::ExcNotImplemented());
-#endif // PARALLEL_LA == 3
-
 #else // MATRIXFREE OFF
-#if PARALLEL_LA == 0
-  right_hand_side.reinit (dofs.locally_owned_dofs.n_elements());
-#elif PARALLEL_LA == 3
   unsigned int level = dofs.mesh.triangulation.n_levels()-1;
   right_hand_side.reinit (dofs.locally_owned_dofs, dofs.locally_relevant_dofs, *mpi_communicator);
-#else
-  right_hand_side.reinit (dofs.locally_owned_dofs, *mpi_communicator);
-#endif // PARALLEL_LA == 0
 #endif // MATRIXFREE
 
-#if PARALLEL_LA == 3
-  dealii::MGLevelObject<LA::MPI::Vector>  ghosted_solution ;
+  dealii::MGLevelObject<dealii::parallel::distributed::Vector<double>>  ghosted_solution ;
   ghosted_solution.resize(level,level);
   ghosted_solution[level] = std::move(solution) ;
   ghosted_solution[level].update_ghost_values();
@@ -51,7 +37,6 @@ void RHS<dim>::assemble(const LA::MPI::Vector & solution)
           ++i;
         }
     }
-#endif 
   
   dealii::MeshWorker::IntegrationInfoBox<dim> info_box;
   const unsigned int n_gauss_points = fe.fe.degree+1;
@@ -73,45 +58,23 @@ void RHS<dim>::assemble(const LA::MPI::Vector & solution)
   info_box.initialize(fe.fe, fe.mapping);
   dealii::MeshWorker::DoFInfo<dim> dof_info(dofs.dof_handler);
 #else
-#if PARALLEL_LA == 3
-  src_data.add<const dealii::MGLevelObject<LA::MPI::Vector >*>(&ghosted_solution,"Newton iterate");
-#else
-  src_data.add<const LA::MPI::Vector *>(&solution,"Newton iterate");
-#endif
-  info_box.initialize(fe.fe,fe.mapping,src_data,LA::MPI::Vector {},&(dofs.dof_handler.block_info()));
+  src_data.add<const dealii::MGLevelObject<dealii::parallel::distributed::Vector<double> >*>(&ghosted_solution,"Newton iterate");
+  info_box.initialize(fe.fe,fe.mapping,src_data,dealii::parallel::distributed::Vector<double> {},&(dofs.dof_handler.block_info()));
   dealii::MeshWorker::DoFInfo<dim> dof_info(dofs.dof_handler.block_info());
 #endif // MATRIXFREE
 
   dealii::AnyData data;
-  data.add<LA::MPI::Vector *>(&right_hand_side, "RHS");
+  data.add<dealii::parallel::distributed::Vector<double> *>(&right_hand_side, "RHS");
 
-#if PARALLEL_LA == 3
-  dealii::MeshWorker::Assembler::ResidualSimple<LA::MPI::Vector > rhs_assembler;
-#else
-  ResidualSimpleConstraints<LA::MPI::Vector > rhs_assembler;
-#endif
+  dealii::MeshWorker::Assembler::ResidualSimple<dealii::parallel::distributed::Vector<double> > rhs_assembler;
   rhs_assembler.initialize(data);
 #ifdef CG
   rhs_assembler.initialize(dofs.constraints);
 #endif
   RHSIntegrator<dim> rhs_integrator(fe.fe.n_components());
 
-#if PARALLEL_LA == 3
   dealii::MeshWorker::LoopControl lctrl;
-  dealii::colored_loop<dim, dim> (colored_iterators,
-				  dof_info,
-				  info_box,
-				  rhs_integrator,
-				  rhs_assembler,
-				  lctrl) ;
-#else
-  dealii::MeshWorker::integration_loop<dim, dim>(dofs.dof_handler.begin_active(),
-                                                 dofs.dof_handler.end(),
-                                                 dof_info,
-                                                 info_box,
-                                                 rhs_integrator,
-                                                 rhs_assembler);
-#endif
+  dealii::colored_loop<dim, dim> (colored_iterators,dof_info,info_box,rhs_integrator,rhs_assembler,lctrl) ;
   right_hand_side.compress(dealii::VectorOperation::add);
 }
 

@@ -37,27 +37,11 @@ void Simulator<SystemMatrixType,VectorType,Preconditioner,dim,degree>::setup_sys
 #endif
 
 #ifdef MATRIXFREE
-#if PARALLEL_LA == 3
   system_matrix.initialize_dof_vector(solution);
   system_matrix.initialize_dof_vector(solution_tmp);
-#elif PARALLEL_LA == 0
-  solution.reinit (dofs.locally_owned_dofs.n_elements());
-  solution_tmp.reinit (dofs.locally_owned_dofs.n_elements());
-#else // PARALLEL_LA == 1,2
-  AssertThrow(false, dealii::ExcNotImplemented());
-#endif // PARALLEL_LA == 3
-
 #else // MATRIXFREE OFF
-#if PARALLEL_LA == 0
-  solution.reinit (dofs.locally_owned_dofs.n_elements());
-  solution_tmp.reinit (dofs.locally_owned_dofs.n_elements());
-#elif PARALLEL_LA == 3
   solution.reinit (dofs.locally_owned_dofs, dofs.locally_relevant_dofs, *mpi_communicator);
   solution_tmp.reinit (dofs.locally_owned_dofs, *mpi_communicator);
-#else
-  solution.reinit (dofs.locally_owned_dofs, dofs.locally_relevant_dofs, *mpi_communicator);
-  solution_tmp.reinit (dofs.locally_owned_dofs, *mpi_communicator);
-#endif // PARALLEL_LA == 0
   system_matrix.reinit (&(dofs.dof_handler),&(fe.mapping), &(dofs.constraints), mesh.triangulation.n_global_levels()-1, solution);
 #endif // MATRIXFREE
 }

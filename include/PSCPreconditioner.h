@@ -16,7 +16,6 @@
 
 #include <functional>
 
-#include <GenericLinearAlgebra.h>
 #include <DDHandler.h>
 #include <MFOperator.h>
 #include <MfreeOperator.h>
@@ -24,7 +23,8 @@
 #include <integration_loop.h>
 #include <MGMatrixSimpleMapped.h>
 
-template <int dim, typename SystemMatrixType, typename VectorType=LA::MPI::Vector, typename number=double, bool same_diagonal=false>
+template <int dim, typename SystemMatrixType, typename VectorType=dealii::parallel::distributed::Vector<double>,
+	  typename number=double, bool same_diagonal=false>
 class PSCPreconditioner final
 {
 public:
@@ -65,12 +65,10 @@ private:
   dealii::MeshWorker::IntegrationInfoBox<dim> info_box;
   std::unique_ptr<dealii::MeshWorker::DoFInfo<dim> >  dof_info;
 
-  dealii::MGLevelObject<LA::MPI::Vector>              ghosted_solution;
+  dealii::MGLevelObject<VectorType >                  ghosted_solution;
   PSCMatrixIntegrator<dim>                            matrix_integrator;
-  mutable LA::MPI::Vector                             ghosted_src;
-#if PARALLEL_LA==3
-  mutable LA::MPI::Vector                             ghosted_dst;
-#endif
+  mutable VectorType                                  ghosted_src;
+  mutable VectorType                                  ghosted_dst;
 
   unsigned int level;
   std::shared_ptr<DDHandlerBase<dim> > ddh;
@@ -134,8 +132,8 @@ public:
   double relaxation;
   double tol;
   const dealii::Mapping<dim> *mapping;
-  LA::MPI::Vector *solution;
-  const LA::MPI::SparseMatrix *coarse_matrix;
+  VectorType *solution;
+  const dealii::SparseMatrix<double> *coarse_matrix;
 
   bool use_dictionary;
 

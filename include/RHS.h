@@ -4,7 +4,6 @@
 #include <deal.II/meshworker/integration_info.h>
 #include <deal.II/meshworker/loop.h>
 
-#include <GenericLinearAlgebra.h>
 #include <FiniteElement.h>
 #include <Dofs.h>
 #include <ResidualSimpleConstraints.h>
@@ -17,12 +16,12 @@ class RHS final
  public:
   RHS (FiniteElement<dim> & fe_,Dofs<dim> & dofs_) ;
   
-  void assemble(const LA::MPI::Vector & solution);
+  void assemble(const dealii::parallel::distributed::Vector<double> & solution);
   
   FiniteElement<dim> & fe;
   Dofs<dim> & dofs;
   
-  LA::MPI::Vector            right_hand_side;
+  dealii::parallel::distributed::Vector<double>            right_hand_side;
 };
 
 #ifdef HEADER_IMPLEMENTATION

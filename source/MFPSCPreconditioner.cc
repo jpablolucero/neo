@@ -31,7 +31,7 @@ namespace MF
       {}
 
       dealii::ReductionControl          solver_control;
-      dealii::SolverCG<LA::MPI::Vector> solver;
+      dealii::SolverCG<dealii::parallel::distributed::Vector<double> > solver;
       MFOperator<dim,1>           system_matrix;
 
       dealii::Vector<number>  local_src;

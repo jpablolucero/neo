@@ -373,8 +373,8 @@ MFIntegrator<dim,fe_degree,n_q_points_1d,n_comp,number>::MFIntegrator()
 template <int dim, int fe_degree, int n_q_points_1d, int n_comp, typename number>
 void
 MFIntegrator<dim,fe_degree,n_q_points_1d,n_comp,number>::cell(const dealii::MatrixFree<dim,number>       &data,
-    LA::MPI::Vector                            &dst,
-    const LA::MPI::Vector                      &src,
+    dealii::parallel::distributed::Vector<double>                            &dst,
+    const dealii::parallel::distributed::Vector<double>                      &src,
     const std::pair<unsigned int,unsigned int> &cell_range) const
 {
   dealii::FEEvaluation<dim,fe_degree,n_q_points_1d,n_comp,number> phi (data);
@@ -393,8 +393,8 @@ MFIntegrator<dim,fe_degree,n_q_points_1d,n_comp,number>::cell(const dealii::Matr
 template <int dim, int fe_degree, int n_q_points_1d, int n_comp, typename number>
 void
 MFIntegrator<dim,fe_degree,n_q_points_1d,n_comp,number>::face(const dealii::MatrixFree<dim,number>       &data,
-    LA::MPI::Vector                            &dst,
-    const LA::MPI::Vector                      &src,
+    dealii::parallel::distributed::Vector<double>                            &dst,
+    const dealii::parallel::distributed::Vector<double>                      &src,
     const std::pair<unsigned int,unsigned int> &face_range) const
 {
   dealii::FEFaceEvaluation<dim,fe_degree,n_q_points_1d,n_comp,number> fe_eval(data,true);
@@ -437,8 +437,8 @@ MFIntegrator<dim,fe_degree,n_q_points_1d,n_comp,number>::face(const dealii::Matr
 template <int dim, int fe_degree, int n_q_points_1d, int n_comp, typename number>
 void
 MFIntegrator<dim,fe_degree,n_q_points_1d,n_comp,number>::boundary(const dealii::MatrixFree<dim,number>       &data,
-    LA::MPI::Vector                            &dst,
-    const LA::MPI::Vector                      &src,
+    dealii::parallel::distributed::Vector<double>                            &dst,
+    const dealii::parallel::distributed::Vector<double>                      &src,
     const std::pair<unsigned int,unsigned int> &face_range) const
 {
   dealii::FEFaceEvaluation<dim,fe_degree,n_q_points_1d,n_comp,number> fe_eval(data, true);

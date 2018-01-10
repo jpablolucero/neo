@@ -69,9 +69,9 @@ namespace
       info_box.face_selector.add("Newton iterate", true, true, false);
       dealii::AnyData src_data ;
       
-      src_data.add<const dealii::MGLevelObject<LA::MPI::Vector >*>(scratch.solution,"src");
-      src_data.add<const dealii::MGLevelObject<LA::MPI::Vector >*>(scratch.solution,"Newton iterate");
-      info_box.initialize(ddh.get_dofh().get_fe(), *(scratch.mapping), src_data, LA::MPI::Vector {}, &(ddh.get_dofh().block_info()));
+      src_data.add<const dealii::MGLevelObject<VectorType >*>(scratch.solution,"src");
+      src_data.add<const dealii::MGLevelObject<VectorType >*>(scratch.solution,"Newton iterate");
+      info_box.initialize(ddh.get_dofh().get_fe(), *(scratch.mapping), src_data, VectorType {}, &(ddh.get_dofh().block_info()));
       
       std::vector<std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> >
 	colored_iterators(1,copy.ddh->subdomain_to_global_map[subdomain_idx]);
@@ -207,17 +207,9 @@ void NLPSCPreconditioner<dim, SystemMatrixType, VectorType, number,same_diagonal
     ghosted_src.reinit(locally_owned_level_dofs,locally_relevant_level_dofs,*mpi_communicator);
 #ifndef MATRIXFREE
     ghosted_solution.resize(level, level);
-#if PARALLEL_LA == 0
-    ghosted_solution[level].reinit(locally_owned_level_dofs.n_elements());
-#elif PARALLEL_LA < 3
-    ghosted_solution[level].reinit(locally_owned_level_dofs,
-                                   locally_relevant_level_dofs,
-                                   *mpi_communicator,true);
-#else
     ghosted_solution[level].reinit(locally_owned_level_dofs,
                                    locally_relevant_level_dofs,
                                    *mpi_communicator);
-#endif // PARALLEL_LA
     ghosted_solution[level] = *(data.solution);
 #endif // MATRIXFREE
   }

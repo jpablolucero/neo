@@ -49,20 +49,6 @@ void GMGPreconditioner<dim,VectorType,number,same_diagonal,degree,Smoother>::set
   timer->enter_subsection("solve::mg_initialization");
   // Setup coarse solver
   coarse_solver_control.reset(new dealii::ReductionControl(dofs.dof_handler.n_dofs(min_level)*10, 1.e-20, 1.e-10, false, false));
-#if PARALLEL_LA < 3
-  coarse_preconditioner.clear();
-  mg_matrix[min_level].build_coarse_matrix();
-  const LA::MPI::SparseMatrix &coarse_matrix = mg_matrix[min_level].get_coarse_matrix();
-  coarse_solver.reset(new dealii::SolverGMRES<VectorType> (*coarse_solver_control) );
-  coarse_preconditioner.initialize(coarse_matrix,1.0);
-  mg_coarse.reset(new dealii::MGCoarseGridIterativeSolver<VectorType,
-		  dealii::SolverGMRES<VectorType>,
-		  LA::MPI::SparseMatrix,
-		  decltype(coarse_preconditioner)>
-		  (*coarse_solver,
-		   coarse_matrix,
-		   coarse_preconditioner));
-#else // PARALLEL_LA == 3
   // TODO allow for Matrix-based solver for dealii MPI vectors
   coarse_solver_control.reset(new dealii::ReductionControl(dofs.dof_handler.n_dofs(min_level)*10, 1.e-20, 1.e-10, false, false));
   // mg_matrix[min_level].build_coarse_matrix();
@@ -75,7 +61,6 @@ void GMGPreconditioner<dim,VectorType,number,same_diagonal,degree,Smoother>::set
 		  (*coarse_solver,
 		   mg_matrix[min_level],
 		   id));
-#endif
 
   // Setup Multigrid-Smoother
   smoother_data.resize(mg_matrix.min_level(), mg_matrix.max_level());

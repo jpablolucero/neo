@@ -15,7 +15,6 @@
 #include <deal.II/meshworker/loop.h>
 #include <deal.II/lac/lapack_full_matrix.h>
 
-#include <GenericLinearAlgebra.h>
 #include <Integrators.h>
 #include <integration_loop.h>
 #include <MGMatrixSimpleMapped.h>
@@ -23,12 +22,12 @@
 #include <functional>
 
 
-template <int dim, int fe_degree, typename number=double>
+template <int dim, int fe_degree, typename number=double, typename VectorType=dealii::parallel::distributed::Vector<double> >
 class MFOperator final: public dealii::Subscriptor
 {
 public:
   typedef double value_type ;
-  typedef LA::MPI::SparseMatrixSizeType                         size_type ;
+  typedef dealii::SparseMatrix<double>::size_type               size_type ;
   typedef typename dealii::DoFHandler<dim>::level_cell_iterator level_cell_iterator ;
   typedef typename dealii::LAPACKFullMatrix<double>             LAPACKMatrix ;
 
@@ -41,34 +40,29 @@ public:
                const dealii::Mapping<dim>     *mapping_,
                const dealii::ConstraintMatrix *constraints,
                const unsigned                 int level_ = dealii::numbers::invalid_unsigned_int,
-               LA::MPI::Vector                solution_ = LA::MPI::Vector {});
+               VectorType                     solution_ = VectorType {});
 
   void set_cell_range (const std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> &cell_range_);
   void unset_cell_range ();
 
   // TODO parallel::distributed case
-#if PARALLEL_LA < 3
   void build_coarse_matrix();
-#endif
 
   void clear () ;
 
-  void vmult (LA::MPI::Vector &dst,
-              const LA::MPI::Vector &src) const ;
-  void Tvmult (LA::MPI::Vector &dst,
-               const LA::MPI::Vector &src) const ;
-  void vmult_add (LA::MPI::Vector &dst,
-                  const LA::MPI::Vector &src) const ;
-  void Tvmult_add (LA::MPI::Vector &dst,
-                   const LA::MPI::Vector &src) const ;
+  void vmult (VectorType &dst,
+              const VectorType &src) const ;
+  void Tvmult (VectorType &dst,
+               const VectorType &src) const ;
+  void vmult_add (VectorType &dst,
+                  const VectorType &src) const ;
+  void Tvmult_add (VectorType &dst,
+                   const VectorType &src) const ;
 
-  // TODO parallel::distributed case
-#if PARALLEL_LA < 3
-  const LA::MPI::SparseMatrix &get_coarse_matrix() const
+  const dealii::SparseMatrix<double> &get_coarse_matrix() const
   {
     return coarse_matrix;
   }
-#endif
 
   unsigned int m() const
   {
@@ -90,19 +84,17 @@ private:
 
   std::unique_ptr<dealii::MeshWorker::DoFInfo<dim> >  dof_info;
   mutable dealii::MeshWorker::IntegrationInfoBox<dim> info_box;
-  mutable dealii::MGLevelObject<LA::MPI::Vector>      ghosted_src;
-  mutable dealii::MGLevelObject<LA::MPI::Vector>      ghosted_solution;
+  mutable dealii::MGLevelObject<VectorType>           ghosted_src;
+  mutable dealii::MGLevelObject<VectorType>           ghosted_solution;
   const std::vector<level_cell_iterator>              *cell_range;
   bool                                                use_cell_range;
   std::vector<std::vector<level_cell_iterator> >      colored_iterators;
   const std::vector<level_cell_iterator> *            selected_iterators;
   ResidualIntegrator<dim>                             residual_integrator;
 
-#if PARALLEL_LA < 3
   dealii::SparsityPattern                             sp;
-  LA::MPI::SparseMatrix                               coarse_matrix;
+  dealii::SparseMatrix<double>                        coarse_matrix;
   MatrixIntegrator<dim>                               matrix_integrator;
-#endif // PARALLEL_LA
 };
 
 #endif // MATRIXFREE OFF
