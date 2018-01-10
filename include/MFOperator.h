@@ -16,6 +16,7 @@
 #include <Integrators.h>
 #include <integration_loop.h>
 #include <MGMatrixSimpleMapped.h>
+#include <DDHandler.h>
 
 #include <functional>
 
@@ -42,6 +43,7 @@ public:
 
   void set_cell_range (const std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> &cell_range_);
   void unset_cell_range ();
+  void set_subdomain (unsigned int subdomain_idx_);
 
   // TODO parallel::distributed case
   void build_coarse_matrix();
@@ -56,6 +58,10 @@ public:
                   const VectorType &src) const ;
   void Tvmult_add (VectorType &dst,
                    const VectorType &src) const ;
+  void vmult (dealii::Vector<double> &dst,
+	      const dealii::Vector<double> &src) const ;
+  void vmult_add (dealii::Vector<double> &dst,
+                  const dealii::Vector<double> &src) const ;
 
   const dealii::SparseMatrix<double> &get_coarse_matrix() const
   {
@@ -74,15 +80,18 @@ public:
 
 private:
   unsigned int                                        level;
+  unsigned int                                        subdomain_idx;
   const dealii::DoFHandler<dim>                       *dof_handler;
   const dealii::FiniteElement<dim>                    *fe;
   const dealii::Mapping<dim>                          *mapping;
   const dealii::ConstraintMatrix                      *constraints;
   const dealii::MGConstrainedDoFs                     *mg_constrained_dofs;
+  DGDDHandlerCell<dim>                                ddh;
 
   std::unique_ptr<dealii::MeshWorker::DoFInfo<dim> >  dof_info;
   mutable dealii::MeshWorker::IntegrationInfoBox<dim> info_box;
   mutable dealii::MGLevelObject<VectorType>           ghosted_src;
+  mutable dealii::MGLevelObject<VectorType>           zero_dst;
   mutable dealii::MGLevelObject<VectorType>           ghosted_solution;
   const std::vector<level_cell_iterator>              *cell_range;
   bool                                                use_cell_range;

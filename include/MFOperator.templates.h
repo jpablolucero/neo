@@ -49,6 +49,7 @@ void MFOperator<dim,fe_degree,number,VectorType>::reinit
   mapping = mapping_ ;
   level=level_;
   constraints = constraints_;
+  ddh.initialize(*dof_handler, level);
 
   // Setup DoFInfo & IntegrationInfoBox
   std::unique_ptr<dealii::MeshWorker::DoFInfo<dim> > tmp
@@ -78,14 +79,14 @@ void MFOperator<dim,fe_degree,number,VectorType>::reinit
   (*dof_handler, level, locally_relevant_level_dofs);
 
   ghosted_src.resize(level, level);
+  zero_dst.resize(level, level);
   ghosted_solution.resize(level, level);
-  ghosted_src[level].reinit(locally_owned_level_dofs,
-                            locally_relevant_level_dofs,
-                            *mpi_communicator);
-  ghosted_solution[level].reinit(locally_owned_level_dofs,
-                                 locally_relevant_level_dofs,
-                                 *mpi_communicator);
+  ghosted_src[level].reinit(locally_owned_level_dofs,locally_relevant_level_dofs,*mpi_communicator);
+  ghosted_src[level].update_ghost_values();
+  zero_dst[level].reinit(locally_owned_level_dofs,*mpi_communicator);
+  ghosted_solution[level].reinit(locally_owned_level_dofs,locally_relevant_level_dofs,*mpi_communicator);
   ghosted_solution[level] = solution_ ;
+  ghosted_solution[level].update_ghost_values();
   // TODO possibly colorize iterators, assume thread-safety for the moment
   std::vector<std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> >
     all_iterators(static_cast<unsigned int>(std::pow(2,dim)));
@@ -107,6 +108,13 @@ void MFOperator<dim,fe_degree,number,VectorType>::reinit
 }
 
 template <int dim, int fe_degree, typename number, typename VectorType>
+void MFOperator<dim,fe_degree,number,VectorType>::clear()
+{
+  ghosted_src[level] = 0.;
+  ghosted_src[level].update_ghost_values() ;
+}
+
+template <int dim, int fe_degree, typename number, typename VectorType>
 void MFOperator<dim,fe_degree,number,VectorType>::set_cell_range
 (const std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> &cell_range_)
 {
@@ -121,6 +129,11 @@ void MFOperator<dim,fe_degree,number,VectorType>::unset_cell_range()
   selected_iterators = nullptr ;
 }
 
+template <int dim, int fe_degree, typename number, typename VectorType>
+void MFOperator<dim,fe_degree,number,VectorType>::set_subdomain(unsigned int subdomain_idx_)
+{
+  subdomain_idx = subdomain_idx_;
+}
 
 template <int dim, int fe_degree, typename number, typename VectorType>
 void MFOperator<dim,fe_degree,number,VectorType>::build_coarse_matrix()
@@ -237,3 +250,36 @@ MFOperator<dim,fe_degree,number,VectorType>::Tvmult_add (VectorType &dst,
   vmult_add(dst, src);
 }
 
+template <int dim, int fe_degree, typename number, typename VectorType>
+void MFOperator<dim,fe_degree,number,VectorType>::vmult (dealii::Vector<double> &dst,
+							 const dealii::Vector<double> &src) const
+{
+  dst = 0;
+  dst.compress(dealii::VectorOperation::insert);
+  vmult_add(dst, src);
+  dst.compress(dealii::VectorOperation::add);
+  AssertIsFinite(dst.l2_norm());
+}
+
+template <int dim, int fe_degree, typename number, typename VectorType>
+void MFOperator<dim,fe_degree,number,VectorType>::vmult_add (dealii::Vector<double> &local_dst,
+							     const dealii::Vector<double> &local_src) const
+{
+  ddh.prolongate(ghosted_src[level],local_src,subdomain_idx);
+  ddh.prolongate(zero_dst[level],local_dst,subdomain_idx);
+  dealii::AnyData dst_data;
+  dst_data.add<VectorType *>(&zero_dst[level], "dst");
+  dealii::AnyData src_data ;
+  src_data.add<const dealii::MGLevelObject<VectorType >*>(&ghosted_src,"src");
+  src_data.add<const dealii::MGLevelObject<VectorType >*>(&ghosted_solution,"Newton iterate");
+  info_box.initialize(*fe, *mapping, src_data, VectorType {}, &(dof_handler->block_info()));
+  dealii::MeshWorker::Assembler::ResidualSimple<VectorType > assembler;
+  assembler.initialize(dst_data);
+  dealii::MeshWorker::LoopControl lctrl;
+  lctrl.faces_to_ghost = dealii::MeshWorker::LoopControl::both;
+  lctrl.own_faces = dealii::MeshWorker::LoopControl::both ;
+  dealii::colored_loop<dim, dim> (colored_iterators,*dof_info,info_box,residual_integrator,assembler,lctrl,*selected_iterators);
+  ddh.restrict_add(local_dst,zero_dst[level],subdomain_idx);
+  dealii::Vector<double> zero(local_src.size());
+  ddh.prolongate(ghosted_src[level],zero,subdomain_idx);
+}
