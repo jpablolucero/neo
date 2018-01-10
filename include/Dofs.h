@@ -21,11 +21,7 @@ public:
   dealii::IndexSet           locally_owned_dofs;
   dealii::IndexSet           locally_relevant_dofs;
   dealii::ConstraintMatrix                            constraints;
-#ifdef MATRIXFREE
-  MFSolution<dim>                                     reference_function;
-#else
   ReferenceFunction<dim>                              reference_function;
-#endif // MATRIXFREE
 
 };
 

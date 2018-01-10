@@ -205,13 +205,11 @@ void NLPSCPreconditioner<dim, SystemMatrixType, VectorType, number,same_diagonal
     dealii::DoFTools::extract_locally_relevant_level_dofs
     (dof_handler, level, locally_relevant_level_dofs);
     ghosted_src.reinit(locally_owned_level_dofs,locally_relevant_level_dofs,*mpi_communicator);
-#ifndef MATRIXFREE
     ghosted_solution.resize(level, level);
     ghosted_solution[level].reinit(locally_owned_level_dofs,
                                    locally_relevant_level_dofs,
                                    *mpi_communicator);
     ghosted_solution[level] = *(data.solution);
-#endif // MATRIXFREE
   }
 
   if (data.patch_type == AdditionalData::PatchType::cell_patches)

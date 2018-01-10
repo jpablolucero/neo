@@ -15,9 +15,7 @@
 #include <deal.II/lac/solver_richardson.h>
 #include <deal.II/lac/solver_control.h>
 
-#include <MGTransferMF.h>
 #include <MFOperator.h>
-#include <MfreeOperator.h>
 #include <PSCPreconditioner.h>
 #include <Mesh.h>
 #include <Dofs.h>
@@ -47,11 +45,7 @@ class GMGPreconditioner final
 
   void Tvmult_add(VectorType &dst, const VectorType &src) const;
   
-#ifdef MATRIXFREE
-  typedef MfreeOperator<dim,fe_degree,fe_degree+1,number> SystemMatrixType;
-#else
   typedef MFOperator<dim,fe_degree,number> SystemMatrixType;
-#endif // MATRIXFREE
  
   int min_level ;
   int smoothing_steps ;
@@ -78,20 +72,12 @@ class GMGPreconditioner final
   dealii::MGSmootherPrecondition<SystemMatrixType,Smoother,VectorType> mg_smoother;
 
   // Setup Multigrid-Transfer
-#ifdef MATRIXFREE
-  std::unique_ptr<dealii::MGTransferMF<dim,SystemMatrixType> > mg_transfer ;
-#else // MATRIXFREE OFF
   std::unique_ptr<dealii::MGTransferPrebuilt<VectorType> > mg_transfer ;
-#endif // MATRIXFREE
 
   dealii::mg::Matrix<VectorType>         mglevel_matrix;
   std::unique_ptr<dealii::Multigrid<VectorType> > mg ;
 
-#ifdef MATRIXFREE
-  std::unique_ptr<dealii::PreconditionMG<dim, VectorType, dealii::MGTransferMF<dim,SystemMatrixType> > > preconditioner ;
-#else
   std::unique_ptr<dealii::PreconditionMG<dim, VectorType, dealii::MGTransferPrebuilt<VectorType> > > preconditioner ;
-#endif // MATRIXFREE
   
 };
 

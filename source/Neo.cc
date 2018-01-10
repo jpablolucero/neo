@@ -18,13 +18,8 @@ int main (int argc, char *argv[])
   timer.reset(new dealii::TimerOutput (*mpi_communicator, *pcout,dealii::TimerOutput::never,dealii::TimerOutput::wall_times));
   const unsigned int d = 2 ;
   const unsigned int fe_degree = 1 ;
-#ifdef MATRIXFREE
-  typedef MfreeOperator<d,fe_degree,fe_degree+1,double> SystemMatrixType;
-  *pcout << "Using deal.II's MatrixFree objects" << std::endl;
-#else
   typedef MFOperator<d,fe_degree,double> SystemMatrixType;
   *pcout << "Using MeshWorker-based matrix-free implementation" << std::endl;
-#endif // MATRIXFREE
 #ifdef MG   
   typedef GMGPreconditioner<d>  Precond;
 #else // MG OFF

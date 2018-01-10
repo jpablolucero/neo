@@ -29,21 +29,10 @@ template <typename SystemMatrixType,typename VectorType,typename Preconditioner,
 void Simulator<SystemMatrixType,VectorType,Preconditioner,dim,degree>::setup_system ()
 {
   dofs.setup();
-  
-#ifdef MATRIXFREE
-  system_matrix.reinit (&(dofs.dof_handler),&(fe.mapping),&(dofs.constraints),*mpi_communicator,dealii::numbers::invalid_unsigned_int);
-#else
   system_matrix.reinit (&(dofs.dof_handler),&(fe.mapping),&(dofs.constraints),mesh.triangulation.n_global_levels()-1);
-#endif
-
-#ifdef MATRIXFREE
-  system_matrix.initialize_dof_vector(solution);
-  system_matrix.initialize_dof_vector(solution_tmp);
-#else // MATRIXFREE OFF
   solution.reinit (dofs.locally_owned_dofs, dofs.locally_relevant_dofs, *mpi_communicator);
   solution_tmp.reinit (dofs.locally_owned_dofs, *mpi_communicator);
   system_matrix.reinit (&(dofs.dof_handler),&(fe.mapping), &(dofs.constraints), mesh.triangulation.n_global_levels()-1, solution);
-#endif // MATRIXFREE
 }
 
 template <typename SystemMatrixType,typename VectorType,typename Preconditioner,int dim,unsigned int degree>

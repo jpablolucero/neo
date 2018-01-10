@@ -1,5 +1,3 @@
-#ifndef MATRIXFREE
-
 #include <MFOperator.h>
 
 extern std::unique_ptr<dealii::TimerOutput>        timer ;
@@ -239,4 +237,3 @@ MFOperator<dim,fe_degree,number,VectorType>::Tvmult_add (VectorType &dst,
   vmult_add(dst, src);
 }
 
-#endif // MATRIXFREE

@@ -94,13 +94,11 @@ void PSCPreconditioner<dim, SystemMatrixType, VectorType, number,same_diagonal>:
     (dof_handler, level, locally_relevant_level_dofs);
     ghosted_src.reinit(locally_owned_level_dofs,locally_relevant_level_dofs,*mpi_communicator);
     ghosted_dst.reinit(locally_owned_level_dofs,locally_relevant_level_dofs,*mpi_communicator);
-#ifndef MATRIXFREE
     ghosted_solution.resize(level, level);
     ghosted_solution[level].reinit(locally_owned_level_dofs,
                                    locally_relevant_level_dofs,
                                    *mpi_communicator);
     ghosted_solution[level] = *(data.solution);
-#endif // MATRIXFREE
   }
 
   if (data.patch_type == AdditionalData::PatchType::cell_patches)
@@ -130,16 +128,11 @@ void PSCPreconditioner<dim, SystemMatrixType, VectorType, number,same_diagonal>:
   info_box.boundary_selector.add("Newton iterate", true, true, false);
   info_box.face_selector.add("Newton iterate", true, true, false);
 
-#ifndef MATRIXFREE
   dealii::AnyData src_data ;
   src_data.add<const dealii::MGLevelObject<VectorType >*>(&ghosted_solution,"src");
   src_data.add<const dealii::MGLevelObject<VectorType >*>(&ghosted_solution,"Newton iterate");
   info_box.initialize(fe, *(data.mapping), src_data, VectorType {},&(dof_handler.block_info()));
   dof_info.reset(new dealii::MeshWorker::DoFInfo<dim> (dof_handler.block_info()));
-#else // MATRIXFREE ON
-  info_box.initialize(fe, *(data.mapping), &(dof_handler.block_info()));
-  dof_info.reset(new dealii::MeshWorker::DoFInfo<dim> (dof_handler));
-#endif // MATRIXFREE
 
   patch_inverses.resize(ddh->global_dofs_on_subdomain.size());
   //setup local matrices/inverses

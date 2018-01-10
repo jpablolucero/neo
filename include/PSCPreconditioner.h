@@ -18,8 +18,6 @@
 
 #include <DDHandler.h>
 #include <MFOperator.h>
-#include <MfreeOperator.h>
-#include <PSCIntegrators.h>
 #include <integration_loop.h>
 #include <MGMatrixSimpleMapped.h>
 
@@ -66,7 +64,7 @@ private:
   std::unique_ptr<dealii::MeshWorker::DoFInfo<dim> >  dof_info;
 
   dealii::MGLevelObject<VectorType >                  ghosted_solution;
-  PSCMatrixIntegrator<dim>                            matrix_integrator;
+  MatrixIntegrator<dim>                               matrix_integrator;
   mutable VectorType                                  ghosted_src;
   mutable VectorType                                  ghosted_dst;
 

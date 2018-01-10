@@ -26,7 +26,6 @@ void GMGPreconditioner<dim,VectorType,number,same_diagonal,degree,Smoother>::set
   mg_smoother.clear();
   mglevel_matrix.reset();
   mg_matrix.resize(min_level, n_global_levels-1);
-#ifndef MATRIXFREE
   dealii::MGTransferPrebuilt<VectorType> mg_transfer_tmp;
   mg_transfer_tmp.build_matrices(dofs.dof_handler);
   mg_solution.resize(min_level, n_global_levels-1);
@@ -40,12 +39,6 @@ void GMGPreconditioner<dim,VectorType,number,same_diagonal,degree,Smoother>::set
     {
       mg_matrix[level].reinit(&(dofs.dof_handler),&(fe.mapping),&(dofs.constraints),level,mg_solution[level]);
     }
-#else // MATRIXFREE ON
-  for (unsigned int level=min_level; level<n_global_levels; ++level)
-    {
-      mg_matrix[level].reinit(&(dofs.dof_handler),&(fe.mapping),&(dofs.constraints),*mpi_communicator,level);
-    }
-#endif // MATRIXFREE
   timer->enter_subsection("solve::mg_initialization");
   // Setup coarse solver
   coarse_solver_control.reset(new dealii::ReductionControl(dofs.dof_handler.n_dofs(min_level)*10, 1.e-20, 1.e-10, false, false));
@@ -74,9 +67,7 @@ void GMGPreconditioner<dim,VectorType,number,same_diagonal,degree,Smoother>::set
       smoother_data[level].mapping = &(fe.mapping);
       smoother_data[level].relaxation = 0.7;
       // smoother_data[level].mg_constrained_dofs = mg_constrained_dofs;
-#ifndef MATRIXFREE
       smoother_data[level].solution = &mg_solution[level];
-#endif // MATRIXFREE
       //      uncomment to use the dictionary
       // if(!same_diagonal)
       //  {
@@ -90,16 +81,11 @@ void GMGPreconditioner<dim,VectorType,number,same_diagonal,degree,Smoother>::set
   mg_smoother.set_steps(smoothing_steps);
 
   // Setup Multigrid-Transfer
-#ifdef MATRIXFREE
-  mg_transfer.reset(new dealii::MGTransferMF<dim,SystemMatrixType> {mg_matrix});
-  mg_transfer->build(dofs.dof_handler);
-#else // MATRIXFREE OFF
   mg_transfer.reset(new dealii::MGTransferPrebuilt<VectorType> {});
 #ifdef CG
   // mg_transfer->initialize_constraints(dofs.constraints, mg_constrained_dofs);
 #endif // CG
   mg_transfer->build_matrices(dofs.dof_handler);
-#endif // MATRIXFREE
 
   // Setup (Multigrid-)Preconditioner
   mglevel_matrix.initialize(mg_matrix);
@@ -112,13 +98,8 @@ void GMGPreconditioner<dim,VectorType,number,same_diagonal,degree,Smoother>::set
   // mg.set_debug(10);
   mg->set_minlevel(mg_matrix.min_level());
   mg->set_maxlevel(mg_matrix.max_level());
-#ifdef MATRIXFREE
-  preconditioner.reset(new dealii::PreconditionMG<dim, VectorType, dealii::MGTransferMF<dim,SystemMatrixType> >
-		       (dofs.dof_handler, *mg, *mg_transfer));
-#else
   preconditioner.reset(new dealii::PreconditionMG<dim, VectorType, dealii::MGTransferPrebuilt<VectorType> >
 		       (dofs.dof_handler, *mg, *mg_transfer));
-#endif // MATRIXFREE
   timer->leave_subsection();
 }
 

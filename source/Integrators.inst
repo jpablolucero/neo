@@ -5,23 +5,7 @@ template class MatrixIntegrator<2>;
 template class MatrixIntegrator<3>;
 template class RHSIntegrator<2>;
 template class RHSIntegrator<3>;
-
-#ifndef MATRIXFREE
 template class ResidualIntegrator<2>;
 template class ResidualIntegrator<3>;
 
-#else // MATRIXFREE ON
-#undef I
-#define I(D,P,C,T) template class MFIntegrator<D,P,P+1,C,T>
-I(2,1,1,double);
-I(2,2,1,double);
-I(2,3,1,double);
-I(2,4,1,double);
-I(3,1,1,double);
-I(3,2,1,double);
-I(3,3,1,double);
-I(3,4,1,double);
-#undef I
-
-#endif // MATRIXFREE
 #endif // INTEGRATORS_INST

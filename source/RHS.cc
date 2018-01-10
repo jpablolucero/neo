@@ -11,12 +11,8 @@ RHS<dim>::RHS (FiniteElement<dim> & fe_,Dofs<dim> & dofs_):
 template <int dim>
 void RHS<dim>::assemble(const dealii::parallel::distributed::Vector<double> & solution)
 {
-#ifdef MATRIXFREE
-  right_hand_side.reinit (dofs.locally_owned_dofs, dofs.locally_relevant_dofs, *mpi_communicator);
-#else // MATRIXFREE OFF
   unsigned int level = dofs.mesh.triangulation.n_levels()-1;
   right_hand_side.reinit (dofs.locally_owned_dofs, dofs.locally_relevant_dofs, *mpi_communicator);
-#endif // MATRIXFREE
 
   dealii::MGLevelObject<dealii::parallel::distributed::Vector<double>>  ghosted_solution ;
   ghosted_solution.resize(level,level);
@@ -54,14 +50,9 @@ void RHS<dim>::assemble(const dealii::parallel::distributed::Vector<double> & so
   info_box.face_selector.add("Newton iterate", true, true, false);
 
   dealii::AnyData src_data;
-#ifdef MATRIXFREE
-  info_box.initialize(fe.fe, fe.mapping);
-  dealii::MeshWorker::DoFInfo<dim> dof_info(dofs.dof_handler);
-#else
   src_data.add<const dealii::MGLevelObject<dealii::parallel::distributed::Vector<double> >*>(&ghosted_solution,"Newton iterate");
   info_box.initialize(fe.fe,fe.mapping,src_data,dealii::parallel::distributed::Vector<double> {},&(dofs.dof_handler.block_info()));
   dealii::MeshWorker::DoFInfo<dim> dof_info(dofs.dof_handler.block_info());
-#endif // MATRIXFREE
 
   dealii::AnyData data;
   data.add<dealii::parallel::distributed::Vector<double> *>(&right_hand_side, "RHS");

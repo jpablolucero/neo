@@ -1,9 +1,0 @@
-#ifndef MFPSCPRECONDITIONER_INST
-#define MFPSCPRECONDITIONER_INST
-
-template class MFPSCPreconditioner<2, dealii::parallel::distributed::Vector<double>, double>;
-template class MFPSCPreconditioner<2, dealii::parallel::distributed::Vector<double>, float>;
-
-template class MFPSCPreconditioner<3, dealii::parallel::distributed::Vector<double>, double>;
-template class MFPSCPreconditioner<3, dealii::parallel::distributed::Vector<double>, float>;
-#endif // MFPSCPRECONDITIONER_INST

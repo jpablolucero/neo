@@ -21,7 +21,6 @@
 
 #include <DDHandler.h>
 #include <MFOperator.h>
-#include <MfreeOperator.h>
 #include <Integrators.h>
 #include <integration_loop.h>
 #include <MGMatrixSimpleMapped.h>
@@ -63,7 +62,7 @@ private:
 
   mutable dealii::MGLevelObject<VectorType>      ghosted_solution;
   mutable dealii::MGLevelObject<VectorType>      non_ghosted_solution;
-  PSCMatrixIntegrator<dim>                            matrix_integrator;
+  MatrixIntegrator<dim>                          matrix_integrator;
   mutable VectorType                             ghosted_src;
 
   unsigned int level;

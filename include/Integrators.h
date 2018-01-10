@@ -25,7 +25,6 @@
 
 
 
-#ifndef MATRIXFREE
 template <int dim>
 class MatrixIntegrator : public dealii::MeshWorker::LocalIntegrator<dim>
 {
@@ -77,59 +76,6 @@ private:
   Coefficient<dim> diffcoeff;
   ReferenceFunction<dim> exact_solution;
 };
-
-#else // MATRIXFREE ON
-template <int dim>
-class MatrixIntegrator : public dealii::MeshWorker::LocalIntegrator<dim>
-{
-public:
-  MatrixIntegrator () : dealii::MeshWorker::LocalIntegrator<dim>::LocalIntegrator() {};
-  MatrixIntegrator (const MatrixIntegrator &) = delete ;
-  MatrixIntegrator &operator = (const MatrixIntegrator &) = delete;
-  void cell(dealii::MeshWorker::DoFInfo<dim> &dinfo, typename dealii::MeshWorker::IntegrationInfo<dim> &info) const override;
-  void boundary(dealii::MeshWorker::DoFInfo<dim> &dinfo, typename dealii::MeshWorker::IntegrationInfo<dim> &info) const override;
-  void face(dealii::MeshWorker::DoFInfo<dim> &dinfo1,
-            dealii::MeshWorker::DoFInfo<dim> &dinfo2,
-            typename dealii::MeshWorker::IntegrationInfo<dim> &info1,
-            typename dealii::MeshWorker::IntegrationInfo<dim> &info2) const override;
-};
-
-template <int dim, int fe_degree, int n_q_points_1d = fe_degree+1,
-          int n_comp = 1, typename number = double >
-class MFIntegrator final
-{
-public:
-  MFIntegrator ();
-  MFIntegrator (const MFIntegrator &) = delete ;
-  MFIntegrator &operator= (const MFIntegrator &) = delete;
-  void cell(const dealii::MatrixFree<dim,number>       &data,
-            dealii::parallel::distributed::Vector<double>                            &dst,
-            const dealii::parallel::distributed::Vector<double>                      &src,
-            const std::pair<unsigned int,unsigned int> &cell_range) const;
-  void boundary(const dealii::MatrixFree<dim,number>       &data,
-                dealii::parallel::distributed::Vector<double>                            &dst,
-                const dealii::parallel::distributed::Vector<double>                      &src,
-                const std::pair<unsigned int,unsigned int> &face_range) const;
-  void face(const dealii::MatrixFree<dim,number>       &data,
-            dealii::parallel::distributed::Vector<double>                            &dst,
-            const dealii::parallel::distributed::Vector<double>                      &src,
-            const std::pair<unsigned int,unsigned int> &face_range) const;
-};
-
-template <int dim>
-class RHSIntegrator final : public dealii::MeshWorker::LocalIntegrator<dim>
-{
-public:
-  RHSIntegrator(unsigned int n_components);
-  RHSIntegrator (const RHSIntegrator &) = delete ;
-  RHSIntegrator &operator = (const RHSIntegrator &) = delete;
-  void cell(dealii::MeshWorker::DoFInfo<dim> &dinfo, typename dealii::MeshWorker::IntegrationInfo<dim> &info) const override;
-  void boundary(dealii::MeshWorker::DoFInfo<dim> &dinfo, typename dealii::MeshWorker::IntegrationInfo<dim> &info) const override;
-private:
-  MFRightHandSide<dim> ref_rhs;
-  MFSolution<dim> ref_solution;
-};
-#endif // MATRIXFREE ON
 
 #ifdef HEADER_IMPLEMENTATION
 #include <Integrators.cc>

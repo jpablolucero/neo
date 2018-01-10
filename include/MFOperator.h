@@ -1,8 +1,6 @@
 #ifndef MFOPERATOR_H
 #define MFOPERATOR_H
 
-#ifndef MATRIXFREE
-
 #include <deal.II/base/timer.h>
 #include <deal.II/base/graph_coloring.h>
 #include <deal.II/grid/tria.h>
@@ -96,8 +94,6 @@ private:
   dealii::SparseMatrix<double>                        coarse_matrix;
   MatrixIntegrator<dim>                               matrix_integrator;
 };
-
-#endif // MATRIXFREE OFF
 
 #include <MFOperator.templates.h>
 

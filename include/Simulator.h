@@ -18,11 +18,9 @@
 #include <deal.II/numerics/data_out.h>
 
 #include <MFOperator.h>
-#include <MfreeOperator.h>
 #include <EquationData.h>
 #include <ResidualSimpleConstraints.h>
 #include <PSCPreconditioner.h>
-#include <MFPSCPreconditioner.h>
 #include <Mesh.h>
 #include <FiniteElement.h>
 #include <Dofs.h>
