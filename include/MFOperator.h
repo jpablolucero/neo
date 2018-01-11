@@ -92,6 +92,7 @@ private:
   mutable dealii::MeshWorker::IntegrationInfoBox<dim> info_box;
   mutable dealii::MGLevelObject<VectorType>           ghosted_src;
   mutable dealii::MGLevelObject<VectorType>           zero_dst;
+  mutable dealii::MGLevelObject<VectorType>           zero_src;
   mutable dealii::MGLevelObject<VectorType>           ghosted_solution;
   const std::vector<level_cell_iterator>              *cell_range;
   bool                                                use_cell_range;

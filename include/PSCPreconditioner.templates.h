@@ -49,7 +49,7 @@ namespace
       ddh.reinit(scratch.local_src, subdomain_idx);
       ddh.reinit(copy.local_solution, subdomain_idx);
       ddh.restrict_add(scratch.local_src, *(scratch.src), subdomain_idx);
-      dealii::ReductionControl                                              solver_control (10, 1.e-20, 1.E-2,false,false);
+      dealii::ReductionControl                                              solver_control (10, 1.e-20, 1.E-5,false,false);
       typename dealii::SolverGMRES<dealii::Vector<double> >::AdditionalData data(100,false);
       dealii::SolverGMRES<dealii::Vector<double> >                          solver (solver_control,data);
       scratch.system_matrix->set_cell_range(ddh.subdomain_to_global_map[subdomain_idx]);

@@ -79,14 +79,17 @@ void MFOperator<dim,fe_degree,number,VectorType>::reinit
   (*dof_handler, level, locally_relevant_level_dofs);
 
   ghosted_src.resize(level, level);
-  zero_dst.resize(level, level);
-  ghosted_solution.resize(level, level);
   ghosted_src[level].reinit(locally_owned_level_dofs,locally_relevant_level_dofs,*mpi_communicator);
   ghosted_src[level].update_ghost_values();
-  zero_dst[level].reinit(locally_owned_level_dofs,*mpi_communicator);
+  ghosted_solution.resize(level, level);
   ghosted_solution[level].reinit(locally_owned_level_dofs,locally_relevant_level_dofs,*mpi_communicator);
   ghosted_solution[level] = solution_ ;
   ghosted_solution[level].update_ghost_values();
+  zero_src.resize(level, level);
+  zero_src[level].reinit(locally_owned_level_dofs,locally_relevant_level_dofs,*mpi_communicator);
+  zero_src[level].update_ghost_values();
+  zero_dst.resize(level, level);
+  zero_dst[level].reinit(locally_owned_level_dofs,*mpi_communicator);
   // TODO possibly colorize iterators, assume thread-safety for the moment
   std::vector<std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> >
     all_iterators(static_cast<unsigned int>(std::pow(2,dim)));
@@ -201,7 +204,6 @@ void MFOperator<dim,fe_degree,number,VectorType>::vmult_add (VectorType &dst,
   // Setup AnyData
   dealii::AnyData dst_data;
   dst_data.add<VectorType *>(&dst, "dst");
-  ghosted_src[level] = std::move(src);
   dealii::AnyData src_data ;
   src_data.add<const dealii::MGLevelObject<VectorType >*>(&ghosted_src,"src");
   src_data.add<const dealii::MGLevelObject<VectorType >*>(&ghosted_solution,"Newton iterate");
@@ -255,22 +257,20 @@ void MFOperator<dim,fe_degree,number,VectorType>::vmult (dealii::Vector<double> 
 							 const dealii::Vector<double> &src) const
 {
   dst = 0;
-  dst.compress(dealii::VectorOperation::insert);
   vmult_add(dst, src);
-  dst.compress(dealii::VectorOperation::add);
-  AssertIsFinite(dst.l2_norm());
 }
 
 template <int dim, int fe_degree, typename number, typename VectorType>
 void MFOperator<dim,fe_degree,number,VectorType>::vmult_add (dealii::Vector<double> &local_dst,
 							     const dealii::Vector<double> &local_src) const
 {
-  ddh.prolongate(ghosted_src[level],local_src,subdomain_idx);
+  dealii::Vector<double> zero(local_src.size());
+  ddh.prolongate(zero_src[level],local_src,subdomain_idx);
   ddh.prolongate(zero_dst[level],local_dst,subdomain_idx);
   dealii::AnyData dst_data;
   dst_data.add<VectorType *>(&zero_dst[level], "dst");
   dealii::AnyData src_data ;
-  src_data.add<const dealii::MGLevelObject<VectorType >*>(&ghosted_src,"src");
+  src_data.add<const dealii::MGLevelObject<VectorType >*>(&zero_src,"src");
   src_data.add<const dealii::MGLevelObject<VectorType >*>(&ghosted_solution,"Newton iterate");
   info_box.initialize(*fe, *mapping, src_data, VectorType {}, &(dof_handler->block_info()));
   dealii::MeshWorker::Assembler::ResidualSimple<VectorType > assembler;
@@ -280,6 +280,6 @@ void MFOperator<dim,fe_degree,number,VectorType>::vmult_add (dealii::Vector<doub
   lctrl.own_faces = dealii::MeshWorker::LoopControl::both ;
   dealii::colored_loop<dim, dim> (colored_iterators,*dof_info,info_box,residual_integrator,assembler,lctrl,*selected_iterators);
   ddh.restrict_add(local_dst,zero_dst[level],subdomain_idx);
-  dealii::Vector<double> zero(local_src.size());
-  ddh.prolongate(ghosted_src[level],zero,subdomain_idx);
+  ddh.prolongate(zero_src[level],zero,subdomain_idx);
+  ddh.prolongate(zero_dst[level],zero,subdomain_idx);
 }

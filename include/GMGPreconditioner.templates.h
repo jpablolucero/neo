@@ -40,9 +40,6 @@ void GMGPreconditioner<dim,VectorType,number,same_diagonal,degree,Smoother>::set
       mg_matrix[level].reinit(&(dofs.dof_handler),&(fe.mapping),&(dofs.constraints),level,mg_solution[level]);
     }
   timer->enter_subsection("solve::mg_initialization");
-  // Setup coarse solver
-  coarse_solver_control.reset(new dealii::ReductionControl(dofs.dof_handler.n_dofs(min_level)*10, 1.e-20, 1.e-10, false, false));
-  // TODO allow for Matrix-based solver for dealii MPI vectors
   coarse_solver_control.reset(new dealii::ReductionControl(dofs.dof_handler.n_dofs(min_level)*10, 1.e-20, 1.e-10, false, false));
   // mg_matrix[min_level].build_coarse_matrix();
   // const dealii::SparseMatrix<double> &coarse_matrix = mg_matrix[min_level].get_coarse_matrix();
