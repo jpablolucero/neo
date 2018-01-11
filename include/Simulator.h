@@ -44,6 +44,7 @@ public:
   unsigned int n_levels ;
   unsigned int min_level;
   unsigned int smoothing_steps ;
+  bool aspin = false ;
 private:
   void setup_system ();
   void solve ();
@@ -60,7 +61,6 @@ private:
   VectorType       ghosted_solution;
   VectorType       solution;
 
-  bool aspin = false ;
 
   friend class Residual;
   template <typename SystemMatrixType_,typename VectorType_,typename Preconditioner_>
@@ -75,14 +75,10 @@ private:
       sim.ghosted_solution = *(in.try_read_ptr<VectorType_>("Newton iterate"));
       sim.rhs.assemble(sim.ghosted_solution);
       residual = sim.rhs.right_hand_side.l2_norm() ;
-      if (sim.aspin)
-	dealii::deallog << "ASPIN Residual: " << residual << std::endl ;
-      else
-	dealii::deallog << "Residual: " << residual << std::endl ;
-      if ((sim.aspin == true) and (residual > old_residual / 4.))
-	sim.aspin = false ;
-      else if ((sim.aspin == false) and (residual > old_residual / 4.))
-	sim.aspin = true ;
+      if (sim.aspin) dealii::deallog << "ASPIN Residual: " << residual << std::endl ;
+      else dealii::deallog << "Residual: " << residual << std::endl ;
+      if (sim.aspin == true) sim.aspin = false ;
+      else if (sim.aspin == false) sim.aspin = true ;
       *out.entry<VectorType_ *>(0) = sim.rhs.right_hand_side ;
       old_residual = residual ;
     }

@@ -46,7 +46,7 @@ void Simulator<SystemMatrixType,VectorType,Preconditioner,dim,degree>::solve ()
 #endif // MG
   
   // Setup Solver
-  dealii::ReductionControl                                 solver_control (dofs.dof_handler.n_dofs(), 1.e-20, 1.e-10,true);
+  dealii::ReductionControl                                 solver_control (dofs.dof_handler.n_dofs(), 1.e-20, 1.E-10,true);
   typename dealii::SolverGMRES<VectorType>::AdditionalData data(100,true);
   dealii::SolverGMRES<VectorType>                          solver (solver_control,data);
       
