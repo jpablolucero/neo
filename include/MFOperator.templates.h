@@ -148,7 +148,7 @@ template <int dim, int fe_degree, typename number, typename VectorType>
 void MFOperator<dim,fe_degree,number,VectorType>::vmult (VectorType &dst,
 							 const VectorType &src) const
 {
-  dst = 0;
+  dst = 0.;
   vmult_add(dst, src);
   dst.compress(dealii::VectorOperation::add);
   AssertIsFinite(dst.l2_norm());
@@ -156,9 +156,9 @@ void MFOperator<dim,fe_degree,number,VectorType>::vmult (VectorType &dst,
 
 template <int dim, int fe_degree, typename number, typename VectorType>
 void MFOperator<dim,fe_degree,number,VectorType>::Tvmult (VectorType &dst,
-                                               const VectorType &src) const
+							  const VectorType &src) const
 {
-  dst = 0;
+  dst = 0.;
   Tvmult_add(dst, src);
   dst.compress(dealii::VectorOperation::add);
   AssertIsFinite(dst.l2_norm());

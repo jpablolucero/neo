@@ -228,16 +228,16 @@ void PSCPreconditioner<dim, SystemMatrixType, VectorType, number,same_diagonal>:
   //                       << dict_size << " inverse(s)." << std::endl;
   //     }
   // }
-  // ordered_iterators.clear();
-  // ordered_gens.clear();
-  // auto & dirs = data.dirs ;
-  // for (unsigned int d = 0 ; d < dirs.size() ; ++d)
-  //   {
-  //     ordered_iterators.resize(d+1);
-  //     ordered_gens.resize(d+1);
-  //     add_cell_ordering(dirs[d]);
-  //   }
   // timer->leave_subsection();
+  ordered_iterators.clear();
+  ordered_gens.clear();
+  auto & dirs = data.dirs ;
+  for (unsigned int d = 0 ; d < dirs.size() ; ++d)
+    {
+      ordered_iterators.resize(d+1);
+      ordered_gens.resize(d+1);
+      add_cell_ordering(dirs[d]);
+    }
 }
 
 template <int dim, typename SystemMatrixType, typename VectorType, typename number, bool same_diagonal>
@@ -248,9 +248,9 @@ template <int dim, typename SystemMatrixType, typename VectorType, typename numb
 void PSCPreconditioner<dim, SystemMatrixType, VectorType, number, same_diagonal>::vmult (VectorType &dst,
     const VectorType &src) const
 {
-  ghosted_dst = 0;
+  ghosted_dst = 0.;
   vmult_add(ghosted_dst, src);
-  ghosted_dst.compress(dealii::VectorOperation::add);
+  ghosted_dst.update_ghost_values();
   dst = ghosted_dst;
   dst *= data.relaxation;
   AssertIsFinite(dst.l2_norm());
