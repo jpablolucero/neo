@@ -40,11 +40,8 @@ public:
   void clear();
 
   void vmult(VectorType &dst, const VectorType &src) const;
-
   void Tvmult(VectorType &dst, const VectorType &src) const;
-
   void vmult_add(VectorType &dst, const VectorType &src) const;
-
   void Tvmult_add(VectorType &dst, const VectorType &src) const;
 
 protected:
@@ -57,21 +54,16 @@ private:
    const std::map<dealii::types::global_dof_index, unsigned int> &all_to_unique,
    dealii::LAPACKFullMatrix<double> &matrix);
   void add_cell_ordering(dealii::Tensor<1,dim> dir) ;
-  
   std::vector<std::shared_ptr<LAPACKMatrix> > patch_inverses;
-
   dealii::MeshWorker::IntegrationInfoBox<dim> info_box;
   std::unique_ptr<dealii::MeshWorker::DoFInfo<dim> >  dof_info;
-
   dealii::MGLevelObject<VectorType >                  ghosted_solution;
   MatrixIntegrator<dim>                               matrix_integrator;
   mutable VectorType                                  ghosted_src;
   mutable VectorType                                  ghosted_dst;
-
   unsigned int level;
   std::shared_ptr<DDHandlerBase<dim> > ddh;
   const SystemMatrixType *system_matrix;
-
   typedef std::vector<unsigned int>::const_iterator iterator;
   std::vector<std::vector<std::vector<std::vector<iterator> > > > ordered_iterators ;
   std::vector<std::vector<int> > ordered_gens ;

@@ -39,36 +39,24 @@ public:
   NLPSCPreconditioner (const NLPSCPreconditioner &) = delete ;
   NLPSCPreconditioner &operator = (const NLPSCPreconditioner &) = delete;
 
-  void initialize(const SystemMatrixType &system_matrix_,
-                  const AdditionalData &data);
-  void clear();
-
+  void initialize(const SystemMatrixType &system_matrix_,const AdditionalData &data);
   void vmult(VectorType &dst, const VectorType &src) const;
-
   void Tvmult(VectorType &dst, const VectorType &src) const;
-
   void vmult_add(VectorType &dst, const VectorType &src) const;
-
   void Tvmult_add(VectorType &dst, const VectorType &src) const;
 
 protected:
   AdditionalData data;
 
 private:
-
   void add_cell_ordering(dealii::Tensor<1,dim> dir) ;
-  
   std::unique_ptr<dealii::MeshWorker::DoFInfo<dim> >  dof_info;
-
-  mutable dealii::MGLevelObject<VectorType>      ghosted_solution;
-  mutable dealii::MGLevelObject<VectorType>      non_ghosted_solution;
-  MatrixIntegrator<dim>                          matrix_integrator;
-  mutable VectorType                             ghosted_src;
-
+  mutable dealii::MGLevelObject<VectorType>           ghosted_solution;
+  MatrixIntegrator<dim>                               matrix_integrator;
+  mutable VectorType                                  ghosted_src;
   unsigned int level;
   std::shared_ptr<DDHandlerBase<dim> > ddh;
   const SystemMatrixType *system_matrix;
-
   typedef std::vector<unsigned int>::const_iterator iterator;
   std::vector<std::vector<std::vector<std::vector<iterator> > > > ordered_iterators ;
   std::vector<std::vector<int> > ordered_gens ;

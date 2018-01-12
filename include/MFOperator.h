@@ -44,24 +44,19 @@ public:
   void set_cell_range (const std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> &cell_range_);
   void unset_cell_range ();
   void set_subdomain (unsigned int subdomain_idx_);
-
-  // TODO parallel::distributed case
   void build_coarse_matrix();
 
-  void clear () ;
+  void clear ()
+  {
+    ghosted_src[level] = 0.;
+  }
 
-  void vmult (VectorType &dst,
-              const VectorType &src) const ;
-  void Tvmult (VectorType &dst,
-               const VectorType &src) const ;
-  void vmult_add (VectorType &dst,
-                  const VectorType &src) const ;
-  void Tvmult_add (VectorType &dst,
-                   const VectorType &src) const ;
-  void vmult (dealii::Vector<double> &dst,
-	      const dealii::Vector<double> &src) const ;
-  void vmult_add (dealii::Vector<double> &dst,
-                  const dealii::Vector<double> &src) const ;
+  void vmult (VectorType &dst, const VectorType &src) const ;
+  void Tvmult (VectorType &dst, const VectorType &src) const ;
+  void vmult_add (VectorType &dst, const VectorType &src) const ;
+  void Tvmult_add (VectorType &dst, const VectorType &src) const ;
+  void vmult (dealii::Vector<double> &dst, const dealii::Vector<double> &src) const ;
+  void vmult_add (dealii::Vector<double> &dst, const dealii::Vector<double> &src) const ;
 
   const dealii::SparseMatrix<double> &get_coarse_matrix() const
   {
@@ -87,7 +82,6 @@ private:
   const dealii::ConstraintMatrix                      *constraints;
   const dealii::MGConstrainedDoFs                     *mg_constrained_dofs;
   DGDDHandlerCell<dim>                                ddh;
-
   std::unique_ptr<dealii::MeshWorker::DoFInfo<dim> >  dof_info;
   mutable dealii::MeshWorker::IntegrationInfoBox<dim> info_box;
   mutable dealii::MGLevelObject<VectorType>           ghosted_src;
@@ -99,7 +93,6 @@ private:
   std::vector<std::vector<level_cell_iterator> >      colored_iterators;
   const std::vector<level_cell_iterator> *            selected_iterators;
   ResidualIntegrator<dim>                             residual_integrator;
-
   dealii::SparsityPattern                             sp;
   dealii::SparseMatrix<double>                        coarse_matrix;
   MatrixIntegrator<dim>                               matrix_integrator;
