@@ -29,11 +29,20 @@ void GMGPreconditioner<dim,VectorType,number,same_diagonal,degree,Smoother>::set
   dealii::MGTransferPrebuilt<VectorType> mg_transfer_tmp;
   mg_transfer_tmp.build_matrices(dofs.dof_handler);
   mg_solution.resize(min_level, n_global_levels-1);
+  dealii::IndexSet locally_owned_level_dofs = dofs.dof_handler.locally_owned_mg_dofs(n_global_levels-1);
+  dealii::IndexSet locally_relevant_level_dofs;
+  dealii::DoFTools::extract_locally_relevant_level_dofs(dofs.dof_handler, n_global_levels-1, locally_relevant_level_dofs);
+  mg_solution[n_global_levels-1].reinit(locally_owned_level_dofs,locally_relevant_level_dofs,*mpi_communicator);
   mg_transfer_tmp.copy_to_mg(dofs.dof_handler,mg_solution,solution);
+  mg_solution[n_global_levels-1].update_ghost_values();
   for (auto l = n_global_levels-1 ; l > 0 ; --l)
     {
-      mg_solution[l-1] = 0.;
+      dealii::IndexSet locally_owned_level_dofs2 = dofs.dof_handler.locally_owned_mg_dofs(l-1);
+      dealii::IndexSet locally_relevant_level_dofs2;
+      dealii::DoFTools::extract_locally_relevant_level_dofs(dofs.dof_handler, l-1, locally_relevant_level_dofs);
+      mg_solution[l-1].reinit(locally_owned_level_dofs2,locally_relevant_level_dofs2,*mpi_communicator);
       mg_transfer_tmp.restrict_and_add(l,mg_solution[l-1], mg_solution[l]);
+      mg_solution[l-1].update_ghost_values();
     }
   for (unsigned int level=min_level; level<n_global_levels; ++level)
     {

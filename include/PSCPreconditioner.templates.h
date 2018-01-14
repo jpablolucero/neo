@@ -88,7 +88,9 @@ void PSCPreconditioner<dim, SystemMatrixType, VectorType, number,same_diagonal>:
     dealii::IndexSet locally_relevant_level_dofs;
     dealii::DoFTools::extract_locally_relevant_level_dofs(dof_handler, level, locally_relevant_level_dofs);
     ghosted_src.reinit(locally_owned_level_dofs,locally_relevant_level_dofs,*mpi_communicator);
+    ghosted_src.update_ghost_values();
     ghosted_dst.reinit(locally_owned_level_dofs,locally_relevant_level_dofs,*mpi_communicator);
+    ghosted_dst.update_ghost_values();
     ghosted_solution.resize(level, level);
     ghosted_solution[level].reinit(locally_owned_level_dofs,locally_relevant_level_dofs,*mpi_communicator);
     ghosted_solution[level] = *(data.solution);
@@ -249,6 +251,7 @@ void PSCPreconditioner<dim, SystemMatrixType, VectorType, number, same_diagonal>
     const VectorType &src) const
 {
   ghosted_dst = 0.;
+  ghosted_dst.update_ghost_values();
   vmult_add(ghosted_dst, src);
   ghosted_dst.update_ghost_values();
   dst = ghosted_dst;
