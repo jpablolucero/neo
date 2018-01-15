@@ -7,7 +7,7 @@ namespace
 {
   namespace NLWorkStream
   {
-    template <int dim, typename VectorType, typename number, bool same_diagonal>
+    template <int dim, typename SystemMatrixType, typename VectorType, typename number, bool same_diagonal>
     class Copy
     {
     public:
@@ -17,24 +17,25 @@ namespace
       std::shared_ptr<DDHandlerBase<dim> > ddh;
     };
 
-    template <int dim, typename VectorType, typename number, bool same_diagonal>
+    template <int dim, typename SystemMatrixType, typename VectorType, typename number, bool same_diagonal>
     class Scratch
     {
     public:
-      MFOperator<dim,1> * system_matrix ;
+      SystemMatrixType* system_matrix ;
       dealii::MGLevelObject<VectorType> *solution;
       const dealii::Mapping<dim>  *mapping;
     };
 
-    template <int dim, typename VectorType, typename number, bool same_diagonal>
-    void assemble(const Copy<dim, VectorType, number, same_diagonal> &copy)
+    template <int dim, typename SystemMatrixType, typename VectorType, typename number, bool same_diagonal>
+    void assemble(const Copy<dim, SystemMatrixType, VectorType, number, same_diagonal> &copy)
     {
       copy.ddh->prolongate_add(*(copy.dst),copy.local_solution,copy.subdomain_idx);
     }
 
-    template <int dim, typename VectorType, typename number, bool same_diagonal>
+    template <int dim, typename SystemMatrixType, typename VectorType, typename number, bool same_diagonal>
     void work(const std::vector<unsigned int>::const_iterator &iterator,
-              Scratch<dim, VectorType, number, same_diagonal> &scratch, Copy<dim, VectorType, number, same_diagonal> &copy)
+              Scratch<dim, SystemMatrixType, VectorType, number, same_diagonal> &scratch,
+	      Copy<dim, SystemMatrixType, VectorType, number, same_diagonal> &copy)
     {
       const unsigned int subdomain_idx = *iterator;
       const DDHandlerBase<dim> &ddh = *(copy.ddh);
@@ -207,16 +208,16 @@ void NLPSCPreconditioner<dim, SystemMatrixType, VectorType, number, same_diagona
   internal_system_matrix.clear();
   if (data.smoother_type == AdditionalData::SmootherType::additive)
     {
-      NLWorkStream::Copy<dim, VectorType, number, same_diagonal> copy_sample;
+      NLWorkStream::Copy<dim, SystemMatrixType, VectorType, number, same_diagonal> copy_sample;
       copy_sample.dst = &dst;
       copy_sample.ddh = ddh;
-      NLWorkStream::Scratch<dim, VectorType, number, same_diagonal> scratch_sample;
+      NLWorkStream::Scratch<dim, SystemMatrixType, VectorType, number, same_diagonal> scratch_sample;
       scratch_sample.solution = &ghosted_solution;
       scratch_sample.mapping = data.mapping ;
       scratch_sample.system_matrix = &internal_system_matrix;
       dealii::WorkStream::run(ddh->colorized_iterators(),
-			      NLWorkStream::work<dim, VectorType, number, same_diagonal>,
-			      NLWorkStream::assemble<dim, VectorType, number, same_diagonal>,
+			      NLWorkStream::work<dim, SystemMatrixType, VectorType, number, same_diagonal>,
+			      NLWorkStream::assemble<dim, SystemMatrixType, VectorType, number, same_diagonal>,
 			      scratch_sample, copy_sample);
     }
   else AssertThrow(false, dealii::ExcNotImplemented());
