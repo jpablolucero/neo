@@ -1,5 +1,7 @@
 #include <Dofs.h>
 
+#include <deal.II/numerics/vector_tools.h>
+
 extern std::unique_ptr<MPI_Comm>                   mpi_communicator ;
 
 template <int dim>
