@@ -26,8 +26,8 @@ void GMGPreconditioner<dim,VectorType,number,same_diagonal,degree,Smoother>::set
   mg_smoother.clear();
   mglevel_matrix.reset();
   mg_matrix.resize(min_level, n_global_levels-1);
-  dealii::MGTransferMatrixFree<dim,double> mg_transfer_tmp;
-  mg_transfer_tmp.build(dofs.dof_handler);
+  dealii::MGTransferPrebuilt<VectorType> mg_transfer_tmp;
+  mg_transfer_tmp.build_matrices(dofs.dof_handler);
   mg_solution.resize(min_level, n_global_levels-1);
   dealii::IndexSet locally_owned_level_dofs = dofs.dof_handler.locally_owned_mg_dofs(n_global_levels-1);
   dealii::IndexSet locally_relevant_level_dofs;
@@ -87,11 +87,11 @@ void GMGPreconditioner<dim,VectorType,number,same_diagonal,degree,Smoother>::set
   mg_smoother.set_steps(smoothing_steps);
 
   // Setup Multigrid-Transfer
-  mg_transfer.reset(new dealii::MGTransferMatrixFree<dim,double> {});
+  mg_transfer.reset(new dealii::MGTransferPrebuilt<VectorType> {});
 #ifdef CG
   // mg_transfer->initialize_constraints(dofs.constraints, mg_constrained_dofs);
 #endif // CG
-  mg_transfer->build(dofs.dof_handler);
+  mg_transfer->build_matrices(dofs.dof_handler);
 
   // Setup (Multigrid-)Preconditioner
   mglevel_matrix.initialize(mg_matrix);
@@ -104,7 +104,7 @@ void GMGPreconditioner<dim,VectorType,number,same_diagonal,degree,Smoother>::set
   // mg.set_debug(10);
   mg->set_minlevel(mg_matrix.min_level());
   mg->set_maxlevel(mg_matrix.max_level());
-  preconditioner.reset(new dealii::PreconditionMG<dim, VectorType, dealii::MGTransferMatrixFree<dim,double> >
+  preconditioner.reset(new dealii::PreconditionMG<dim, VectorType, dealii::MGTransferPrebuilt<VectorType> >
 		       (dofs.dof_handler, *mg, *mg_transfer));
   timer->leave_subsection();
 }
