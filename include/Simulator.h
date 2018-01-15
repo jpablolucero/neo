@@ -44,7 +44,7 @@ public:
   unsigned int n_levels ;
   unsigned int min_level;
   unsigned int smoothing_steps ;
-  bool aspin = false ;
+  bool aspin = true ;
 private:
   void setup_system ();
   void solve ();
@@ -68,19 +68,12 @@ private:
   {
   public:
     Residual(Simulator<SystemMatrixType_,VectorType_,Preconditioner_,dim,fe_degree> &sim_):sim(sim_) {} ;
-    double old_residual = 1.E30 ;
-    double residual = 0.;
     void operator() (dealii::AnyData &out, const dealii::AnyData &in) override
     {
       sim.ghosted_solution = *(in.try_read_ptr<VectorType_>("Newton iterate"));
       sim.rhs.assemble(sim.ghosted_solution);
-      residual = sim.rhs.right_hand_side.l2_norm() ;
-      if (sim.aspin) dealii::deallog << "ASPIN Residual: " << residual << std::endl ;
-      else dealii::deallog << "Residual: " << residual << std::endl ;
-      if (sim.aspin == true) sim.aspin = false ;
-      else if (sim.aspin == false) sim.aspin = true ;
+      dealii::deallog << "Residual: " << sim.rhs.right_hand_side.l2_norm() << std::endl ;
       *out.entry<VectorType_ *>(0) = sim.rhs.right_hand_side ;
-      old_residual = residual ;
     }
     Simulator<SystemMatrixType_,VectorType_,Preconditioner_,dim,fe_degree> &sim ;
   };
@@ -94,11 +87,10 @@ private:
     InverseDerivative(Simulator<SystemMatrixType_,VectorType_,Preconditioner_,dim,fe_degree> &sim_):sim(sim_) {} ;
     void operator() (dealii::AnyData &out, const dealii::AnyData &in) override
     {
-      
+      sim.ghosted_solution = *(in.try_read_ptr<VectorType_>("Newton iterate"));
+      sim.ghosted_solution.update_ghost_values();
       if (sim.aspin)
-      	{
-	  sim.ghosted_solution = *(in.try_read_ptr<VectorType_>("Newton iterate"));
-	  sim.ghosted_solution.update_ghost_values();
+	{
 	  typename NLPSCPreconditioner<dim, SystemMatrixType_, VectorType_, double, false>::AdditionalData data ;
 	  data.dof_handler = &(sim.dofs.dof_handler);
 	  data.level = sim.n_levels-1;
@@ -111,16 +103,15 @@ private:
 	  prec.initialize(sim.system_matrix,data);
 	  prec.vmult(sim.ghosted_solution,*(in.try_read_ptr<VectorType_>("Newton residual")));
 	  *out.entry<VectorType_ *>(0) = sim.ghosted_solution ;
-      	}
-      else
-      	{
 	  sim.ghosted_solution = *(in.try_read_ptr<VectorType_>("Newton iterate"));
-	  sim.ghosted_solution.update_ghost_values();
-	  sim.solution = 0.;
-	  sim.solve ();
-	  *out.entry<VectorType_ *>(0) = sim.ghosted_solution ;
-      	}
-
+	  sim.ghosted_solution.add(-1.,*out.entry<VectorType_ *>(0));
+	  sim.rhs.assemble(sim.ghosted_solution);
+	  dealii::deallog << "ASPIN Residual: " << sim.rhs.right_hand_side.l2_norm() << std::endl ;
+	  *const_cast<VectorType_*>(in.try_read_ptr<VectorType_>("Newton iterate")) = sim.ghosted_solution;
+	}
+      sim.solution = 0.;
+      sim.solve ();
+      *out.entry<VectorType_ *>(0) = sim.ghosted_solution ;
     }
     Simulator<SystemMatrixType_,VectorType_,Preconditioner_,dim,fe_degree> &sim ;
   };
