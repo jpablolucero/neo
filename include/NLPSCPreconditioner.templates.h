@@ -76,7 +76,7 @@ namespace
       RHSIntegrator<dim> rhs_integrator(ddh.get_dofh().get_fe().n_components());
       auto inverse_derivative = [&](dealii::Vector<number> & Du, dealii::Vector<number> & res)
 	{
-	  dealii::ReductionControl solver_control (res.size()*10, 1.e-20, 1.E-15,false,false);
+	  dealii::ReductionControl solver_control (res.size()*10, 1.e-20, 1.E-5,false,false);
 	  typename dealii::SolverGMRES<dealii::Vector<double> >::AdditionalData data(100,false);
 	  dealii::SolverGMRES<dealii::Vector<double> >                          solver (solver_control,data);
 	  scratch.system_matrix->set_cell_range(ddh.subdomain_to_global_map[subdomain_idx]);
