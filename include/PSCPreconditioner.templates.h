@@ -298,9 +298,9 @@ void PSCPreconditioner<dim, SystemMatrixType, VectorType, number, same_diagonal>
       VectorType dummy0(ghosted_src);
       dealii::ReductionControl control(10000, 1e-20, 1e-14, false, false) ;
       dealii::SolverGMRES<VectorType> coarse_solver(control);
-      dealii::MGTransferPrebuilt<VectorType > mg_transfer ;
+      dealii::MGTransferMatrixFree<dim,double> mg_transfer ;
       dealii::MGLevelObject<VectorType > mg_solution ;
-      mg_transfer.build_matrices(*(data.dof_handler));
+      mg_transfer.build(*(data.dof_handler));
       mg_transfer.restrict_and_add(data.level,dummy1,dummy0);
       coarse_solver.solve(*(data.coarse_matrix),dummy2,dummy1,dealii::PreconditionIdentity{});
       mg_transfer.prolongate(data.level,dummy3,dummy2);

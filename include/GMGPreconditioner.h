@@ -2,7 +2,7 @@
 #define GMGPRECONDITIONER_H
 
 #include <deal.II/distributed/tria.h>
-#include <deal.II/multigrid/mg_transfer.h>
+#include <deal.II/multigrid/mg_transfer_matrix_free.h>
 #include <deal.II/multigrid/mg_smoother.h>
 #include <deal.II/multigrid/mg_coarse.h>
 #include <deal.II/multigrid/mg_matrix.h>
@@ -72,12 +72,12 @@ class GMGPreconditioner final
   dealii::MGSmootherPrecondition<SystemMatrixType,Smoother,VectorType> mg_smoother;
 
   // Setup Multigrid-Transfer
-  std::unique_ptr<dealii::MGTransferPrebuilt<VectorType> > mg_transfer ;
+  std::unique_ptr<dealii::MGTransferMatrixFree<dim,double> > mg_transfer ;
 
   dealii::mg::Matrix<VectorType>         mglevel_matrix;
   std::unique_ptr<dealii::Multigrid<VectorType> > mg ;
 
-  std::unique_ptr<dealii::PreconditionMG<dim, VectorType, dealii::MGTransferPrebuilt<VectorType> > > preconditioner ;
+  std::unique_ptr<dealii::PreconditionMG<dim, VectorType, dealii::MGTransferMatrixFree<dim,double> > > preconditioner ;
   
 };
 
