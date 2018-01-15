@@ -97,13 +97,14 @@ private:
       
       if (sim.aspin)
       	{
+	  sim.ghosted_solution = *(in.try_read_ptr<VectorType_>("Newton iterate"));
+	  sim.ghosted_solution.update_ghost_values();
 	  typename NLPSCPreconditioner<dim, SystemMatrixType_, VectorType_, double, false>::AdditionalData data ;
 	  data.dof_handler = &(sim.dofs.dof_handler);
 	  data.level = sim.n_levels-1;
 	  data.n_levels = sim.n_levels ;
 	  data.mapping = &(sim.fe.mapping);
 	  data.relaxation = 1.;
-	  data.solution = const_cast<VectorType_*>(in.try_read_ptr<VectorType_>("Newton iterate")) ;
 	  data.patch_type = NLPSCPreconditioner<dim, SystemMatrixType_, VectorType_, double, false>::AdditionalData::cell_patches;
 	  data.smoother_type = NLPSCPreconditioner<dim, SystemMatrixType_, VectorType_, double, false>::AdditionalData::additive;
 	  NLPSCPreconditioner<dim, SystemMatrixType_, VectorType_, double, false> prec ;

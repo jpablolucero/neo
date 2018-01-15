@@ -93,9 +93,12 @@ void MFOperator<dim,fe_degree,number,VectorType>::reinit
   zero_src.resize(level, level);
   zero_src[level].reinit(locally_owned_level_dofs,locally_relevant_level_dofs,*mpi_communicator);
   zero_src[level].update_ghost_values();
+  zero_solution.resize(level, level);
+  zero_solution[level].reinit(locally_owned_level_dofs,locally_relevant_level_dofs,*mpi_communicator);
+  zero_solution[level].update_ghost_values();
   dealii::AnyData zero_src_data ;
   zero_src_data.add<const dealii::MGLevelObject<VectorType >*>(&zero_src,"src");
-  zero_src_data.add<const dealii::MGLevelObject<VectorType >*>(&ghosted_solution,"Newton iterate");
+  zero_src_data.add<const dealii::MGLevelObject<VectorType >*>(&zero_solution,"Newton iterate");
   zero_info_box.initialize(*fe, *mapping, zero_src_data, VectorType{}, &(dof_handler->block_info()));
   std::vector<std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> >
     all_iterators(static_cast<unsigned int>(std::pow(2,dim)));
@@ -230,7 +233,10 @@ void MFOperator<dim,fe_degree,number,VectorType>::vmult_add (dealii::Vector<doub
 							     const dealii::Vector<double> &local_src) const
 {
   dealii::Vector<double> zero(local_src.size());
+  dealii::Vector<double> local_solution(local_src.size());
+  ddh.restrict_add(local_solution,*solution,subdomain_idx);
   ddh.prolongate(zero_src[level],local_src,subdomain_idx);
+  ddh.prolongate(zero_solution[level],local_solution,subdomain_idx);
   dealii::AnyData dst_data;
   dst_data.add<dealii::Vector<double> *>(&local_dst, "dst");
   Assembler::ResidualSimpleMapped<dealii::Vector<double> > assembler;
@@ -241,4 +247,5 @@ void MFOperator<dim,fe_degree,number,VectorType>::vmult_add (dealii::Vector<doub
   lctrl.own_faces = dealii::MeshWorker::LoopControl::both ;
   dealii::colored_loop<dim, dim> (colored_iterators,*dof_info,zero_info_box,residual_integrator,assembler,lctrl,*selected_iterators);
   ddh.prolongate(zero_src[level],zero,subdomain_idx);
+  ddh.prolongate(zero_solution[level],zero,subdomain_idx);
 }
