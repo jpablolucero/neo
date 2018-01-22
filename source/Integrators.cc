@@ -26,7 +26,6 @@ void MatrixIntegrator<dim>::cell(dealii::MeshWorker::DoFInfo<dim> &dinfo,
           ++c ;
         }
       auto &M = dinfo.matrix(b*n_blocks + b).matrix;
-
       LocalIntegrators::Diffusion::cell_matrix<dim>(M,fev,coeffs);
     }
 }
