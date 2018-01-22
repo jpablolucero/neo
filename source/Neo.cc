@@ -25,7 +25,6 @@ int main (int argc, char *argv[])
 #else // MG OFF
   typedef dealii::PreconditionIdentity          Precond;
 #endif // MG
-  
   Simulator<SystemMatrixType,dealii::parallel::distributed::Vector<double>,Precond,d,fe_degree> dgmethod;
   dgmethod.n_levels = (argc > 1) ? atoi(argv[1]) : 2 ;
   dgmethod.min_level=0;
