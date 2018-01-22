@@ -42,7 +42,7 @@ void MatrixIntegrator<dim>::boundary(dealii::MeshWorker::DoFInfo<dim> &dinfo,
                                      typename dealii::MeshWorker::IntegrationInfo<dim> &info) const
 {
   const unsigned int deg = info.fe_values(0).get_fe().tensor_degree();
-  if (dinfo.face->boundary_id() == 0 || dinfo.face->boundary_id() == 1)
+  if (boundaries.dirichlet.count(dinfo.face->boundary_id()) != 0)
   {
     dealii::LocalIntegrators::Elasticity::nitsche_matrix(
       dinfo.matrix(0, false).matrix,
@@ -98,13 +98,13 @@ template <int dim>
 void ResidualIntegrator<dim>::boundary(dealii::MeshWorker::DoFInfo<dim> &dinfo,
                                        typename dealii::MeshWorker::IntegrationInfo<dim> &info) const
 {
-  std::vector<std::vector<double>> null(
-    dim, std::vector<double>(info.fe_values(0).n_quadrature_points, 0.));
-
-  boundary_values->vector_values(info.fe_values(0).get_quadrature_points(), null);
-
-  if (dinfo.face->boundary_id() == 0 || dinfo.face->boundary_id() == 1)
+  if (boundaries.dirichlet.count(dinfo.face->boundary_id()) != 0)
   {
+    std::vector<std::vector<double>> null(
+      dim, std::vector<double>(info.fe_values(0).n_quadrature_points, 0.));
+
+    boundaries.vector_values(info.fe_values(0).get_quadrature_points(), null);
+
     const unsigned int deg = info.fe_values(0).get_fe().tensor_degree();
     dealii::LocalIntegrators::Elasticity::nitsche_residual(
       dinfo.vector(0).block(0),

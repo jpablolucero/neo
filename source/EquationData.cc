@@ -6,6 +6,34 @@ MaterialParameter::MaterialParameter()
 {}
 
 template <int dim>
+Boundaries<dim>::Boundaries()
+  : dealii::Function<dim>(dim)
+{
+  dirichlet.insert(0);
+  dirichlet.insert(1);
+}
+
+template <int dim>
+void
+Boundaries<dim>::vector_value_list (const std::vector<dealii::Point<dim> > &points,
+				    std::vector<dealii::Vector<double> > &values) const
+{}
+
+template <int dim>
+void
+Boundaries<dim>::vector_values (const std::vector<dealii::Point<dim>>& points,
+				std::vector<std::vector<double>>& values) const
+{
+  AssertVectorVectorDimension(values, this->n_components, points.size());
+
+  for (unsigned int k = 0; k < points.size(); ++k)
+    {
+      const dealii::Point<dim>& p = points[k];
+      values[0][k] = 1. * p(0);
+    }
+}
+
+template <int dim>
 Coefficient<dim>::Coefficient()
   : dealii::Function<dim>()
 {}

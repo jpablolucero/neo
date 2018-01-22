@@ -10,6 +10,7 @@
 #include <deal.II/base/parameter_handler.h>
 #include <deal.II/base/vectorization.h>
 
+#include <set>
 #include <string>
 #include <fstream>
 #include <vector>
@@ -21,6 +22,22 @@ public:
   MaterialParameter();
   const double lambda;
   const double mu;
+};
+
+template <int dim>
+class Boundaries final : public dealii::Function<dim>
+{
+public:
+  Boundaries();
+  Boundaries (const Boundaries &) = delete;
+  Boundaries &operator = (const Boundaries &) = delete;
+
+  std::set<unsigned int> dirichlet;
+
+  void vector_value_list (const std::vector<dealii::Point<dim> > &points,
+			  std::vector<dealii::Vector<double> > &values) const override;
+  void vector_values (const std::vector<dealii::Point<dim> > &points,
+		      std::vector<std::vector<double> > &values) const override;
 };
 
 template <int dim>

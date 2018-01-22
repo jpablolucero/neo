@@ -40,6 +40,7 @@ public:
             typename dealii::MeshWorker::IntegrationInfo<dim> &info2) const override;
 protected:
   const MaterialParameter material_param;
+  Boundaries<dim> boundaries;
 };
 
 template <int dim>
@@ -57,6 +58,7 @@ public:
             typename dealii::MeshWorker::IntegrationInfo<dim> &info2) const override;
 private:
   const MaterialParameter material_param;
+  Boundaries<dim> boundaries;
 };
 
 template <int dim>
