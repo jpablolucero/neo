@@ -12,6 +12,7 @@ void MatrixIntegrator<dim>::cell(dealii::MeshWorker::DoFInfo<dim> &dinfo,
                                  typename dealii::MeshWorker::IntegrationInfo<dim> &info) const
 {
   AssertDimension(dinfo.n_matrices(), 1);
+
   dealii::LocalIntegrators::Elasticity::cell_matrix(
       dinfo.matrix(0, false).matrix, info.fe_values(0), 2. * material_param.mu);
   dealii::LocalIntegrators::GradDiv::cell_matrix(
