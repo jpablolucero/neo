@@ -39,7 +39,7 @@ public:
             typename dealii::MeshWorker::IntegrationInfo<dim> &info1,
             typename dealii::MeshWorker::IntegrationInfo<dim> &info2) const override;
 protected:
-  Coefficient<dim> diffcoeff;
+  const MaterialParameter material_param;
 };
 
 template <int dim>
@@ -56,7 +56,7 @@ public:
             typename dealii::MeshWorker::IntegrationInfo<dim> &info1,
             typename dealii::MeshWorker::IntegrationInfo<dim> &info2) const override;
 private:
-  Coefficient<dim> diffcoeff;
+  const MaterialParameter material_param;
 };
 
 template <int dim>
@@ -73,7 +73,7 @@ public:
 	    typename dealii::MeshWorker::IntegrationInfo<dim> &info1,
 	    typename dealii::MeshWorker::IntegrationInfo<dim> &info2) const override;
 private:
-  Coefficient<dim> diffcoeff;
+  const MaterialParameter material_param;
   ReferenceFunction<dim> exact_solution;
 };
 

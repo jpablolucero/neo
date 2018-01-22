@@ -12,12 +12,10 @@ void MatrixIntegrator<dim>::cell(dealii::MeshWorker::DoFInfo<dim> &dinfo,
                                  typename dealii::MeshWorker::IntegrationInfo<dim> &info) const
 {
   AssertDimension(dinfo.n_matrices(), 1);
-  const double lambda = 1.;
-  const double mu = 1.;
   dealii::LocalIntegrators::Elasticity::cell_matrix(
-      dinfo.matrix(0, false).matrix, info.fe_values(0), 2. * mu);
+      dinfo.matrix(0, false).matrix, info.fe_values(0), 2. * material_param.mu);
   dealii::LocalIntegrators::GradDiv::cell_matrix(
-      dinfo.matrix(0, false).matrix, info.fe_values(0), lambda);
+      dinfo.matrix(0, false).matrix, info.fe_values(0), material_param.lambda);
 }
 
 template <int dim>
@@ -27,7 +25,6 @@ void MatrixIntegrator<dim>::face(dealii::MeshWorker::DoFInfo<dim> &dinfo1,
                                  typename dealii::MeshWorker::IntegrationInfo<dim> &info2) const
 {
   const unsigned int deg = info1.fe_values(0).get_fe().tensor_degree();
-  const double mu = 1.;
   dealii::LocalIntegrators::Elasticity::ip_matrix(
     dinfo1.matrix(0, false).matrix,
     dinfo1.matrix(0, true).matrix,
@@ -36,7 +33,7 @@ void MatrixIntegrator<dim>::face(dealii::MeshWorker::DoFInfo<dim> &dinfo1,
     info1.fe_values(0),
     info2.fe_values(0),
     dealii::LocalIntegrators::Laplace::compute_penalty(dinfo1, dinfo2, deg, deg),
-    2. * mu);
+    2. * material_param.mu);
 }
 
 template <int dim>
@@ -44,14 +41,13 @@ void MatrixIntegrator<dim>::boundary(dealii::MeshWorker::DoFInfo<dim> &dinfo,
                                      typename dealii::MeshWorker::IntegrationInfo<dim> &info) const
 {
   const unsigned int deg = info.fe_values(0).get_fe().tensor_degree();
-  const double mu = 1.;
   if (dinfo.face->boundary_id() == 0 || dinfo.face->boundary_id() == 1)
   {
     dealii::LocalIntegrators::Elasticity::nitsche_matrix(
       dinfo.matrix(0, false).matrix,
       info.fe_values(0),
       dealii::LocalIntegrators::Laplace::compute_penalty(dinfo, dinfo, deg, deg),
-      2. * mu);
+      2. * material_param.mu);
   }
 }
 
@@ -66,18 +62,15 @@ void ResidualIntegrator<dim>::cell(dealii::MeshWorker::DoFInfo<dim> &dinfo,
   Assert(info.values.size() >= 1, dealii::ExcDimensionMismatch(info.values.size(), 1));
   Assert(info.gradients.size() >= 1, dealii::ExcDimensionMismatch(info.values.size(), 1));
 
-  const double lambda = 1.;
-  const double mu = 1.;
-
   dealii::LocalIntegrators::Elasticity::cell_residual(
       dinfo.vector(0).block(0),
       info.fe_values(0),
       dealii::make_slice(info.gradients[0], 0, dim),
-      2. * mu);
+      2. * material_param.mu);
   dealii::LocalIntegrators::GradDiv::cell_residual(dinfo.vector(0).block(0),
 						   info.fe_values(0),
 						   dealii::make_slice(info.gradients[0], 0, dim),
-						   lambda);
+						   material_param.lambda);
 }
 
 template <int dim>
@@ -87,7 +80,6 @@ void ResidualIntegrator<dim>::face(dealii::MeshWorker::DoFInfo<dim> &dinfo1,
                                    typename dealii::MeshWorker::IntegrationInfo<dim> &info2) const
 {
   const unsigned int deg = info1.fe_values(0).get_fe().tensor_degree();
-  const double mu = 1.;
   dealii::LocalIntegrators::Elasticity::ip_residual(
     dinfo1.vector(0).block(0),
     dinfo2.vector(0).block(0),
@@ -98,7 +90,7 @@ void ResidualIntegrator<dim>::face(dealii::MeshWorker::DoFInfo<dim> &dinfo1,
     dealii::make_slice(info2.values[0], 0, dim),
     dealii::make_slice(info2.gradients[0], 0, dim),
     dealii::LocalIntegrators::Laplace::compute_penalty(dinfo1, dinfo2, deg, deg),
-    2. * mu);
+    2. * material_param.mu);
 }
 
 template <int dim>
@@ -113,7 +105,6 @@ void ResidualIntegrator<dim>::boundary(dealii::MeshWorker::DoFInfo<dim> &dinfo,
   if (dinfo.face->boundary_id() == 0 || dinfo.face->boundary_id() == 1)
   {
     const unsigned int deg = info.fe_values(0).get_fe().tensor_degree();
-    const double mu = 1.;
     dealii::LocalIntegrators::Elasticity::nitsche_residual(
       dinfo.vector(0).block(0),
       info.fe_values(0),
@@ -121,7 +112,7 @@ void ResidualIntegrator<dim>::boundary(dealii::MeshWorker::DoFInfo<dim> &dinfo,
       dealii::make_slice(info.gradients[0], 0, dim),
       null,
       dealii::LocalIntegrators::Laplace::compute_penalty(dinfo, dinfo, deg, deg),
-      2. * mu);
+      2. * material_param.mu);
   }
 }
 

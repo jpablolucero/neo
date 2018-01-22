@@ -1,5 +1,10 @@
 #include <EquationData.h>
 
+MaterialParameter::MaterialParameter()
+  : lambda(1.)
+  , mu(1.)
+{}
+
 template <int dim>
 Coefficient<dim>::Coefficient()
   : dealii::Function<dim>()

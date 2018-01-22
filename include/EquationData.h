@@ -15,6 +15,14 @@
 #include <vector>
 #include <math.h>
 
+class MaterialParameter
+{
+public:
+  MaterialParameter();
+  const double lambda;
+  const double mu;
+};
+
 template <int dim>
 class Coefficient final : public dealii::Function<dim>
 {
