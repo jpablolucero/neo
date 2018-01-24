@@ -15,8 +15,8 @@ namespace LocalIntegrators
   {
     template <int dim>
     inline void cell_matrix (
-      FullMatrix<double> &M,
-      const FEValuesBase<dim> &fe,
+      dealii::FullMatrix<double> &M,
+      const dealii::FEValuesBase<dim> &fe,
       const double factor = 1.)
     {
       const unsigned int n_dofs = fe.dofs_per_cell;
@@ -42,9 +42,9 @@ namespace LocalIntegrators
     template <int dim, typename number>
     inline void
     cell_residual  (
-      Vector<number> &result,
-      const FEValuesBase<dim> &fe,
-      const VectorSlice<const std::vector<std::vector<Tensor<1,dim> > > > &input,
+      dealii::Vector<number> &result,
+      const dealii::FEValuesBase<dim> &fe,
+      const dealii::VectorSlice<const std::vector<std::vector<dealii::Tensor<1,dim> > > > &input,
       double factor = 1.)
     {
       const unsigned int nq = fe.n_quadrature_points;
@@ -52,7 +52,7 @@ namespace LocalIntegrators
 
       AssertDimension(fe.get_fe().n_components(), dim);
       AssertVectorVectorDimension(input, dim, fe.n_quadrature_points);
-      Assert(result.size() == n_dofs, ExcDimensionMismatch(result.size(), n_dofs));
+      Assert(result.size() == n_dofs, dealii::ExcDimensionMismatch(result.size(), n_dofs));
 
       for (unsigned int k=0; k<nq; ++k)
         {
@@ -71,8 +71,8 @@ namespace LocalIntegrators
 
     template <int dim>
     inline void nitsche_matrix (
-      FullMatrix<double> &M,
-      const FEValuesBase<dim> &fe,
+      dealii::FullMatrix<double> &M,
+      const dealii::FEValuesBase<dim> &fe,
       double penalty,
       double factor = 1.)
     {
@@ -85,7 +85,7 @@ namespace LocalIntegrators
       for (unsigned int k=0; k<fe.n_quadrature_points; ++k)
         {
           const double dx = factor * fe.JxW(k);
-          const Tensor<1,dim> n = fe.normal_vector(k);
+          const dealii::Tensor<1,dim> n = fe.normal_vector(k);
           for (unsigned int i=0; i<n_dofs; ++i)
             for (unsigned int j=0; j<n_dofs; ++j)
               for (unsigned int d1=0; d1<dim; ++d1)
@@ -111,8 +111,8 @@ namespace LocalIntegrators
 
     template <int dim>
     inline void nitsche_tangential_matrix (
-      FullMatrix<double> &M,
-      const FEValuesBase<dim> &fe,
+      dealii::FullMatrix<double> &M,
+      const dealii::FEValuesBase<dim> &fe,
       double penalty,
       double factor = 1.)
     {
@@ -125,7 +125,7 @@ namespace LocalIntegrators
       for (unsigned int k=0; k<fe.n_quadrature_points; ++k)
         {
           const double dx = factor * fe.JxW(k);
-          const Tensor<1,dim> n = fe.normal_vector(k);
+          const dealii::Tensor<1,dim> n = fe.normal_vector(k);
           for (unsigned int i=0; i<n_dofs; ++i)
             for (unsigned int j=0; j<n_dofs; ++j)
               {
@@ -167,11 +167,11 @@ namespace LocalIntegrators
 
     template <int dim, typename number>
     void nitsche_residual (
-      Vector<number> &result,
-      const FEValuesBase<dim> &fe,
-      const VectorSlice<const std::vector<std::vector<double> > > &input,
-      const VectorSlice<const std::vector<std::vector<Tensor<1,dim> > > > &Dinput,
-      const VectorSlice<const std::vector<std::vector<double> > > &data,
+      dealii::Vector<number> &result,
+      const dealii::FEValuesBase<dim> &fe,
+      const dealii::VectorSlice<const std::vector<std::vector<double> > > &input,
+      const dealii::VectorSlice<const std::vector<std::vector<dealii::Tensor<1,dim> > > > &Dinput,
+      const dealii::VectorSlice<const std::vector<std::vector<double> > > &data,
       double penalty,
       double factor = 1.)
     {
@@ -184,7 +184,7 @@ namespace LocalIntegrators
       for (unsigned int k=0; k<fe.n_quadrature_points; ++k)
         {
           const double dx = factor * fe.JxW(k);
-          const Tensor<1,dim> n = fe.normal_vector(k);
+          const dealii::Tensor<1,dim> n = fe.normal_vector(k);
           for (unsigned int i=0; i<n_dofs; ++i)
             for (unsigned int d1=0; d1<dim; ++d1)
               {
@@ -210,12 +210,47 @@ namespace LocalIntegrators
 
 
     template <int dim, typename number>
+    void nitsche_residual_data_only (
+      dealii::Vector<number> &result,
+      const dealii::FEValuesBase<dim> &fe,
+      const dealii::VectorSlice<const std::vector<std::vector<double> > > &data,
+      double penalty,
+      double factor = 1.)
+    {
+      const unsigned int n_dofs = fe.dofs_per_cell;
+
+      AssertVectorVectorDimension(data, dim, fe.n_quadrature_points);
+
+      for (unsigned int k=0; k<fe.n_quadrature_points; ++k)
+        {
+          const double dx = factor * fe.JxW(k);
+          const dealii::Tensor<1,dim> n = fe.normal_vector(k);
+          for (unsigned int i=0; i<n_dofs; ++i)
+            for (unsigned int d1=0; d1<dim; ++d1)
+              {
+                const double v= fe.shape_value_component(i,k,d1);
+                const double g= data[d1][k];
+                result(i) += dx * 2.*penalty * g * v;
+
+                for (unsigned int d2=0; d2<dim; ++d2)
+                  {
+                    // u  nabla v n
+                    result(i) -= .5*dx * g * fe.shape_grad_component(i,k,d1)[d2] * n[d2];
+                    // u  (nabla v)^T n
+                    result(i) -= .5*dx * g * fe.shape_grad_component(i,k,d2)[d1] * n[d2];
+                  }
+              }
+        }
+    }
+
+
+    template <int dim, typename number>
     inline void nitsche_tangential_residual (
-      Vector<number> &result,
-      const FEValuesBase<dim> &fe,
-      const VectorSlice<const std::vector<std::vector<double> > > &input,
-      const VectorSlice<const std::vector<std::vector<Tensor<1,dim> > > > &Dinput,
-      const VectorSlice<const std::vector<std::vector<double> > > &data,
+      dealii::Vector<number> &result,
+      const dealii::FEValuesBase<dim> &fe,
+      const dealii::VectorSlice<const std::vector<std::vector<double> > > &input,
+      const dealii::VectorSlice<const std::vector<std::vector<dealii::Tensor<1,dim> > > > &Dinput,
+      const dealii::VectorSlice<const std::vector<std::vector<double> > > &data,
       double penalty,
       double factor = 1.)
     {
@@ -228,7 +263,7 @@ namespace LocalIntegrators
       for (unsigned int k=0; k<fe.n_quadrature_points; ++k)
         {
           const double dx = factor * fe.JxW(k);
-          const Tensor<1,dim> n = fe.normal_vector(k);
+          const dealii::Tensor<1,dim> n = fe.normal_vector(k);
           for (unsigned int i=0; i<n_dofs; ++i)
             {
               double udotn = 0.;
@@ -272,10 +307,10 @@ namespace LocalIntegrators
 
     template <int dim, typename number>
     void nitsche_residual_homogeneous (
-      Vector<number> &result,
-      const FEValuesBase<dim> &fe,
-      const VectorSlice<const std::vector<std::vector<double> > > &input,
-      const VectorSlice<const std::vector<std::vector<Tensor<1,dim> > > > &Dinput,
+      dealii::Vector<number> &result,
+      const dealii::FEValuesBase<dim> &fe,
+      const dealii::VectorSlice<const std::vector<std::vector<double> > > &input,
+      const dealii::VectorSlice<const std::vector<std::vector<dealii::Tensor<1,dim> > > > &Dinput,
       double penalty,
       double factor = 1.)
     {
@@ -287,7 +322,7 @@ namespace LocalIntegrators
       for (unsigned int k=0; k<fe.n_quadrature_points; ++k)
         {
           const double dx = factor * fe.JxW(k);
-          const Tensor<1,dim> n = fe.normal_vector(k);
+          const dealii::Tensor<1,dim> n = fe.normal_vector(k);
           for (unsigned int i=0; i<n_dofs; ++i)
             for (unsigned int d1=0; d1<dim; ++d1)
               {
@@ -313,12 +348,12 @@ namespace LocalIntegrators
 
     template <int dim>
     inline void ip_matrix (
-      FullMatrix<double> &M11,
-      FullMatrix<double> &M12,
-      FullMatrix<double> &M21,
-      FullMatrix<double> &M22,
-      const FEValuesBase<dim> &fe1,
-      const FEValuesBase<dim> &fe2,
+      dealii::FullMatrix<double> &M11,
+      dealii::FullMatrix<double> &M12,
+      dealii::FullMatrix<double> &M21,
+      dealii::FullMatrix<double> &M22,
+      const dealii::FEValuesBase<dim> &fe1,
+      const dealii::FEValuesBase<dim> &fe2,
       const double pen,
       const double int_factor = 1.,
       const double ext_factor = -1.)
@@ -343,7 +378,7 @@ namespace LocalIntegrators
       for (unsigned int k=0; k<fe1.n_quadrature_points; ++k)
         {
           const double dx = fe1.JxW(k);
-          const Tensor<1,dim> n = fe1.normal_vector(k);
+          const dealii::Tensor<1,dim> n = fe1.normal_vector(k);
           for (unsigned int i=0; i<n_dofs; ++i)
             for (unsigned int j=0; j<n_dofs; ++j)
               for (unsigned int d1=0; d1<dim; ++d1)
@@ -389,14 +424,14 @@ namespace LocalIntegrators
     template <int dim, typename number>
     void
     ip_residual(
-      Vector<number> &result1,
-      Vector<number> &result2,
-      const FEValuesBase<dim> &fe1,
-      const FEValuesBase<dim> &fe2,
-      const VectorSlice<const std::vector<std::vector<double> > > &input1,
-      const VectorSlice<const std::vector<std::vector<Tensor<1,dim> > > > &Dinput1,
-      const VectorSlice<const std::vector<std::vector<double> > > &input2,
-      const VectorSlice<const std::vector<std::vector<Tensor<1,dim> > > > &Dinput2,
+      dealii::Vector<number> &result1,
+      dealii::Vector<number> &result2,
+      const dealii::FEValuesBase<dim> &fe1,
+      const dealii::FEValuesBase<dim> &fe2,
+      const dealii::VectorSlice<const std::vector<std::vector<double> > > &input1,
+      const dealii::VectorSlice<const std::vector<std::vector<dealii::Tensor<1,dim> > > > &Dinput1,
+      const dealii::VectorSlice<const std::vector<std::vector<double> > > &input2,
+      const dealii::VectorSlice<const std::vector<std::vector<dealii::Tensor<1,dim> > > > &Dinput2,
       double pen,
       double int_factor = 1.,
       double ext_factor = -1.)
@@ -417,7 +452,7 @@ namespace LocalIntegrators
       for (unsigned int k=0; k<fe1.n_quadrature_points; ++k)
         {
           const double dx = fe1.JxW(k);
-          const Tensor<1,dim> n = fe1.normal_vector(k);
+          const dealii::Tensor<1,dim> n = fe1.normal_vector(k);
 
           for (unsigned int i=0; i<n1; ++i)
             for (unsigned int d1=0; d1<dim; ++d1)

@@ -1,5 +1,5 @@
 #include <Neo.h>
-
+// #include <test_cell_elasticity.h>
 #ifndef BENCHMARKS
 
 std::unique_ptr<dealii::TimerOutput>        timer ;
@@ -8,6 +8,8 @@ std::unique_ptr<dealii::ConditionalOStream> pcout ;
 
 int main (int argc, char *argv[])
 {
+  // TestElasticityMatrix::test_cell_elasticity<2>();
+
   dealii::Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv, 1);
   mpi_communicator.reset(new MPI_Comm(MPI_COMM_WORLD));
   pcout.reset(new dealii::ConditionalOStream(std::cout,dealii::Utilities::MPI::this_mpi_process(*mpi_communicator) == 0));
@@ -22,8 +24,10 @@ int main (int argc, char *argv[])
   *pcout << "Using MeshWorker-based matrix-free implementation" << std::endl;
 #ifdef MG   
   typedef GMGPreconditioner<d>  Precond;
+  *pcout << "Using MG" << std::endl;
 #else // MG OFF
   typedef dealii::PreconditionIdentity          Precond;
+  *pcout << "Not using MG" << std::endl;
 #endif // MG
   Simulator<SystemMatrixType,dealii::parallel::distributed::Vector<double>,Precond,d,fe_degree> dgmethod;
   dgmethod.n_levels = (argc > 1) ? atoi(argv[1]) : 2 ;

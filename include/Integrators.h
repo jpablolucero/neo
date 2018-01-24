@@ -5,6 +5,8 @@
 
 #include <deal.II/fe/fe_values.h>
 
+// #include <deal.II/integrators/elasticity.h>
+#include <deal.II/integrators/grad_div.h>
 #include <deal.II/integrators/l2.h>
 #include <deal.II/integrators/laplace.h>
 
@@ -19,6 +21,7 @@
 #include <deal.II/meshworker/integration_info.h>
 #include <deal.II/meshworker/local_integrator.h>
 
+#include <Elasticity.h>
 #include <Diffusion.h>
 #include <Transport.h>
 #include <EquationData.h>
@@ -76,6 +79,7 @@ public:
 	    typename dealii::MeshWorker::IntegrationInfo<dim> &info2) const override;
 private:
   const MaterialParameter material_param;
+  Boundaries<dim> boundaries;
   ReferenceFunction<dim> exact_solution;
 };
 

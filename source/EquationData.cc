@@ -298,6 +298,8 @@ double MFRightHandSide<dim>::value (const dealii::Point<dim>   &p,
   //  return 1.;
 }
 
+template class Boundaries<2>;
+template class Boundaries<3>;
 template class Coefficient<2>;
 template class Coefficient<3>;
 template class ReferenceFunction<2>;

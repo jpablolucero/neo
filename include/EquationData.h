@@ -28,7 +28,7 @@ template <int dim>
 class Boundaries final : public dealii::Function<dim>
 {
 public:
-  Boundaries();
+  Boundaries(/*unsigned int n_comp*/);
   Boundaries (const Boundaries &) = delete;
   Boundaries &operator = (const Boundaries &) = delete;
 
