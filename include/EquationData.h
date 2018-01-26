@@ -20,8 +20,7 @@ class MaterialParameter
 {
 public:
   MaterialParameter();
-  const double lambda;
-  const double mu;
+  const double viscosity;
 };
 
 template <int dim>

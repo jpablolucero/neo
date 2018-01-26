@@ -1,8 +1,7 @@
 #include <EquationData.h>
 
 MaterialParameter::MaterialParameter()
-  : lambda(1.)
-  , mu(1.)
+  : viscosity(1.)
 {}
 
 template <int dim>
@@ -10,7 +9,8 @@ Boundaries<dim>::Boundaries()
   : dealii::Function<dim>(dim)
 {
   dirichlet.insert(0);
-  dirichlet.insert(1);
+  dirichlet.insert(2);
+  dirichlet.insert(3);
 }
 
 template <int dim>
@@ -29,7 +29,7 @@ Boundaries<dim>::vector_values (const std::vector<dealii::Point<dim>>& points,
   for (unsigned int k = 0; k < points.size(); ++k)
     {
       const dealii::Point<dim>& p = points[k];
-      values[0][k] = 1. * p(0);
+      values[0][k] = 1. - p(1) * p(1);
     }
 }
 
