@@ -23,6 +23,7 @@
 
 #include <Elasticity.h>
 #include <Diffusion.h>
+#include <Laplace.h>
 #include <Transport.h>
 #include <EquationData.h>
 

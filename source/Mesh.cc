@@ -8,7 +8,7 @@ Mesh<dim>::Mesh():
 		limit_level_difference_at_vertices,
 		dealii::parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy)
 {
-  dealii::GridGenerator::hyper_cube(triangulation,-1.,1.,true);
+  dealii::GridGenerator::hyper_cube(triangulation,0.,1.,true);
 
 #ifdef PERIODIC
   //add periodicity

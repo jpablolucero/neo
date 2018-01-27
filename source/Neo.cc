@@ -19,7 +19,7 @@ int main (int argc, char *argv[])
     dealii::deallog.depth_console (3);
   timer.reset(new dealii::TimerOutput (*mpi_communicator, *pcout,dealii::TimerOutput::never,dealii::TimerOutput::wall_times));
   const unsigned int d = 2 ;
-  const unsigned int fe_degree = 1 ;
+  const unsigned int fe_degree = 2 ;
   typedef MFOperator<d,fe_degree,double> SystemMatrixType;
   *pcout << "Using MeshWorker-based matrix-free implementation" << std::endl;
 #ifdef MG   
