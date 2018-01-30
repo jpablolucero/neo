@@ -9,6 +9,7 @@ Boundaries<dim>::Boundaries()
   : dealii::Function<dim>(dim+1)
 {
   dirichlet.insert(0);
+  dirichlet.insert(1);
   dirichlet.insert(2);
   dirichlet.insert(3);
 }

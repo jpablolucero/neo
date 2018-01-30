@@ -100,12 +100,18 @@ void ResidualIntegrator<dim>::cell(dealii::MeshWorker::DoFInfo<dim> &dinfo,
     dinfo.vector(0).block(0),
     info.fe_values(0),
     info.values[0][dim],
-    -1.);
+    1.);
+  // Strong gradient residual!
+  // dealii::LocalIntegrators::Divergence::gradient_residual(
+  //   dinfo.vector(0).block(0),
+  //   info.fe_values(0),
+  //   info.gradients[0][dim],
+  //   1.);
   dealii::LocalIntegrators::Divergence::cell_residual(
     dinfo.vector(0).block(1),
     info.fe_values(1),
     make_slice(info.gradients[0], 0, dim),
-    1.);
+    -1.);
 }
 
 template <int dim>
@@ -151,14 +157,6 @@ void ResidualIntegrator<dim>::boundary(dealii::MeshWorker::DoFInfo<dim> &dinfo,
       // boundaries.vector_values(info.fe_values(0).get_quadrature_points(), null);
 
       const unsigned int deg = info.fe_values(0).get_fe().tensor_degree();
-      dealii::LocalIntegrators::Laplace::nitsche_residual(
-        dinfo.vector(0).block(0),
-	info.fe_values(0),
-	dealii::make_slice(info.values[0], 0, dim),
-	dealii::make_slice(info.gradients[0], 0, dim),
-	dealii::make_slice(null, 0, dim),
-	dealii::LocalIntegrators::Laplace::compute_penalty(dinfo, dinfo, deg, deg),
-	material_param.viscosity);
       // LocalIntegrators::Elasticity::nitsche_residual(
       //   dinfo.vector(0).block(0),
       // 	info.fe_values(0),
@@ -167,6 +165,14 @@ void ResidualIntegrator<dim>::boundary(dealii::MeshWorker::DoFInfo<dim> &dinfo,
       // 	dealii::make_slice(null, 0, dim),
       // 	dealii::LocalIntegrators::Laplace::compute_penalty(dinfo, dinfo, deg, deg),
       // 	material_param.viscosity);
+      dealii::LocalIntegrators::Laplace::nitsche_residual(
+        dinfo.vector(0).block(0),
+	info.fe_values(0),
+	dealii::make_slice(info.values[0], 0, dim),
+	dealii::make_slice(info.gradients[0], 0, dim),
+	dealii::make_slice(null, 0, dim),
+	dealii::LocalIntegrators::Laplace::compute_penalty(dinfo, dinfo, deg, deg),
+	material_param.viscosity);
     }
 }
 
