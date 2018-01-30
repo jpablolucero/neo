@@ -21,9 +21,7 @@ int main (int argc, char *argv[])
   *pcout << "Using MeshWorker-based matrix-free implementation" << std::endl;
 #ifdef MG
   typedef dealii::parallel::distributed::Vector<double> VectorType;
-  bool same_diagonal = false;
-  typedef PSCPreconditioner<d,MFOperator<d,fe_degree,double> > > Smoother;
-  typedef GMGPreconditioner<d,VectorType,double,same_diagonal,fe_degree,Smoother> Precond;
+  typedef GMGPreconditioner<d,VectorType,double,false,fe_degree> Precond;
   *pcout << "Using MG" << std::endl;
 #else // MG OFF
   typedef dealii::PreconditionIdentity          Precond;
