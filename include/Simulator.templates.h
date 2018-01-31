@@ -107,7 +107,24 @@ void Simulator<SystemMatrixType,VectorType,Preconditioner,dim,degree>::output_re
 
   dealii::DataOut<dim> data_out;
   data_out.attach_dof_handler (dofs.dof_handler);
-  data_out.add_data_vector (ghosted_solution, "u");
+
+  std::vector<dealii::DataComponentInterpretation::DataComponentInterpretation> output_data_types (fe.fe.n_components());
+  unsigned int comp = 0;
+  for (unsigned int i = 0; i < fe.fe.n_base_elements(); ++i)
+    {
+      const dealii::FiniteElement<dim>& base = fe.fe.base_element(i);
+      dealii::DataComponentInterpretation::DataComponentInterpretation inter =
+	dealii::DataComponentInterpretation::component_is_scalar;
+      if (base.n_components() == dim)
+	inter = dealii::DataComponentInterpretation::component_is_part_of_vector;
+      for (unsigned int j = 0; j < fe.fe.element_multiplicity(i); ++j)
+	for (unsigned int k = 0; k < base.n_components(); ++k)
+	  output_data_types[comp++] = inter;
+    }
+  data_out.add_data_vector (ghosted_solution, "u",
+			    dealii::DataOut_DoFData<dealii::DoFHandler<dim>, dim, dim>::type_dof_data,
+			    output_data_types);
+
   dealii::Vector<float> subdomain (mesh.triangulation.n_active_cells());
   for (unsigned int i=0; i<subdomain.size(); ++i)
     subdomain(i) = mesh.triangulation.locally_owned_subdomain();
