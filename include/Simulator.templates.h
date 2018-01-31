@@ -71,7 +71,8 @@ void Simulator<SystemMatrixType,VectorType,Preconditioner,dim,degree>::compute_e
   dealii::Vector<double> local_errors;
 
   unsigned int base_component_start = 0;
-  for (unsigned int i = 0; i < fe.fe.n_base_elements(); ++i)
+  const unsigned int n_base_elements = fe.fe.n_base_elements();
+  for (unsigned int i = 0; i < n_base_elements; ++i)
     {
       const dealii::FiniteElement<dim>& base = fe.fe.base_element(i);
       const unsigned int base_n_components = base.n_components();
@@ -91,7 +92,9 @@ void Simulator<SystemMatrixType,VectorType,Preconditioner,dim,degree>::compute_e
 	= std::sqrt(dealii::Utilities::MPI::sum(L2_error_local * L2_error_local,
 						*mpi_communicator));
 
-      *pcout << "Block(" << i << ") L2 error: " << L2_error << std::endl;
+      if (n_base_elements > 1)
+	*pcout << "Block(" << i << ") ";
+      *pcout << "L2 error: " << L2_error << std::endl;
 
       base_component_start += base_n_components;
     }
@@ -121,7 +124,6 @@ void Simulator<SystemMatrixType,VectorType,Preconditioner,dim,degree>::output_re
   data_out.add_data_vector (ghosted_solution, "u",
 			    dealii::DataOut_DoFData<dealii::DoFHandler<dim>, dim, dim>::type_dof_data,
 			    output_data_types);
-  // data_out.add_data_vector (ghosted_solution, "u");
 
   dealii::Vector<float> subdomain (mesh.triangulation.n_active_cells());
   for (unsigned int i=0; i<subdomain.size(); ++i)
