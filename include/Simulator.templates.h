@@ -78,7 +78,7 @@ void Simulator<SystemMatrixType,VectorType,Preconditioner,dim,degree>::compute_e
       const unsigned int base_n_components = base.n_components();
       const std::pair<unsigned int, unsigned int> selected (base_component_start,
 							    base_component_start + base_n_components);
-      typename dealii::ComponentSelectFunction<dim>::ComponentSelectFunction
+      dealii::ComponentSelectFunction<dim>
         block_mask (selected, fe.fe.n_components());
 
       dealii::VectorTools::integrate_difference (fe.mapping, dofs.dof_handler,

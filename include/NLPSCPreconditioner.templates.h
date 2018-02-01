@@ -157,7 +157,6 @@ void NLPSCPreconditioner<dim, SystemMatrixType, VectorType, number,same_diagonal
   this->data = data;
   level = data.level;
   const dealii::DoFHandler<dim> &dof_handler = *(data.dof_handler);
-  const dealii::FiniteElement<dim> &fe = dof_handler.get_fe();
   {
 #ifdef DEBUG
     const dealii::parallel::distributed::Triangulation<dim> *distributed_tria
