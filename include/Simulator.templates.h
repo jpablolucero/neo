@@ -70,17 +70,34 @@ void Simulator<SystemMatrixType,VectorType,Preconditioner,dim,degree>::compute_e
   dealii::QGauss<dim> quadrature (degree+2);
   dealii::Vector<double> local_errors;
 
-  dealii::VectorTools::integrate_difference (fe.mapping, dofs.dof_handler,
-                                             ghosted_solution,
-                                             dofs.reference_function,
-                                             local_errors, quadrature,
-                                             dealii::VectorTools::L2_norm);
-  const double L2_error_local = local_errors.l2_norm();
-  const double L2_error
-    = std::sqrt(dealii::Utilities::MPI::sum(L2_error_local * L2_error_local,
-                                            *mpi_communicator));
+  unsigned int base_component_start = 0;
+  const unsigned int n_base_elements = fe.fe.n_base_elements();
+  for (unsigned int i = 0; i < n_base_elements; ++i)
+    {
+      const dealii::FiniteElement<dim>& base = fe.fe.base_element(i);
+      const unsigned int base_n_components = base.n_components();
+      const std::pair<unsigned int, unsigned int> selected (base_component_start,
+							    base_component_start + base_n_components);
+      typename dealii::ComponentSelectFunction<dim>::ComponentSelectFunction
+        block_mask (selected, fe.fe.n_components());
 
-  *pcout << "L2 error: " << L2_error << std::endl;
+      dealii::VectorTools::integrate_difference (fe.mapping, dofs.dof_handler,
+						 ghosted_solution,
+						 dofs.reference_function,
+						 local_errors, quadrature,
+						 dealii::VectorTools::L2_norm,
+						 &block_mask);
+      const double L2_error_local = local_errors.l2_norm();
+      const double L2_error
+	= std::sqrt(dealii::Utilities::MPI::sum(L2_error_local * L2_error_local,
+						*mpi_communicator));
+
+      if (n_base_elements > 1)
+	*pcout << "Block(" << i << ") ";
+      *pcout << "L2 error: " << L2_error << std::endl;
+
+      base_component_start += base_n_components;
+    }
 }
 
 template <typename SystemMatrixType,typename VectorType,typename Preconditioner,int dim,unsigned int degree>
@@ -90,7 +107,24 @@ void Simulator<SystemMatrixType,VectorType,Preconditioner,dim,degree>::output_re
 
   dealii::DataOut<dim> data_out;
   data_out.attach_dof_handler (dofs.dof_handler);
-  data_out.add_data_vector (ghosted_solution, "u");
+
+  std::vector<dealii::DataComponentInterpretation::DataComponentInterpretation> output_data_types (fe.fe.n_components());
+  unsigned int comp = 0;
+  for (unsigned int i = 0; i < fe.fe.n_base_elements(); ++i)
+    {
+      const dealii::FiniteElement<dim>& base = fe.fe.base_element(i);
+      dealii::DataComponentInterpretation::DataComponentInterpretation inter =
+	dealii::DataComponentInterpretation::component_is_scalar;
+      if (base.n_components() == dim)
+	inter = dealii::DataComponentInterpretation::component_is_part_of_vector;
+      for (unsigned int j = 0; j < fe.fe.element_multiplicity(i); ++j)
+	for (unsigned int k = 0; k < base.n_components(); ++k)
+	  output_data_types[comp++] = inter;
+    }
+  data_out.add_data_vector (ghosted_solution, "u",
+			    dealii::DataOut_DoFData<dealii::DoFHandler<dim>, dim, dim>::type_dof_data,
+			    output_data_types);
+
   dealii::Vector<float> subdomain (mesh.triangulation.n_active_cells());
   for (unsigned int i=0; i<subdomain.size(); ++i)
     subdomain(i) = mesh.triangulation.locally_owned_subdomain();
