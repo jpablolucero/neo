@@ -134,29 +134,35 @@ void Simulator<SystemMatrixType,VectorType,Preconditioner,dim,degree>::run ()
   *pcout << "Refine global" << std::endl;
   mesh.triangulation.refine_global (n_levels-1);
   timer->leave_subsection();
+
   *pcout << "Finite element: " << fe.fe.get_name() << std::endl;
   *pcout << "Number of active cells: "
         << mesh.triangulation.n_global_active_cells()
         << std::endl;
+
   timer->enter_subsection("setup_system");
   *pcout << "Setup system" << std::endl;
   setup_system ();
   *pcout << "Assemble system" << std::endl;
   rhs.assemble(ghosted_solution);
   timer->leave_subsection();
+
   dealii::deallog << "DoFHandler levels: ";
   for (unsigned int l=min_level; l<mesh.triangulation.n_global_levels(); ++l)
     dealii::deallog << ' ' << dofs.dof_handler.n_dofs(l);
   dealii::deallog << std::endl;
+
   timer->enter_subsection("solve");
   *pcout << "Solve" << std::endl;
   solve ();
   timer->leave_subsection();
+
   timer->enter_subsection("output");
   *pcout << "Output" << std::endl;
   compute_error();
   output_results(n_levels);
   timer->leave_subsection();
+
   timer->print_summary();
   *pcout << std::endl;
   // workaround regarding issue #2533
@@ -177,14 +183,17 @@ void Simulator<SystemMatrixType,VectorType,Preconditioner,dim,degree>::run_non_l
   *pcout << "Refine global" << std::endl;
   mesh.triangulation.refine_global (n_levels-1);
   timer->leave_subsection();
+
   *pcout << "Finite element: " << fe.fe.get_name() << std::endl;
   *pcout << "Number of active cells: "
         << mesh.triangulation.n_global_active_cells()
         << std::endl;
+
   timer->enter_subsection("setup_system");
   *pcout << "Setup system" << std::endl;
   setup_system ();
   timer->leave_subsection();
+
   dealii::deallog << "DoFHandler levels: ";
   for (unsigned int l=0; l<mesh.triangulation.n_global_levels(); ++l)
     dealii::deallog << ' ' << dofs.dof_handler.n_dofs(l);
@@ -195,15 +204,18 @@ void Simulator<SystemMatrixType,VectorType,Preconditioner,dim,degree>::run_non_l
   solution_data.add(&sol, "solution");
   dealii::AnyData data;
   newton.control.set_reduction(1.E-8);
+
   timer->enter_subsection("solve");
   *pcout << "Solve" << std::endl;
   newton(solution_data, data);
   ghosted_solution = *(solution_data.try_read_ptr<VectorType>("solution"));
   ghosted_solution.update_ghost_values();
   timer->leave_subsection();
+
   timer->enter_subsection("output");
   output_results(n_levels);
   timer->leave_subsection();
+
   timer->print_summary();
   *pcout << std::endl;
   // workaround regarding issue #2533
