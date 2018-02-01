@@ -6,6 +6,7 @@
 #include <deal.II/fe/fe_values.h>
 
 #include <deal.II/integrators/divergence.h>
+#include <deal.II/integrators/elasticity.h>
 #include <deal.II/integrators/grad_div.h>
 #include <deal.II/integrators/l2.h>
 #include <deal.II/integrators/laplace.h>
