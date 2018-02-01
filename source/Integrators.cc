@@ -273,11 +273,6 @@ void RHSIntegrator<dim>::cell(dealii::MeshWorker::DoFInfo<dim> &dinfo, typename 
         }
 
       dealii::LocalIntegrators::L2::L2(result.block(b),fev,f,-1.);
-#ifdef CG
-      //we need to do the same thing as for matrix integrator
-      auto &M = dinfo.matrix(b*n_blocks + b).matrix;
-      LocalIntegrators::Diffusion::cell_matrix<dim>(M,fev,coeffs_values);
-#endif // CG
     }
 }
 
