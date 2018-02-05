@@ -428,10 +428,10 @@ void PSCPreconditioner<dim, SystemMatrixType, VectorType, number, same_diagonal>
     CellVectorContainer(std::vector<std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> > &
 			subdomain_to_global_map_):
       subdomain_to_global_map(subdomain_to_global_map_){};
-    auto & operator [](unsigned int c) {return subdomain_to_global_map[c][0];}
-    auto size() {return subdomain_to_global_map.size();}
-    auto begin() {return subdomain_to_global_map.begin();}
-    auto end() {return subdomain_to_global_map.end();}
+    typename dealii::DoFHandler<dim>::level_cell_iterator & operator [](unsigned int c) {return subdomain_to_global_map[c][0];}
+    std::size_t size() {return subdomain_to_global_map.size();}
+    typename std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator>::iterator begin() {return subdomain_to_global_map.begin();}
+    typename std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator>::iterator end() {return subdomain_to_global_map.end();}
   private:
     std::vector<std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> > & subdomain_to_global_map;
   } local_cells(ddh->subdomain_to_global_map) ;

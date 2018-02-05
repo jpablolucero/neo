@@ -279,7 +279,10 @@ void RHSIntegrator<dim>::cell(dealii::MeshWorker::DoFInfo<dim> &dinfo, typename 
 template <int dim>
 void RHSIntegrator<dim>::boundary(dealii::MeshWorker::DoFInfo<dim> &dinfo, typename dealii::MeshWorker::IntegrationInfo<dim> &info) const
 {
-#ifndef CG
+#ifdef CG
+  (void) dinfo;
+  (void) info;
+#else
   auto &result = dinfo.vector(0);
   const auto n_blocks = result.n_blocks();
   Assert(n_blocks>0, dealii::ExcMessage("BlockInfo not initialized!"));

@@ -85,7 +85,7 @@ namespace
 	  solver.solve(*(scratch.system_matrix),Du,res,dealii::PreconditionIdentity());
 	  scratch.system_matrix->unset_cell_range();
 	};
-      auto residual = [&](dealii::Vector<number> & res,dealii::Vector<number> & u)
+      auto residual = [&](dealii::Vector<number> & res,dealii::Vector<number> & /*u*/) //TODO why is u unused?
 	{
 	  mg_vector[ddh.get_level()] = 0. ;
 	  dealii::MeshWorker::LoopControl lctrl;
@@ -197,7 +197,7 @@ void NLPSCPreconditioner<dim, SystemMatrixType, VectorType, number, same_diagona
 
 template <int dim, typename SystemMatrixType, typename VectorType, typename number, bool same_diagonal>
 void NLPSCPreconditioner<dim, SystemMatrixType, VectorType, number, same_diagonal>::vmult_add (VectorType &dst,
-    const VectorType &src) const
+    const VectorType &/*src*/) const //TODO why is src unused?
 {
   std::string section = "Smoothing @ level ";
   section += std::to_string(level);
