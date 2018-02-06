@@ -100,7 +100,16 @@ void MatrixIntegrator<dim>::boundary(dealii::MeshWorker::DoFInfo<dim> &dinfo,
 
 template <int dim>
 ResidualIntegrator<dim>::ResidualIntegrator()
-{}
+{
+  this->use_cell = true;
+#ifdef CG
+  this->use_boundary = false;
+  this->use_face = false;
+#else
+  this->use_boundary = true;
+  this->use_face = true;
+#endif
+}
 
 template <int dim>
 void ResidualIntegrator<dim>::cell(dealii::MeshWorker::DoFInfo<dim> &dinfo,

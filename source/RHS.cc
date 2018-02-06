@@ -36,11 +36,7 @@ void RHS<dim>::assemble(const dealii::parallel::distributed::Vector<double> & so
   
   dealii::MeshWorker::IntegrationInfoBox<dim> info_box;
   const unsigned int n_gauss_points = fe.fe.degree+1;
-#ifdef CG
   info_box.initialize_gauss_quadrature(n_gauss_points,n_gauss_points,n_gauss_points);
-#else
-  info_box.initialize_gauss_quadrature(n_gauss_points,n_gauss_points,n_gauss_points);
-#endif // CG
   info_box.initialize_update_flags();
   dealii::UpdateFlags update_flags = dealii::update_quadrature_points |
                                      dealii::update_values | dealii::update_gradients;

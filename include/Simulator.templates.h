@@ -49,15 +49,25 @@ void Simulator<SystemMatrixType,VectorType,Preconditioner,dim,degree>::solve ()
   dealii::ReductionControl                                 solver_control (dofs.dof_handler.n_dofs(), 1.e-20, 1.E-10,true);
   typename dealii::SolverGMRES<VectorType>::AdditionalData data(100,true);
   dealii::SolverGMRES<VectorType>                          solver (solver_control,data);
-      
+
+#ifdef CG
+  VectorType constraint_entries(solution);
+  dofs.constraints.distribute(constraint_entries);
+  VectorType tmp(solution);
+  system_matrix.vmult(tmp, constraint_entries);
+  rhs.right_hand_side.add(-1., tmp);
+#endif
+
   // Solve the system
   timer->enter_subsection("solve::solve");
   dofs.constraints.set_zero(solution);
   solver.solve(system_matrix,solution,rhs.right_hand_side,preconditioner);
   
 #ifdef CG
+  solution += constraint_entries;
   dofs.constraints.distribute(solution);
 #endif
+
   ghosted_solution = solution;
   ghosted_solution.update_ghost_values();
   timer->leave_subsection();

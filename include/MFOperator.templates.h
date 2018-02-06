@@ -199,6 +199,10 @@ void MFOperator<dim,fe_degree,number,VectorType>::vmult_add (VectorType &dst,
   dst_data.add<VectorType *>(&dst, "dst");
   dealii::MeshWorker::Assembler::ResidualSimple<VectorType > assembler;
   assembler.initialize(dst_data);
+#ifdef CG
+  assembler.initialize(*constraints);
+#endif
+
   dealii::MeshWorker::LoopControl lctrl;
   if (use_cell_range)
     {

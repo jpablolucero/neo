@@ -50,7 +50,7 @@ ReferenceFunction<dim>::value(const dealii::Point<dim> &p,
                               const unsigned int /*component = 0*/) const
 {
   const double pi2 = dealii::numbers::PI;
-  return std::sin(pi2*p(0))*std::sin(pi2*p(1));
+  return std::sin(pi2*p(0))*std::sin(pi2*p(1)) + 1.;
 }
 
 template <int dim>
