@@ -425,13 +425,33 @@ void PSCPreconditioner<dim, SystemMatrixType, VectorType, number, same_diagonal>
   class CellVectorContainer
   {
   public:
-    CellVectorContainer(std::vector<std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> > &
-			subdomain_to_global_map_):
-      subdomain_to_global_map(subdomain_to_global_map_){};
-    typename dealii::DoFHandler<dim>::level_cell_iterator & operator [](unsigned int c) {return subdomain_to_global_map[c][0];}
-    std::size_t size() {return subdomain_to_global_map.size();}
-    typename std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator>::iterator begin() {return subdomain_to_global_map.begin();}
-    typename std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator>::iterator end() {return subdomain_to_global_map.end();}
+    CellVectorContainer(std::vector<std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> > &subdomain_to_global_map_)
+        : subdomain_to_global_map(subdomain_to_global_map_)
+      {};
+
+    typename dealii::DoFHandler<dim>::level_cell_iterator &
+    operator [](unsigned int c)
+    {
+        return subdomain_to_global_map[c][0];
+    }
+
+    std::size_t
+    size()
+    {
+        return subdomain_to_global_map.size();
+    }
+
+    typename std::vector<std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> >::iterator
+    begin()
+    {
+        return subdomain_to_global_map.begin();
+    }
+
+    typename std::vector<std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> >::iterator
+    end()
+    {
+        return subdomain_to_global_map.end();
+    }
   private:
     std::vector<std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> > & subdomain_to_global_map;
   } local_cells(ddh->subdomain_to_global_map) ;
