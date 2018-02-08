@@ -72,7 +72,7 @@ void GMGPreconditioner<dim,VectorType,number,same_diagonal,degree,Smoother>::set
       smoother_data[level].n_levels = n_global_levels ;
       smoother_data[level].mapping = &(fe.mapping);
       smoother_data[level].relaxation = 1.;
-      // smoother_data[level].mg_constrained_dofs = mg_constrained_dofs;
+      smoother_data[level].mg_constrained_dofs = dofs.mg_constrained_dofs;
       smoother_data[level].solution = &mg_solution[level];
       //      uncomment to use the dictionary
       // if(!same_diagonal)
@@ -89,7 +89,7 @@ void GMGPreconditioner<dim,VectorType,number,same_diagonal,degree,Smoother>::set
   // Setup Multigrid-Transfer
   mg_transfer.reset(new dealii::MGTransferPrebuilt<VectorType> {});
 #ifdef CG
-  // mg_transfer->initialize_constraints(dofs.constraints, mg_constrained_dofs);
+  mg_transfer->initialize_constraints(*dofs.mg_constrained_dofs);
 #endif // CG
   mg_transfer->build_matrices(dofs.dof_handler);
 

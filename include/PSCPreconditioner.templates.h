@@ -44,14 +44,14 @@ namespace
       ddh.reinit(scratch.local_src, subdomain_idx);
       ddh.reinit(copy.local_solution, subdomain_idx);
       ddh.restrict_add(scratch.local_src, *(scratch.src), subdomain_idx);
-      dealii::ReductionControl solver_control (scratch.local_src.size()*10, 1.e-20, 1.E-5,false,false);
+      /*dealii::ReductionControl solver_control (scratch.local_src.size()*10, 1.e-20, 1.E-5,false,false);
       typename dealii::SolverGMRES<dealii::Vector<double> >::AdditionalData data(100,false);
       dealii::SolverGMRES<dealii::Vector<double> >                          solver (solver_control,data);
       scratch.system_matrix->set_cell_range(ddh.subdomain_to_global_map[subdomain_idx]);
       scratch.system_matrix->set_subdomain(subdomain_idx);
       solver.solve(*(scratch.system_matrix),copy.local_solution,scratch.local_src,dealii::PreconditionIdentity());
-      scratch.system_matrix->unset_cell_range();
-      // (*(scratch.local_inverses))[subdomain_idx]->vmult(copy.local_solution,scratch.local_src);
+      scratch.system_matrix->unset_cell_range();*/
+      (*(scratch.local_inverses))[subdomain_idx]->vmult(copy.local_solution,scratch.local_src);
     }
   }
 }
@@ -67,8 +67,9 @@ PSCPreconditioner<dim, SystemMatrixType, VectorType, number, same_diagonal>::~PS
 }
 
 template <int dim, typename SystemMatrixType, typename VectorType, typename number, bool same_diagonal>
-void PSCPreconditioner<dim, SystemMatrixType, VectorType, number,same_diagonal>::initialize(const SystemMatrixType & system_matrix_,
-    const AdditionalData &data)
+void PSCPreconditioner<dim, SystemMatrixType, VectorType, number,same_diagonal>::initialize
+(const SystemMatrixType &system_matrix_,
+ const AdditionalData   &data)
 {
   Assert(data.dof_handler != 0, dealii::ExcInternalError());
   Assert(data.level != dealii::numbers::invalid_unsigned_int, dealii::ExcInternalError());
@@ -82,8 +83,8 @@ void PSCPreconditioner<dim, SystemMatrixType, VectorType, number,same_diagonal>:
 #ifdef DEBUG
     const dealii::parallel::distributed::Triangulation<dim> *distributed_tria
       = dynamic_cast<const dealii::parallel::distributed::Triangulation<dim>* > (&(dof_handler.get_triangulation()));
-#endif
     Assert(distributed_tria, dealii::ExcInternalError());
+#endif
     dealii::IndexSet locally_owned_level_dofs = dof_handler.locally_owned_mg_dofs(level);
     dealii::IndexSet locally_relevant_level_dofs;
     dealii::DoFTools::extract_locally_relevant_level_dofs(dof_handler, level, locally_relevant_level_dofs);
@@ -95,9 +96,12 @@ void PSCPreconditioner<dim, SystemMatrixType, VectorType, number,same_diagonal>:
     ghosted_solution[level].reinit(locally_owned_level_dofs,locally_relevant_level_dofs,*mpi_communicator);
     ghosted_solution[level] = *(data.solution);
   }
-  if (data.patch_type == AdditionalData::PatchType::cell_patches) ddh.reset(new DGDDHandlerCell<dim>());
-  else ddh.reset(new DGDDHandlerVertex<dim>());
+  if (data.patch_type == AdditionalData::PatchType::cell_patches) 
+      ddh.reset(new DGDDHandlerCell<dim>());
+  else 
+      ddh.reset(new DGDDHandlerVertex<dim>());
   ddh->initialize(dof_handler, level);
+
   const unsigned int n_gauss_points = fe.degree+1;
   info_box.initialize_gauss_quadrature(n_gauss_points,n_gauss_points,n_gauss_points);
   info_box.initialize_update_flags();
@@ -119,119 +123,120 @@ void PSCPreconditioner<dim, SystemMatrixType, VectorType, number,same_diagonal>:
   src_data.add<const dealii::MGLevelObject<VectorType >*>(&ghosted_solution,"Newton iterate");
   info_box.initialize(fe, *(data.mapping), src_data, VectorType {},&(dof_handler.block_info()));
   dof_info.reset(new dealii::MeshWorker::DoFInfo<dim> (dof_handler.block_info()));
-  // timer->enter_subsection("PSC::build_patch_inverses");
-  // patch_inverses.resize(ddh->global_dofs_on_subdomain.size());
-  // {
-  //   // SAME_DIAGONAL
-  //   if (same_diagonal && !data.use_dictionary && patch_inverses.size()!=0)
-  //     {
-  //       // TODO broadcast local patch inverse instead of solving a local problem
-  //       // find the first interior cell if there is any and use it
-  //       typename std::vector<std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> >::iterator it
-  //         = ddh->subdomain_to_global_map.begin();
-  //       unsigned int subdomain = 0;
-  //       for (int i=0; it!=ddh->subdomain_to_global_map.end(); ++it, ++i)
-  //         {
-  //           bool all_interior = true;
-  //           typename std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator>::iterator it_cell
-  //             = it->begin();
-  //           for (; it_cell!=it->end(); ++it_cell)
-  //             if ((*it_cell)->at_boundary())
-  //               {
-  //                 all_interior = false;
-  //                 break;
-  //               }
-  //           if (all_interior)
-  //             {
-  //               subdomain = i;
-  //               break;
-  //             }
-  //         }
-  //       const unsigned int n = fe.n_dofs_per_cell();
-  //       patch_inverses[0].reset(new LAPACKMatrix(n));
-  //       build_matrix(ddh->subdomain_to_global_map[subdomain],
-  //                    ddh->global_dofs_on_subdomain[subdomain],
-  //                    ddh->all_to_unique[subdomain],
-  //                    *patch_inverses[0]);
-  //       // patch_inverses[0]->print_formatted(std::cout);
-  //       patch_inverses[0]->compute_inverse_svd();
-  //       for ( unsigned int j=1; j<patch_inverses.size(); ++j )
-  //         patch_inverses[j] = patch_inverses[0];
-  //     }
-  //   // FULL BLOCK JACOBI
-  //   else if (!same_diagonal && !data.use_dictionary && patch_inverses.size()!=0)
-  //     {
-  //       dealii::Threads::TaskGroup<> tasks;
-  //       for (unsigned int i=0; i<ddh->subdomain_to_global_map.size(); ++i)
-  //         {
-  //           tasks += dealii::Threads::new_task([i,this]()
-  //           {
-  //             patch_inverses[i].reset(new LAPACKMatrix);
-  //             build_matrix(ddh->subdomain_to_global_map[i],
-  //                          ddh->global_dofs_on_subdomain[i],
-  //                          ddh->all_to_unique[i],
-  //                          *patch_inverses[i]);
-  //             // std::cout << std::endl;
-  //             // patch_inverses[i]->print_formatted(std::cout);
-  //             patch_inverses[i]->compute_inverse_svd();
-  //           });
-  //         }
-  //       tasks.join_all ();
-  //     }
-  //   // DICTIONARY
-  //   else if (!same_diagonal && data.use_dictionary && patch_inverses.size()!=0)
-  //     {
-  //       Assert(data.tol > 0., dealii::ExcInternalError());
-  //       std::vector<unsigned int> id_range;
-  //       for ( unsigned int id=0; id<ddh->global_dofs_on_subdomain.size(); ++id)
-  //         id_range.push_back(id);
-  //       unsigned int patch_id, dict_size = 0;
-  //       // loop over subdomain range
-  //       while (id_range.size()!=0)
-  //         {
-  //           // build local inverse of first subdomain in the remaining id_range of subdomains
-  //           patch_id = id_range.front();
-  //           patch_inverses[patch_id].reset(new LAPACKMatrix);
-  //           build_matrix(ddh->subdomain_to_global_map[patch_id],
-  //                        ddh->global_dofs_on_subdomain[patch_id],
-  //                        ddh->all_to_unique[patch_id],
-  //                        *patch_inverses[patch_id]);
-  //           patch_inverses[patch_id]->invert();
-  //           id_range.erase(id_range.begin());
-  //           ++dict_size;
-  //           // check 'inverse-similarity' with the remainder of subdomains
-  //           auto j = id_range.begin();
-  //           while (j!=id_range.end())
-  //             {
-  //               LAPACKMatrix A_j;
-  //               build_matrix(ddh->subdomain_to_global_map[*j],
-  //                            ddh->global_dofs_on_subdomain[*j],
-  //                            ddh->all_to_unique[*j],
-  //                            A_j);
-  //               dealii::FullMatrix<double> S_j {A_j.m()};
-  //               patch_inverses[patch_id]->mmult(S_j,A_j);
-  //               S_j.diagadd(-1.);
-  //               // test if currently observed inverse is a good approximation of inv(A_j)
-  //               Assert(S_j.m() == S_j.n(), dealii::ExcInternalError());
-  //               const double tol_m = data.tol * S_j.m();
-  //               if (S_j.frobenius_norm() < tol_m)
-  //                 {
-  //                   patch_inverses[*j] = patch_inverses[patch_id];
-  //                   j = id_range.erase(j);
-  //                 }
-  //               else
-  //                 ++j;
-  //             }
-  //         }
-  //       //Output
-  //       dealii::deallog << "DEAL::Dictionary(level=" << level
-  //                       << ", mpi_proc=" << 0
-  //                       << ", Tol=" << data.tol << ") contains "
-  //                       << dict_size << " inverse(s)." << std::endl;
-  //     }
-  // }
-  // timer->leave_subsection();
-  ordered_iterators.clear();
+  timer->enter_subsection("PSC::build_patch_inverses");
+  patch_inverses.resize(ddh->global_dofs_on_subdomain.size());
+  {
+    // SAME_DIAGONAL
+    if (same_diagonal && !data.use_dictionary && patch_inverses.size()!=0)
+      {
+        // TODO broadcast local patch inverse instead of solving a local problem
+        // find the first interior cell if there is any and use it
+        typename std::vector<std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> >::iterator it
+          = ddh->subdomain_to_global_map.begin();
+        unsigned int subdomain = 0;
+        for (int i=0; it!=ddh->subdomain_to_global_map.end(); ++it, ++i)
+          {
+            bool all_interior = true;
+            typename std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator>::iterator it_cell
+              = it->begin();
+            for (; it_cell!=it->end(); ++it_cell)
+              if ((*it_cell)->at_boundary())
+                {
+                  all_interior = false;
+                  break;
+                }
+
+            if (all_interior)
+              {
+                subdomain = i;
+                break;
+              }
+          }
+        const unsigned int n = fe.n_dofs_per_cell();
+        patch_inverses[0].reset(new LAPACKMatrix(n));
+        build_matrix(ddh->subdomain_to_global_map[subdomain],
+                     ddh->global_dofs_on_subdomain[subdomain],
+                     ddh->all_to_unique[subdomain],
+                     *patch_inverses[0]);
+        // patch_inverses[0]->print_formatted(std::cout);
+        patch_inverses[0]->compute_inverse_svd();
+        for ( unsigned int j=1; j<patch_inverses.size(); ++j )
+          patch_inverses[j] = patch_inverses[0];
+      }
+    // FULL BLOCK JACOBI
+    else if (!same_diagonal && !data.use_dictionary && patch_inverses.size()!=0)
+      {
+        dealii::Threads::TaskGroup<> tasks;
+        for (unsigned int i=0; i<ddh->subdomain_to_global_map.size(); ++i)
+          {
+            tasks += dealii::Threads::new_task([i,this]()
+              {
+                patch_inverses[i].reset(new LAPACKMatrix);
+                build_matrix(ddh->subdomain_to_global_map[i],
+                             ddh->global_dofs_on_subdomain[i],
+                             ddh->all_to_unique[i],
+                             *patch_inverses[i]);
+                // std::cout << std::endl;
+                // patch_inverses[i]->print_formatted(std::cout);
+                patch_inverses[i]->compute_inverse_svd();
+              });
+          }
+        tasks.join_all ();
+      }
+    // DICTIONARY
+    else if (!same_diagonal && data.use_dictionary && patch_inverses.size()!=0)
+      {
+        Assert(data.tol > 0., dealii::ExcInternalError());
+        std::vector<unsigned int> id_range;
+        for ( unsigned int id=0; id<ddh->global_dofs_on_subdomain.size(); ++id)
+          id_range.push_back(id);
+        unsigned int patch_id, dict_size = 0;
+        // loop over subdomain range
+        while (id_range.size()!=0)
+          {
+            // build local inverse of first subdomain in the remaining id_range of subdomains
+            patch_id = id_range.front();
+            patch_inverses[patch_id].reset(new LAPACKMatrix);
+            build_matrix(ddh->subdomain_to_global_map[patch_id],
+                         ddh->global_dofs_on_subdomain[patch_id],
+                         ddh->all_to_unique[patch_id],
+                         *patch_inverses[patch_id]);
+            patch_inverses[patch_id]->invert();
+            id_range.erase(id_range.begin());
+            ++dict_size;
+            // check 'inverse-similarity' with the remainder of subdomains
+            auto j = id_range.begin();
+            while (j!=id_range.end())
+              {
+                LAPACKMatrix A_j;
+                build_matrix(ddh->subdomain_to_global_map[*j],
+                             ddh->global_dofs_on_subdomain[*j],
+                             ddh->all_to_unique[*j],
+                             A_j);
+                dealii::FullMatrix<double> S_j {A_j.m()};
+                patch_inverses[patch_id]->mmult(S_j,A_j);
+                S_j.diagadd(-1.);
+                // test if currently observed inverse is a good approximation of inv(A_j)
+                Assert(S_j.m() == S_j.n(), dealii::ExcInternalError());
+                const double tol_m = data.tol * S_j.m();
+                if (S_j.frobenius_norm() < tol_m)
+                  {
+                    patch_inverses[*j] = patch_inverses[patch_id];
+                    j = id_range.erase(j);
+                  }
+                else
+                  ++j;
+              }
+          }
+        //Output
+        dealii::deallog << "DEAL::Dictionary(level=" << level
+                        << ", mpi_proc=" << 0
+                        << ", Tol=" << data.tol << ") contains "
+                        << dict_size << " inverse(s)." << std::endl;
+      }
+  }
+  timer->leave_subsection();
+  /*ordered_iterators.clear();
   ordered_gens.clear();
   auto & dirs = data.dirs ;
   for (unsigned int d = 0 ; d < dirs.size() ; ++d)
@@ -239,7 +244,7 @@ void PSCPreconditioner<dim, SystemMatrixType, VectorType, number,same_diagonal>:
       ordered_iterators.resize(d+1);
       ordered_gens.resize(d+1);
       add_cell_ordering(dirs[d]);
-    }
+    }*/
 }
 
 template <int dim, typename SystemMatrixType, typename VectorType, typename number, bool same_diagonal>
@@ -388,8 +393,9 @@ void PSCPreconditioner<dim, SystemMatrixType, VectorType, number, same_diagonal>
 }
 
 template <int dim, typename SystemMatrixType, typename VectorType, typename number, bool same_diagonal>
-void PSCPreconditioner<dim, SystemMatrixType, VectorType, number, same_diagonal>::Tvmult_add (VectorType &/*dst*/,
-    const VectorType &/*src*/) const
+void PSCPreconditioner<dim, SystemMatrixType, VectorType, number, same_diagonal>::Tvmult_add 
+(VectorType       &/*dst*/,
+ const VectorType &/*src*/) const
 {
   AssertThrow(false, dealii::ExcNotImplemented());
 }
@@ -397,9 +403,9 @@ void PSCPreconditioner<dim, SystemMatrixType, VectorType, number, same_diagonal>
 template <int dim, typename SystemMatrixType, typename VectorType, typename number, bool same_diagonal>
 void PSCPreconditioner<dim, SystemMatrixType, VectorType, number, same_diagonal>::build_matrix
 (const std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> &cell_range,
- const std::vector<dealii::types::global_dof_index> &global_dofs_on_subdomain,
- const std::map<dealii::types::global_dof_index, unsigned int> &all_to_unique,
- dealii::LAPACKFullMatrix<double> &matrix)
+ const std::vector<dealii::types::global_dof_index>                       &global_dofs_on_subdomain,
+ const std::map<dealii::types::global_dof_index, unsigned int>            &all_to_unique,
+ dealii::LAPACKFullMatrix<double>                                         &matrix)
 {
   dealii::MGLevelObject<dealii::FullMatrix<double> > mg_matrix ;
   mg_matrix.resize(level,level);
@@ -407,7 +413,7 @@ void PSCPreconditioner<dim, SystemMatrixType, VectorType, number, same_diagonal>
   Assembler::MGMatrixSimpleMapped<dealii::FullMatrix<double> > assembler;
   assembler.initialize(mg_matrix);
 #ifdef CG
-  assembler.initialize(data.mg_constrained_dofs);
+//  assembler.initialize(*data.mg_constrained_dofs);
 #endif
   assembler.initialize(all_to_unique);
   dealii::MeshWorker::LoopControl lctrl;
@@ -419,7 +425,8 @@ void PSCPreconditioner<dim, SystemMatrixType, VectorType, number, same_diagonal>
 }
 
 template <int dim, typename SystemMatrixType, typename VectorType, typename number, bool same_diagonal>
-void PSCPreconditioner<dim, SystemMatrixType, VectorType, number, same_diagonal>::add_cell_ordering(dealii::Tensor<1,dim> dir)
+void PSCPreconditioner<dim, SystemMatrixType, VectorType, number, same_diagonal>::add_cell_ordering
+(dealii::Tensor<1,dim> dir)
 {
   Assert(ddh->colorized_iterators().size() == 1, dealii::ExcInternalError());
   class CellVectorContainer

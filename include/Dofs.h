@@ -3,6 +3,7 @@
 
 #include <deal.II/dofs/dof_handler.h>
 #include <deal.II/dofs/dof_tools.h>
+#include <deal.II/multigrid/mg_constrained_dofs.h>
 
 #include <Mesh.h>
 #include <FiniteElement.h>
@@ -20,9 +21,9 @@ public:
   dealii::DoFHandler<dim>    dof_handler;
   dealii::IndexSet           locally_owned_dofs;
   dealii::IndexSet           locally_relevant_dofs;
-  dealii::ConstraintMatrix                            constraints;
-  ReferenceFunction<dim>                              reference_function;
-
+  dealii::ConstraintMatrix                   constraints;
+  std::shared_ptr<dealii::MGConstrainedDoFs> mg_constrained_dofs;  
+  ReferenceFunction<dim>                     reference_function;
 };
 
 #ifdef HEADER_IMPLEMENTATION

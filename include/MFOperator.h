@@ -80,7 +80,7 @@ private:
   const dealii::FiniteElement<dim>                    *fe;
   const dealii::Mapping<dim>                          *mapping;
   const dealii::ConstraintMatrix                      *constraints;
-  const dealii::MGConstrainedDoFs                     *mg_constrained_dofs;
+  const std::shared_ptr<dealii::MGConstrainedDoFs>    mg_constrained_dofs;
   mutable VectorType                                  *solution;
   DGDDHandlerCell<dim>                                ddh;
   std::unique_ptr<dealii::MeshWorker::DoFInfo<dim> >  dof_info;

@@ -88,7 +88,7 @@ public:
     additive,
   };
   SmootherType smoother_type;
-  // dealii::MGConstrainedDoFs  mg_constrained_dofs;
+  std::shared_ptr<dealii::MGConstrainedDoFs> mg_constrained_dofs;
 };
 
 #include <NLPSCPreconditioner.templates.h>

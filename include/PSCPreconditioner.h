@@ -144,7 +144,7 @@ public:
   
   SmootherType smoother_type;
 
-  // dealii::MGConstrainedDoFs  mg_constrained_dofs;
+  std::shared_ptr<dealii::MGConstrainedDoFs> mg_constrained_dofs;
 
   std::vector<dealii::Tensor<1,dim> > dirs;  
 

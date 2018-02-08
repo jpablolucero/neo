@@ -9,6 +9,7 @@ Dofs<dim>::Dofs(Mesh<dim> & mesh_,FiniteElement<dim> & fe_):
   mesh(mesh_),
   fe(fe_),
   dof_handler(mesh.triangulation),
+  mg_constrained_dofs(std::make_shared<dealii::MGConstrainedDoFs>()),
   reference_function(fe.fe.n_components())
 {}
 
@@ -45,6 +46,7 @@ void Dofs<dim>::setup()
   constraints.clear();
   constraints.reinit(locally_relevant_dofs);
 #ifdef CG
+  std::set<dealii::types::boundary_id> constrained_boundary_ids;
 #ifdef PERIODIC
   //Periodic boundary conditions
   std::vector<dealii::GridTools::PeriodicFacePair
@@ -62,15 +64,23 @@ void Dofs<dim>::setup()
   dealii::DoFTools::make_periodicity_constraints<dealii::DoFHandler<dim> >
     (periodic_faces, constraints);
   for (unsigned int i=0; i<2*dim-2; ++i)
+  {
     dealii::VectorTools::interpolate_boundary_values(dof_handler, i,
                                                      reference_function,
                                                      constraints);
+    constrained_boundary_ids.insert(i);
+  }
 #else
   for (unsigned int i=0; i<2*dim; ++i)
+  {
     dealii::VectorTools::interpolate_boundary_values(dof_handler, i,
                                                      reference_function,
                                                      constraints);
+    constrained_boundary_ids.insert(i);
+  }
 #endif
+  mg_constrained_dofs->initialize(dof_handler);
+  mg_constrained_dofs->make_zero_boundary_constraints(dof_handler, constrained_boundary_ids);
 
   dealii::DoFTools::make_hanging_node_constraints
     (dof_handler, constraints);
