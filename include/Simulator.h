@@ -44,7 +44,6 @@ public:
   unsigned int n_levels ;
   unsigned int min_level;
   unsigned int smoothing_steps ;
-  bool aspin = true ;
 private:
   void setup_system ();
   void solve ();
@@ -89,7 +88,7 @@ private:
     {
       sim.ghosted_solution = *(in.try_read_ptr<VectorType_>("Newton iterate"));
       sim.ghosted_solution.update_ghost_values();
-      if (sim.aspin)
+#ifdef ASPIN
 	{
 	  typename NLPSCPreconditioner<dim, SystemMatrixType_, VectorType_, double, false>::AdditionalData data ;
 	  data.dof_handler = &(sim.dofs.dof_handler);
@@ -109,6 +108,7 @@ private:
 	  dealii::deallog << "ASPIN Residual: " << sim.rhs.right_hand_side.l2_norm() << std::endl ;
 	  *const_cast<VectorType_*>(in.try_read_ptr<VectorType_>("Newton iterate")) = sim.ghosted_solution;
 	}
+#endif
       sim.solution = 0.;
       sim.solve ();
       *out.entry<VectorType_ *>(0) = sim.ghosted_solution ;
