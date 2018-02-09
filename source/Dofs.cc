@@ -9,7 +9,8 @@ Dofs<dim>::Dofs(Mesh<dim> & mesh_,FiniteElement<dim> & fe_):
   mesh(mesh_),
   fe(fe_),
   dof_handler(mesh.triangulation),
-  reference_function(fe.fe.n_components())
+  reference_function(fe.fe.n_components()),
+  boundaries(fe.fe.n_components())
 {}
 
 template <int dim>
@@ -66,10 +67,19 @@ void Dofs<dim>::setup()
                                                      reference_function,
                                                      constraints);
 #else
-  for (unsigned int i=0; i<2*dim; ++i)
-    dealii::VectorTools::interpolate_boundary_values(dof_handler, i,
-                                                     reference_function,
-                                                     constraints);
+  // for (unsigned int i=0; i<2*dim; ++i)
+  //   dealii::VectorTools::interpolate_boundary_values(dof_handler, i,
+  //                                                    reference_function,
+  //                                                    constraints);
+  for (std::map<dealii::types::boundary_id, dealii::ComponentMask>::const_iterator
+	 p = boundaries.boundary_masks.begin();
+       p != boundaries.boundary_masks.end();
+       ++p)
+    if (p->second.n_selected_components(fe.fe.n_components()) != 0)
+      dealii::VectorTools::interpolate_boundary_values(dof_handler, p->first,
+						       reference_function,
+						       constraints,
+						       p->second);
 #endif
 
   dealii::DoFTools::make_hanging_node_constraints

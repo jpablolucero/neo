@@ -40,6 +40,25 @@ Coefficient<dim>::gradient (const dealii::Point<dim> &/*p*/,
 }
 
 template <int dim>
+Boundaries<dim>::Boundaries(unsigned int n_comp_)
+{
+#ifdef CG
+  dealii::ComponentMask component_mask(n_comp_, true);
+  for (unsigned int i = 0; i < 2*dim; ++i)
+    set_boundary(i, component_mask);
+#else
+#endif  // CG
+}
+
+template <int dim>
+void
+Boundaries<dim>::set_boundary(dealii::types::boundary_id index,
+			      dealii::ComponentMask mask)
+{
+  boundary_masks.insert(std::pair<dealii::types::boundary_id, dealii::ComponentMask>(index, mask));
+}
+
+template <int dim>
 ReferenceFunction<dim>::ReferenceFunction(unsigned int n_comp_)
   : dealii::Function<dim> (n_comp_)
 {}
@@ -265,6 +284,8 @@ double MFRightHandSide<dim>::value (const dealii::Point<dim>   &p,
 
 template class Coefficient<2>;
 template class Coefficient<3>;
+template class Boundaries<2>;
+template class Boundaries<3>;
 template class ReferenceFunction<2>;
 template class ReferenceFunction<3>;
 template class Angle<2>;

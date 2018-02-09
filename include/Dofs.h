@@ -17,12 +17,13 @@ public:
   
   Mesh<dim> & mesh ;
   FiniteElement<dim> & fe ;
-  dealii::DoFHandler<dim>    dof_handler;
-  dealii::IndexSet           locally_owned_dofs;
-  dealii::IndexSet           locally_relevant_dofs;
-  dealii::ConstraintMatrix                            constraints;
-  ReferenceFunction<dim>                              reference_function;
+  dealii::DoFHandler<dim>  dof_handler;
+  dealii::IndexSet         locally_owned_dofs;
+  dealii::IndexSet         locally_relevant_dofs;
 
+  dealii::ConstraintMatrix constraints;
+  ReferenceFunction<dim>   reference_function;
+  Boundaries<dim>          boundaries;
 };
 
 #ifdef HEADER_IMPLEMENTATION

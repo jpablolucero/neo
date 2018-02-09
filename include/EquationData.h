@@ -9,6 +9,7 @@
 #include <deal.II/base/quadrature.h>
 #include <deal.II/base/parameter_handler.h>
 #include <deal.II/base/vectorization.h>
+#include <deal.II/fe/component_mask.h>
 
 #include <string>
 #include <fstream>
@@ -32,6 +33,19 @@ public:
 
   dealii::Tensor<1,dim> gradient (const dealii::Point<dim>  &p,
                                   const unsigned int        component = 0) const override;
+};
+
+template <int dim>
+class Boundaries
+{
+public:
+  Boundaries(unsigned int n_comp_);
+
+  // std::set<unsigned int> dirichlet;
+  std::map<dealii::types::boundary_id, dealii::ComponentMask> boundary_masks;
+
+  void set_boundary(dealii::types::boundary_id index,
+		    dealii::ComponentMask mask = dealii::ComponentMask());
 };
 
 template <int dim>
