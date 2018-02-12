@@ -19,12 +19,7 @@ int main (int argc, char *argv[])
   const unsigned int d = 2 ;
   const unsigned int fe_degree = 1 ;
   typedef MFOperator<d,fe_degree,double> SystemMatrixType;
-  *pcout << "Using MeshWorker-based matrix-free implementation" << std::endl;
-#ifdef MG   
   typedef GMGPreconditioner<d>  Precond;
-#else // MG OFF
-  typedef dealii::PreconditionIdentity          Precond;
-#endif // MG
   Simulator<SystemMatrixType,dealii::parallel::distributed::Vector<double>,Precond,d,fe_degree> dgmethod;
   dgmethod.n_levels = (argc > 1) ? atoi(argv[1]) : 2 ;
   dgmethod.min_level=0;

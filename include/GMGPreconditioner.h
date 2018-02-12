@@ -30,11 +30,13 @@ template <int dim,
 class GMGPreconditioner final
 {
  public:
-  GMGPreconditioner (Mesh<dim> & mesh_,
-		     Dofs<dim> & dofs_,
-		     FiniteElement<dim> & fe_) ;
+  typedef MFOperator<dim,fe_degree,number> SystemMatrixType;
+
+  class AdditionalData;
+
+  GMGPreconditioner () ;
   
-  void setup(const VectorType & solution, unsigned int min_level_ = 0);
+  void initialize(const SystemMatrixType & system_matrix_,const AdditionalData &data);
 
   void vmult(VectorType &dst, const VectorType &src) const;
 
@@ -44,14 +46,9 @@ class GMGPreconditioner final
 
   void Tvmult_add(VectorType &dst, const VectorType &src) const;
   
-  typedef MFOperator<dim,fe_degree,number> SystemMatrixType;
  
   int min_level ;
   int smoothing_steps ;
-
-  Mesh<dim> &          mesh ;
-  Dofs<dim> &          dofs ;
-  FiniteElement<dim> & fe ;
 
   dealii::MGLevelObject<SystemMatrixType >            mg_matrix ;
   dealii::MGLevelObject<VectorType>                   mg_solution ;
@@ -79,6 +76,19 @@ class GMGPreconditioner final
   std::unique_ptr<dealii::PreconditionMG<dim, VectorType, dealii::MGTransferPrebuilt<VectorType> > > preconditioner ;
   
 };
+
+template <int dim,typename VectorType,typename number,bool same_diagonal,unsigned int degree, typename Smoother>
+class GMGPreconditioner<dim,VectorType,number,same_diagonal,degree,Smoother>::AdditionalData
+{
+public:
+  AdditionalData(){} ;
+  Mesh<dim> *            mesh ;
+  Dofs<dim> *            dofs ;
+  FiniteElement<dim> *   fe ;
+  VectorType *           solution ;
+  unsigned int           min_level = 0;
+};
+
 
 #include <GMGPreconditioner.templates.h>
 

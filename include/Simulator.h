@@ -46,7 +46,10 @@ public:
   unsigned int smoothing_steps ;
   bool aspin = true ;
 private:
-  void setup_system ();
+  template <typename P=Preconditioner>
+  typename std::enable_if<std::is_same<P,dealii::PreconditionIdentity>::value >::type  setup_system ();
+  template <typename P=Preconditioner>
+  typename std::enable_if<!std::is_same<P,dealii::PreconditionIdentity>::value >::type  setup_system ();
   void solve ();
   void compute_error () const;
   void output_results (const unsigned int cycle) const;
@@ -56,6 +59,7 @@ private:
   Dofs<dim>             dofs;
   RHS<dim>              rhs;
   Preconditioner        preconditioner;
+  typename Preconditioner::AdditionalData pdata ;
   SystemMatrixType      system_matrix;
   
   VectorType       ghosted_solution;

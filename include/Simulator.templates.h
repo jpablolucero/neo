@@ -13,9 +13,6 @@ Simulator<SystemMatrixType,VectorType,Preconditioner,dim,degree>::Simulator ()
   fe(degree),
   dofs(mesh,fe),
   rhs(fe,dofs),
-#ifdef MG
-  preconditioner(mesh,dofs,fe),
-#endif // MG
   residual(*this),
   inverse(*this),
   newton(residual,inverse)
@@ -26,7 +23,9 @@ Simulator<SystemMatrixType,VectorType,Preconditioner,dim,degree>::~Simulator ()
 {}
 
 template <typename SystemMatrixType,typename VectorType,typename Preconditioner,int dim,unsigned int degree>
-void Simulator<SystemMatrixType,VectorType,Preconditioner,dim,degree>::setup_system ()
+template <typename P>
+typename std::enable_if<std::is_same<P,dealii::PreconditionIdentity>::value >::type
+Simulator<SystemMatrixType,VectorType,Preconditioner,dim,degree>::setup_system ()
 {
   dofs.setup();
   ghosted_solution.reinit (dofs.locally_owned_dofs, dofs.locally_relevant_dofs, *mpi_communicator);
@@ -36,15 +35,27 @@ void Simulator<SystemMatrixType,VectorType,Preconditioner,dim,degree>::setup_sys
 }
 
 template <typename SystemMatrixType,typename VectorType,typename Preconditioner,int dim,unsigned int degree>
-void Simulator<SystemMatrixType,VectorType,Preconditioner,dim,degree>::solve ()
+template <typename P>
+typename std::enable_if<!std::is_same<P,dealii::PreconditionIdentity>::value >::type
+Simulator<SystemMatrixType,VectorType,Preconditioner,dim,degree>::setup_system ()
 {
+  dofs.setup();
+  ghosted_solution.reinit (dofs.locally_owned_dofs, dofs.locally_relevant_dofs, *mpi_communicator);
+  solution.reinit (dofs.locally_owned_dofs, *mpi_communicator);
   system_matrix.reinit (&(dofs.dof_handler),&(fe.mapping), &(dofs.constraints), mesh.triangulation.n_global_levels()-1,
 			ghosted_solution);
-  
-#ifdef MG
-  preconditioner.setup(ghosted_solution,min_level);
-#endif // MG
-  
+  pdata.mesh = &mesh;
+  pdata.dofs = &dofs;
+  pdata.fe = &fe;
+  pdata.solution = &ghosted_solution;
+}
+
+
+template <typename SystemMatrixType,typename VectorType,typename Preconditioner,int dim,unsigned int degree>
+void Simulator<SystemMatrixType,VectorType,Preconditioner,dim,degree>::solve ()
+{
+  preconditioner.initialize(system_matrix,pdata);
+ 
   // Setup Solver
   dealii::ReductionControl                                 solver_control (dofs.dof_handler.n_dofs(), 1.e-20, 1.E-10,true);
   typename dealii::SolverGMRES<VectorType>::AdditionalData data(100,true);

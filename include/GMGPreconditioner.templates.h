@@ -4,21 +4,22 @@ extern std::unique_ptr<dealii::TimerOutput>        timer ;
 extern std::unique_ptr<MPI_Comm>                   mpi_communicator ;
 
 template <int dim,typename VectorType,typename number,bool same_diagonal,unsigned int degree, typename Smoother>
-GMGPreconditioner<dim,VectorType,number,same_diagonal,degree,Smoother>::GMGPreconditioner (Mesh<dim> & mesh_,
-											   Dofs<dim> & dofs_,
-											   FiniteElement<dim> & fe_):
+GMGPreconditioner<dim,VectorType,number,same_diagonal,degree,Smoother>::GMGPreconditioner ():
   min_level(0),
-  smoothing_steps(1),
-  mesh(mesh_),
-  dofs(dofs_),
-  fe(fe_)
+  smoothing_steps(1)
 {}
 
 template <int dim,typename VectorType,typename number,bool same_diagonal,unsigned int degree, typename Smoother>
-void GMGPreconditioner<dim,VectorType,number,same_diagonal,degree,Smoother>::setup (const VectorType & solution, unsigned int min_level_)
+void GMGPreconditioner<dim,VectorType,number,same_diagonal,degree,Smoother>::initialize(const SystemMatrixType & system_matrix_,
+											const AdditionalData &data)
+
 {
+  Mesh<dim> & mesh = *(data.mesh) ;
+  Dofs<dim> & dofs = *(data.dofs) ;
+  FiniteElement<dim> & fe = *(data.fe) ;
+  VectorType & solution = *(data.solution) ;
   const unsigned int n_global_levels = mesh.triangulation.n_global_levels();
-  min_level = min_level_ ;
+  min_level = data.min_level ;
   preconditioner.reset(nullptr);
   mg.reset(nullptr);
   mg_coarse.reset(nullptr);
