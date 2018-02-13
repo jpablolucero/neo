@@ -18,9 +18,10 @@ int main (int argc, char *argv[])
   timer.reset(new dealii::TimerOutput (*mpi_communicator, *pcout,dealii::TimerOutput::never,dealii::TimerOutput::wall_times));
   const unsigned int d = 2 ;
   const unsigned int fe_degree = 1 ;
+  typedef dealii::parallel::distributed::Vector<double> VectorType;
   typedef MFOperator<d,fe_degree,double> SystemMatrixType;
-  typedef GMGPreconditioner<d>  Precond;
-  Simulator<SystemMatrixType,dealii::parallel::distributed::Vector<double>,Precond,d,fe_degree> dgmethod;
+  typedef GMGPreconditioner<d,VectorType,double,false,fe_degree>  Precond;
+  Simulator<SystemMatrixType,VectorType,Precond,d,fe_degree> dgmethod;
   dgmethod.n_levels = (argc > 1) ? atoi(argv[1]) : 2 ;
   dgmethod.min_level=0;
   dgmethod.smoothing_steps = (argc > 2) ? atoi(argv[2]) : 1 ;

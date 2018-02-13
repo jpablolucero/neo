@@ -106,7 +106,7 @@ namespace
       res.reinit(u);
       residual(res,u);
       double resnorm = res.l2_norm();
-      const unsigned int n_stepsize_iterations = 21;
+      unsigned int n_iterations = 0;
       const double resnorm0 = resnorm ;
       while(resnorm/resnorm0 > 1.E-2)
       {
@@ -115,20 +115,16 @@ namespace
       	u.add(-1.,Du);
       	copy.ddh->prolongate((*scratch.solution)[ddh.get_level()],u,copy.subdomain_idx);
 	double old_residual = resnorm;
-	dealii::IndexSet locally_relevant_level_dofs;
-	dealii::DoFTools::extract_locally_relevant_level_dofs(ddh.get_dofh(), ddh.get_level(), locally_relevant_level_dofs);
 	residual(res,u);
       	resnorm = res.l2_norm();
-        unsigned int step_size = 0;
-        while (resnorm >= old_residual)
-          {
-            ++step_size;
-            if (step_size > n_stepsize_iterations) break;
-            u.add(1./(1<<step_size), Du);
-      	    copy.ddh->prolongate((*scratch.solution)[ddh.get_level()],u,copy.subdomain_idx);
-      	    residual(res,u);
-            resnorm = res.l2_norm();
-          }
+        if (resnorm > old_residual)
+	  {
+	    u.add(1., Du);
+	    copy.ddh->prolongate((*scratch.solution)[ddh.get_level()],u,copy.subdomain_idx);
+	    break ;
+	  }
+	++n_iterations ;
+	if (n_iterations > 21) break ;
       }
       copy.ddh->prolongate((*scratch.solution)[ddh.get_level()],u0,copy.subdomain_idx);
       copy.local_solution -= u;
