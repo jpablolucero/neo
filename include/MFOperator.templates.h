@@ -142,8 +142,9 @@ template <int dim, int fe_degree, typename number, typename VectorType>
 void MFOperator<dim,fe_degree,number,VectorType>::build_coarse_matrix()
 {
   Assert(dof_handler != 0, dealii::ExcInternalError());
-  dealii::MGLevelObject<dealii::SparseMatrix<double> > mg_matrix ;
+  dealii::MGLevelObject<dealii::TrilinosWrappers::SparseMatrix > mg_matrix ;
   mg_matrix.resize(level,level);
+  dealii::IndexSet locally_owned_level_dofs = dof_handler->locally_owned_mg_dofs(level);
   dealii::IndexSet locally_relevant_level_dofs;
   dealii::DoFTools::extract_locally_relevant_level_dofs(*dof_handler,level,locally_relevant_level_dofs);
   dealii::DynamicSparsityPattern dsp(locally_relevant_level_dofs);
@@ -152,16 +153,21 @@ void MFOperator<dim,fe_degree,number,VectorType>::build_coarse_matrix()
   src_data.add<const dealii::MGLevelObject<VectorType >*>(&ghosted_solution,"Newton iterate");
   info_box.initialize(*fe, *mapping, src_data, VectorType {}, &(dof_handler->block_info()));
   dealii::MGTools::make_flux_sparsity_pattern(*dof_handler,dsp,level);
-  sp.copy_from (dsp);
-  mg_matrix[level].reinit(sp);
-  dealii::MeshWorker::Assembler::MGMatrixSimple<dealii::SparseMatrix<double> > assembler;
+  // sp.copy_from (dsp);
+  dealii::SparsityTools::distribute_sparsity_pattern (dsp,
+						      dof_handler->n_locally_owned_dofs_per_processor(),
+						      *mpi_communicator,
+						      locally_relevant_level_dofs);
+  // mg_matrix[level].reinit(sp);
+  mg_matrix[level].reinit(locally_owned_level_dofs,locally_owned_level_dofs,dsp,*mpi_communicator);
+  dealii::MeshWorker::Assembler::MGMatrixSimple<dealii::TrilinosWrappers::SparseMatrix > assembler;
   assembler.initialize(mg_matrix);
 #ifdef CG
   assembler.initialize(*mg_constrained_dofs);
 #endif // CG
   dealii::colored_loop<dim, dim> (colored_iterators, *dof_info, info_box, matrix_integrator, assembler);
   mg_matrix[level].compress(dealii::VectorOperation::add);
-  coarse_matrix = std::move(mg_matrix[level]);
+  coarse_matrix.copy_from(mg_matrix[level]);
 }
 
 template <int dim, int fe_degree, typename number, typename VectorType>

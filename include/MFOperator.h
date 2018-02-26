@@ -12,6 +12,10 @@
 #include <deal.II/meshworker/simple.h>
 #include <deal.II/meshworker/loop.h>
 #include <deal.II/lac/lapack_full_matrix.h>
+#include <deal.II/lac/trilinos_sparse_matrix.h>
+#include <deal.II/lac/sparsity_tools.h>
+#include <deal.II/lac/trilinos_sparse_matrix.h>
+#include <deal.II/lac/sparsity_tools.h>
 
 #include <Integrators.h>
 #include <integration_loop.h>
@@ -26,7 +30,7 @@ class MFOperator final: public dealii::Subscriptor
 {
 public:
   typedef double value_type ;
-  typedef dealii::SparseMatrix<double>::size_type               size_type ;
+  typedef dealii::TrilinosWrappers::SparseMatrix::size_type               size_type ;
   typedef typename dealii::DoFHandler<dim>::level_cell_iterator level_cell_iterator ;
   typedef typename dealii::LAPACKFullMatrix<double>             LAPACKMatrix ;
 
@@ -58,7 +62,7 @@ public:
   void vmult (dealii::Vector<double> &dst, const dealii::Vector<double> &src) const ;
   void vmult_add (dealii::Vector<double> &dst, const dealii::Vector<double> &src) const ;
 
-  const dealii::SparseMatrix<double> &get_coarse_matrix() const
+  const dealii::TrilinosWrappers::SparseMatrix &get_coarse_matrix() const
   {
     return coarse_matrix;
   }
@@ -96,7 +100,7 @@ private:
   const std::vector<level_cell_iterator> *            selected_iterators;
   ResidualIntegrator<dim>                             residual_integrator;
   dealii::SparsityPattern                             sp;
-  dealii::SparseMatrix<double>                        coarse_matrix;
+  dealii::TrilinosWrappers::SparseMatrix              coarse_matrix;
   MatrixIntegrator<dim>                               matrix_integrator;
 };
 

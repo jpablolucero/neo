@@ -26,7 +26,9 @@ template <int dim,
 	  typename number=double,
 	  bool same_diagonal=false,
 	  unsigned int fe_degree = 1,
-	  typename Smoother=PSCPreconditioner<dim,MFOperator<dim,fe_degree,number> > >
+	  typename Smoother=PSCPreconditioner<dim,MFOperator<dim,fe_degree,number> >,
+	  typename CoarseMatrixType=MFOperator<dim,fe_degree,number>,
+	  typename CoarsePreconditionerType=dealii::PreconditionIdentity >
 class GMGPreconditioner final
 {
  public:
@@ -35,9 +37,18 @@ class GMGPreconditioner final
   class AdditionalData;
 
   GMGPreconditioner () ;
-  
-  void initialize(const SystemMatrixType & system_matrix_,const AdditionalData &data);
 
+ private:
+  template <typename M=CoarseMatrixType>
+    typename std::enable_if<std::is_same<M,dealii::TrilinosWrappers::SparseMatrix>::value >::type
+    configure_coarse_solver ();
+  template <typename M=CoarseMatrixType>
+    typename std::enable_if<!std::is_same<M,dealii::TrilinosWrappers::SparseMatrix>::value >::type
+    configure_coarse_solver ();
+
+ public:
+  void initialize(const SystemMatrixType & system_matrix_,const AdditionalData &data);
+  
   void vmult(VectorType &dst, const VectorType &src) const;
 
   void Tvmult(VectorType &dst, const VectorType &src) const;
@@ -45,23 +56,23 @@ class GMGPreconditioner final
   void vmult_add(VectorType &dst, const VectorType &src) const;
 
   void Tvmult_add(VectorType &dst, const VectorType &src) const;
-  
- 
+
   int min_level ;
   int smoothing_steps ;
 
+ private:
   dealii::MGLevelObject<SystemMatrixType >            mg_matrix ;
   dealii::MGLevelObject<VectorType>                   mg_solution ;
   // dealii::MGConstrainedDoFs                           mg_constrained_dofs;
 
   std::unique_ptr<dealii::ReductionControl>              coarse_solver_control;
 
-  dealii::PreconditionIdentity id ;
+  CoarsePreconditionerType coarse_preconditioner ;
   std::unique_ptr<dealii::SolverGMRES<VectorType> >              coarse_solver;
   std::unique_ptr<dealii::MGCoarseGridIterativeSolver<VectorType,
 						      dealii::SolverGMRES<VectorType>,
-						      SystemMatrixType,
-						      decltype(id)> >   mg_coarse;
+						      CoarseMatrixType,
+						      CoarsePreconditionerType> >   mg_coarse;
 
   //typedef MFPSCPreconditioner<dim, VectorType, number> Smoother;
   dealii::MGLevelObject<typename Smoother::AdditionalData> smoother_data;
@@ -77,8 +88,10 @@ class GMGPreconditioner final
   
 };
 
-template <int dim,typename VectorType,typename number,bool same_diagonal,unsigned int degree, typename Smoother>
-class GMGPreconditioner<dim,VectorType,number,same_diagonal,degree,Smoother>::AdditionalData
+template <int dim,typename VectorType,typename number,bool same_diagonal,unsigned int fe_degree,typename Smoother,
+	  typename CoarseMatrixType,typename CoarsePreconditionerType >
+class GMGPreconditioner<dim,VectorType,number,same_diagonal,fe_degree,Smoother,CoarseMatrixType,CoarsePreconditionerType>::
+  AdditionalData
 {
 public:
   AdditionalData(){} ;
