@@ -7,7 +7,7 @@ namespace
 {
   namespace WorkStream
   {
-    template <int dim, typename SystemMatrixType, typename VectorType, typename number, bool same_diagonal>
+    template <int dim,typename SystemMatrixType,typename LocalMatrixType,typename VectorType,typename number>
     class Copy
     {
     public:
@@ -17,26 +17,42 @@ namespace
       std::shared_ptr<DDHandlerBase<dim> > ddh;
     };
 
-    template <int dim, typename SystemMatrixType, typename VectorType, typename number, bool same_diagonal>
+    template <int dim,typename SystemMatrixType,typename LocalMatrixType,typename VectorType,typename number>
     class Scratch
     {
     public:
-      const std::vector<std::shared_ptr<dealii::LAPACKFullMatrix<double> > > *local_inverses;
+      const std::vector<std::shared_ptr<LocalMatrixType> > *local_inverses;
       SystemMatrixType * system_matrix ;
       dealii::Vector<number>  local_src;
       const VectorType *src;
     };
 
-    template <int dim, typename SystemMatrixType, typename VectorType, typename number, bool same_diagonal>
-    void assemble(const Copy<dim, SystemMatrixType, VectorType, number, same_diagonal> &copy)
+    template <int dim,typename SystemMatrixType,typename LocalMatrixType,typename VectorType,typename number>
+    void assemble(const Copy<dim,SystemMatrixType,LocalMatrixType,VectorType,number> &copy)
     {
       copy.ddh->prolongate_add(*(copy.dst),copy.local_solution, copy.subdomain_idx);
     }
 
-    template <int dim, typename SystemMatrixType, typename VectorType, typename number, bool same_diagonal>
-    void work(const std::vector<unsigned int>::const_iterator &iterator,
-              Scratch<dim, SystemMatrixType, VectorType, number, same_diagonal> &scratch,
-	      Copy<dim, SystemMatrixType, VectorType, number, same_diagonal> &copy)
+    template <int dim,typename SystemMatrixType,typename LocalMatrixType,typename VectorType,typename number>
+    typename std::enable_if<std::is_same<LocalMatrixType,dealii::LAPACKFullMatrix<number> >::value >::type
+    work(const std::vector<unsigned int>::const_iterator &iterator,
+	 Scratch<dim,SystemMatrixType,LocalMatrixType,VectorType,number> &scratch,
+	 Copy<dim,SystemMatrixType,LocalMatrixType,VectorType,number> &copy)
+    {
+      const unsigned int subdomain_idx = *iterator;
+      const DDHandlerBase<dim> &ddh = *(copy.ddh);
+      copy.subdomain_idx = subdomain_idx;
+      ddh.reinit(scratch.local_src, subdomain_idx);
+      ddh.reinit(copy.local_solution, subdomain_idx);
+      ddh.restrict_add(scratch.local_src, *(scratch.src), subdomain_idx);
+      (*(scratch.local_inverses))[subdomain_idx]->vmult(copy.local_solution,scratch.local_src);
+    }
+
+    template <int dim,typename SystemMatrixType,typename LocalMatrixType,typename VectorType,typename number>
+    typename std::enable_if<std::is_same<LocalMatrixType,SystemMatrixType>::value >::type
+    work(const std::vector<unsigned int>::const_iterator &iterator,
+	 Scratch<dim,SystemMatrixType,LocalMatrixType,VectorType,number> &scratch,
+	 Copy<dim,SystemMatrixType,LocalMatrixType,VectorType,number> &copy)
     {
       const unsigned int subdomain_idx = *iterator;
       const DDHandlerBase<dim> &ddh = *(copy.ddh);
@@ -51,24 +67,193 @@ namespace
       scratch.system_matrix->set_subdomain(subdomain_idx);
       solver.solve(*(scratch.system_matrix),copy.local_solution,scratch.local_src,dealii::PreconditionIdentity());
       scratch.system_matrix->unset_cell_range();
-      // (*(scratch.local_inverses))[subdomain_idx]->vmult(copy.local_solution,scratch.local_src);
+    }
+
+    template <int dim,typename SystemMatrixType,typename LocalMatrixType,typename VectorType,typename number>
+    typename std::enable_if<std::is_same<LocalMatrixType,dealii::TrilinosWrappers::SparseMatrix>::value >::type
+    work(const std::vector<unsigned int>::const_iterator &iterator,
+	 Scratch<dim,SystemMatrixType,LocalMatrixType,VectorType,number> &scratch,
+	 Copy<dim,SystemMatrixType,LocalMatrixType,VectorType,number> &copy)
+    {
+      const unsigned int subdomain_idx = *iterator;
+      const DDHandlerBase<dim> &ddh = *(copy.ddh);
+      copy.subdomain_idx = subdomain_idx;
+      ddh.reinit(scratch.local_src, subdomain_idx);
+      ddh.reinit(copy.local_solution, subdomain_idx);
+      ddh.restrict_add(scratch.local_src, *(scratch.src), subdomain_idx);
+      dealii::ReductionControl solver_control (101, 1.e-20, 1.E-5,false,false);
+      typename dealii::SolverGMRES<dealii::Vector<double> >::AdditionalData data(100,false);
+      dealii::SolverGMRES<dealii::Vector<double> >                          solver (solver_control,data);
+      dealii::TrilinosWrappers::PreconditionAMG::AdditionalData pdata(false,false,1,false,1e-4,std::vector<std::vector<bool> >{},2,0,
+								      false,"Block Chebyshev","Amesos-KLU");
+      dealii::TrilinosWrappers::PreconditionAMG prec ;
+      prec.initialize(*((*(scratch.local_inverses))[subdomain_idx]), pdata);
+      solver.solve(*((*(scratch.local_inverses))[subdomain_idx]),copy.local_solution,scratch.local_src,prec);
     }
   }
 }
 
-template <int dim, typename SystemMatrixType, typename VectorType, typename number, bool same_diagonal>
-PSCPreconditioner<dim, SystemMatrixType, VectorType, number, same_diagonal>::PSCPreconditioner()
+template <int dim,typename SystemMatrixType,typename LocalMatrixType,typename VectorType,typename number,bool same_diagonal>
+PSCPreconditioner<dim,SystemMatrixType,LocalMatrixType,VectorType,number,same_diagonal>::
+PSCPreconditioner()
 {}
 
-template <int dim, typename SystemMatrixType, typename VectorType, typename number, bool same_diagonal>
-PSCPreconditioner<dim, SystemMatrixType, VectorType, number, same_diagonal>::~PSCPreconditioner()
+template <int dim,typename SystemMatrixType,typename LocalMatrixType,typename VectorType,typename number,bool same_diagonal>
+PSCPreconditioner<dim,SystemMatrixType,LocalMatrixType,VectorType,number,same_diagonal>::
+~PSCPreconditioner()
 {
   system_matrix = nullptr ;
 }
 
-template <int dim, typename SystemMatrixType, typename VectorType, typename number, bool same_diagonal>
-void PSCPreconditioner<dim, SystemMatrixType, VectorType, number,same_diagonal>::initialize(const SystemMatrixType & system_matrix_,
-    const AdditionalData &data)
+template <int dim,typename SystemMatrixType,typename LocalMatrixType,typename VectorType,typename number,bool same_diagonal>
+template <typename M>
+typename std::enable_if<std::is_same<M,dealii::LAPACKFullMatrix<number> >::value >::type
+PSCPreconditioner<dim,SystemMatrixType,LocalMatrixType,VectorType,number,same_diagonal>::
+configure_local_matrices()
+{
+  const dealii::DoFHandler<dim> &dof_handler = *(data.dof_handler);
+  const dealii::FiniteElement<dim> &fe = dof_handler.get_fe();
+  patch_matrices.resize(ddh->global_dofs_on_subdomain.size());
+  {
+    // SAME_DIAGONAL
+    if (same_diagonal && !data.use_dictionary && patch_matrices.size()!=0)
+      {
+        // TODO broadcast local patch inverse instead of solving a local problem
+        // find the first interior cell if there is any and use it
+        typename std::vector<std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> >::iterator it
+          = ddh->subdomain_to_global_map.begin();
+        unsigned int subdomain = 0;
+        for (int i=0; it!=ddh->subdomain_to_global_map.end(); ++it, ++i)
+          {
+            bool all_interior = true;
+            typename std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator>::iterator it_cell
+              = it->begin();
+            for (; it_cell!=it->end(); ++it_cell)
+              if ((*it_cell)->at_boundary())
+                {
+                  all_interior = false;
+                  break;
+                }
+            if (all_interior)
+              {
+                subdomain = i;
+                break;
+              }
+          }
+        const unsigned int n = fe.n_dofs_per_cell();
+        patch_matrices[0].reset(new LocalMatrixType(n));
+        build_matrix(ddh->subdomain_to_global_map[subdomain],
+                     ddh->global_dofs_on_subdomain[subdomain],
+                     ddh->all_to_unique[subdomain],
+                     *patch_matrices[0]);
+        // patch_matrices[0]->print_formatted(std::cout);
+        patch_matrices[0]->compute_inverse_svd();
+        for ( unsigned int j=1; j<patch_matrices.size(); ++j )
+          patch_matrices[j] = patch_matrices[0];
+      }
+    // FULL BLOCK JACOBI
+    else if (!same_diagonal && !data.use_dictionary && patch_matrices.size()!=0)
+      {
+        dealii::Threads::TaskGroup<> tasks;
+        for (unsigned int i=0; i<ddh->subdomain_to_global_map.size(); ++i)
+          {
+            tasks += dealii::Threads::new_task([i,this]()
+            {
+              patch_matrices[i].reset(new LocalMatrixType);
+              build_matrix(ddh->subdomain_to_global_map[i],
+                           ddh->global_dofs_on_subdomain[i],
+                           ddh->all_to_unique[i],
+                           *patch_matrices[i]);
+              // std::cout << std::endl;
+              // patch_matrices[i]->print_formatted(std::cout);
+              patch_matrices[i]->compute_inverse_svd();
+            });
+          }
+        tasks.join_all ();
+      }
+    // DICTIONARY
+    else if (!same_diagonal && data.use_dictionary && patch_matrices.size()!=0)
+      {
+        Assert(data.tol > 0., dealii::ExcInternalError());
+        std::vector<unsigned int> id_range;
+        for ( unsigned int id=0; id<ddh->global_dofs_on_subdomain.size(); ++id)
+          id_range.push_back(id);
+        unsigned int patch_id, dict_size = 0;
+        // loop over subdomain range
+        while (id_range.size()!=0)
+          {
+            // build local inverse of first subdomain in the remaining id_range of subdomains
+            patch_id = id_range.front();
+            patch_matrices[patch_id].reset(new LocalMatrixType);
+            build_matrix(ddh->subdomain_to_global_map[patch_id],
+                         ddh->global_dofs_on_subdomain[patch_id],
+                         ddh->all_to_unique[patch_id],
+                         *patch_matrices[patch_id]);
+            patch_matrices[patch_id]->invert();
+            id_range.erase(id_range.begin());
+            ++dict_size;
+            // check 'inverse-similarity' with the remainder of subdomains
+            auto j = id_range.begin();
+            while (j!=id_range.end())
+              {
+                LocalMatrixType A_j;
+                build_matrix(ddh->subdomain_to_global_map[*j],
+                             ddh->global_dofs_on_subdomain[*j],
+                             ddh->all_to_unique[*j],
+                             A_j);
+                dealii::FullMatrix<double> S_j {A_j.m()};
+                patch_matrices[patch_id]->mmult(S_j,A_j);
+                S_j.diagadd(-1.);
+                // test if currently observed inverse is a good approximation of inv(A_j)
+                Assert(S_j.m() == S_j.n(), dealii::ExcInternalError());
+                const double tol_m = data.tol * S_j.m();
+                if (S_j.frobenius_norm() < tol_m)
+                  {
+                    patch_matrices[*j] = patch_matrices[patch_id];
+                    j = id_range.erase(j);
+                  }
+                else
+                  ++j;
+              }
+          }
+        //Output
+        dealii::deallog << "DEAL::Dictionary(level=" << level
+                        << ", mpi_proc=" << 0
+                        << ", Tol=" << data.tol << ") contains "
+                        << dict_size << " inverse(s)." << std::endl;
+      }
+  }
+}
+
+template <int dim,typename SystemMatrixType,typename LocalMatrixType,typename VectorType,typename number,bool same_diagonal>
+template <typename M>
+typename std::enable_if<std::is_same<M,dealii::TrilinosWrappers::SparseMatrix >::value >::type
+PSCPreconditioner<dim,SystemMatrixType,LocalMatrixType,VectorType,number,same_diagonal>::
+configure_local_matrices()
+{
+  const dealii::DoFHandler<dim> &dof_handler = *(data.dof_handler);
+  const dealii::FiniteElement<dim> &fe = dof_handler.get_fe();
+  patch_matrices.resize(ddh->global_dofs_on_subdomain.size());
+  for (unsigned int i=0; i<ddh->subdomain_to_global_map.size(); ++i)
+    {
+      patch_matrices[i].reset(new dealii::TrilinosWrappers::SparseMatrix);
+      build_matrix(ddh->subdomain_to_global_map[i],
+		   ddh->global_dofs_on_subdomain[i],
+		   ddh->all_to_unique[i],
+		   *patch_matrices[i]);
+    }
+}
+
+template <int dim,typename SystemMatrixType,typename LocalMatrixType,typename VectorType,typename number,bool same_diagonal>
+template <typename M>
+typename std::enable_if<std::is_same<M,SystemMatrixType>::value >::type
+PSCPreconditioner<dim,SystemMatrixType,LocalMatrixType,VectorType,number,same_diagonal>::
+configure_local_matrices()
+{}
+
+template <int dim,typename SystemMatrixType,typename LocalMatrixType,typename VectorType,typename number,bool same_diagonal>
+void PSCPreconditioner<dim,SystemMatrixType,LocalMatrixType,VectorType,number,same_diagonal>::
+initialize(const SystemMatrixType & system_matrix_,const AdditionalData &data)
 {
   Assert(data.dof_handler != 0, dealii::ExcInternalError());
   Assert(data.level != dealii::numbers::invalid_unsigned_int, dealii::ExcInternalError());
@@ -119,118 +304,7 @@ void PSCPreconditioner<dim, SystemMatrixType, VectorType, number,same_diagonal>:
   src_data.add<const dealii::MGLevelObject<VectorType >*>(&ghosted_solution,"Newton iterate");
   info_box.initialize(fe, *(data.mapping), src_data, VectorType {},&(dof_handler.block_info()));
   dof_info.reset(new dealii::MeshWorker::DoFInfo<dim> (dof_handler.block_info()));
-  // timer->enter_subsection("PSC::build_patch_inverses");
-  // patch_inverses.resize(ddh->global_dofs_on_subdomain.size());
-  // {
-  //   // SAME_DIAGONAL
-  //   if (same_diagonal && !data.use_dictionary && patch_inverses.size()!=0)
-  //     {
-  //       // TODO broadcast local patch inverse instead of solving a local problem
-  //       // find the first interior cell if there is any and use it
-  //       typename std::vector<std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> >::iterator it
-  //         = ddh->subdomain_to_global_map.begin();
-  //       unsigned int subdomain = 0;
-  //       for (int i=0; it!=ddh->subdomain_to_global_map.end(); ++it, ++i)
-  //         {
-  //           bool all_interior = true;
-  //           typename std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator>::iterator it_cell
-  //             = it->begin();
-  //           for (; it_cell!=it->end(); ++it_cell)
-  //             if ((*it_cell)->at_boundary())
-  //               {
-  //                 all_interior = false;
-  //                 break;
-  //               }
-  //           if (all_interior)
-  //             {
-  //               subdomain = i;
-  //               break;
-  //             }
-  //         }
-  //       const unsigned int n = fe.n_dofs_per_cell();
-  //       patch_inverses[0].reset(new LAPACKMatrix(n));
-  //       build_matrix(ddh->subdomain_to_global_map[subdomain],
-  //                    ddh->global_dofs_on_subdomain[subdomain],
-  //                    ddh->all_to_unique[subdomain],
-  //                    *patch_inverses[0]);
-  //       // patch_inverses[0]->print_formatted(std::cout);
-  //       patch_inverses[0]->compute_inverse_svd();
-  //       for ( unsigned int j=1; j<patch_inverses.size(); ++j )
-  //         patch_inverses[j] = patch_inverses[0];
-  //     }
-  //   // FULL BLOCK JACOBI
-  //   else if (!same_diagonal && !data.use_dictionary && patch_inverses.size()!=0)
-  //     {
-  //       dealii::Threads::TaskGroup<> tasks;
-  //       for (unsigned int i=0; i<ddh->subdomain_to_global_map.size(); ++i)
-  //         {
-  //           tasks += dealii::Threads::new_task([i,this]()
-  //           {
-  //             patch_inverses[i].reset(new LAPACKMatrix);
-  //             build_matrix(ddh->subdomain_to_global_map[i],
-  //                          ddh->global_dofs_on_subdomain[i],
-  //                          ddh->all_to_unique[i],
-  //                          *patch_inverses[i]);
-  //             // std::cout << std::endl;
-  //             // patch_inverses[i]->print_formatted(std::cout);
-  //             patch_inverses[i]->compute_inverse_svd();
-  //           });
-  //         }
-  //       tasks.join_all ();
-  //     }
-  //   // DICTIONARY
-  //   else if (!same_diagonal && data.use_dictionary && patch_inverses.size()!=0)
-  //     {
-  //       Assert(data.tol > 0., dealii::ExcInternalError());
-  //       std::vector<unsigned int> id_range;
-  //       for ( unsigned int id=0; id<ddh->global_dofs_on_subdomain.size(); ++id)
-  //         id_range.push_back(id);
-  //       unsigned int patch_id, dict_size = 0;
-  //       // loop over subdomain range
-  //       while (id_range.size()!=0)
-  //         {
-  //           // build local inverse of first subdomain in the remaining id_range of subdomains
-  //           patch_id = id_range.front();
-  //           patch_inverses[patch_id].reset(new LAPACKMatrix);
-  //           build_matrix(ddh->subdomain_to_global_map[patch_id],
-  //                        ddh->global_dofs_on_subdomain[patch_id],
-  //                        ddh->all_to_unique[patch_id],
-  //                        *patch_inverses[patch_id]);
-  //           patch_inverses[patch_id]->invert();
-  //           id_range.erase(id_range.begin());
-  //           ++dict_size;
-  //           // check 'inverse-similarity' with the remainder of subdomains
-  //           auto j = id_range.begin();
-  //           while (j!=id_range.end())
-  //             {
-  //               LAPACKMatrix A_j;
-  //               build_matrix(ddh->subdomain_to_global_map[*j],
-  //                            ddh->global_dofs_on_subdomain[*j],
-  //                            ddh->all_to_unique[*j],
-  //                            A_j);
-  //               dealii::FullMatrix<double> S_j {A_j.m()};
-  //               patch_inverses[patch_id]->mmult(S_j,A_j);
-  //               S_j.diagadd(-1.);
-  //               // test if currently observed inverse is a good approximation of inv(A_j)
-  //               Assert(S_j.m() == S_j.n(), dealii::ExcInternalError());
-  //               const double tol_m = data.tol * S_j.m();
-  //               if (S_j.frobenius_norm() < tol_m)
-  //                 {
-  //                   patch_inverses[*j] = patch_inverses[patch_id];
-  //                   j = id_range.erase(j);
-  //                 }
-  //               else
-  //                 ++j;
-  //             }
-  //         }
-  //       //Output
-  //       dealii::deallog << "DEAL::Dictionary(level=" << level
-  //                       << ", mpi_proc=" << 0
-  //                       << ", Tol=" << data.tol << ") contains "
-  //                       << dict_size << " inverse(s)." << std::endl;
-  //     }
-  // }
-  // timer->leave_subsection();
+  configure_local_matrices();
   ordered_iterators.clear();
   ordered_gens.clear();
   auto & dirs = data.dirs ;
@@ -242,13 +316,14 @@ void PSCPreconditioner<dim, SystemMatrixType, VectorType, number,same_diagonal>:
     }
 }
 
-template <int dim, typename SystemMatrixType, typename VectorType, typename number, bool same_diagonal>
-void PSCPreconditioner<dim, SystemMatrixType, VectorType, number, same_diagonal>::clear()
+template <int dim,typename SystemMatrixType,typename LocalMatrixType,typename VectorType,typename number,bool same_diagonal>
+void PSCPreconditioner<dim,SystemMatrixType,LocalMatrixType,VectorType,number,same_diagonal>::
+clear()
 {}
 
-template <int dim, typename SystemMatrixType, typename VectorType, typename number, bool same_diagonal>
-void PSCPreconditioner<dim, SystemMatrixType, VectorType, number, same_diagonal>::vmult (VectorType &dst,
-    const VectorType &src) const
+template <int dim,typename SystemMatrixType,typename LocalMatrixType,typename VectorType,typename number,bool same_diagonal>
+void PSCPreconditioner<dim,SystemMatrixType,LocalMatrixType,VectorType,number,same_diagonal>::
+vmult(VectorType &dst,const VectorType &src) const
 {
   ghosted_dst = 0.;
   ghosted_dst.update_ghost_values();
@@ -259,16 +334,16 @@ void PSCPreconditioner<dim, SystemMatrixType, VectorType, number, same_diagonal>
   AssertIsFinite(dst.l2_norm());
 }
 
-template <int dim, typename SystemMatrixType, typename VectorType, typename number, bool same_diagonal>
-void PSCPreconditioner<dim, SystemMatrixType, VectorType, number, same_diagonal>::Tvmult (VectorType &/*dst*/,
-    const VectorType &/*src*/) const
+template <int dim,typename SystemMatrixType,typename LocalMatrixType,typename VectorType,typename number,bool same_diagonal>
+void PSCPreconditioner<dim,SystemMatrixType,LocalMatrixType,VectorType,number,same_diagonal>::
+Tvmult (VectorType &/*dst*/,const VectorType &/*src*/) const
 {
   AssertThrow(false, dealii::ExcNotImplemented());
 }
 
-template <int dim, typename SystemMatrixType, typename VectorType, typename number, bool same_diagonal>
-void PSCPreconditioner<dim, SystemMatrixType, VectorType, number, same_diagonal>::vmult_add (VectorType &dst,
-    const VectorType &src) const
+template <int dim,typename SystemMatrixType,typename LocalMatrixType,typename VectorType,typename number,bool same_diagonal>
+void PSCPreconditioner<dim,SystemMatrixType,LocalMatrixType,VectorType,number,same_diagonal>::
+vmult_add (VectorType &dst,const VectorType &src) const
 {
   std::string section = "Smoothing @ level ";
   section += std::to_string(level);
@@ -277,17 +352,17 @@ void PSCPreconditioner<dim, SystemMatrixType, VectorType, number, same_diagonal>
   if (data.smoother_type == AdditionalData::SmootherType::additive)
     {
       //TODO make sure that the source vector is ghosted
-      WorkStream::Copy<dim, SystemMatrixType, VectorType, number, same_diagonal> copy_sample;
+      WorkStream::Copy<dim,SystemMatrixType,LocalMatrixType,VectorType,number> copy_sample;
       copy_sample.dst = &dst;
       copy_sample.ddh = ddh;
-      WorkStream::Scratch<dim, SystemMatrixType, VectorType, number, same_diagonal> scratch_sample;
+      WorkStream::Scratch<dim,SystemMatrixType,LocalMatrixType,VectorType,number> scratch_sample;
       scratch_sample.src = &ghosted_src;
-      scratch_sample.local_inverses = &patch_inverses;
+      scratch_sample.local_inverses = &patch_matrices;
       scratch_sample.system_matrix = const_cast<SystemMatrixType*>(system_matrix);
       ghosted_src = src;
       dealii::WorkStream::run(ddh->colorized_iterators(),
-			      WorkStream::work<dim, SystemMatrixType, VectorType, number, same_diagonal>,
-			      WorkStream::assemble<dim, SystemMatrixType, VectorType, number, same_diagonal>,
+			      WorkStream::work<dim,SystemMatrixType,LocalMatrixType,VectorType,number>,
+			      WorkStream::assemble<dim,SystemMatrixType,LocalMatrixType,VectorType,number>,
 			      scratch_sample, copy_sample);
     }
   else if (data.smoother_type == AdditionalData::SmootherType::additive_with_coarse)
@@ -305,17 +380,17 @@ void PSCPreconditioner<dim, SystemMatrixType, VectorType, number, same_diagonal>
       coarse_solver.solve(*(data.coarse_matrix),dummy2,dummy1,dealii::PreconditionIdentity{});
       mg_transfer.prolongate(data.level,dummy3,dummy2);
       dst = dummy3 ;
-      WorkStream::Copy<dim, SystemMatrixType, VectorType, number, same_diagonal> copy_sample;
+      WorkStream::Copy<dim,SystemMatrixType,LocalMatrixType,VectorType,number> copy_sample;
       copy_sample.dst = &dst;
       copy_sample.ddh = ddh;
-      WorkStream::Scratch<dim, SystemMatrixType, VectorType, number, same_diagonal> scratch_sample;
+      WorkStream::Scratch<dim,SystemMatrixType,LocalMatrixType,VectorType,number> scratch_sample;
       scratch_sample.src = &ghosted_src;
-      scratch_sample.local_inverses = &patch_inverses;
+      scratch_sample.local_inverses = &patch_matrices;
       scratch_sample.system_matrix = const_cast<SystemMatrixType*>(system_matrix);
       ghosted_src = src;
       dealii::WorkStream::run(ddh->colorized_iterators(),
-			      WorkStream::work<dim, SystemMatrixType, VectorType, number, same_diagonal>,
-			      WorkStream::assemble<dim, SystemMatrixType, VectorType, number, same_diagonal>,
+			      WorkStream::work<dim,SystemMatrixType,LocalMatrixType,VectorType,number>,
+			      WorkStream::assemble<dim,SystemMatrixType,LocalMatrixType,VectorType,number>,
 			      scratch_sample, copy_sample);
     }
   else if (data.smoother_type == AdditionalData::SmootherType::hybrid)
@@ -325,12 +400,12 @@ void PSCPreconditioner<dim, SystemMatrixType, VectorType, number, same_diagonal>
       int max_subdomains = 0;
       const int ierr = MPI_Allreduce (&local_n_subdomains, &max_subdomains, 1, MPI_INT, MPI_MAX, *mpi_communicator);
       AssertThrowMPI(ierr);
-      WorkStream::Copy<dim, SystemMatrixType, VectorType, number, same_diagonal> copy_sample;
+      WorkStream::Copy<dim,SystemMatrixType,LocalMatrixType,VectorType,number> copy_sample;
       copy_sample.dst = &dst;
       copy_sample.ddh = ddh;
-      WorkStream::Scratch<dim, SystemMatrixType, VectorType, number, same_diagonal> scratch_sample;
+      WorkStream::Scratch<dim,SystemMatrixType,LocalMatrixType,VectorType,number> scratch_sample;
       scratch_sample.src = &ghosted_src;
-      scratch_sample.local_inverses = &patch_inverses;
+      scratch_sample.local_inverses = &patch_matrices;
       scratch_sample.system_matrix = const_cast<SystemMatrixType*>(system_matrix);
       ghosted_src = src ;
       for (int p = 0 ; p < max_subdomains ; ++p)
@@ -346,12 +421,12 @@ void PSCPreconditioner<dim, SystemMatrixType, VectorType, number, same_diagonal>
     }      
   else if (data.smoother_type == AdditionalData::SmootherType::multiplicative)
     {
-      WorkStream::Copy<dim, SystemMatrixType, VectorType, number, same_diagonal> copy_sample;
+      WorkStream::Copy<dim,SystemMatrixType,LocalMatrixType,VectorType,number> copy_sample;
       copy_sample.dst = &dst;
       copy_sample.ddh = ddh;
-      WorkStream::Scratch<dim, SystemMatrixType, VectorType, number, same_diagonal> scratch_sample;
+      WorkStream::Scratch<dim,SystemMatrixType,LocalMatrixType,VectorType,number> scratch_sample;
       scratch_sample.src = &ghosted_src;
-      scratch_sample.local_inverses = &patch_inverses;
+      scratch_sample.local_inverses = &patch_matrices;
       scratch_sample.system_matrix = const_cast<SystemMatrixType*>(system_matrix);
       ghosted_src = src ;
       for (unsigned int d = 0 ; d < ordered_iterators.size() ; ++d)
@@ -387,19 +462,20 @@ void PSCPreconditioner<dim, SystemMatrixType, VectorType, number, same_diagonal>
   timer->leave_subsection();
 }
 
-template <int dim, typename SystemMatrixType, typename VectorType, typename number, bool same_diagonal>
-void PSCPreconditioner<dim, SystemMatrixType, VectorType, number, same_diagonal>::Tvmult_add (VectorType &/*dst*/,
-    const VectorType &/*src*/) const
+template <int dim,typename SystemMatrixType,typename LocalMatrixType,typename VectorType,typename number,bool same_diagonal>
+void PSCPreconditioner<dim,SystemMatrixType,LocalMatrixType,VectorType,number,same_diagonal>::
+Tvmult_add (VectorType &/*dst*/,const VectorType &/*src*/) const
 {
   AssertThrow(false, dealii::ExcNotImplemented());
 }
 
-template <int dim, typename SystemMatrixType, typename VectorType, typename number, bool same_diagonal>
-void PSCPreconditioner<dim, SystemMatrixType, VectorType, number, same_diagonal>::build_matrix
+template <int dim,typename SystemMatrixType,typename LocalMatrixType,typename VectorType,typename number,bool same_diagonal>
+void PSCPreconditioner<dim,SystemMatrixType,LocalMatrixType,VectorType,number,same_diagonal>::
+build_matrix
 (const std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> &cell_range,
  const std::vector<dealii::types::global_dof_index> &global_dofs_on_subdomain,
  const std::map<dealii::types::global_dof_index, unsigned int> &all_to_unique,
- dealii::LAPACKFullMatrix<double> &matrix)
+ dealii::LAPACKFullMatrix<number> &matrix)
 {
   dealii::MGLevelObject<dealii::FullMatrix<double> > mg_matrix ;
   mg_matrix.resize(level,level);
@@ -418,8 +494,43 @@ void PSCPreconditioner<dim, SystemMatrixType, VectorType, number, same_diagonal>
   matrix.copy_from(mg_matrix[level]);
 }
 
-template <int dim, typename SystemMatrixType, typename VectorType, typename number, bool same_diagonal>
-void PSCPreconditioner<dim, SystemMatrixType, VectorType, number, same_diagonal>::add_cell_ordering(dealii::Tensor<1,dim> dir)
+template <int dim,typename SystemMatrixType,typename LocalMatrixType,typename VectorType,typename number,bool same_diagonal>
+void PSCPreconditioner<dim,SystemMatrixType,LocalMatrixType,VectorType,number,same_diagonal>::
+build_matrix
+(const std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> &cell_range,
+ const std::vector<dealii::types::global_dof_index> &global_dofs_on_subdomain,
+ const std::map<dealii::types::global_dof_index, unsigned int> &all_to_unique,
+ dealii::TrilinosWrappers::SparseMatrix &matrix)
+{
+  dealii::MGLevelObject<dealii::TrilinosWrappers::SparseMatrix > mg_matrix ;
+  mg_matrix.resize(level,level);
+  dealii::TrilinosWrappers::SparseMatrix dummy(global_dofs_on_subdomain.size(),
+					       global_dofs_on_subdomain.size(),
+					       global_dofs_on_subdomain.size());
+  for (auto i = 0u ; i<global_dofs_on_subdomain.size() ; ++i)
+    for (auto j = 0u ; j<global_dofs_on_subdomain.size() ; ++j)
+      dummy.set(i,j,0.);
+  dummy.compress(dealii::VectorOperation::insert);
+  mg_matrix[level].copy_from(dummy);
+  mg_matrix[level].compress(dealii::VectorOperation::add);
+  Assembler::MGMatrixSimpleMapped<dealii::TrilinosWrappers::SparseMatrix > assembler;
+  assembler.initialize(mg_matrix);
+#ifdef CG
+  assembler.initialize(data.mg_constrained_dofs);
+#endif
+  assembler.initialize(all_to_unique);
+  dealii::MeshWorker::LoopControl lctrl;
+  lctrl.faces_to_ghost = dealii::MeshWorker::LoopControl::one;
+  lctrl.ghost_cells = true;
+  std::vector<std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> > colored_iterators(1, cell_range);
+  dealii::colored_loop<dim, dim> (colored_iterators, *dof_info, info_box, matrix_integrator, assembler,lctrl, colored_iterators[0]);
+  matrix.copy_from(mg_matrix[level]);
+  matrix.compress(dealii::VectorOperation::add);
+}
+
+template <int dim,typename SystemMatrixType,typename LocalMatrixType,typename VectorType,typename number,bool same_diagonal>
+void PSCPreconditioner<dim,SystemMatrixType,LocalMatrixType,VectorType,number,same_diagonal>::
+add_cell_ordering(dealii::Tensor<1,dim> dir)
 {
   Assert(ddh->colorized_iterators().size() == 1, dealii::ExcInternalError());
   class CellVectorContainer

@@ -18,6 +18,7 @@ typename std::enable_if<std::is_same<M,dealii::TrilinosWrappers::SparseMatrix>::
 GMGPreconditioner<dim,VectorType,number,same_diagonal,degree,Smoother,CoarseMatrixType,CoarsePreconditionerType>::
 configure_coarse_solver ()
 {
+  AssertThrow((std::is_same<CoarsePreconditionerType,dealii::TrilinosWrappers::PreconditionAMG>::value),dealii::ExcNotImplemented());  
   mg_matrix[min_level].build_coarse_matrix();
   const dealii::TrilinosWrappers::SparseMatrix &coarse_matrix = mg_matrix[min_level].get_coarse_matrix();
   typename CoarsePreconditionerType::AdditionalData pdata(false,false,1,false,1e-4,std::vector<std::vector<bool> >{},2,0,

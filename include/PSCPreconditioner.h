@@ -21,12 +21,11 @@
 #include <integration_loop.h>
 #include <MGMatrixSimpleMapped.h>
 
-template <int dim, typename SystemMatrixType, typename VectorType=dealii::parallel::distributed::Vector<double>,
-	  typename number=double, bool same_diagonal=false>
+template <int dim,typename SystemMatrixType,typename LocalMatrixType=SystemMatrixType,
+	  typename VectorType=dealii::parallel::distributed::Vector<double>,typename number=double,bool same_diagonal=false>
 class PSCPreconditioner final
 {
 public:
-  typedef typename dealii::LAPACKFullMatrix<double> LAPACKMatrix;
   typedef typename dealii::FullMatrix<double> Matrix;
   class AdditionalData;
 
@@ -48,13 +47,29 @@ protected:
   AdditionalData data;
 
 private:
-  void build_matrix
-  (const std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> &cell_range,
-   const std::vector<dealii::types::global_dof_index> &global_dofs_on_subdomain,
-   const std::map<dealii::types::global_dof_index, unsigned int> &all_to_unique,
-   dealii::LAPACKFullMatrix<double> &matrix);
+
+  template <typename M=LocalMatrixType>
+    typename std::enable_if<std::is_same<M,dealii::LAPACKFullMatrix<number> >::value >::type
+    configure_local_matrices ();
+  template <typename M=LocalMatrixType>
+    typename std::enable_if<std::is_same<M,dealii::TrilinosWrappers::SparseMatrix>::value >::type
+    configure_local_matrices ();
+  template <typename M=LocalMatrixType>
+    typename std::enable_if<std::is_same<M,SystemMatrixType>::value >::type
+    configure_local_matrices ();
+  
+  void build_matrix(const std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> &cell_range,
+		    const std::vector<dealii::types::global_dof_index> &global_dofs_on_subdomain,
+		    const std::map<dealii::types::global_dof_index, unsigned int> &all_to_unique,
+		    dealii::LAPACKFullMatrix<number> &matrix);
+  
+  void build_matrix(const std::vector<typename dealii::DoFHandler<dim>::level_cell_iterator> &cell_range,
+		    const std::vector<dealii::types::global_dof_index> &global_dofs_on_subdomain,
+		    const std::map<dealii::types::global_dof_index, unsigned int> &all_to_unique,
+		    dealii::TrilinosWrappers::SparseMatrix &matrix);
+
   void add_cell_ordering(dealii::Tensor<1,dim> dir) ;
-  std::vector<std::shared_ptr<LAPACKMatrix> > patch_inverses;
+  std::vector<std::shared_ptr<LocalMatrixType> > patch_matrices;
   dealii::MeshWorker::IntegrationInfoBox<dim> info_box;
   std::unique_ptr<dealii::MeshWorker::DoFInfo<dim> >  dof_info;
   dealii::MGLevelObject<VectorType >                  ghosted_solution;
@@ -71,8 +86,8 @@ private:
   unsigned int global_last_gen = 0 ;
 };
 
-template <int dim, typename SystemMatrixType, typename VectorType, class number, bool same_diagonal>
-class PSCPreconditioner<dim, SystemMatrixType, VectorType, number, same_diagonal>::AdditionalData
+template <int dim,typename SystemMatrixType,typename LocalMatrixType,typename VectorType,typename number,bool same_diagonal>
+class PSCPreconditioner<dim,SystemMatrixType,LocalMatrixType,VectorType,number,same_diagonal>::AdditionalData
 {
 public:
   AdditionalData() : dof_handler(0),
