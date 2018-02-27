@@ -1,6 +1,7 @@
 #include <RHS.h>
 
 extern std::unique_ptr<MPI_Comm>                   mpi_communicator ;
+extern std::unique_ptr<dealii::TimerOutput>        timer ;
 
 template <int dim>
 RHS<dim>::RHS (FiniteElement<dim> & fe_,Dofs<dim> & dofs_):
@@ -11,6 +12,7 @@ RHS<dim>::RHS (FiniteElement<dim> & fe_,Dofs<dim> & dofs_):
 template <int dim>
 void RHS<dim>::assemble(const dealii::parallel::distributed::Vector<double> & solution)
 {
+  timer->enter_subsection("RHS::assemble()");
   unsigned int level = dofs.mesh.triangulation.n_levels()-1;
   right_hand_side.reinit (dofs.locally_owned_dofs, dofs.locally_relevant_dofs, *mpi_communicator);
 
@@ -63,6 +65,7 @@ void RHS<dim>::assemble(const dealii::parallel::distributed::Vector<double> & so
   dealii::MeshWorker::LoopControl lctrl;
   dealii::colored_loop<dim, dim> (colored_iterators,dof_info,info_box,rhs_integrator,rhs_assembler,lctrl) ;
   right_hand_side.compress(dealii::VectorOperation::add);
+  timer->leave_subsection();
 }
 
 template class RHS<2>;

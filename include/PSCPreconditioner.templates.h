@@ -255,6 +255,7 @@ template <int dim,typename SystemMatrixType,typename LocalMatrixType,typename Ve
 void PSCPreconditioner<dim,SystemMatrixType,LocalMatrixType,VectorType,number,same_diagonal>::
 initialize(const SystemMatrixType & system_matrix_,const AdditionalData &data)
 {
+  timer->enter_subsection("PSC::init(...) @ level ");
   Assert(data.dof_handler != 0, dealii::ExcInternalError());
   Assert(data.level != dealii::numbers::invalid_unsigned_int, dealii::ExcInternalError());
   Assert(data.mapping != 0, dealii::ExcInternalError());
@@ -314,6 +315,7 @@ initialize(const SystemMatrixType & system_matrix_,const AdditionalData &data)
       ordered_gens.resize(d+1);
       add_cell_ordering(dirs[d]);
     }
+  timer->leave_subsection();
 }
 
 template <int dim,typename SystemMatrixType,typename LocalMatrixType,typename VectorType,typename number,bool same_diagonal>
@@ -345,7 +347,7 @@ template <int dim,typename SystemMatrixType,typename LocalMatrixType,typename Ve
 void PSCPreconditioner<dim,SystemMatrixType,LocalMatrixType,VectorType,number,same_diagonal>::
 vmult_add (VectorType &dst,const VectorType &src) const
 {
-  std::string section = "Smoothing @ level ";
+  std::string section = "PSC::vmult_+(...) @ level ";
   section += std::to_string(level);
   timer->enter_subsection(section);
   const_cast<SystemMatrixType*>(system_matrix)->clear();

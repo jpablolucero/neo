@@ -1,6 +1,7 @@
 #ifndef DOFS_H
 #define DOFS_H
 
+#include <deal.II/base/timer.h>
 #include <deal.II/dofs/dof_handler.h>
 #include <deal.II/dofs/dof_tools.h>
 

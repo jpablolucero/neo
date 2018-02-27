@@ -43,7 +43,7 @@ void MFOperator<dim,fe_degree,number,VectorType>::reinit
  const unsigned int level_,
  VectorType& solution_)
 {
-  timer->enter_subsection("MFOperator::reinit");
+  timer->enter_subsection("MFO::reinit(...)");
   dof_handler = dof_handler_ ;
   fe = &(dof_handler->get_fe());
   mapping = mapping_ ;
@@ -142,6 +142,7 @@ template <int dim, int fe_degree, typename number, typename VectorType>
 void MFOperator<dim,fe_degree,number,VectorType>::build_coarse_matrix()
 {
   Assert(dof_handler != 0, dealii::ExcInternalError());
+  timer->enter_subsection("MFO::build_c_m()");
   dealii::MGLevelObject<dealii::TrilinosWrappers::SparseMatrix > mg_matrix ;
   mg_matrix.resize(level,level);
   dealii::IndexSet locally_owned_level_dofs = dof_handler->locally_owned_mg_dofs(level);
@@ -168,6 +169,7 @@ void MFOperator<dim,fe_degree,number,VectorType>::build_coarse_matrix()
   dealii::colored_loop<dim, dim> (colored_iterators, *dof_info, info_box, matrix_integrator, assembler);
   mg_matrix[level].compress(dealii::VectorOperation::add);
   coarse_matrix.copy_from(mg_matrix[level]);
+  timer->leave_subsection();
 }
 
 template <int dim, int fe_degree, typename number, typename VectorType>
@@ -189,16 +191,16 @@ template <int dim, int fe_degree, typename number, typename VectorType>
 void MFOperator<dim,fe_degree,number,VectorType>::Tvmult (VectorType &dst,
 							  const VectorType &src) const
 {
-  dst = 0.;
-  Tvmult_add(dst, src);
-  dst.compress(dealii::VectorOperation::add);
-  AssertIsFinite(dst.l2_norm());
+  AssertThrow(false,dealii::ExcNotImplemented());  
 }
 
 template <int dim, int fe_degree, typename number, typename VectorType>
 void MFOperator<dim,fe_degree,number,VectorType>::vmult_add (VectorType &dst,
                                                   const VectorType &src) const
 {
+  std::string section = "MFO::vmult_+(...) @ level ";
+  section += std::to_string(level);
+  timer->enter_subsection(section);
   std::swap(ghosted_src[level],*(const_cast<VectorType*>(&src)));
   std::swap(ghosted_solution[level],*solution);
   dealii::AnyData dst_data;
@@ -220,6 +222,7 @@ void MFOperator<dim,fe_degree,number,VectorType>::vmult_add (VectorType &dst,
     dealii::colored_loop<dim, dim> (colored_iterators,*dof_info,info_box,residual_integrator,assembler,lctrl);
   std::swap(*(const_cast<VectorType*>(&src)),ghosted_src[level]);
   std::swap(*solution,ghosted_solution[level]);
+  timer->leave_subsection();
 }
 
 template <int dim, int fe_degree, typename number, typename VectorType>
@@ -227,7 +230,7 @@ void
 MFOperator<dim,fe_degree,number,VectorType>::Tvmult_add (VectorType &dst,
                                               const VectorType &src) const
 {
-  vmult_add(dst, src);
+  AssertThrow(false,dealii::ExcNotImplemented());  
 }
 
 template <int dim, int fe_degree, typename number, typename VectorType>

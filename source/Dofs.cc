@@ -3,6 +3,7 @@
 #include <deal.II/numerics/vector_tools.h>
 
 extern std::unique_ptr<MPI_Comm>                   mpi_communicator ;
+extern std::unique_ptr<dealii::TimerOutput>        timer ;
 
 template <int dim>
 Dofs<dim>::Dofs(Mesh<dim> & mesh_,FiniteElement<dim> & fe_):
@@ -16,6 +17,7 @@ Dofs<dim>::Dofs(Mesh<dim> & mesh_,FiniteElement<dim> & fe_):
 template <int dim>
 void Dofs<dim>::setup()
 {
+  timer->enter_subsection("Dofs::setup()");
   dof_handler.distribute_dofs (fe.fe);
   dof_handler.distribute_mg_dofs(fe.fe);
   dof_handler.initialize_local_block_info();
@@ -87,6 +89,7 @@ void Dofs<dim>::setup()
 
 #endif
   constraints.close();
+  timer->leave_subsection();
 }
 
 template class Dofs<2>;

@@ -195,9 +195,7 @@ template <int dim, typename SystemMatrixType, typename VectorType, typename numb
 void NLPSCPreconditioner<dim, SystemMatrixType, VectorType, number, same_diagonal>::vmult_add (VectorType &dst,
     const VectorType &/*src*/) const //TODO why is src unused?
 {
-  std::string section = "Smoothing @ level ";
-  section += std::to_string(level);
-  timer->enter_subsection(section);
+  timer->enter_subsection("NLPSC::vmult_+(...)");
   SystemMatrixType internal_system_matrix ;
   internal_system_matrix.reinit (data.dof_handler,data.mapping,nullptr,level,ghosted_solution[level]);
   internal_system_matrix.clear();

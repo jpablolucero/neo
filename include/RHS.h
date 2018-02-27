@@ -1,6 +1,7 @@
 #ifndef RHS_H
 #define RHS_H
 
+#include <deal.II/base/timer.h>
 #include <deal.II/meshworker/integration_info.h>
 #include <deal.II/meshworker/loop.h>
 

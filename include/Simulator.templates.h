@@ -27,11 +27,13 @@ template <typename P>
 typename std::enable_if<std::is_same<P,dealii::PreconditionIdentity>::value >::type
 Simulator<SystemMatrixType,VectorType,Preconditioner,dim,degree>::setup_system ()
 {
+  timer->enter_subsection("Sim::setup_system()");
   dofs.setup();
   ghosted_solution.reinit (dofs.locally_owned_dofs, dofs.locally_relevant_dofs, *mpi_communicator);
   solution.reinit (dofs.locally_owned_dofs, *mpi_communicator);
   system_matrix.reinit (&(dofs.dof_handler),&(fe.mapping), &(dofs.constraints), mesh.triangulation.n_global_levels()-1,
 			ghosted_solution);
+  timer->leave_subsection();
 }
 
 template <typename SystemMatrixType,typename VectorType,typename Preconditioner,int dim,unsigned int degree>
@@ -39,6 +41,7 @@ template <typename P>
 typename std::enable_if<!std::is_same<P,dealii::PreconditionIdentity>::value >::type
 Simulator<SystemMatrixType,VectorType,Preconditioner,dim,degree>::setup_system ()
 {
+  timer->enter_subsection("Sim::setup_system()");
   dofs.setup();
   ghosted_solution.reinit (dofs.locally_owned_dofs, dofs.locally_relevant_dofs, *mpi_communicator);
   solution.reinit (dofs.locally_owned_dofs, *mpi_communicator);
@@ -48,12 +51,15 @@ Simulator<SystemMatrixType,VectorType,Preconditioner,dim,degree>::setup_system (
   pdata.dofs = &dofs;
   pdata.fe = &fe;
   pdata.solution = &ghosted_solution;
+  timer->leave_subsection();
 }
 
 
 template <typename SystemMatrixType,typename VectorType,typename Preconditioner,int dim,unsigned int degree>
 void Simulator<SystemMatrixType,VectorType,Preconditioner,dim,degree>::solve ()
 {
+  timer->enter_subsection("Sim::solve()");
+
   preconditioner.initialize(system_matrix,pdata);
  
   // Setup Solver
@@ -70,7 +76,6 @@ void Simulator<SystemMatrixType,VectorType,Preconditioner,dim,degree>::solve ()
 #endif
 
   // Solve the system
-  timer->enter_subsection("solve::solve");
   dofs.constraints.set_zero(solution);
   solver.solve(system_matrix,solution,rhs.right_hand_side,preconditioner);
   
@@ -81,6 +86,7 @@ void Simulator<SystemMatrixType,VectorType,Preconditioner,dim,degree>::solve ()
 
   ghosted_solution = solution;
   ghosted_solution.update_ghost_values();
+
   timer->leave_subsection();
 }
 
@@ -88,6 +94,7 @@ void Simulator<SystemMatrixType,VectorType,Preconditioner,dim,degree>::solve ()
 template <typename SystemMatrixType,typename VectorType,typename Preconditioner,int dim,unsigned int degree>
 void Simulator<SystemMatrixType,VectorType,Preconditioner,dim,degree>::compute_error () const
 {
+  timer->enter_subsection("Sim::compute_error()");
   dealii::QGauss<dim> quadrature (degree+2);
   dealii::Vector<double> local_errors;
 
@@ -119,11 +126,13 @@ void Simulator<SystemMatrixType,VectorType,Preconditioner,dim,degree>::compute_e
 
       base_component_start += base_n_components;
     }
+  timer->leave_subsection();
 }
 
 template <typename SystemMatrixType,typename VectorType,typename Preconditioner,int dim,unsigned int degree>
 void Simulator<SystemMatrixType,VectorType,Preconditioner,dim,degree>::output_results (const unsigned int cycle) const
 {
+  timer->enter_subsection("Sim::output_result()");
   std::string filename = "solution-"+dealii::Utilities::int_to_string(cycle,2);
 
   dealii::DataOut<dim> data_out;
@@ -178,6 +187,7 @@ void Simulator<SystemMatrixType,VectorType,Preconditioner,dim,degree>::output_re
       std::ofstream output ((filename + ".vtk").c_str());
       data_out.write_vtk (output);
     }
+  timer->leave_subsection();
 }
 
 
@@ -185,41 +195,51 @@ template <typename SystemMatrixType,typename VectorType,typename Preconditioner,
 void Simulator<SystemMatrixType,VectorType,Preconditioner,dim,degree>::run ()
 {
   timer->reset();
-  timer->enter_subsection("refine_global");
-  *pcout << "Refine global" << std::endl;
+  timer->enter_subsection("Sim::run()");
+  dealii::deallog << "Linear Simulator run starts." << std::endl ;
+
+  timer->enter_subsection("Sim::...refine_global(...)");
+  dealii::deallog << "Refining triangulation... " ;
   mesh.triangulation.refine_global (n_levels-1);
+  dealii::deallog << "done." << std::endl;
   timer->leave_subsection();
 
-  *pcout << "Finite element: " << fe.fe.get_name() << std::endl;
-  *pcout << "Number of active cells: "
-        << mesh.triangulation.n_global_active_cells()
-        << std::endl;
+  if (std::is_same<Preconditioner,dealii::PreconditionIdentity>::value)
+    dealii::deallog << "No preconditioning." << std::endl;
+  else
+    dealii::deallog << "Geometric multigrid preconditioning." << std::endl;
 
-  timer->enter_subsection("setup_system");
-  *pcout << "Setup system" << std::endl;
+  dealii::deallog << "Setup system and storage..." ;
   setup_system ();
-  *pcout << "Assemble system" << std::endl;
-  rhs.assemble(ghosted_solution);
-  timer->leave_subsection();
+  dealii::deallog << "done." << std::endl;
 
+  dealii::deallog << "Assembling right hand side... " ;
+  rhs.assemble(ghosted_solution);
+  dealii::deallog << "done." << std::endl ;
+
+  dealii::deallog << "Finite element: " << fe.fe.get_name() << std::endl;
+  dealii::deallog << "Number of active cells: "
+		  << mesh.triangulation.n_global_active_cells()
+		  << std::endl;
+  
   dealii::deallog << "DoFHandler levels: ";
   for (unsigned int l=min_level; l<mesh.triangulation.n_global_levels(); ++l)
     dealii::deallog << ' ' << dofs.dof_handler.n_dofs(l);
   dealii::deallog << std::endl;
-
-  timer->enter_subsection("solve");
-  *pcout << "Solve" << std::endl;
+  
+  dealii::deallog << "Solving..." << std::endl;
   solve ();
-  timer->leave_subsection();
 
-  timer->enter_subsection("output");
-  *pcout << "Output" << std::endl;
   compute_error();
-  output_results(n_levels);
-  timer->leave_subsection();
 
+  dealii::deallog << "Generating output..." ;
+  output_results(n_levels);
+  dealii::deallog << "done." ;
+
+  timer->leave_subsection();
+   
   timer->print_summary();
-  *pcout << std::endl;
+  dealii::deallog << std::endl;
   // workaround regarding issue #2533
   // GrowingVectorMemory does not destroy the vectors
   // after this instance goes out of scope.
@@ -233,26 +253,34 @@ void Simulator<SystemMatrixType,VectorType,Preconditioner,dim,degree>::run ()
 template <typename SystemMatrixType,typename VectorType,typename Preconditioner,int dim,unsigned int degree>
 void Simulator<SystemMatrixType,VectorType,Preconditioner,dim,degree>::run_non_linear ()
 {
+  dealii::deallog << "Nonlinear Simulator run starts." << std::endl ;
   timer->reset();
-  timer->enter_subsection("refine_global");
-  *pcout << "Refine global" << std::endl;
+
+  timer->enter_subsection("Sim::...refine_global(...)");
+  dealii::deallog << "Refining triangulation... " ;
   mesh.triangulation.refine_global (n_levels-1);
+  dealii::deallog << "done." << std::endl;
   timer->leave_subsection();
 
-  *pcout << "Finite element: " << fe.fe.get_name() << std::endl;
-  *pcout << "Number of active cells: "
-        << mesh.triangulation.n_global_active_cells()
-        << std::endl;
+  if (std::is_same<Preconditioner,dealii::PreconditionIdentity>::value)
+    dealii::deallog << "No preconditioning." << std::endl;
+  else
+    dealii::deallog << "Geometric multigrid preconditioning." << std::endl;
 
-  timer->enter_subsection("setup_system");
-  *pcout << "Setup system" << std::endl;
+  dealii::deallog << "Setup system and storage..." ;
   setup_system ();
-  timer->leave_subsection();
+  dealii::deallog << "done." << std::endl;
 
+  dealii::deallog << "Finite element: " << fe.fe.get_name() << std::endl;
+  dealii::deallog << "Number of active cells: "
+		  << mesh.triangulation.n_global_active_cells()
+		  << std::endl;
+  
   dealii::deallog << "DoFHandler levels: ";
   for (unsigned int l=0; l<mesh.triangulation.n_global_levels(); ++l)
     dealii::deallog << ' ' << dofs.dof_handler.n_dofs(l);
   dealii::deallog << std::endl;
+
   auto sol = solution ;
   for (auto &elem : sol) elem = 600. ;
   dealii::AnyData solution_data;
@@ -260,19 +288,18 @@ void Simulator<SystemMatrixType,VectorType,Preconditioner,dim,degree>::run_non_l
   dealii::AnyData data;
   newton.control.set_reduction(1.E-8);
 
-  timer->enter_subsection("solve");
-  *pcout << "Solve" << std::endl;
+  dealii::deallog << "Solving..." << std::endl;
   newton(solution_data, data);
+ 
   ghosted_solution = *(solution_data.try_read_ptr<VectorType>("solution"));
   ghosted_solution.update_ghost_values();
-  timer->leave_subsection();
 
-  timer->enter_subsection("output");
+  dealii::deallog << "Generating output..." ;
   output_results(n_levels);
-  timer->leave_subsection();
+  dealii::deallog << "done." ;
 
   timer->print_summary();
-  *pcout << std::endl;
+  dealii::deallog << std::endl;
   // workaround regarding issue #2533
   // GrowingVectorMemory does not destroy the vectors
   // after this instance goes out of scope.

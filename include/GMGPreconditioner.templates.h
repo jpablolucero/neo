@@ -54,6 +54,7 @@ template <int dim,typename VectorType,typename number,bool same_diagonal,unsigne
 void GMGPreconditioner<dim,VectorType,number,same_diagonal,degree,Smoother,CoarseMatrixType,CoarsePreconditionerType>::
 initialize(const SystemMatrixType & system_matrix_,const AdditionalData &data)
 {
+  timer->enter_subsection("GMG::init(...)");
   Mesh<dim> & mesh = *(data.mesh) ;
   Dofs<dim> & dofs = *(data.dofs) ;
   FiniteElement<dim> & fe = *(data.fe) ;
@@ -89,7 +90,6 @@ initialize(const SystemMatrixType & system_matrix_,const AdditionalData &data)
     {
       mg_matrix[level].reinit(&(dofs.dof_handler),&(fe.mapping),&(dofs.constraints),level,mg_solution[level]);
     }
-  timer->enter_subsection("solve::mg_initialization");
 
   coarse_solver_control.reset(new dealii::ReductionControl(dofs.dof_handler.n_dofs(min_level)*10, 1.e-20, 1.e-10, false, false));
   coarse_solver.reset(new dealii::SolverGMRES<VectorType> (*coarse_solver_control) );
@@ -148,7 +148,9 @@ template <int dim,typename VectorType,typename number,bool same_diagonal,unsigne
 void GMGPreconditioner<dim,VectorType,number,same_diagonal,degree,Smoother,CoarseMatrixType,CoarsePreconditionerType>::
 vmult (VectorType &dst,const VectorType &src) const
 {
+  timer->enter_subsection("GMG::vmult(...)");
   preconditioner->vmult(dst,src);
+  timer->leave_subsection();
 }
 
 template <int dim,typename VectorType,typename number,bool same_diagonal,unsigned int degree,typename Smoother,
@@ -164,7 +166,9 @@ template <int dim,typename VectorType,typename number,bool same_diagonal,unsigne
 void GMGPreconditioner<dim,VectorType,number,same_diagonal,degree,Smoother,CoarseMatrixType,CoarsePreconditionerType>::
 vmult_add (VectorType &dst,const VectorType &src) const
 {
+  timer->enter_subsection("GMG::vmult_+(...)");
   preconditioner->vmult_add(dst,src);
+  timer->leave_subsection();
 }
 
 template <int dim,typename VectorType,typename number,bool same_diagonal,unsigned int degree,typename Smoother,
