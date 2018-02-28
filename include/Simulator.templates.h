@@ -60,7 +60,9 @@ void Simulator<SystemMatrixType,VectorType,Preconditioner,dim,degree>::solve ()
 {
   timer->enter_subsection("Sim::solve()");
 
+  dealii::deallog << "Initializing linear preconditioner... ";
   preconditioner.initialize(system_matrix,pdata);
+  dealii::deallog << "done." << std::endl;
  
   // Setup Solver
   dealii::ReductionControl                                 solver_control (dofs.dof_handler.n_dofs(), 1.e-20, 1.E-10,true);
@@ -77,6 +79,7 @@ void Simulator<SystemMatrixType,VectorType,Preconditioner,dim,degree>::solve ()
 
   // Solve the system
   dofs.constraints.set_zero(solution);
+  dealii::deallog << "Solving linear system... " << std::endl;
   solver.solve(system_matrix,solution,rhs.right_hand_side,preconditioner);
   
 #ifdef CG
@@ -209,7 +212,7 @@ void Simulator<SystemMatrixType,VectorType,Preconditioner,dim,degree>::run ()
   else
     dealii::deallog << "Geometric multigrid preconditioning." << std::endl;
 
-  dealii::deallog << "Setup system and storage..." ;
+  dealii::deallog << "Setup system and storage... " ;
   setup_system ();
   dealii::deallog << "done." << std::endl;
 
@@ -227,7 +230,6 @@ void Simulator<SystemMatrixType,VectorType,Preconditioner,dim,degree>::run ()
     dealii::deallog << ' ' << dofs.dof_handler.n_dofs(l);
   dealii::deallog << std::endl;
   
-  dealii::deallog << "Solving..." << std::endl;
   solve ();
 
   compute_error();
@@ -267,7 +269,7 @@ void Simulator<SystemMatrixType,VectorType,Preconditioner,dim,degree>::run_non_l
   else
     dealii::deallog << "Geometric multigrid preconditioning." << std::endl;
 
-  dealii::deallog << "Setup system and storage..." ;
+  dealii::deallog << "Setup system and storage... " ;
   setup_system ();
   dealii::deallog << "done." << std::endl;
 
@@ -288,7 +290,6 @@ void Simulator<SystemMatrixType,VectorType,Preconditioner,dim,degree>::run_non_l
   dealii::AnyData data;
   newton.control.set_reduction(1.E-8);
 
-  dealii::deallog << "Solving..." << std::endl;
   newton(solution_data, data);
  
   ghosted_solution = *(solution_data.try_read_ptr<VectorType>("solution"));

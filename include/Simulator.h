@@ -95,6 +95,7 @@ private:
       sim.ghosted_solution.update_ghost_values();
       if (sim.aspin)
 	{
+	  dealii::deallog << "Preconditioning nonlinear iteration..." << std::endl;
 	  typename NLPSCPreconditioner<dim, SystemMatrixType_, VectorType_, double, false>::AdditionalData data ;
 	  data.dof_handler = &(sim.dofs.dof_handler);
 	  data.level = sim.n_levels-1;
