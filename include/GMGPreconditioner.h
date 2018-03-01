@@ -28,7 +28,7 @@ template <int dim,
 	  unsigned int fe_degree = 1,
 	  typename Smoother=PSCPreconditioner<dim,MFOperator<dim,fe_degree,number> >,
 	  typename CoarseMatrixType=MFOperator<dim,fe_degree,number>,
-	  typename CoarsePreconditionerType=dealii::PreconditionIdentity >
+	  typename CoarsePreconditionerType=PSCPreconditioner<dim,MFOperator<dim,fe_degree,number> > >
 class GMGPreconditioner final
 {
  public:
@@ -37,14 +37,6 @@ class GMGPreconditioner final
   class AdditionalData;
 
   GMGPreconditioner () ;
-
- private:
-  template <typename M=CoarseMatrixType>
-    typename std::enable_if<std::is_same<M,dealii::TrilinosWrappers::SparseMatrix>::value >::type
-    configure_coarse_solver ();
-  template <typename M=CoarseMatrixType>
-    typename std::enable_if<!std::is_same<M,dealii::TrilinosWrappers::SparseMatrix>::value >::type
-    configure_coarse_solver ();
 
  public:
   void initialize(const SystemMatrixType & system_matrix_,const AdditionalData &data);
@@ -61,6 +53,20 @@ class GMGPreconditioner final
   int smoothing_steps ;
 
  private:
+  template <typename M=CoarseMatrixType,typename P=CoarsePreconditionerType>
+    typename std::enable_if<std::is_same<M,dealii::TrilinosWrappers::SparseMatrix>::value and
+			    std::is_same<P,dealii::TrilinosWrappers::PreconditionAMG>::value>::type
+    configure_coarse_solver ();
+  template <typename M=CoarseMatrixType,typename P=CoarsePreconditionerType>
+    typename std::enable_if<std::is_same<M,MFOperator<dim,fe_degree,number> >::value and
+			    std::is_same<P,Smoother>::value>::type
+    configure_coarse_solver ();
+
+  template <typename M=CoarseMatrixType,typename P=CoarsePreconditionerType>
+  typename std::enable_if<std::is_same<M,MFOperator<dim,fe_degree,number> >::value and
+			std::is_same<P,dealii::PreconditionIdentity>::value>::type
+    configure_coarse_solver ();
+
   dealii::MGLevelObject<SystemMatrixType >            mg_matrix ;
   dealii::MGLevelObject<VectorType>                   mg_solution ;
   // dealii::MGConstrainedDoFs                           mg_constrained_dofs;

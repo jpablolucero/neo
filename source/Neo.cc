@@ -20,7 +20,8 @@ int main (int argc, char *argv[])
   const unsigned int fe_degree = 1 ;
   typedef dealii::parallel::distributed::Vector<double> VectorType;
   typedef MFOperator<d,fe_degree,double> SystemMatrixType;
-  typedef GMGPreconditioner<d,VectorType,double,false,fe_degree>  Precond;
+  typedef PSCPreconditioner<d,SystemMatrixType > Smoother;
+  typedef GMGPreconditioner<d,VectorType,double,false,fe_degree,Smoother,SystemMatrixType,dealii::PreconditionIdentity>  Precond;
   Simulator<SystemMatrixType,VectorType,Precond,d,fe_degree> dgmethod;
   dgmethod.n_levels = (argc > 1) ? atoi(argv[1]) : 2 ;
   dgmethod.min_level=0;

@@ -3,26 +3,26 @@
 extern std::unique_ptr<dealii::TimerOutput>        timer ;
 extern std::unique_ptr<MPI_Comm>                   mpi_communicator ;
 
-template <int dim,typename VectorType,typename number,bool same_diagonal,unsigned int degree,typename Smoother,
+template <int dim,typename VectorType,typename number,bool same_diagonal,unsigned int fe_degree,typename Smoother,
 	  typename CoarseMatrixType,typename CoarsePreconditionerType>
-GMGPreconditioner<dim,VectorType,number,same_diagonal,degree,Smoother,CoarseMatrixType,CoarsePreconditionerType>::
+GMGPreconditioner<dim,VectorType,number,same_diagonal,fe_degree,Smoother,CoarseMatrixType,CoarsePreconditionerType>::
 GMGPreconditioner ():
   min_level(0),
   smoothing_steps(1)
 {}
 
-template <int dim,typename VectorType,typename number,bool same_diagonal,unsigned int degree,typename Smoother,
+template <int dim,typename VectorType,typename number,bool same_diagonal,unsigned int fe_degree,typename Smoother,
 	  typename CoarseMatrixType,typename CoarsePreconditionerType>
-template <typename M>
-typename std::enable_if<std::is_same<M,dealii::TrilinosWrappers::SparseMatrix>::value >::type
-GMGPreconditioner<dim,VectorType,number,same_diagonal,degree,Smoother,CoarseMatrixType,CoarsePreconditionerType>::
+template <typename M,typename P>
+typename std::enable_if<std::is_same<M,dealii::TrilinosWrappers::SparseMatrix>::value and
+			std::is_same<P,dealii::TrilinosWrappers::PreconditionAMG>::value>::type
+GMGPreconditioner<dim,VectorType,number,same_diagonal,fe_degree,Smoother,CoarseMatrixType,CoarsePreconditionerType>::
 configure_coarse_solver ()
 {
-  AssertThrow((std::is_same<CoarsePreconditionerType,dealii::TrilinosWrappers::PreconditionAMG>::value),dealii::ExcNotImplemented());  
   mg_matrix[min_level].build_coarse_matrix();
   const dealii::TrilinosWrappers::SparseMatrix &coarse_matrix = mg_matrix[min_level].get_coarse_matrix();
   typename CoarsePreconditionerType::AdditionalData pdata(false,false,1,false,1e-4,std::vector<std::vector<bool> >{},2,0,
-							  false,"Block Chebyshev","Amesos-KLU");
+							  false,"block Gauss-Seidel","Amesos-KLU");
   coarse_preconditioner.initialize(coarse_matrix, pdata);
   mg_coarse.reset(new dealii::MGCoarseGridIterativeSolver<VectorType,
 		  dealii::SolverGMRES<VectorType>,
@@ -33,11 +33,30 @@ configure_coarse_solver ()
 		   coarse_preconditioner));
 }
 
-template <int dim,typename VectorType,typename number,bool same_diagonal,unsigned int degree,typename Smoother,
+template <int dim,typename VectorType,typename number,bool same_diagonal,unsigned int fe_degree,typename Smoother,
 	  typename CoarseMatrixType,typename CoarsePreconditionerType>
-template <typename M>
-typename std::enable_if<!std::is_same<M,dealii::TrilinosWrappers::SparseMatrix>::value >::type
-GMGPreconditioner<dim,VectorType,number,same_diagonal,degree,Smoother,CoarseMatrixType,CoarsePreconditionerType>::
+template <typename M,typename P>
+typename std::enable_if<std::is_same<M,MFOperator<dim,fe_degree,number> >::value and
+			std::is_same<P,Smoother>::value>::type
+GMGPreconditioner<dim,VectorType,number,same_diagonal,fe_degree,Smoother,CoarseMatrixType,CoarsePreconditionerType>::
+configure_coarse_solver ()
+{
+  coarse_preconditioner.initialize(mg_matrix[min_level],smoother_data[min_level]);
+  mg_coarse.reset(new dealii::MGCoarseGridIterativeSolver<VectorType,
+		  dealii::SolverGMRES<VectorType>,
+		  CoarseMatrixType,
+		  CoarsePreconditionerType>
+		  (*coarse_solver,
+		   mg_matrix[min_level],
+		   coarse_preconditioner));
+}
+
+template <int dim,typename VectorType,typename number,bool same_diagonal,unsigned int fe_degree,typename Smoother,
+	  typename CoarseMatrixType,typename CoarsePreconditionerType>
+template <typename M,typename P>
+typename std::enable_if<std::is_same<M,MFOperator<dim,fe_degree,number> >::value and
+			std::is_same<P,dealii::PreconditionIdentity>::value>::type
+GMGPreconditioner<dim,VectorType,number,same_diagonal,fe_degree,Smoother,CoarseMatrixType,CoarsePreconditionerType>::
 configure_coarse_solver ()
 {
   mg_coarse.reset(new dealii::MGCoarseGridIterativeSolver<VectorType,
@@ -49,9 +68,9 @@ configure_coarse_solver ()
 		   coarse_preconditioner));
 }
 
-template <int dim,typename VectorType,typename number,bool same_diagonal,unsigned int degree,typename Smoother,
+template <int dim,typename VectorType,typename number,bool same_diagonal,unsigned int fe_degree,typename Smoother,
 	  typename CoarseMatrixType,typename CoarsePreconditionerType>
-void GMGPreconditioner<dim,VectorType,number,same_diagonal,degree,Smoother,CoarseMatrixType,CoarsePreconditionerType>::
+void GMGPreconditioner<dim,VectorType,number,same_diagonal,fe_degree,Smoother,CoarseMatrixType,CoarsePreconditionerType>::
 initialize(const SystemMatrixType & system_matrix_,const AdditionalData &data)
 {
   timer->enter_subsection("GMG::init(...)");
@@ -91,10 +110,6 @@ initialize(const SystemMatrixType & system_matrix_,const AdditionalData &data)
       mg_matrix[level].reinit(&(dofs.dof_handler),&(fe.mapping),&(dofs.constraints),level,mg_solution[level]);
     }
 
-  coarse_solver_control.reset(new dealii::ReductionControl(dofs.dof_handler.n_dofs(min_level)*10, 1.e-20, 1.e-10, false, false));
-  coarse_solver.reset(new dealii::SolverGMRES<VectorType> (*coarse_solver_control) );
-  configure_coarse_solver();
-  
   // Setup Multigrid-Smoother
   smoother_data.resize(mg_matrix.min_level(), mg_matrix.max_level());
   for (unsigned int level = mg_matrix.min_level();
@@ -120,6 +135,10 @@ initialize(const SystemMatrixType & system_matrix_,const AdditionalData &data)
   mg_smoother.initialize(mg_matrix, smoother_data);
   mg_smoother.set_steps(smoothing_steps);
 
+  coarse_solver_control.reset(new dealii::ReductionControl(dofs.dof_handler.n_dofs(min_level)*10, 1.e-20, 1.e-10, false, false));
+  coarse_solver.reset(new dealii::SolverGMRES<VectorType> (*coarse_solver_control) );
+  configure_coarse_solver();
+
   // Setup Multigrid-Transfer
   mg_transfer.reset(new dealii::MGTransferPrebuilt<VectorType> {});
 #ifdef CG
@@ -143,9 +162,9 @@ initialize(const SystemMatrixType & system_matrix_,const AdditionalData &data)
   timer->leave_subsection();
 }
 
-template <int dim,typename VectorType,typename number,bool same_diagonal,unsigned int degree,typename Smoother,
+template <int dim,typename VectorType,typename number,bool same_diagonal,unsigned int fe_degree,typename Smoother,
 	  typename CoarseMatrixType,typename CoarsePreconditionerType>
-void GMGPreconditioner<dim,VectorType,number,same_diagonal,degree,Smoother,CoarseMatrixType,CoarsePreconditionerType>::
+void GMGPreconditioner<dim,VectorType,number,same_diagonal,fe_degree,Smoother,CoarseMatrixType,CoarsePreconditionerType>::
 vmult (VectorType &dst,const VectorType &src) const
 {
   timer->enter_subsection("GMG::vmult(...)");
@@ -153,17 +172,17 @@ vmult (VectorType &dst,const VectorType &src) const
   timer->leave_subsection();
 }
 
-template <int dim,typename VectorType,typename number,bool same_diagonal,unsigned int degree,typename Smoother,
+template <int dim,typename VectorType,typename number,bool same_diagonal,unsigned int fe_degree,typename Smoother,
 	  typename CoarseMatrixType,typename CoarsePreconditionerType>
-void GMGPreconditioner<dim,VectorType,number,same_diagonal,degree,Smoother,CoarseMatrixType,CoarsePreconditionerType>::
+void GMGPreconditioner<dim,VectorType,number,same_diagonal,fe_degree,Smoother,CoarseMatrixType,CoarsePreconditionerType>::
 Tvmult (VectorType &/*dst*/,const VectorType &/*src*/) const
 {
   AssertThrow(false, dealii::ExcNotImplemented());
 }
 
-template <int dim,typename VectorType,typename number,bool same_diagonal,unsigned int degree,typename Smoother,
+template <int dim,typename VectorType,typename number,bool same_diagonal,unsigned int fe_degree,typename Smoother,
 	  typename CoarseMatrixType,typename CoarsePreconditionerType>
-void GMGPreconditioner<dim,VectorType,number,same_diagonal,degree,Smoother,CoarseMatrixType,CoarsePreconditionerType>::
+void GMGPreconditioner<dim,VectorType,number,same_diagonal,fe_degree,Smoother,CoarseMatrixType,CoarsePreconditionerType>::
 vmult_add (VectorType &dst,const VectorType &src) const
 {
   timer->enter_subsection("GMG::vmult_+(...)");
@@ -171,9 +190,9 @@ vmult_add (VectorType &dst,const VectorType &src) const
   timer->leave_subsection();
 }
 
-template <int dim,typename VectorType,typename number,bool same_diagonal,unsigned int degree,typename Smoother,
+template <int dim,typename VectorType,typename number,bool same_diagonal,unsigned int fe_degree,typename Smoother,
 	  typename CoarseMatrixType,typename CoarsePreconditionerType>
-void GMGPreconditioner<dim,VectorType,number,same_diagonal,degree,Smoother,CoarseMatrixType,CoarsePreconditionerType>::
+void GMGPreconditioner<dim,VectorType,number,same_diagonal,fe_degree,Smoother,CoarseMatrixType,CoarsePreconditionerType>::
 Tvmult_add (VectorType &/*dst*/,const VectorType &/*src*/) const
 {
   AssertThrow(false, dealii::ExcNotImplemented());

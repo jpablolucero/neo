@@ -26,6 +26,8 @@ template <int dim,typename SystemMatrixType,typename LocalMatrixType=SystemMatri
 class PSCPreconditioner final
 {
 public:
+  void subscribe (const char *identifier=0) const {};
+  void unsubscribe (const char *identifier=0) const {};
   typedef typename dealii::FullMatrix<double> Matrix;
   class AdditionalData;
 
