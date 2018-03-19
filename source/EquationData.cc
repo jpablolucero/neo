@@ -1,5 +1,8 @@
 #include <EquationData.h>
 
+extern double eps ;
+extern double max_energy ;
+
 template <int dim>
 Coefficient<dim>::Coefficient()
   : dealii::Function<dim>()
@@ -96,8 +99,10 @@ ReferenceFunction<dim>::laplacian(const dealii::Point<dim> &p,
 }
 
 template <int dim>
-XS<dim>::XS():grid {1.E4,1.}
-{}
+XS<dim>::XS():grid {0.9,0.8,0.7,0.6,0.5,0.4,0.3,0.2,0.1,1.E-5}
+{
+  for (auto & e : grid) e *= max_energy ;
+}
 
 template <int dim>
 std::vector<std::vector<double> > XS<dim>::total(const std::vector<dealii::Point<dim> > &points,
@@ -111,7 +116,7 @@ std::vector<std::vector<double> > XS<dim>::total(const std::vector<dealii::Point
     {
       angle.resize(points.size());
       for (auto &point : angle)
-        point = 1. * factor + 0.01 ;
+        point = 1. / eps * factor  ;
     }
   return xs ;
 }
@@ -132,7 +137,7 @@ std::vector<std::vector<std::vector<double> > > XS<dim>::scattering(const std::v
         {
           quads.resize(points.size());
           for (auto &point : quads)
-            point = 1. * factor ;
+            point = ( 1. / eps * factor ) ;
         }
     }
   return xs ;
@@ -143,16 +148,18 @@ std::vector<std::vector<double> > XS<dim>::absorption(const std::vector<dealii::
                                                       const std::vector<double> &weights,
                                                       unsigned int n_angles,
                                                       unsigned int n_groups,
-                                                      unsigned int bin,
+                                                      unsigned int ,
                                                       double total_factor,
                                                       double scattering_factor)
 {
-  auto abs = total(points,n_angles,bin,total_factor);
+  auto abs = total(points,n_angles,0,total_factor);
   for (unsigned int bout = 0; bout < n_groups ; ++bout)
-    for (unsigned int cin = 0; cin < n_angles ; ++cin)
-      for (unsigned int cout = 0; cout < n_angles ; ++cout)
-        for (unsigned int q = 0; q < points.size() ; ++q)
-          abs[cin][q] -= weights[cout] * scattering(points,n_angles,bin,bout,scattering_factor)[cin][cout][q];
+    for (unsigned int cout = 0; cout < n_angles ; ++cout)
+      for (unsigned int q = 0; q < points.size() ; ++q)
+	{
+	  abs[cout][q] -= scattering(points,n_angles,0,bout,scattering_factor)[0][0][q];
+	  if (abs[cout][q] < 1.E-10) abs[cout][q] = 0.;
+	}
   return abs ;
 }
 

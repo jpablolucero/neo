@@ -106,12 +106,29 @@ private:
 	  data.smoother_type = NLPSCPreconditioner<dim, SystemMatrixType_, VectorType_, double, false>::AdditionalData::additive;
 	  NLPSCPreconditioner<dim, SystemMatrixType_, VectorType_, double, false> prec ;
 	  prec.initialize(sim.system_matrix,data);
+	  sim.rhs.assemble(sim.ghosted_solution);
+	  auto old_residual = sim.rhs.right_hand_side.l2_norm();
 	  prec.vmult(sim.ghosted_solution,*(in.try_read_ptr<VectorType_>("Newton residual")));
 	  *out.entry<VectorType_ *>(0) = sim.ghosted_solution ;
 	  sim.ghosted_solution = *(in.try_read_ptr<VectorType_>("Newton iterate"));
 	  sim.ghosted_solution.add(-1.,*out.entry<VectorType_ *>(0));
 	  sim.rhs.assemble(sim.ghosted_solution);
-	  dealii::deallog << "ASPIN Residual: " << sim.rhs.right_hand_side.l2_norm() << std::endl ;
+	  auto resnorm = sim.rhs.right_hand_side.l2_norm();
+	  unsigned int step_size = 0;
+	  while (resnorm >= old_residual)
+	    {
+	      ++step_size;
+	      if (step_size > 21)
+		{
+		  dealii::deallog << "No smaller stepsize allowed!" << std::endl ;
+		  break;
+		}
+	      sim.ghosted_solution.add(1./(1<<step_size), *out.entry<VectorType_ *>(0));
+	      sim.rhs.assemble(sim.ghosted_solution);
+	      resnorm = sim.rhs.right_hand_side.l2_norm();
+	      dealii::deallog << "ASPIN Residual: " << resnorm << std::endl ;
+	    }
+	  dealii::deallog << "ASPIN Residual: " << resnorm << std::endl ;
 	  *const_cast<VectorType_*>(in.try_read_ptr<VectorType_>("Newton iterate")) = sim.ghosted_solution;
 	}
       sim.solution = 0.;

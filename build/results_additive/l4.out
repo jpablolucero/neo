@@ -1,0 +1,3037 @@
+Starting at Thu Mar 15 17:19:06 CET 2018
+Running on hosts: stek[252-259]
+Running on 8 nodes.
+Running on 64 processors.
+Current working directory is /home/hd/hd_hd/hd_ly428/workspace/lte/multigroup/unit/build
+LD_LIBRARY_PATH is /opt/easybuild/software/Compiler/GCCcore/5.4.0/ncurses/6.0/lib:/opt/easybuild/software/MPI/GCC/5.4.0-2.26/OpenMPI/1.10.3/ScaLAPACK/2.0.2-OpenBLAS-0.2.18-LAPACK-3.6.1/lib:/opt/easybuild/software/Compiler/GCC/5.4.0-2.26/OpenBLAS/0.2.18-LAPACK-3.6.1/lib:/opt/easybuild/software/Compiler/GCCcore/5.4.0/binutils/2.26/lib:/opt/easybuild/software/Core/GCCcore/5.4.0/lib/gcc/x86_64-unknown-linux-gnu/5.4.0:/opt/easybuild/software/Core/GCCcore/5.4.0/lib64:/opt/easybuild/software/Core/GCCcore/5.4.0/lib:/opt/easybuild/software/MPI/GCC/5.4.0-2.26/OpenMPI/1.10.3/FFTW/3.3.4/lib:/opt/easybuild/software/Compiler/GCC/5.4.0-2.26/OpenMPI/1.10.3/lib:/opt/easybuild/software/Compiler/GCC/5.4.0-2.26/hwloc/1.11.3/lib:/opt/easybuild/software/Compiler/GCC/5.4.0-2.26/numactl/2.0.11/lib:/opt/slurm/lib
+current mpicc is /opt/easybuild/software/Compiler/GCC/5.4.0-2.26/OpenMPI/1.10.3/bin/mpicc
+tmpdir is /tmp
+I_MPI_FABRICS=shm:tmi
+I_MPI_PMI_LIBRARY=/opt/slurm/lib/libpmi.so
+OMPI_MCA_btl=vader,self
+OMPI_MCA_mtl=psm
+DEAL::eps = 1.00000
+DEAL::abs_rate = 0.00000
+DEAL::max_energy = 3000.00
+DEAL::flux_guess = 100.000
+DEAL::temp_guess = 500.000
+DEAL::Nonlinear Simulator run starts.
+DEAL::Refining triangulation... done.
+DEAL::Geometric multigrid preconditioning.
+DEAL::Setup system and storage... done.
+DEAL::Finite element: FESystem<2>[FESystem<2>[FE_DGQ<2>(1)^4]^10-FESystem<2>[FE_DGQ<2>(1)]]
+DEAL::Number of active cells: 256
+DEAL::DoFHandler levels:  164 656 2624 10496 41984
+DEAL:Newton::Residual: 89.9014
+DEAL:Newton::Starting value 89.9014
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	89.9014
+DEAL:Newton:GMRES::Starting value 89.9014
+DEAL:Newton:GMRES::Check 1	22.9316
+DEAL:Newton:GMRES::Check 2	5.54988
+DEAL:Newton:GMRES::Check 3	1.82008
+DEAL:Newton:GMRES::Check 4	0.869113
+DEAL:Newton:GMRES::Check 5	0.511015
+DEAL:Newton:GMRES::Check 6	0.305943
+DEAL:Newton:GMRES::Check 7	0.174875
+DEAL:Newton:GMRES::Check 8	0.101100
+DEAL:Newton:GMRES::Check 9	0.0628697
+DEAL:Newton:GMRES::Check 10	0.0369788
+DEAL:Newton:GMRES::Check 11	0.0223126
+DEAL:Newton:GMRES::Check 12	0.0149024
+DEAL:Newton:GMRES::Check 13	0.00907966
+DEAL:Newton:GMRES::Check 14	0.00519063
+DEAL:Newton:GMRES::Check 15	0.00280235
+DEAL:Newton:GMRES::Check 16	0.00147655
+DEAL:Newton:GMRES::Check 17	0.000591072
+DEAL:Newton:GMRES::Check 18	0.000239480
+DEAL:Newton:GMRES::Check 19	7.37870e-05
+DEAL:Newton:GMRES::Check 20	3.01589e-05
+DEAL:Newton:GMRES::Check 21	1.44282e-05
+DEAL:Newton:GMRES::Check 22	6.43536e-06
+DEAL:Newton:GMRES::Check 23	2.37214e-06
+DEAL:Newton:GMRES::Check 24	1.11909e-06
+DEAL:Newton:GMRES::Convergence step 25 value 5.59579e-07
+DEAL:Newton::Residual: 5.59572e-07
+DEAL:Newton::Convergence step 1 value 5.59572e-07
+
+
++---------------------------------------------+------------+------------+
+| Total wallclock time elapsed since start    |      19.6s |            |
+|                                             |            |            |
+| Section                         | no. calls |  wall time | % of total |
++---------------------------------+-----------+------------+------------+
+| Dofs::setup()                   |         1 |    0.0429s |      0.22% |
+| GMG::init(...)                  |         1 |      1.64s |       8.4% |
+| GMG::vmult(...)                 |        26 |      15.9s |        81% |
+| MFO::reinit(...)                |         6 |    0.0137s |         0% |
+| MFO::vmult_+(...) @ level 0     |        52 |      4.91s |        25% |
+| MFO::vmult_+(...) @ level 1     |        52 |      3.42s |        17% |
+| MFO::vmult_+(...) @ level 2     |        52 |      1.56s |       7.9% |
+| MFO::vmult_+(...) @ level 3     |        52 |     0.802s |       4.1% |
+| MFO::vmult_+(...) @ level 4     |        78 |      3.42s |        17% |
+| PSC::init(...) @ level          |         6 |      1.59s |       8.1% |
+| PSC::vmult_+(...) @ level 0     |        52 |     0.333s |       1.7% |
+| PSC::vmult_+(...) @ level 1     |        52 |     0.344s |       1.8% |
+| PSC::vmult_+(...) @ level 2     |        52 |     0.349s |       1.8% |
+| PSC::vmult_+(...) @ level 3     |        52 |     0.363s |       1.9% |
+| PSC::vmult_+(...) @ level 4     |        52 |      1.45s |       7.4% |
+| RHS::assemble()                 |         2 |     0.109s |      0.56% |
+| Sim::...refine_global(...)      |         1 |    0.0426s |      0.22% |
+| Sim::setup_system()             |         1 |    0.0465s |      0.24% |
+| Sim::solve()                    |         1 |        19s |        97% |
++---------------------------------+-----------+------------+------------+
+
+DEAL::
+DEAL::eps = 0.100000
+DEAL::abs_rate = 0.00000
+DEAL::max_energy = 3000.00
+DEAL::flux_guess = 100.000
+DEAL::temp_guess = 500.000
+DEAL::Nonlinear Simulator run starts.
+DEAL::Refining triangulation... done.
+DEAL::Geometric multigrid preconditioning.
+DEAL::Setup system and storage... done.
+DEAL::Finite element: FESystem<2>[FESystem<2>[FE_DGQ<2>(1)^4]^10-FESystem<2>[FE_DGQ<2>(1)]]
+DEAL::Number of active cells: 256
+DEAL::DoFHandler levels:  164 656 2624 10496 41984
+DEAL:Newton::Residual: 92.2358
+DEAL:Newton::Starting value 92.2358
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	92.2358
+DEAL:Newton:GMRES::Starting value 92.2358
+DEAL:Newton:GMRES::Check 1	17.2097
+DEAL:Newton:GMRES::Check 2	4.95440
+DEAL:Newton:GMRES::Check 3	1.51673
+DEAL:Newton:GMRES::Check 4	0.406721
+DEAL:Newton:GMRES::Check 5	0.114307
+DEAL:Newton:GMRES::Check 6	0.0331519
+DEAL:Newton:GMRES::Check 7	0.0113742
+DEAL:Newton:GMRES::Check 8	0.00417351
+DEAL:Newton:GMRES::Check 9	0.00149550
+DEAL:Newton:GMRES::Check 10	0.000566924
+DEAL:Newton:GMRES::Check 11	0.000229910
+DEAL:Newton:GMRES::Check 12	8.19905e-05
+DEAL:Newton:GMRES::Check 13	2.92362e-05
+DEAL:Newton:GMRES::Check 14	1.02438e-05
+DEAL:Newton:GMRES::Check 15	3.80456e-06
+DEAL:Newton:GMRES::Check 16	1.35788e-06
+DEAL:Newton:GMRES::Convergence step 17 value 4.60226e-07
+DEAL:Newton::Residual: 4.60215e-07
+DEAL:Newton::Convergence step 1 value 4.60215e-07
+
+
++---------------------------------------------+------------+------------+
+| Total wallclock time elapsed since start    |      13.7s |            |
+|                                             |            |            |
+| Section                         | no. calls |  wall time | % of total |
++---------------------------------+-----------+------------+------------+
+| Dofs::setup()                   |         1 |    0.0298s |      0.22% |
+| GMG::init(...)                  |         1 |      1.68s |        12% |
+| GMG::vmult(...)                 |        18 |        11s |        80% |
+| MFO::reinit(...)                |         6 |   0.00963s |         0% |
+| MFO::vmult_+(...) @ level 0     |        36 |       3.4s |        25% |
+| MFO::vmult_+(...) @ level 1     |        36 |      2.34s |        17% |
+| MFO::vmult_+(...) @ level 2     |        36 |      1.06s |       7.7% |
+| MFO::vmult_+(...) @ level 3     |        36 |     0.551s |         4% |
+| MFO::vmult_+(...) @ level 4     |        54 |      2.31s |        17% |
+| PSC::init(...) @ level          |         6 |      1.64s |        12% |
+| PSC::vmult_+(...) @ level 0     |        36 |     0.232s |       1.7% |
+| PSC::vmult_+(...) @ level 1     |        36 |     0.237s |       1.7% |
+| PSC::vmult_+(...) @ level 2     |        36 |     0.241s |       1.8% |
+| PSC::vmult_+(...) @ level 3     |        36 |      0.25s |       1.8% |
+| PSC::vmult_+(...) @ level 4     |        36 |      1.02s |       7.4% |
+| RHS::assemble()                 |         2 |    0.0903s |      0.66% |
+| Sim::...refine_global(...)      |         1 |   0.00634s |         0% |
+| Sim::setup_system()             |         1 |    0.0326s |      0.24% |
+| Sim::solve()                    |         1 |      13.6s |        99% |
++---------------------------------+-----------+------------+------------+
+
+DEAL::
+DEAL::eps = 0.0100000
+DEAL::abs_rate = 0.00000
+DEAL::max_energy = 3000.00
+DEAL::flux_guess = 100.000
+DEAL::temp_guess = 500.000
+DEAL::Nonlinear Simulator run starts.
+DEAL::Refining triangulation... done.
+DEAL::Geometric multigrid preconditioning.
+DEAL::Setup system and storage... done.
+DEAL::Finite element: FESystem<2>[FESystem<2>[FE_DGQ<2>(1)^4]^10-FESystem<2>[FE_DGQ<2>(1)]]
+DEAL::Number of active cells: 256
+DEAL::DoFHandler levels:  164 656 2624 10496 41984
+DEAL:Newton::Residual: 92.6540
+DEAL:Newton::Starting value 92.6540
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	92.6540
+DEAL:Newton:GMRES::Starting value 92.6540
+DEAL:Newton:GMRES::Check 1	11.5583
+DEAL:Newton:GMRES::Check 2	5.35800
+DEAL:Newton:GMRES::Check 3	1.59284
+DEAL:Newton:GMRES::Check 4	0.595840
+DEAL:Newton:GMRES::Check 5	0.235058
+DEAL:Newton:GMRES::Check 6	0.0657918
+DEAL:Newton:GMRES::Check 7	0.0267697
+DEAL:Newton:GMRES::Check 8	0.00805293
+DEAL:Newton:GMRES::Check 9	0.00299817
+DEAL:Newton:GMRES::Check 10	0.000980215
+DEAL:Newton:GMRES::Check 11	0.000237404
+DEAL:Newton:GMRES::Check 12	7.92055e-05
+DEAL:Newton:GMRES::Check 13	2.97093e-05
+DEAL:Newton:GMRES::Check 14	7.87372e-06
+DEAL:Newton:GMRES::Check 15	2.63682e-06
+DEAL:Newton:GMRES::Convergence step 16 value 7.91294e-07
+DEAL:Newton::Residual: 7.91247e-07
+DEAL:Newton::Convergence step 1 value 7.91247e-07
+
+
++---------------------------------------------+------------+------------+
+| Total wallclock time elapsed since start    |      13.2s |            |
+|                                             |            |            |
+| Section                         | no. calls |  wall time | % of total |
++---------------------------------+-----------+------------+------------+
+| Dofs::setup()                   |         1 |      0.03s |      0.23% |
+| GMG::init(...)                  |         1 |      1.63s |        12% |
+| GMG::vmult(...)                 |        17 |      10.3s |        78% |
+| MFO::reinit(...)                |         6 |   0.00965s |         0% |
+| MFO::vmult_+(...) @ level 0     |        34 |      3.21s |        24% |
+| MFO::vmult_+(...) @ level 1     |        34 |      2.21s |        17% |
+| MFO::vmult_+(...) @ level 2     |        34 |         1s |       7.6% |
+| MFO::vmult_+(...) @ level 3     |        34 |     0.524s |         4% |
+| MFO::vmult_+(...) @ level 4     |        51 |      2.18s |        17% |
+| PSC::init(...) @ level          |         6 |      1.59s |        12% |
+| PSC::vmult_+(...) @ level 0     |        34 |     0.219s |       1.7% |
+| PSC::vmult_+(...) @ level 1     |        34 |     0.223s |       1.7% |
+| PSC::vmult_+(...) @ level 2     |        34 |     0.229s |       1.7% |
+| PSC::vmult_+(...) @ level 3     |        34 |     0.237s |       1.8% |
+| PSC::vmult_+(...) @ level 4     |        34 |     0.966s |       7.3% |
+| RHS::assemble()                 |         2 |    0.0821s |      0.62% |
+| Sim::...refine_global(...)      |         1 |   0.00641s |         0% |
+| Sim::setup_system()             |         1 |    0.0328s |      0.25% |
+| Sim::solve()                    |         1 |        13s |        99% |
++---------------------------------+-----------+------------+------------+
+
+DEAL::
+DEAL::eps = 0.00100000
+DEAL::abs_rate = 0.00000
+DEAL::max_energy = 3000.00
+DEAL::flux_guess = 100.000
+DEAL::temp_guess = 500.000
+DEAL::Nonlinear Simulator run starts.
+DEAL::Refining triangulation... done.
+DEAL::Geometric multigrid preconditioning.
+DEAL::Setup system and storage... done.
+DEAL::Finite element: FESystem<2>[FESystem<2>[FE_DGQ<2>(1)^4]^10-FESystem<2>[FE_DGQ<2>(1)]]
+DEAL::Number of active cells: 256
+DEAL::DoFHandler levels:  164 656 2624 10496 41984
+DEAL:Newton::Residual: 113.855
+DEAL:Newton::Starting value 113.855
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	113.855
+DEAL:Newton:GMRES::Starting value 113.855
+DEAL:Newton:GMRES::Check 1	20.3015
+DEAL:Newton:GMRES::Check 2	3.96560
+DEAL:Newton:GMRES::Check 3	1.47598
+DEAL:Newton:GMRES::Check 4	0.655321
+DEAL:Newton:GMRES::Check 5	0.228622
+DEAL:Newton:GMRES::Check 6	0.0884107
+DEAL:Newton:GMRES::Check 7	0.0322228
+DEAL:Newton:GMRES::Check 8	0.0116459
+DEAL:Newton:GMRES::Check 9	0.00402830
+DEAL:Newton:GMRES::Check 10	0.00103695
+DEAL:Newton:GMRES::Check 11	0.000345610
+DEAL:Newton:GMRES::Check 12	0.000148570
+DEAL:Newton:GMRES::Check 13	3.64693e-05
+DEAL:Newton:GMRES::Check 14	1.49300e-05
+DEAL:Newton:GMRES::Check 15	4.45449e-06
+DEAL:Newton:GMRES::Check 16	1.54682e-06
+DEAL:Newton:GMRES::Convergence step 17 value 5.61617e-07
+DEAL:Newton::Residual: 5.61655e-07
+DEAL:Newton::Convergence step 1 value 5.61655e-07
+
+
++---------------------------------------------+------------+------------+
+| Total wallclock time elapsed since start    |        14s |            |
+|                                             |            |            |
+| Section                         | no. calls |  wall time | % of total |
++---------------------------------+-----------+------------+------------+
+| Dofs::setup()                   |         1 |    0.0299s |      0.21% |
+| GMG::init(...)                  |         1 |      1.63s |        12% |
+| GMG::vmult(...)                 |        18 |      11.2s |        80% |
+| MFO::reinit(...)                |         6 |   0.00968s |         0% |
+| MFO::vmult_+(...) @ level 0     |        37 |       3.5s |        25% |
+| MFO::vmult_+(...) @ level 1     |        36 |      2.34s |        17% |
+| MFO::vmult_+(...) @ level 2     |        36 |      1.12s |         8% |
+| MFO::vmult_+(...) @ level 3     |        36 |     0.574s |       4.1% |
+| MFO::vmult_+(...) @ level 4     |        54 |      2.35s |        17% |
+| PSC::init(...) @ level          |         6 |      1.59s |        11% |
+| PSC::vmult_+(...) @ level 0     |        37 |     0.238s |       1.7% |
+| PSC::vmult_+(...) @ level 1     |        36 |     0.239s |       1.7% |
+| PSC::vmult_+(...) @ level 2     |        36 |     0.244s |       1.7% |
+| PSC::vmult_+(...) @ level 3     |        36 |     0.253s |       1.8% |
+| PSC::vmult_+(...) @ level 4     |        36 |      1.04s |       7.4% |
+| RHS::assemble()                 |         2 |    0.0888s |      0.63% |
+| Sim::...refine_global(...)      |         1 |   0.00632s |         0% |
+| Sim::setup_system()             |         1 |    0.0326s |      0.23% |
+| Sim::solve()                    |         1 |      13.9s |        99% |
++---------------------------------+-----------+------------+------------+
+
+DEAL::
+DEAL::eps = 0.000100000
+DEAL::abs_rate = 0.00000
+DEAL::max_energy = 3000.00
+DEAL::flux_guess = 100.000
+DEAL::temp_guess = 500.000
+DEAL::Nonlinear Simulator run starts.
+DEAL::Refining triangulation... done.
+DEAL::Geometric multigrid preconditioning.
+DEAL::Setup system and storage... done.
+DEAL::Finite element: FESystem<2>[FESystem<2>[FE_DGQ<2>(1)^4]^10-FESystem<2>[FE_DGQ<2>(1)]]
+DEAL::Number of active cells: 256
+DEAL::DoFHandler levels:  164 656 2624 10496 41984
+DEAL:Newton::Residual: 127.458
+DEAL:Newton::Starting value 127.458
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	127.458
+DEAL:Newton:GMRES::Starting value 127.458
+DEAL:Newton:GMRES::Check 1	20.2705
+DEAL:Newton:GMRES::Check 2	4.00163
+DEAL:Newton:GMRES::Check 3	1.47817
+DEAL:Newton:GMRES::Check 4	0.658503
+DEAL:Newton:GMRES::Check 5	0.229522
+DEAL:Newton:GMRES::Check 6	0.0896122
+DEAL:Newton:GMRES::Check 7	0.0324693
+DEAL:Newton:GMRES::Check 8	0.0116990
+DEAL:Newton:GMRES::Check 9	0.00404589
+DEAL:Newton:GMRES::Check 10	0.00104423
+DEAL:Newton:GMRES::Check 11	0.000347024
+DEAL:Newton:GMRES::Check 12	0.000148225
+DEAL:Newton:GMRES::Check 13	3.60513e-05
+DEAL:Newton:GMRES::Check 14	1.46819e-05
+DEAL:Newton:GMRES::Check 15	4.44103e-06
+DEAL:Newton:GMRES::Check 16	1.52237e-06
+DEAL:Newton:GMRES::Convergence step 17 value 5.43820e-07
+DEAL:Newton::Residual: 5.45125e-07
+DEAL:Newton::Convergence step 1 value 5.45125e-07
+
+
++---------------------------------------------+------------+------------+
+| Total wallclock time elapsed since start    |      16.3s |            |
+|                                             |            |            |
+| Section                         | no. calls |  wall time | % of total |
++---------------------------------+-----------+------------+------------+
+| Dofs::setup()                   |         1 |    0.0466s |      0.29% |
+| GMG::init(...)                  |         1 |      1.63s |        10% |
+| GMG::vmult(...)                 |        18 |      12.9s |        79% |
+| MFO::reinit(...)                |         6 |    0.0105s |         0% |
+| MFO::vmult_+(...) @ level 0     |        54 |       5.1s |        31% |
+| MFO::vmult_+(...) @ level 1     |        36 |      2.34s |        14% |
+| MFO::vmult_+(...) @ level 2     |        36 |      1.12s |       6.9% |
+| MFO::vmult_+(...) @ level 3     |        36 |     0.538s |       3.3% |
+| MFO::vmult_+(...) @ level 4     |        54 |      2.44s |        15% |
+| PSC::init(...) @ level          |         6 |      1.59s |       9.7% |
+| PSC::vmult_+(...) @ level 0     |        54 |     0.353s |       2.2% |
+| PSC::vmult_+(...) @ level 1     |        36 |      0.24s |       1.5% |
+| PSC::vmult_+(...) @ level 2     |        36 |     0.244s |       1.5% |
+| PSC::vmult_+(...) @ level 3     |        36 |     0.254s |       1.6% |
+| PSC::vmult_+(...) @ level 4     |        36 |      1.04s |       6.4% |
+| RHS::assemble()                 |         2 |    0.0958s |      0.59% |
+| Sim::...refine_global(...)      |         1 |   0.00787s |         0% |
+| Sim::setup_system()             |         1 |    0.0503s |      0.31% |
+| Sim::solve()                    |         1 |      16.1s |        99% |
++---------------------------------+-----------+------------+------------+
+
+DEAL::
+DEAL::eps = 1.00000e-05
+DEAL::abs_rate = 0.00000
+DEAL::max_energy = 3000.00
+DEAL::flux_guess = 100.000
+DEAL::temp_guess = 500.000
+DEAL::Nonlinear Simulator run starts.
+DEAL::Refining triangulation... done.
+DEAL::Geometric multigrid preconditioning.
+DEAL::Setup system and storage... done.
+DEAL::Finite element: FESystem<2>[FESystem<2>[FE_DGQ<2>(1)^4]^10-FESystem<2>[FE_DGQ<2>(1)]]
+DEAL::Number of active cells: 256
+DEAL::DoFHandler levels:  164 656 2624 10496 41984
+DEAL:Newton::Residual: 128.934
+DEAL:Newton::Starting value 128.934
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	128.934
+DEAL:Newton:GMRES::Starting value 128.934
+DEAL:Newton:GMRES::Check 1	20.2828
+DEAL:Newton:GMRES::Check 2	4.00771
+DEAL:Newton:GMRES::Check 3	1.47867
+DEAL:Newton:GMRES::Check 4	0.658948
+DEAL:Newton:GMRES::Check 5	0.229641
+DEAL:Newton:GMRES::Check 6	0.0897507
+DEAL:Newton:GMRES::Check 7	0.0325020
+DEAL:Newton:GMRES::Check 8	0.0117048
+DEAL:Newton:GMRES::Check 9	0.00404949
+DEAL:Newton:GMRES::Check 10	0.00104527
+DEAL:Newton:GMRES::Check 11	0.000347159
+DEAL:Newton:GMRES::Check 12	0.000148129
+DEAL:Newton:GMRES::Check 13	3.60417e-05
+DEAL:Newton:GMRES::Check 14	1.46526e-05
+DEAL:Newton:GMRES::Check 15	4.43975e-06
+DEAL:Newton:GMRES::Check 16	1.51979e-06
+DEAL:Newton:GMRES::Convergence step 17 value 5.41533e-07
+DEAL:Newton::Residual: 4.11207e-06
+DEAL:Newton::Convergence step 1 value 4.11207e-06
+
+
++---------------------------------------------+------------+------------+
+| Total wallclock time elapsed since start    |      15.6s |            |
+|                                             |            |            |
+| Section                         | no. calls |  wall time | % of total |
++---------------------------------+-----------+------------+------------+
+| Dofs::setup()                   |         1 |      0.03s |      0.19% |
+| GMG::init(...)                  |         1 |      1.65s |        11% |
+| GMG::vmult(...)                 |        18 |      12.9s |        83% |
+| MFO::reinit(...)                |         6 |   0.00957s |         0% |
+| MFO::vmult_+(...) @ level 0     |        54 |       5.1s |        33% |
+| MFO::vmult_+(...) @ level 1     |        36 |      2.35s |        15% |
+| MFO::vmult_+(...) @ level 2     |        36 |      1.16s |       7.5% |
+| MFO::vmult_+(...) @ level 3     |        36 |     0.552s |       3.5% |
+| MFO::vmult_+(...) @ level 4     |        54 |      2.34s |        15% |
+| PSC::init(...) @ level          |         6 |       1.6s |        10% |
+| PSC::vmult_+(...) @ level 0     |        54 |     0.364s |       2.3% |
+| PSC::vmult_+(...) @ level 1     |        36 |     0.244s |       1.6% |
+| PSC::vmult_+(...) @ level 2     |        36 |     0.246s |       1.6% |
+| PSC::vmult_+(...) @ level 3     |        36 |      0.25s |       1.6% |
+| PSC::vmult_+(...) @ level 4     |        36 |     0.992s |       6.4% |
+| RHS::assemble()                 |         2 |     0.086s |      0.55% |
+| Sim::...refine_global(...)      |         1 |   0.00636s |         0% |
+| Sim::setup_system()             |         1 |    0.0327s |      0.21% |
+| Sim::solve()                    |         1 |      15.4s |        99% |
++---------------------------------+-----------+------------+------------+
+
+DEAL::
+DEAL::eps = 1.00000
+DEAL::abs_rate = 1.00000e-05
+DEAL::max_energy = 3000.00
+DEAL::flux_guess = 100.000
+DEAL::temp_guess = 500.000
+DEAL::Nonlinear Simulator run starts.
+DEAL::Refining triangulation... done.
+DEAL::Geometric multigrid preconditioning.
+DEAL::Setup system and storage... done.
+DEAL::Finite element: FESystem<2>[FESystem<2>[FE_DGQ<2>(1)^4]^10-FESystem<2>[FE_DGQ<2>(1)]]
+DEAL::Number of active cells: 256
+DEAL::DoFHandler levels:  164 656 2624 10496 41984
+DEAL:Newton::Residual: 89.9014
+DEAL:Newton::Starting value 89.9014
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	89.9014
+DEAL:Newton:GMRES::Starting value 89.9014
+DEAL:Newton:GMRES::Check 1	22.9316
+DEAL:Newton:GMRES::Check 2	5.54988
+DEAL:Newton:GMRES::Check 3	1.82008
+DEAL:Newton:GMRES::Check 4	0.869113
+DEAL:Newton:GMRES::Check 5	0.511015
+DEAL:Newton:GMRES::Check 6	0.305943
+DEAL:Newton:GMRES::Check 7	0.174875
+DEAL:Newton:GMRES::Check 8	0.101100
+DEAL:Newton:GMRES::Check 9	0.0628697
+DEAL:Newton:GMRES::Check 10	0.0369788
+DEAL:Newton:GMRES::Check 11	0.0223126
+DEAL:Newton:GMRES::Check 12	0.0149024
+DEAL:Newton:GMRES::Check 13	0.00907966
+DEAL:Newton:GMRES::Check 14	0.00519063
+DEAL:Newton:GMRES::Check 15	0.00280235
+DEAL:Newton:GMRES::Check 16	0.00147655
+DEAL:Newton:GMRES::Check 17	0.000591072
+DEAL:Newton:GMRES::Check 18	0.000239480
+DEAL:Newton:GMRES::Check 19	7.37870e-05
+DEAL:Newton:GMRES::Check 20	3.01589e-05
+DEAL:Newton:GMRES::Check 21	1.44282e-05
+DEAL:Newton:GMRES::Check 22	6.43536e-06
+DEAL:Newton:GMRES::Check 23	2.37214e-06
+DEAL:Newton:GMRES::Check 24	1.11909e-06
+DEAL:Newton:GMRES::Convergence step 25 value 5.59579e-07
+DEAL:Newton::Residual: 6.41818e-07
+DEAL:Newton::Convergence step 1 value 6.41818e-07
+
+
++---------------------------------------------+------------+------------+
+| Total wallclock time elapsed since start    |      19.3s |            |
+|                                             |            |            |
+| Section                         | no. calls |  wall time | % of total |
++---------------------------------+-----------+------------+------------+
+| Dofs::setup()                   |         1 |    0.0331s |      0.17% |
+| GMG::init(...)                  |         1 |      1.65s |       8.5% |
+| GMG::vmult(...)                 |        26 |      16.2s |        84% |
+| MFO::reinit(...)                |         6 |    0.0107s |         0% |
+| MFO::vmult_+(...) @ level 0     |        52 |      4.91s |        25% |
+| MFO::vmult_+(...) @ level 1     |        52 |      3.41s |        18% |
+| MFO::vmult_+(...) @ level 2     |        52 |      1.56s |       8.1% |
+| MFO::vmult_+(...) @ level 3     |        52 |     0.884s |       4.6% |
+| MFO::vmult_+(...) @ level 4     |        78 |      3.65s |        19% |
+| PSC::init(...) @ level          |         6 |       1.6s |       8.3% |
+| PSC::vmult_+(...) @ level 0     |        52 |     0.335s |       1.7% |
+| PSC::vmult_+(...) @ level 1     |        52 |     0.343s |       1.8% |
+| PSC::vmult_+(...) @ level 2     |        52 |     0.348s |       1.8% |
+| PSC::vmult_+(...) @ level 3     |        52 |     0.362s |       1.9% |
+| PSC::vmult_+(...) @ level 4     |        52 |      1.46s |       7.5% |
+| RHS::assemble()                 |         2 |     0.105s |      0.54% |
+| Sim::...refine_global(...)      |         1 |   0.00644s |         0% |
+| Sim::setup_system()             |         1 |    0.0368s |      0.19% |
+| Sim::solve()                    |         1 |      19.1s |        99% |
++---------------------------------+-----------+------------+------------+
+
+DEAL::
+DEAL::eps = 0.100000
+DEAL::abs_rate = 1.00000e-05
+DEAL::max_energy = 3000.00
+DEAL::flux_guess = 100.000
+DEAL::temp_guess = 500.000
+DEAL::Nonlinear Simulator run starts.
+DEAL::Refining triangulation... done.
+DEAL::Geometric multigrid preconditioning.
+DEAL::Setup system and storage... done.
+DEAL::Finite element: FESystem<2>[FESystem<2>[FE_DGQ<2>(1)^4]^10-FESystem<2>[FE_DGQ<2>(1)]]
+DEAL::Number of active cells: 256
+DEAL::DoFHandler levels:  164 656 2624 10496 41984
+DEAL:Newton::Residual: 92.2358
+DEAL:Newton::Starting value 92.2358
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	92.2358
+DEAL:Newton:GMRES::Starting value 92.2358
+DEAL:Newton:GMRES::Check 1	17.2097
+DEAL:Newton:GMRES::Check 2	4.95440
+DEAL:Newton:GMRES::Check 3	1.51673
+DEAL:Newton:GMRES::Check 4	0.406721
+DEAL:Newton:GMRES::Check 5	0.114307
+DEAL:Newton:GMRES::Check 6	0.0331519
+DEAL:Newton:GMRES::Check 7	0.0113742
+DEAL:Newton:GMRES::Check 8	0.00417351
+DEAL:Newton:GMRES::Check 9	0.00149550
+DEAL:Newton:GMRES::Check 10	0.000566924
+DEAL:Newton:GMRES::Check 11	0.000229910
+DEAL:Newton:GMRES::Check 12	8.19905e-05
+DEAL:Newton:GMRES::Check 13	2.92362e-05
+DEAL:Newton:GMRES::Check 14	1.02438e-05
+DEAL:Newton:GMRES::Check 15	3.80456e-06
+DEAL:Newton:GMRES::Check 16	1.35788e-06
+DEAL:Newton:GMRES::Convergence step 17 value 4.60226e-07
+DEAL:Newton::Residual: 1.07232e-05
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	1.07232e-05
+DEAL:Newton:GMRES::Starting value 1.07232e-05
+DEAL:Newton:GMRES::Check 1	4.08243e-06
+DEAL:Newton:GMRES::Check 2	8.16029e-07
+DEAL:Newton:GMRES::Check 3	1.26978e-07
+DEAL:Newton:GMRES::Check 4	1.91077e-08
+DEAL:Newton:GMRES::Check 5	6.04863e-09
+DEAL:Newton:GMRES::Check 6	1.86215e-09
+DEAL:Newton:GMRES::Check 7	5.77044e-10
+DEAL:Newton:GMRES::Check 8	1.90260e-10
+DEAL:Newton:GMRES::Check 9	6.44768e-11
+DEAL:Newton:GMRES::Convergence step 9 value 6.44768e-11
+DEAL:Newton::Residual: 2.46096e-06
+DEAL:Newton::Convergence step 2 value 2.46096e-06
+
+
++---------------------------------------------+------------+------------+
+| Total wallclock time elapsed since start    |      22.3s |            |
+|                                             |            |            |
+| Section                         | no. calls |  wall time | % of total |
++---------------------------------+-----------+------------+------------+
+| Dofs::setup()                   |         1 |    0.0299s |      0.13% |
+| GMG::init(...)                  |         2 |      3.37s |        15% |
+| GMG::vmult(...)                 |        28 |      17.2s |        77% |
+| MFO::reinit(...)                |        11 |    0.0176s |         0% |
+| MFO::vmult_+(...) @ level 0     |        56 |      5.29s |        24% |
+| MFO::vmult_+(...) @ level 1     |        56 |      3.68s |        16% |
+| MFO::vmult_+(...) @ level 2     |        56 |      1.63s |       7.3% |
+| MFO::vmult_+(...) @ level 3     |        56 |     0.871s |       3.9% |
+| MFO::vmult_+(...) @ level 4     |        84 |      3.78s |        17% |
+| PSC::init(...) @ level          |        12 |      3.28s |        15% |
+| PSC::vmult_+(...) @ level 0     |        56 |     0.358s |       1.6% |
+| PSC::vmult_+(...) @ level 1     |        56 |     0.366s |       1.6% |
+| PSC::vmult_+(...) @ level 2     |        56 |     0.378s |       1.7% |
+| PSC::vmult_+(...) @ level 3     |        56 |     0.393s |       1.8% |
+| PSC::vmult_+(...) @ level 4     |        56 |       1.6s |       7.2% |
+| RHS::assemble()                 |         3 |     0.166s |      0.75% |
+| Sim::...refine_global(...)      |         1 |   0.00653s |         0% |
+| Sim::setup_system()             |         1 |    0.0328s |      0.15% |
+| Sim::solve()                    |         2 |        22s |        99% |
++---------------------------------+-----------+------------+------------+
+
+DEAL::
+DEAL::eps = 0.0100000
+DEAL::abs_rate = 1.00000e-05
+DEAL::max_energy = 3000.00
+DEAL::flux_guess = 100.000
+DEAL::temp_guess = 500.000
+DEAL::Nonlinear Simulator run starts.
+DEAL::Refining triangulation... done.
+DEAL::Geometric multigrid preconditioning.
+DEAL::Setup system and storage... done.
+DEAL::Finite element: FESystem<2>[FESystem<2>[FE_DGQ<2>(1)^4]^10-FESystem<2>[FE_DGQ<2>(1)]]
+DEAL::Number of active cells: 256
+DEAL::DoFHandler levels:  164 656 2624 10496 41984
+DEAL:Newton::Residual: 92.6540
+DEAL:Newton::Starting value 92.6540
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	92.6540
+DEAL:Newton:GMRES::Starting value 92.6540
+DEAL:Newton:GMRES::Check 1	11.5583
+DEAL:Newton:GMRES::Check 2	5.35800
+DEAL:Newton:GMRES::Check 3	1.59284
+DEAL:Newton:GMRES::Check 4	0.595840
+DEAL:Newton:GMRES::Check 5	0.235058
+DEAL:Newton:GMRES::Check 6	0.0657918
+DEAL:Newton:GMRES::Check 7	0.0267697
+DEAL:Newton:GMRES::Check 8	0.00805293
+DEAL:Newton:GMRES::Check 9	0.00299817
+DEAL:Newton:GMRES::Check 10	0.000980215
+DEAL:Newton:GMRES::Check 11	0.000237404
+DEAL:Newton:GMRES::Check 12	7.92055e-05
+DEAL:Newton:GMRES::Check 13	2.97093e-05
+DEAL:Newton:GMRES::Check 14	7.87372e-06
+DEAL:Newton:GMRES::Check 15	2.63682e-06
+DEAL:Newton:GMRES::Convergence step 16 value 7.91294e-07
+DEAL:Newton::Residual: 0.000116615
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	0.000116615
+DEAL:Newton:GMRES::Starting value 0.000116615
+DEAL:Newton:GMRES::Check 1	1.70623e-05
+DEAL:Newton:GMRES::Check 2	1.13150e-06
+DEAL:Newton:GMRES::Check 3	8.35849e-08
+DEAL:Newton:GMRES::Check 4	2.33871e-08
+DEAL:Newton:GMRES::Check 5	8.30235e-09
+DEAL:Newton:GMRES::Check 6	2.66068e-09
+DEAL:Newton:GMRES::Check 7	8.80933e-10
+DEAL:Newton:GMRES::Check 8	3.56949e-10
+DEAL:Newton:GMRES::Check 9	1.11227e-10
+DEAL:Newton:GMRES::Check 10	3.26569e-11
+DEAL:Newton:GMRES::Convergence step 10 value 3.26569e-11
+DEAL:Newton::Residual: 3.00110e-05
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	3.00110e-05
+DEAL:Newton:GMRES::Starting value 3.00110e-05
+DEAL:Newton:GMRES::Check 1	4.37120e-06
+DEAL:Newton:GMRES::Check 2	2.66030e-07
+DEAL:Newton:GMRES::Check 3	1.47647e-08
+DEAL:Newton:GMRES::Check 4	9.34775e-10
+DEAL:Newton:GMRES::Check 5	8.33704e-11
+DEAL:Newton:GMRES::Convergence step 5 value 8.33704e-11
+DEAL:Newton::Residual: 6.50085e-06
+DEAL:Newton::Convergence step 3 value 6.50085e-06
+
+
++---------------------------------------------+------------+------------+
+| Total wallclock time elapsed since start    |      27.1s |            |
+|                                             |            |            |
+| Section                         | no. calls |  wall time | % of total |
++---------------------------------+-----------+------------+------------+
+| Dofs::setup()                   |         1 |      0.03s |      0.11% |
+| GMG::init(...)                  |         3 |      4.69s |        17% |
+| GMG::vmult(...)                 |        34 |        20s |        74% |
+| MFO::reinit(...)                |        16 |    0.0234s |         0% |
+| MFO::vmult_+(...) @ level 0     |        68 |       6.4s |        24% |
+| MFO::vmult_+(...) @ level 1     |        68 |      4.08s |        15% |
+| MFO::vmult_+(...) @ level 2     |        68 |      1.83s |       6.7% |
+| MFO::vmult_+(...) @ level 3     |        68 |     0.977s |       3.6% |
+| MFO::vmult_+(...) @ level 4     |       102 |      4.28s |        16% |
+| PSC::init(...) @ level          |        18 |      4.58s |        17% |
+| PSC::vmult_+(...) @ level 0     |        68 |     0.436s |       1.6% |
+| PSC::vmult_+(...) @ level 1     |        68 |     0.446s |       1.6% |
+| PSC::vmult_+(...) @ level 2     |        68 |     0.456s |       1.7% |
+| PSC::vmult_+(...) @ level 3     |        68 |     0.477s |       1.8% |
+| PSC::vmult_+(...) @ level 4     |        68 |      1.91s |       7.1% |
+| RHS::assemble()                 |         4 |     0.166s |      0.61% |
+| Sim::...refine_global(...)      |         1 |   0.00631s |         0% |
+| Sim::setup_system()             |         1 |    0.0327s |      0.12% |
+| Sim::solve()                    |         3 |      26.9s |        99% |
++---------------------------------+-----------+------------+------------+
+
+DEAL::
+DEAL::eps = 0.00100000
+DEAL::abs_rate = 1.00000e-05
+DEAL::max_energy = 3000.00
+DEAL::flux_guess = 100.000
+DEAL::temp_guess = 500.000
+DEAL::Nonlinear Simulator run starts.
+DEAL::Refining triangulation... done.
+DEAL::Geometric multigrid preconditioning.
+DEAL::Setup system and storage... done.
+DEAL::Finite element: FESystem<2>[FESystem<2>[FE_DGQ<2>(1)^4]^10-FESystem<2>[FE_DGQ<2>(1)]]
+DEAL::Number of active cells: 256
+DEAL::DoFHandler levels:  164 656 2624 10496 41984
+DEAL:Newton::Residual: 113.855
+DEAL:Newton::Starting value 113.855
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	113.855
+DEAL:Newton:GMRES::Starting value 113.855
+DEAL:Newton:GMRES::Check 1	20.3015
+DEAL:Newton:GMRES::Check 2	3.96561
+DEAL:Newton:GMRES::Check 3	1.47598
+DEAL:Newton:GMRES::Check 4	0.655321
+DEAL:Newton:GMRES::Check 5	0.228622
+DEAL:Newton:GMRES::Check 6	0.0884107
+DEAL:Newton:GMRES::Check 7	0.0322228
+DEAL:Newton:GMRES::Check 8	0.0116459
+DEAL:Newton:GMRES::Check 9	0.00402830
+DEAL:Newton:GMRES::Check 10	0.00103695
+DEAL:Newton:GMRES::Check 11	0.000345610
+DEAL:Newton:GMRES::Check 12	0.000148570
+DEAL:Newton:GMRES::Check 13	3.64693e-05
+DEAL:Newton:GMRES::Check 14	1.49300e-05
+DEAL:Newton:GMRES::Check 15	4.45449e-06
+DEAL:Newton:GMRES::Check 16	1.54682e-06
+DEAL:Newton:GMRES::Convergence step 17 value 5.61617e-07
+DEAL:Newton::Residual: 0.00117464
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	0.00117464
+DEAL:Newton:GMRES::Starting value 0.00117464
+DEAL:Newton:GMRES::Check 1	0.000133210
+DEAL:Newton:GMRES::Check 2	9.27666e-07
+DEAL:Newton:GMRES::Check 3	4.82096e-08
+DEAL:Newton:GMRES::Check 4	1.96239e-08
+DEAL:Newton:GMRES::Check 5	8.31717e-09
+DEAL:Newton:GMRES::Check 6	2.68888e-09
+DEAL:Newton:GMRES::Check 7	1.12109e-09
+DEAL:Newton:GMRES::Check 8	4.04403e-10
+DEAL:Newton:GMRES::Check 9	1.27492e-10
+DEAL:Newton:GMRES::Check 10	4.52724e-11
+DEAL:Newton:GMRES::Convergence step 10 value 4.52724e-11
+DEAL:Newton::Residual: 0.000305276
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	0.000305276
+DEAL:Newton:GMRES::Starting value 0.000305276
+DEAL:Newton:GMRES::Check 1	3.57016e-05
+DEAL:Newton:GMRES::Check 2	2.20063e-07
+DEAL:Newton:GMRES::Check 3	2.11720e-09
+DEAL:Newton:GMRES::Check 4	9.02718e-11
+DEAL:Newton:GMRES::Convergence step 4 value 9.02718e-11
+DEAL:Newton::Residual: 6.76799e-05
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	6.76799e-05
+DEAL:Newton:GMRES::Starting value 6.76799e-05
+DEAL:Newton:GMRES::Check 1	6.68207e-06
+DEAL:Newton:GMRES::Check 2	4.03162e-08
+DEAL:Newton:GMRES::Check 3	6.10024e-10
+DEAL:Newton:GMRES::Check 4	2.74510e-11
+DEAL:Newton:GMRES::Convergence step 4 value 2.74510e-11
+DEAL:Newton::Residual: 1.29103e-05
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	1.29103e-05
+DEAL:Newton:GMRES::Starting value 1.29103e-05
+DEAL:Newton:GMRES::Check 1	1.02646e-06
+DEAL:Newton:GMRES::Check 2	6.57237e-09
+DEAL:Newton:GMRES::Check 3	2.92892e-10
+DEAL:Newton:GMRES::Check 4	9.17467e-11
+DEAL:Newton:GMRES::Convergence step 4 value 9.17467e-11
+DEAL:Newton::Residual: 1.93880e-06
+DEAL:Newton::Convergence step 5 value 1.93880e-06
+
+
++---------------------------------------------+------------+------------+
+| Total wallclock time elapsed since start    |      38.5s |            |
+|                                             |            |            |
+| Section                         | no. calls |  wall time | % of total |
++---------------------------------+-----------+------------+------------+
+| Dofs::setup()                   |         1 |    0.0305s |         0% |
+| GMG::init(...)                  |         5 |      7.66s |        20% |
+| GMG::vmult(...)                 |        44 |      25.7s |        67% |
+| MFO::reinit(...)                |        26 |    0.0397s |       0.1% |
+| MFO::vmult_+(...) @ level 0     |        88 |      8.18s |        21% |
+| MFO::vmult_+(...) @ level 1     |        88 |      5.04s |        13% |
+| MFO::vmult_+(...) @ level 2     |        88 |      2.29s |         6% |
+| MFO::vmult_+(...) @ level 3     |        88 |      1.29s |       3.4% |
+| MFO::vmult_+(...) @ level 4     |       132 |      5.65s |        15% |
+| PSC::init(...) @ level          |        30 |      7.46s |        19% |
+| PSC::vmult_+(...) @ level 0     |        88 |     0.567s |       1.5% |
+| PSC::vmult_+(...) @ level 1     |        88 |     0.584s |       1.5% |
+| PSC::vmult_+(...) @ level 2     |        88 |     0.595s |       1.5% |
+| PSC::vmult_+(...) @ level 3     |        88 |     0.616s |       1.6% |
+| PSC::vmult_+(...) @ level 4     |        88 |      2.48s |       6.4% |
+| RHS::assemble()                 |         6 |      2.68s |         7% |
+| Sim::...refine_global(...)      |         1 |   0.00643s |         0% |
+| Sim::setup_system()             |         1 |    0.0332s |         0% |
+| Sim::solve()                    |         5 |      35.7s |        93% |
++---------------------------------+-----------+------------+------------+
+
+DEAL::
+DEAL::eps = 0.000100000
+DEAL::abs_rate = 1.00000e-05
+DEAL::max_energy = 3000.00
+DEAL::flux_guess = 100.000
+DEAL::temp_guess = 500.000
+DEAL::Nonlinear Simulator run starts.
+DEAL::Refining triangulation... done.
+DEAL::Geometric multigrid preconditioning.
+DEAL::Setup system and storage... done.
+DEAL::Finite element: FESystem<2>[FESystem<2>[FE_DGQ<2>(1)^4]^10-FESystem<2>[FE_DGQ<2>(1)]]
+DEAL::Number of active cells: 256
+DEAL::DoFHandler levels:  164 656 2624 10496 41984
+DEAL:Newton::Residual: 127.458
+DEAL:Newton::Starting value 127.458
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	127.458
+DEAL:Newton:GMRES::Starting value 127.458
+DEAL:Newton:GMRES::Check 1	20.2705
+DEAL:Newton:GMRES::Check 2	4.00163
+DEAL:Newton:GMRES::Check 3	1.47817
+DEAL:Newton:GMRES::Check 4	0.658503
+DEAL:Newton:GMRES::Check 5	0.229522
+DEAL:Newton:GMRES::Check 6	0.0896122
+DEAL:Newton:GMRES::Check 7	0.0324694
+DEAL:Newton:GMRES::Check 8	0.0116990
+DEAL:Newton:GMRES::Check 9	0.00404589
+DEAL:Newton:GMRES::Check 10	0.00104423
+DEAL:Newton:GMRES::Check 11	0.000347024
+DEAL:Newton:GMRES::Check 12	0.000148225
+DEAL:Newton:GMRES::Check 13	3.60514e-05
+DEAL:Newton:GMRES::Check 14	1.46819e-05
+DEAL:Newton:GMRES::Check 15	4.44103e-06
+DEAL:Newton:GMRES::Check 16	1.52237e-06
+DEAL:Newton:GMRES::Convergence step 17 value 5.43820e-07
+DEAL:Newton::Residual: 0.0117532
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	0.0117532
+DEAL:Newton:GMRES::Starting value 0.0117532
+DEAL:Newton:GMRES::Check 1	0.00132788
+DEAL:Newton:GMRES::Check 2	9.31154e-07
+DEAL:Newton:GMRES::Check 3	4.92642e-08
+DEAL:Newton:GMRES::Check 4	1.96463e-08
+DEAL:Newton:GMRES::Check 5	8.47047e-09
+DEAL:Newton:GMRES::Check 6	2.70836e-09
+DEAL:Newton:GMRES::Check 7	1.11354e-09
+DEAL:Newton:GMRES::Check 8	4.16823e-10
+DEAL:Newton:GMRES::Check 9	1.28964e-10
+DEAL:Newton:GMRES::Convergence step 10 value 4.59637e-11
+DEAL:Newton::Residual: 0.00305641
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	0.00305641
+DEAL:Newton:GMRES::Starting value 0.00305641
+DEAL:Newton:GMRES::Check 1	0.000356239
+DEAL:Newton:GMRES::Check 2	2.33160e-07
+DEAL:Newton:GMRES::Check 3	6.16872e-09
+DEAL:Newton:GMRES::Check 4	6.43665e-11
+DEAL:Newton:GMRES::Convergence step 4 value 6.43665e-11
+DEAL:Newton::Residual: 0.000677975
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	0.000677975
+DEAL:Newton:GMRES::Starting value 0.000677975
+DEAL:Newton:GMRES::Check 1	6.67139e-05
+DEAL:Newton:GMRES::Check 2	6.98558e-08
+DEAL:Newton:GMRES::Check 3	2.72962e-09
+DEAL:Newton:GMRES::Check 4	6.49343e-11
+DEAL:Newton:GMRES::Convergence step 4 value 6.49343e-11
+DEAL:Newton::Residual: 0.000129017
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	0.000129017
+DEAL:Newton:GMRES::Starting value 0.000129017
+DEAL:Newton:GMRES::Check 1	1.02236e-05
+DEAL:Newton:GMRES::Check 2	2.77673e-08
+DEAL:Newton:GMRES::Check 3	1.49726e-09
+DEAL:Newton:GMRES::Check 4	5.82894e-10
+DEAL:Newton:GMRES::Check 5	1.39459e-10
+DEAL:Newton:GMRES::Check 6	5.02830e-11
+DEAL:Newton:GMRES::Convergence step 6 value 5.02830e-11
+DEAL:Newton::Residual: 1.92225e-05
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	1.92225e-05
+DEAL:Newton:GMRES::Starting value 1.92225e-05
+DEAL:Newton:GMRES::Check 1	1.28657e-06
+DEAL:Newton:GMRES::Check 2	5.11144e-09
+DEAL:Newton:GMRES::Check 3	2.85641e-10
+DEAL:Newton:GMRES::Check 4	1.45501e-10
+DEAL:Newton:GMRES::Check 5	5.21547e-11
+DEAL:Newton:GMRES::Convergence step 5 value 5.21547e-11
+DEAL:Newton::Residual: 2.22368e-06
+DEAL:Newton::Convergence step 6 value 2.22368e-06
+
+
++---------------------------------------------+------------+------------+
+| Total wallclock time elapsed since start    |      47.2s |            |
+|                                             |            |            |
+| Section                         | no. calls |  wall time | % of total |
++---------------------------------+-----------+------------+------------+
+| Dofs::setup()                   |         1 |    0.0487s |       0.1% |
+| GMG::init(...)                  |         6 |      9.11s |        19% |
+| GMG::vmult(...)                 |        52 |        35s |        74% |
+| MFO::reinit(...)                |        31 |    0.0434s |         0% |
+| MFO::vmult_+(...) @ level 0     |       156 |      14.4s |        31% |
+| MFO::vmult_+(...) @ level 1     |       104 |       5.8s |        12% |
+| MFO::vmult_+(...) @ level 2     |       104 |      2.68s |       5.7% |
+| MFO::vmult_+(...) @ level 3     |       104 |      1.47s |       3.1% |
+| MFO::vmult_+(...) @ level 4     |       156 |      6.63s |        14% |
+| PSC::init(...) @ level          |        36 |      8.89s |        19% |
+| PSC::vmult_+(...) @ level 0     |       156 |      1.02s |       2.2% |
+| PSC::vmult_+(...) @ level 1     |       104 |     0.692s |       1.5% |
+| PSC::vmult_+(...) @ level 2     |       104 |     0.704s |       1.5% |
+| PSC::vmult_+(...) @ level 3     |       104 |     0.723s |       1.5% |
+| PSC::vmult_+(...) @ level 4     |       104 |      2.89s |       6.1% |
+| RHS::assemble()                 |         7 |      0.32s |      0.68% |
+| Sim::...refine_global(...)      |         1 |   0.00903s |         0% |
+| Sim::setup_system()             |         1 |    0.0522s |      0.11% |
+| Sim::solve()                    |         6 |      46.8s |        99% |
++---------------------------------+-----------+------------+------------+
+
+DEAL::
+DEAL::eps = 1.00000e-05
+DEAL::abs_rate = 1.00000e-05
+DEAL::max_energy = 3000.00
+DEAL::flux_guess = 100.000
+DEAL::temp_guess = 500.000
+DEAL::Nonlinear Simulator run starts.
+DEAL::Refining triangulation... done.
+DEAL::Geometric multigrid preconditioning.
+DEAL::Setup system and storage... done.
+DEAL::Finite element: FESystem<2>[FESystem<2>[FE_DGQ<2>(1)^4]^10-FESystem<2>[FE_DGQ<2>(1)]]
+DEAL::Number of active cells: 256
+DEAL::DoFHandler levels:  164 656 2624 10496 41984
+DEAL:Newton::Residual: 128.934
+DEAL:Newton::Starting value 128.934
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	128.934
+DEAL:Newton:GMRES::Starting value 128.934
+DEAL:Newton:GMRES::Check 1	20.2834
+DEAL:Newton:GMRES::Check 2	4.00808
+DEAL:Newton:GMRES::Check 3	1.47872
+DEAL:Newton:GMRES::Check 4	0.658957
+DEAL:Newton:GMRES::Check 5	0.229645
+DEAL:Newton:GMRES::Check 6	0.0897543
+DEAL:Newton:GMRES::Check 7	0.0325031
+DEAL:Newton:GMRES::Check 8	0.0117050
+DEAL:Newton:GMRES::Check 9	0.00404952
+DEAL:Newton:GMRES::Check 10	0.00104528
+DEAL:Newton:GMRES::Check 11	0.000347175
+DEAL:Newton:GMRES::Check 12	0.000148134
+DEAL:Newton:GMRES::Check 13	3.60454e-05
+DEAL:Newton:GMRES::Check 14	1.46546e-05
+DEAL:Newton:GMRES::Check 15	4.44038e-06
+DEAL:Newton:GMRES::Check 16	1.52000e-06
+DEAL:Newton:GMRES::Convergence step 17 value 5.41565e-07
+DEAL:Newton::Residual: 0.117539
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	0.117539
+DEAL:Newton:GMRES::Starting value 0.117539
+DEAL:Newton:GMRES::Check 1	0.0132790
+DEAL:Newton:GMRES::Check 2	3.91462e-06
+DEAL:Newton:GMRES::Check 3	1.72500e-06
+DEAL:Newton:GMRES::Check 4	4.37337e-07
+DEAL:Newton:GMRES::Check 5	1.72519e-07
+DEAL:Newton:GMRES::Check 6	6.03622e-08
+DEAL:Newton:GMRES::Check 7	2.08333e-08
+DEAL:Newton:GMRES::Check 8	6.36261e-09
+DEAL:Newton:GMRES::Check 9	2.49964e-09
+DEAL:Newton:GMRES::Convergence step 10 value 1.00346e-09
+DEAL:Newton::Residual: 0.0305677
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	0.0305677
+DEAL:Newton:GMRES::Starting value 0.0305677
+DEAL:Newton:GMRES::Check 1	0.00356265
+DEAL:Newton:GMRES::Check 2	8.09758e-07
+DEAL:Newton:GMRES::Check 3	2.36901e-08
+DEAL:Newton:GMRES::Check 4	6.34066e-09
+DEAL:Newton:GMRES::Check 5	2.83423e-09
+DEAL:Newton:GMRES::Check 6	8.37455e-10
+DEAL:Newton:GMRES::Check 7	3.38955e-10
+DEAL:Newton:GMRES::Convergence step 8 value 1.34816e-10
+DEAL:Newton::Residual: 0.00678088
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	0.00678088
+DEAL:Newton:GMRES::Starting value 0.00678088
+DEAL:Newton:GMRES::Check 1	0.000667220
+DEAL:Newton:GMRES::Check 2	5.74969e-07
+DEAL:Newton:GMRES::Check 3	1.67860e-08
+DEAL:Newton:GMRES::Check 4	6.55676e-09
+DEAL:Newton:GMRES::Check 5	2.35079e-09
+DEAL:Newton:GMRES::Check 6	8.09132e-10
+DEAL:Newton:GMRES::Check 7	3.39747e-10
+DEAL:Newton:GMRES::Check 8	1.15730e-10
+DEAL:Newton:GMRES::Convergence step 9 value 3.76244e-11
+DEAL:Newton::Residual: 0.00129005
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	0.00129005
+DEAL:Newton:GMRES::Starting value 0.00129005
+DEAL:Newton:GMRES::Check 1	0.000102222
+DEAL:Newton:GMRES::Check 2	2.72722e-07
+DEAL:Newton:GMRES::Check 3	1.30717e-08
+DEAL:Newton:GMRES::Check 4	5.44096e-09
+DEAL:Newton:GMRES::Check 5	2.13866e-09
+DEAL:Newton:GMRES::Check 6	6.46510e-10
+DEAL:Newton:GMRES::Check 7	2.66296e-10
+DEAL:Newton:GMRES::Check 8	1.05084e-10
+DEAL:Newton:GMRES::Check 9	3.56526e-11
+DEAL:Newton:GMRES::Convergence step 9 value 3.56526e-11
+DEAL:Newton::Residual: 0.000192048
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	0.000192048
+DEAL:Newton:GMRES::Starting value 0.000192048
+DEAL:Newton:GMRES::Check 1	1.28518e-05
+DEAL:Newton:GMRES::Check 2	6.28409e-08
+DEAL:Newton:GMRES::Check 3	1.28990e-08
+DEAL:Newton:GMRES::Check 4	5.84838e-09
+DEAL:Newton:GMRES::Check 5	2.37498e-09
+DEAL:Newton:GMRES::Check 6	6.64425e-10
+DEAL:Newton:GMRES::Check 7	3.05650e-10
+DEAL:Newton:GMRES::Check 8	1.20533e-10
+DEAL:Newton:GMRES::Check 9	3.87239e-11
+DEAL:Newton:GMRES::Convergence step 9 value 3.87239e-11
+DEAL:Newton::Residual: 2.21935e-05
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	2.21935e-05
+DEAL:Newton:GMRES::Starting value 2.21935e-05
+DEAL:Newton:GMRES::Check 1	1.29842e-06
+DEAL:Newton:GMRES::Check 2	3.69974e-08
+DEAL:Newton:GMRES::Check 3	1.03014e-08
+DEAL:Newton:GMRES::Check 4	4.54606e-09
+DEAL:Newton:GMRES::Check 5	2.05787e-09
+DEAL:Newton:GMRES::Check 6	5.94535e-10
+DEAL:Newton:GMRES::Check 7	2.75785e-10
+DEAL:Newton:GMRES::Check 8	9.81761e-11
+DEAL:Newton:GMRES::Convergence step 8 value 9.81761e-11
+DEAL:Newton::Residual: 1.68973e-06
+DEAL:Newton::Convergence step 7 value 1.68973e-06
+
+
++---------------------------------------------+------------+------------+
+| Total wallclock time elapsed since start    |        66s |            |
+|                                             |            |            |
+| Section                         | no. calls |  wall time | % of total |
++---------------------------------+-----------+------------+------------+
+| Dofs::setup()                   |         1 |      0.03s |         0% |
+| GMG::init(...)                  |         7 |      10.6s |        16% |
+| GMG::vmult(...)                 |        77 |      51.2s |        78% |
+| MFO::reinit(...)                |        36 |    0.0493s |         0% |
+| MFO::vmult_+(...) @ level 0     |       231 |      21.1s |        32% |
+| MFO::vmult_+(...) @ level 1     |       154 |       8.1s |        12% |
+| MFO::vmult_+(...) @ level 2     |       154 |      4.04s |       6.1% |
+| MFO::vmult_+(...) @ level 3     |       154 |      2.17s |       3.3% |
+| MFO::vmult_+(...) @ level 4     |       231 |      9.75s |        15% |
+| PSC::init(...) @ level          |        42 |      10.3s |        16% |
+| PSC::vmult_+(...) @ level 0     |       231 |      1.52s |       2.3% |
+| PSC::vmult_+(...) @ level 1     |       154 |      1.03s |       1.6% |
+| PSC::vmult_+(...) @ level 2     |       154 |      1.04s |       1.6% |
+| PSC::vmult_+(...) @ level 3     |       154 |      1.07s |       1.6% |
+| PSC::vmult_+(...) @ level 4     |       154 |      4.29s |       6.5% |
+| RHS::assemble()                 |         8 |     0.337s |      0.51% |
+| Sim::...refine_global(...)      |         1 |   0.00623s |         0% |
+| Sim::setup_system()             |         1 |    0.0327s |         0% |
+| Sim::solve()                    |         7 |      65.5s |        99% |
++---------------------------------+-----------+------------+------------+
+
+DEAL::
+DEAL::eps = 1.00000
+DEAL::abs_rate = 100.000
+DEAL::max_energy = 3000.00
+DEAL::flux_guess = 100.000
+DEAL::temp_guess = 500.000
+DEAL::Nonlinear Simulator run starts.
+DEAL::Refining triangulation... done.
+DEAL::Geometric multigrid preconditioning.
+DEAL::Setup system and storage... done.
+DEAL::Finite element: FESystem<2>[FESystem<2>[FE_DGQ<2>(1)^4]^10-FESystem<2>[FE_DGQ<2>(1)]]
+DEAL::Number of active cells: 256
+DEAL::DoFHandler levels:  164 656 2624 10496 41984
+DEAL:Newton::Residual: 90.8330
+DEAL:Newton::Starting value 90.8330
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	90.8330
+DEAL:Newton:GMRES::Starting value 90.8330
+DEAL:Newton:GMRES::Check 1	28.3321
+DEAL:Newton:GMRES::Check 2	11.0014
+DEAL:Newton:GMRES::Check 3	4.11530
+DEAL:Newton:GMRES::Check 4	1.53016
+DEAL:Newton:GMRES::Check 5	0.715941
+DEAL:Newton:GMRES::Check 6	0.397099
+DEAL:Newton:GMRES::Check 7	0.231223
+DEAL:Newton:GMRES::Check 8	0.133907
+DEAL:Newton:GMRES::Check 9	0.0782719
+DEAL:Newton:GMRES::Check 10	0.0463137
+DEAL:Newton:GMRES::Check 11	0.0269301
+DEAL:Newton:GMRES::Check 12	0.0167848
+DEAL:Newton:GMRES::Check 13	0.0106124
+DEAL:Newton:GMRES::Check 14	0.00611036
+DEAL:Newton:GMRES::Check 15	0.00331829
+DEAL:Newton:GMRES::Check 16	0.00174890
+DEAL:Newton:GMRES::Check 17	0.000803649
+DEAL:Newton:GMRES::Check 18	0.000343667
+DEAL:Newton:GMRES::Check 19	0.000146454
+DEAL:Newton:GMRES::Check 20	7.83364e-05
+DEAL:Newton:GMRES::Check 21	4.22660e-05
+DEAL:Newton:GMRES::Check 22	2.13009e-05
+DEAL:Newton:GMRES::Check 23	1.04920e-05
+DEAL:Newton:GMRES::Check 24	4.66411e-06
+DEAL:Newton:GMRES::Check 25	2.06451e-06
+DEAL:Newton:GMRES::Check 26	9.77296e-07
+DEAL:Newton:GMRES::Convergence step 27 value 4.75129e-07
+DEAL:Newton::Residual: 3.23489
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	3.23489
+DEAL:Newton:GMRES::Starting value 3.23489
+DEAL:Newton:GMRES::Check 1	1.47999
+DEAL:Newton:GMRES::Check 2	0.555931
+DEAL:Newton:GMRES::Check 3	0.164607
+DEAL:Newton:GMRES::Check 4	0.0558143
+DEAL:Newton:GMRES::Check 5	0.0286365
+DEAL:Newton:GMRES::Check 6	0.0166735
+DEAL:Newton:GMRES::Check 7	0.0106666
+DEAL:Newton:GMRES::Check 8	0.00680510
+DEAL:Newton:GMRES::Check 9	0.00420744
+DEAL:Newton:GMRES::Check 10	0.00220242
+DEAL:Newton:GMRES::Check 11	0.00108413
+DEAL:Newton:GMRES::Check 12	0.000560250
+DEAL:Newton:GMRES::Check 13	0.000309756
+DEAL:Newton:GMRES::Check 14	0.000164177
+DEAL:Newton:GMRES::Check 15	7.66067e-05
+DEAL:Newton:GMRES::Check 16	3.75592e-05
+DEAL:Newton:GMRES::Check 17	1.42903e-05
+DEAL:Newton:GMRES::Check 18	4.17893e-06
+DEAL:Newton:GMRES::Check 19	1.28923e-06
+DEAL:Newton:GMRES::Check 20	2.97992e-07
+DEAL:Newton:GMRES::Check 21	8.30567e-08
+DEAL:Newton:GMRES::Convergence step 22 value 2.43939e-08
+DEAL:Newton::Residual: 0.214495
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	0.214495
+DEAL:Newton:GMRES::Starting value 0.214495
+DEAL:Newton:GMRES::Check 1	0.0941719
+DEAL:Newton:GMRES::Check 2	0.0385402
+DEAL:Newton:GMRES::Check 3	0.0107805
+DEAL:Newton:GMRES::Check 4	0.00414052
+DEAL:Newton:GMRES::Check 5	0.00226533
+DEAL:Newton:GMRES::Check 6	0.00135312
+DEAL:Newton:GMRES::Check 7	0.000873092
+DEAL:Newton:GMRES::Check 8	0.000560901
+DEAL:Newton:GMRES::Check 9	0.000344345
+DEAL:Newton:GMRES::Check 10	0.000187689
+DEAL:Newton:GMRES::Check 11	9.53667e-05
+DEAL:Newton:GMRES::Check 12	4.96139e-05
+DEAL:Newton:GMRES::Check 13	2.72793e-05
+DEAL:Newton:GMRES::Check 14	1.44679e-05
+DEAL:Newton:GMRES::Check 15	6.83591e-06
+DEAL:Newton:GMRES::Check 16	3.39348e-06
+DEAL:Newton:GMRES::Check 17	1.30549e-06
+DEAL:Newton:GMRES::Check 18	3.64102e-07
+DEAL:Newton:GMRES::Check 19	1.10482e-07
+DEAL:Newton:GMRES::Check 20	2.55761e-08
+DEAL:Newton:GMRES::Check 21	7.15245e-09
+DEAL:Newton:GMRES::Convergence step 22 value 2.07058e-09
+DEAL:Newton::Residual: 0.00197990
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	0.00197990
+DEAL:Newton:GMRES::Starting value 0.00197990
+DEAL:Newton:GMRES::Check 1	0.000776465
+DEAL:Newton:GMRES::Check 2	0.000316337
+DEAL:Newton:GMRES::Check 3	9.74510e-05
+DEAL:Newton:GMRES::Check 4	4.77456e-05
+DEAL:Newton:GMRES::Check 5	2.79844e-05
+DEAL:Newton:GMRES::Check 6	1.75871e-05
+DEAL:Newton:GMRES::Check 7	1.16591e-05
+DEAL:Newton:GMRES::Check 8	7.63867e-06
+DEAL:Newton:GMRES::Check 9	4.71960e-06
+DEAL:Newton:GMRES::Check 10	2.59192e-06
+DEAL:Newton:GMRES::Check 11	1.35910e-06
+DEAL:Newton:GMRES::Check 12	7.10343e-07
+DEAL:Newton:GMRES::Check 13	3.78425e-07
+DEAL:Newton:GMRES::Check 14	2.00138e-07
+DEAL:Newton:GMRES::Check 15	9.45312e-08
+DEAL:Newton:GMRES::Check 16	4.60346e-08
+DEAL:Newton:GMRES::Check 17	1.69214e-08
+DEAL:Newton:GMRES::Check 18	4.38034e-09
+DEAL:Newton:GMRES::Check 19	1.22010e-09
+DEAL:Newton:GMRES::Check 20	2.92257e-10
+DEAL:Newton:GMRES::Check 21	8.32455e-11
+DEAL:Newton:GMRES::Convergence step 21 value 8.32455e-11
+DEAL:Newton::Residual: 3.78238e-07
+DEAL:Newton::Convergence step 4 value 3.78238e-07
+
+
++---------------------------------------------+------------+------------+
+| Total wallclock time elapsed since start    |      69.3s |            |
+|                                             |            |            |
+| Section                         | no. calls |  wall time | % of total |
++---------------------------------+-----------+------------+------------+
+| Dofs::setup()                   |         1 |    0.0298s |         0% |
+| GMG::init(...)                  |         4 |       6.3s |       9.1% |
+| GMG::vmult(...)                 |        96 |      57.7s |        83% |
+| MFO::reinit(...)                |        21 |    0.0307s |         0% |
+| MFO::vmult_+(...) @ level 0     |       192 |      18.2s |        26% |
+| MFO::vmult_+(...) @ level 1     |       192 |      12.1s |        17% |
+| MFO::vmult_+(...) @ level 2     |       192 |      5.48s |       7.9% |
+| MFO::vmult_+(...) @ level 3     |       192 |      2.96s |       4.3% |
+| MFO::vmult_+(...) @ level 4     |       288 |      12.3s |        18% |
+| PSC::init(...) @ level          |        24 |      6.15s |       8.9% |
+| PSC::vmult_+(...) @ level 0     |       192 |      1.24s |       1.8% |
+| PSC::vmult_+(...) @ level 1     |       192 |      1.26s |       1.8% |
+| PSC::vmult_+(...) @ level 2     |       192 |      1.29s |       1.9% |
+| PSC::vmult_+(...) @ level 3     |       192 |      1.33s |       1.9% |
+| PSC::vmult_+(...) @ level 4     |       192 |      5.31s |       7.7% |
+| RHS::assemble()                 |         5 |     0.244s |      0.35% |
+| Sim::...refine_global(...)      |         1 |   0.00671s |         0% |
+| Sim::setup_system()             |         1 |    0.0325s |         0% |
+| Sim::solve()                    |         4 |      68.9s |        99% |
++---------------------------------+-----------+------------+------------+
+
+DEAL::
+DEAL::eps = 0.100000
+DEAL::abs_rate = 100.000
+DEAL::max_energy = 3000.00
+DEAL::flux_guess = 100.000
+DEAL::temp_guess = 500.000
+DEAL::Nonlinear Simulator run starts.
+DEAL::Refining triangulation... done.
+DEAL::Geometric multigrid preconditioning.
+DEAL::Setup system and storage... done.
+DEAL::Finite element: FESystem<2>[FESystem<2>[FE_DGQ<2>(1)^4]^10-FESystem<2>[FE_DGQ<2>(1)]]
+DEAL::Number of active cells: 256
+DEAL::DoFHandler levels:  164 656 2624 10496 41984
+DEAL:Newton::Residual: 160.739
+DEAL:Newton::Starting value 160.739
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	160.739
+DEAL:Newton:GMRES::Starting value 160.739
+DEAL:Newton:GMRES::Check 1	123.846
+DEAL:Newton:GMRES::Check 2	79.1438
+DEAL:Newton:GMRES::Check 3	18.8125
+DEAL:Newton:GMRES::Check 4	3.78421
+DEAL:Newton:GMRES::Check 5	0.756638
+DEAL:Newton:GMRES::Check 6	0.154982
+DEAL:Newton:GMRES::Check 7	0.0394618
+DEAL:Newton:GMRES::Check 8	0.0108462
+DEAL:Newton:GMRES::Check 9	0.00343864
+DEAL:Newton:GMRES::Check 10	0.00122236
+DEAL:Newton:GMRES::Check 11	0.000448495
+DEAL:Newton:GMRES::Check 12	0.000162216
+DEAL:Newton:GMRES::Check 13	5.80532e-05
+DEAL:Newton:GMRES::Check 14	1.95577e-05
+DEAL:Newton:GMRES::Check 15	6.93582e-06
+DEAL:Newton:GMRES::Check 16	2.34323e-06
+DEAL:Newton:GMRES::Convergence step 17 value 7.64073e-07
+DEAL:Newton::Residual: 107.063
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	107.063
+DEAL:Newton:GMRES::Starting value 107.063
+DEAL:Newton:GMRES::Check 1	40.7841
+DEAL:Newton:GMRES::Check 2	8.13513
+DEAL:Newton:GMRES::Check 3	1.23570
+DEAL:Newton:GMRES::Check 4	0.140972
+DEAL:Newton:GMRES::Check 5	0.0290763
+DEAL:Newton:GMRES::Check 6	0.00710733
+DEAL:Newton:GMRES::Check 7	0.00191344
+DEAL:Newton:GMRES::Check 8	0.000538455
+DEAL:Newton:GMRES::Check 9	0.000148714
+DEAL:Newton:GMRES::Check 10	4.17908e-05
+DEAL:Newton:GMRES::Check 11	1.15405e-05
+DEAL:Newton:GMRES::Check 12	3.40631e-06
+DEAL:Newton:GMRES::Convergence step 13 value 9.43069e-07
+DEAL:Newton::Residual: 24.6096
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	24.6096
+DEAL:Newton:GMRES::Starting value 24.6096
+DEAL:Newton:GMRES::Check 1	8.57223
+DEAL:Newton:GMRES::Check 2	1.86509
+DEAL:Newton:GMRES::Check 3	0.257637
+DEAL:Newton:GMRES::Check 4	0.0320061
+DEAL:Newton:GMRES::Check 5	0.00693613
+DEAL:Newton:GMRES::Check 6	0.00172442
+DEAL:Newton:GMRES::Check 7	0.000465939
+DEAL:Newton:GMRES::Check 8	0.000131999
+DEAL:Newton:GMRES::Check 9	3.66494e-05
+DEAL:Newton:GMRES::Check 10	1.03898e-05
+DEAL:Newton:GMRES::Check 11	2.91550e-06
+DEAL:Newton:GMRES::Check 12	8.55107e-07
+DEAL:Newton:GMRES::Convergence step 13 value 2.39486e-07
+DEAL:Newton::Residual: 3.97951
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	3.97951
+DEAL:Newton:GMRES::Starting value 3.97951
+DEAL:Newton:GMRES::Check 1	1.16653
+DEAL:Newton:GMRES::Check 2	0.267959
+DEAL:Newton:GMRES::Check 3	0.0321474
+DEAL:Newton:GMRES::Check 4	0.00497151
+DEAL:Newton:GMRES::Check 5	0.00124238
+DEAL:Newton:GMRES::Check 6	0.000324225
+DEAL:Newton:GMRES::Check 7	8.91359e-05
+DEAL:Newton:GMRES::Check 8	2.51205e-05
+DEAL:Newton:GMRES::Check 9	7.14571e-06
+DEAL:Newton:GMRES::Check 10	2.07935e-06
+DEAL:Newton:GMRES::Check 11	5.87982e-07
+DEAL:Newton:GMRES::Check 12	1.70611e-07
+DEAL:Newton:GMRES::Check 13	4.89215e-08
+DEAL:Newton:GMRES::Convergence step 14 value 1.41778e-08
+DEAL:Newton::Residual: 0.360318
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	0.360318
+DEAL:Newton:GMRES::Starting value 0.360318
+DEAL:Newton:GMRES::Check 1	0.0839418
+DEAL:Newton:GMRES::Check 2	0.0197300
+DEAL:Newton:GMRES::Check 3	0.00224002
+DEAL:Newton:GMRES::Check 4	0.000467868
+DEAL:Newton:GMRES::Check 5	0.000128981
+DEAL:Newton:GMRES::Check 6	3.56076e-05
+DEAL:Newton:GMRES::Check 7	1.00346e-05
+DEAL:Newton:GMRES::Check 8	2.79723e-06
+DEAL:Newton:GMRES::Check 9	8.04452e-07
+DEAL:Newton:GMRES::Check 10	2.38435e-07
+DEAL:Newton:GMRES::Check 11	6.76068e-08
+DEAL:Newton:GMRES::Check 12	1.93778e-08
+DEAL:Newton:GMRES::Check 13	5.66249e-09
+DEAL:Newton:GMRES::Convergence step 14 value 1.64101e-09
+DEAL:Newton::Residual: 0.0127044
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	0.0127044
+DEAL:Newton:GMRES::Starting value 0.0127044
+DEAL:Newton:GMRES::Check 1	0.00216174
+DEAL:Newton:GMRES::Check 2	0.000486528
+DEAL:Newton:GMRES::Check 3	6.98933e-05
+DEAL:Newton:GMRES::Check 4	1.75977e-05
+DEAL:Newton:GMRES::Check 5	4.90041e-06
+DEAL:Newton:GMRES::Check 6	1.37982e-06
+DEAL:Newton:GMRES::Check 7	3.96051e-07
+DEAL:Newton:GMRES::Check 8	1.11321e-07
+DEAL:Newton:GMRES::Check 9	3.17383e-08
+DEAL:Newton:GMRES::Check 10	9.48334e-09
+DEAL:Newton:GMRES::Check 11	2.71470e-09
+DEAL:Newton:GMRES::Check 12	7.81872e-10
+DEAL:Newton:GMRES::Check 13	2.26438e-10
+DEAL:Newton:GMRES::Convergence step 14 value 6.55009e-11
+DEAL:Newton::Residual: 5.60040e-05
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	5.60040e-05
+DEAL:Newton:GMRES::Starting value 5.60040e-05
+DEAL:Newton:GMRES::Check 1	7.33617e-06
+DEAL:Newton:GMRES::Check 2	1.52140e-06
+DEAL:Newton:GMRES::Check 3	2.67090e-07
+DEAL:Newton:GMRES::Check 4	7.20214e-08
+DEAL:Newton:GMRES::Check 5	2.01300e-08
+DEAL:Newton:GMRES::Check 6	5.75486e-09
+DEAL:Newton:GMRES::Check 7	1.67657e-09
+DEAL:Newton:GMRES::Check 8	4.67648e-10
+DEAL:Newton:GMRES::Check 9	1.34883e-10
+DEAL:Newton:GMRES::Check 10	3.99020e-11
+DEAL:Newton:GMRES::Convergence step 10 value 3.99020e-11
+DEAL:Newton::Residual: 2.14548e-09
+DEAL:Newton::Convergence step 7 value 2.14548e-09
+
+
++---------------------------------------------+------------+------------+
+| Total wallclock time elapsed since start    |      75.1s |            |
+|                                             |            |            |
+| Section                         | no. calls |  wall time | % of total |
++---------------------------------+-----------+------------+------------+
+| Dofs::setup()                   |         1 |    0.0299s |         0% |
+| GMG::init(...)                  |         7 |      10.5s |        14% |
+| GMG::vmult(...)                 |       102 |      58.3s |        78% |
+| MFO::reinit(...)                |        36 |    0.0503s |         0% |
+| MFO::vmult_+(...) @ level 0     |       204 |      18.8s |        25% |
+| MFO::vmult_+(...) @ level 1     |       204 |      10.9s |        15% |
+| MFO::vmult_+(...) @ level 2     |       204 |       5.3s |       7.1% |
+| MFO::vmult_+(...) @ level 3     |       204 |      2.86s |       3.8% |
+| MFO::vmult_+(...) @ level 4     |       306 |      13.1s |        18% |
+| PSC::init(...) @ level          |        42 |      10.2s |        14% |
+| PSC::vmult_+(...) @ level 0     |       204 |      1.33s |       1.8% |
+| PSC::vmult_+(...) @ level 1     |       204 |      1.34s |       1.8% |
+| PSC::vmult_+(...) @ level 2     |       204 |      1.37s |       1.8% |
+| PSC::vmult_+(...) @ level 3     |       204 |      1.41s |       1.9% |
+| PSC::vmult_+(...) @ level 4     |       204 |      5.69s |       7.6% |
+| RHS::assemble()                 |         8 |     0.352s |      0.47% |
+| Sim::...refine_global(...)      |         1 |   0.00649s |         0% |
+| Sim::setup_system()             |         1 |    0.0326s |         0% |
+| Sim::solve()                    |         7 |      74.6s |        99% |
++---------------------------------+-----------+------------+------------+
+
+DEAL::
+DEAL::eps = 0.0100000
+DEAL::abs_rate = 100.000
+DEAL::max_energy = 3000.00
+DEAL::flux_guess = 100.000
+DEAL::temp_guess = 500.000
+DEAL::Nonlinear Simulator run starts.
+DEAL::Refining triangulation... done.
+DEAL::Geometric multigrid preconditioning.
+DEAL::Setup system and storage... done.
+DEAL::Finite element: FESystem<2>[FESystem<2>[FE_DGQ<2>(1)^4]^10-FESystem<2>[FE_DGQ<2>(1)]]
+DEAL::Number of active cells: 256
+DEAL::DoFHandler levels:  164 656 2624 10496 41984
+DEAL:Newton::Residual: 1354.86
+DEAL:Newton::Starting value 1354.86
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	1354.86
+DEAL:Newton:GMRES::Starting value 1354.86
+DEAL:Newton:GMRES::Check 1	931.913
+DEAL:Newton:GMRES::Check 2	191.714
+DEAL:Newton:GMRES::Check 3	18.1935
+DEAL:Newton:GMRES::Check 4	11.8589
+DEAL:Newton:GMRES::Check 5	4.76534
+DEAL:Newton:GMRES::Check 6	1.82772
+DEAL:Newton:GMRES::Check 7	0.422135
+DEAL:Newton:GMRES::Check 8	0.112879
+DEAL:Newton:GMRES::Check 9	0.0447543
+DEAL:Newton:GMRES::Check 10	0.0139911
+DEAL:Newton:GMRES::Check 11	0.00276170
+DEAL:Newton:GMRES::Check 12	0.000833647
+DEAL:Newton:GMRES::Check 13	0.000442327
+DEAL:Newton:GMRES::Check 14	7.60409e-05
+DEAL:Newton:GMRES::Check 15	2.22343e-05
+DEAL:Newton:GMRES::Convergence step 16 value 8.10056e-06
+DEAL:Newton::Residual: 1165.97
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	1165.97
+DEAL:Newton:GMRES::Starting value 1165.97
+DEAL:Newton:GMRES::Check 1	170.593
+DEAL:Newton:GMRES::Check 2	11.2352
+DEAL:Newton:GMRES::Check 3	0.602620
+DEAL:Newton:GMRES::Check 4	0.0362895
+DEAL:Newton:GMRES::Check 5	0.00325274
+DEAL:Newton:GMRES::Check 6	0.000314327
+DEAL:Newton:GMRES::Check 7	3.39739e-05
+DEAL:Newton:GMRES::Convergence step 8 value 2.48656e-06
+DEAL:Newton::Residual: 300.110
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	300.110
+DEAL:Newton:GMRES::Starting value 300.110
+DEAL:Newton:GMRES::Check 1	43.7120
+DEAL:Newton:GMRES::Check 2	2.66031
+DEAL:Newton:GMRES::Check 3	0.147647
+DEAL:Newton:GMRES::Check 4	0.00934775
+DEAL:Newton:GMRES::Check 5	0.000833694
+DEAL:Newton:GMRES::Check 6	8.37503e-05
+DEAL:Newton:GMRES::Check 7	8.88470e-06
+DEAL:Newton:GMRES::Convergence step 8 value 6.69274e-07
+DEAL:Newton::Residual: 65.0085
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	65.0085
+DEAL:Newton:GMRES::Starting value 65.0085
+DEAL:Newton:GMRES::Check 1	7.86367
+DEAL:Newton:GMRES::Check 2	0.462100
+DEAL:Newton:GMRES::Check 3	0.0276637
+DEAL:Newton:GMRES::Check 4	0.00197261
+DEAL:Newton:GMRES::Check 5	0.000171157
+DEAL:Newton:GMRES::Check 6	1.78998e-05
+DEAL:Newton:GMRES::Check 7	1.82363e-06
+DEAL:Newton:GMRES::Convergence step 8 value 1.49352e-07
+DEAL:Newton::Residual: 11.7886
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	11.7886
+DEAL:Newton:GMRES::Starting value 11.7886
+DEAL:Newton:GMRES::Check 1	1.12290
+DEAL:Newton:GMRES::Check 2	0.0611988
+DEAL:Newton:GMRES::Check 3	0.00403569
+DEAL:Newton:GMRES::Check 4	0.000338361
+DEAL:Newton:GMRES::Check 5	2.81176e-05
+DEAL:Newton:GMRES::Check 6	2.72791e-06
+DEAL:Newton:GMRES::Check 7	2.85193e-07
+DEAL:Newton:GMRES::Convergence step 8 value 2.51576e-08
+DEAL:Newton::Residual: 1.60986
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	1.60986
+DEAL:Newton:GMRES::Starting value 1.60986
+DEAL:Newton:GMRES::Check 1	0.125126
+DEAL:Newton:GMRES::Check 2	0.00628745
+DEAL:Newton:GMRES::Check 3	0.000445580
+DEAL:Newton:GMRES::Check 4	4.00771e-05
+DEAL:Newton:GMRES::Check 5	3.44544e-06
+DEAL:Newton:GMRES::Check 6	3.00021e-07
+DEAL:Newton:GMRES::Check 7	3.26855e-08
+DEAL:Newton:GMRES::Convergence step 8 value 3.05049e-09
+DEAL:Newton::Residual: 0.163539
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	0.163539
+DEAL:Newton:GMRES::Starting value 0.163539
+DEAL:Newton:GMRES::Check 1	0.0104880
+DEAL:Newton:GMRES::Check 2	0.000446365
+DEAL:Newton:GMRES::Check 3	3.36483e-05
+DEAL:Newton:GMRES::Check 4	3.02146e-06
+DEAL:Newton:GMRES::Check 5	2.81913e-07
+DEAL:Newton:GMRES::Check 6	2.29027e-08
+DEAL:Newton:GMRES::Check 7	2.35970e-09
+DEAL:Newton:GMRES::Convergence step 8 value 2.34982e-10
+DEAL:Newton::Residual: 0.00880618
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	0.00880618
+DEAL:Newton:GMRES::Starting value 0.00880618
+DEAL:Newton:GMRES::Check 1	0.000541765
+DEAL:Newton:GMRES::Check 2	1.98398e-05
+DEAL:Newton:GMRES::Check 3	1.61817e-06
+DEAL:Newton:GMRES::Check 4	1.50226e-07
+DEAL:Newton:GMRES::Check 5	1.49012e-08
+DEAL:Newton:GMRES::Check 6	1.14818e-09
+DEAL:Newton:GMRES::Check 7	1.09072e-10
+DEAL:Newton:GMRES::Convergence step 8 value 1.14476e-11
+DEAL:Newton::Residual: 5.45549e-05
+DEAL:Newton::Convergence step 8 value 5.45549e-05
+
+
++---------------------------------------------+------------+------------+
+| Total wallclock time elapsed since start    |      62.2s |            |
+|                                             |            |            |
+| Section                         | no. calls |  wall time | % of total |
++---------------------------------+-----------+------------+------------+
+| Dofs::setup()                   |         1 |    0.0299s |         0% |
+| GMG::init(...)                  |         8 |      11.8s |        19% |
+| GMG::vmult(...)                 |        80 |      45.5s |        73% |
+| MFO::reinit(...)                |        41 |    0.0599s |         0% |
+| MFO::vmult_+(...) @ level 0     |       160 |      14.5s |        23% |
+| MFO::vmult_+(...) @ level 1     |       160 |      8.32s |        13% |
+| MFO::vmult_+(...) @ level 2     |       160 |      3.87s |       6.2% |
+| MFO::vmult_+(...) @ level 3     |       160 |      2.22s |       3.6% |
+| MFO::vmult_+(...) @ level 4     |       240 |      10.8s |        17% |
+| PSC::init(...) @ level          |        48 |      11.5s |        18% |
+| PSC::vmult_+(...) @ level 0     |       160 |      1.04s |       1.7% |
+| PSC::vmult_+(...) @ level 1     |       160 |      1.08s |       1.7% |
+| PSC::vmult_+(...) @ level 2     |       160 |      1.09s |       1.7% |
+| PSC::vmult_+(...) @ level 3     |       160 |      1.12s |       1.8% |
+| PSC::vmult_+(...) @ level 4     |       160 |      4.56s |       7.3% |
+| RHS::assemble()                 |         9 |     0.369s |      0.59% |
+| Sim::...refine_global(...)      |         1 |   0.00619s |         0% |
+| Sim::setup_system()             |         1 |    0.0331s |         0% |
+| Sim::solve()                    |         8 |      61.7s |        99% |
++---------------------------------+-----------+------------+------------+
+
+DEAL::
+DEAL::eps = 0.00100000
+DEAL::abs_rate = 100.000
+DEAL::max_energy = 3000.00
+DEAL::flux_guess = 100.000
+DEAL::temp_guess = 500.000
+DEAL::Nonlinear Simulator run starts.
+DEAL::Refining triangulation... done.
+DEAL::Geometric multigrid preconditioning.
+DEAL::Setup system and storage... done.
+DEAL::Finite element: FESystem<2>[FESystem<2>[FE_DGQ<2>(1)^4]^10-FESystem<2>[FE_DGQ<2>(1)]]
+DEAL::Number of active cells: 256
+DEAL::DoFHandler levels:  164 656 2624 10496 41984
+DEAL:Newton::Residual: 13558.6
+DEAL:Newton::Starting value 13558.6
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	13558.6
+DEAL:Newton:GMRES::Starting value 13558.6
+DEAL:Newton:GMRES::Check 1	10001.5
+DEAL:Newton:GMRES::Check 2	2260.97
+DEAL:Newton:GMRES::Check 3	320.379
+DEAL:Newton:GMRES::Check 4	96.6545
+DEAL:Newton:GMRES::Check 5	48.3270
+DEAL:Newton:GMRES::Check 6	24.8107
+DEAL:Newton:GMRES::Check 7	5.92622
+DEAL:Newton:GMRES::Check 8	1.09548
+DEAL:Newton:GMRES::Check 9	0.262895
+DEAL:Newton:GMRES::Check 10	0.0343342
+DEAL:Newton:GMRES::Check 11	0.0137560
+DEAL:Newton:GMRES::Check 12	0.0107552
+DEAL:Newton:GMRES::Check 13	0.00253827
+DEAL:Newton:GMRES::Check 14	0.000760137
+DEAL:Newton:GMRES::Check 15	0.000394127
+DEAL:Newton:GMRES::Convergence step 16 value 7.22516e-05
+DEAL:Newton::Residual: 11746.3
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	11746.3
+DEAL:Newton:GMRES::Starting value 11746.3
+DEAL:Newton:GMRES::Check 1	1332.10
+DEAL:Newton:GMRES::Check 2	9.18912
+DEAL:Newton:GMRES::Check 3	0.0817477
+DEAL:Newton:GMRES::Check 4	0.00362532
+DEAL:Newton:GMRES::Convergence step 5 value 4.23838e-05
+DEAL:Newton::Residual: 3052.76
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	3052.76
+DEAL:Newton:GMRES::Starting value 3052.76
+DEAL:Newton:GMRES::Check 1	357.016
+DEAL:Newton:GMRES::Check 2	2.20063
+DEAL:Newton:GMRES::Check 3	0.0211720
+DEAL:Newton:GMRES::Check 4	0.000902587
+DEAL:Newton:GMRES::Convergence step 5 value 8.65063e-06
+DEAL:Newton::Residual: 676.799
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	676.799
+DEAL:Newton:GMRES::Starting value 676.799
+DEAL:Newton:GMRES::Check 1	66.8208
+DEAL:Newton:GMRES::Check 2	0.403162
+DEAL:Newton:GMRES::Check 3	0.00607444
+DEAL:Newton:GMRES::Check 4	0.000190588
+DEAL:Newton:GMRES::Convergence step 5 value 2.02905e-06
+DEAL:Newton::Residual: 129.103
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	129.103
+DEAL:Newton:GMRES::Starting value 129.103
+DEAL:Newton:GMRES::Check 1	10.2653
+DEAL:Newton:GMRES::Check 2	0.0656322
+DEAL:Newton:GMRES::Check 3	0.00224569
+DEAL:Newton:GMRES::Check 4	3.11731e-05
+DEAL:Newton:GMRES::Convergence step 5 value 4.46902e-07
+DEAL:Newton::Residual: 19.3880
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	19.3880
+DEAL:Newton:GMRES::Starting value 19.3880
+DEAL:Newton:GMRES::Check 1	1.30363
+DEAL:Newton:GMRES::Check 2	0.00888910
+DEAL:Newton:GMRES::Check 3	0.000374884
+DEAL:Newton:GMRES::Check 4	4.14237e-06
+DEAL:Newton:GMRES::Convergence step 5 value 6.98847e-08
+DEAL:Newton::Residual: 2.26412
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	2.26412
+DEAL:Newton:GMRES::Starting value 2.26412
+DEAL:Newton:GMRES::Check 1	0.132653
+DEAL:Newton:GMRES::Check 2	0.000909055
+DEAL:Newton:GMRES::Check 3	3.92506e-05
+DEAL:Newton:GMRES::Check 4	3.93765e-07
+DEAL:Newton:GMRES::Convergence step 5 value 6.83314e-09
+DEAL:Newton::Residual: 0.179439
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	0.179439
+DEAL:Newton:GMRES::Starting value 0.179439
+DEAL:Newton:GMRES::Check 1	0.0104225
+DEAL:Newton:GMRES::Check 2	7.08646e-05
+DEAL:Newton:GMRES::Check 3	3.02952e-06
+DEAL:Newton:GMRES::Check 4	3.05281e-08
+DEAL:Newton:GMRES::Convergence step 5 value 5.46367e-10
+DEAL:Newton::Residual: 0.00300422
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	0.00300422
+DEAL:Newton:GMRES::Starting value 0.00300422
+DEAL:Newton:GMRES::Check 1	0.000176974
+DEAL:Newton:GMRES::Check 2	1.17663e-06
+DEAL:Newton:GMRES::Check 3	5.06688e-08
+DEAL:Newton:GMRES::Check 4	5.28098e-10
+DEAL:Newton:GMRES::Convergence step 5 value 2.44150e-11
+DEAL:Newton::Residual: 1.02549e-06
+DEAL:Newton::Convergence step 9 value 1.02549e-06
+
+
++---------------------------------------------+------------+------------+
+| Total wallclock time elapsed since start    |      56.1s |            |
+|                                             |            |            |
+| Section                         | no. calls |  wall time | % of total |
++---------------------------------+-----------+------------+------------+
+| Dofs::setup()                   |         1 |    0.0303s |         0% |
+| GMG::init(...)                  |         9 |      13.2s |        23% |
+| GMG::vmult(...)                 |        65 |        39s |        69% |
+| MFO::reinit(...)                |        46 |     0.067s |      0.12% |
+| MFO::vmult_+(...) @ level 0     |       155 |        14s |        25% |
+| MFO::vmult_+(...) @ level 1     |       130 |      6.82s |        12% |
+| MFO::vmult_+(...) @ level 2     |       130 |      3.26s |       5.8% |
+| MFO::vmult_+(...) @ level 3     |       130 |      1.84s |       3.3% |
+| MFO::vmult_+(...) @ level 4     |       195 |      8.37s |        15% |
+| PSC::init(...) @ level          |        54 |      12.8s |        23% |
+| PSC::vmult_+(...) @ level 0     |       155 |         1s |       1.8% |
+| PSC::vmult_+(...) @ level 1     |       130 |     0.855s |       1.5% |
+| PSC::vmult_+(...) @ level 2     |       130 |     0.874s |       1.6% |
+| PSC::vmult_+(...) @ level 3     |       130 |     0.898s |       1.6% |
+| PSC::vmult_+(...) @ level 4     |       130 |      3.61s |       6.4% |
+| RHS::assemble()                 |        10 |     0.432s |      0.77% |
+| Sim::...refine_global(...)      |         1 |   0.00623s |         0% |
+| Sim::setup_system()             |         1 |    0.0342s |         0% |
+| Sim::solve()                    |         9 |      55.5s |        99% |
++---------------------------------+-----------+------------+------------+
+
+DEAL::
+DEAL::eps = 0.000100000
+DEAL::abs_rate = 100.000
+DEAL::max_energy = 3000.00
+DEAL::flux_guess = 100.000
+DEAL::temp_guess = 500.000
+DEAL::Nonlinear Simulator run starts.
+DEAL::Refining triangulation... done.
+DEAL::Geometric multigrid preconditioning.
+DEAL::Setup system and storage... done.
+DEAL::Finite element: FESystem<2>[FESystem<2>[FE_DGQ<2>(1)^4]^10-FESystem<2>[FE_DGQ<2>(1)]]
+DEAL::Number of active cells: 256
+DEAL::DoFHandler levels:  164 656 2624 10496 41984
+DEAL:Newton::Residual: 135592.
+DEAL:Newton::Starting value 135592.
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	135592.
+DEAL:Newton:GMRES::Starting value 135592.
+DEAL:Newton:GMRES::Check 1	100101.
+DEAL:Newton:GMRES::Check 2	22715.1
+DEAL:Newton:GMRES::Check 3	3335.43
+DEAL:Newton:GMRES::Check 4	988.005
+DEAL:Newton:GMRES::Check 5	485.924
+DEAL:Newton:GMRES::Check 6	252.211
+DEAL:Newton:GMRES::Check 7	59.8273
+DEAL:Newton:GMRES::Check 8	11.2187
+DEAL:Newton:GMRES::Check 9	2.58106
+DEAL:Newton:GMRES::Check 10	0.317269
+DEAL:Newton:GMRES::Check 11	0.111879
+DEAL:Newton:GMRES::Check 12	0.0903542
+DEAL:Newton:GMRES::Check 13	0.0234143
+DEAL:Newton:GMRES::Check 14	0.00710872
+DEAL:Newton:GMRES::Check 15	0.00366937
+DEAL:Newton:GMRES::Convergence step 16 value 0.000646582
+DEAL:Newton::Residual: 117532.
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	117532.
+DEAL:Newton:GMRES::Starting value 117532.
+DEAL:Newton:GMRES::Check 1	13278.8
+DEAL:Newton:GMRES::Check 2	9.22020
+DEAL:Newton:GMRES::Check 3	0.0991597
+DEAL:Newton:GMRES::Convergence step 4 value 0.000918864
+DEAL:Newton::Residual: 30564.1
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	30564.1
+DEAL:Newton:GMRES::Starting value 30564.1
+DEAL:Newton:GMRES::Check 1	3562.39
+DEAL:Newton:GMRES::Check 2	2.33160
+DEAL:Newton:GMRES::Check 3	0.0616686
+DEAL:Newton:GMRES::Convergence step 4 value 0.000198340
+DEAL:Newton::Residual: 6779.75
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	6779.75
+DEAL:Newton:GMRES::Starting value 6779.75
+DEAL:Newton:GMRES::Check 1	667.139
+DEAL:Newton:GMRES::Check 2	0.698546
+DEAL:Newton:GMRES::Check 3	0.0272531
+DEAL:Newton:GMRES::Check 4	8.77318e-05
+DEAL:Newton:GMRES::Convergence step 5 value 2.01397e-06
+DEAL:Newton::Residual: 1290.17
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	1290.17
+DEAL:Newton:GMRES::Starting value 1290.17
+DEAL:Newton:GMRES::Check 1	102.237
+DEAL:Newton:GMRES::Check 2	0.277049
+DEAL:Newton:GMRES::Check 3	0.00562628
+DEAL:Newton:GMRES::Check 4	2.42949e-05
+DEAL:Newton:GMRES::Convergence step 5 value 3.18907e-07
+DEAL:Newton::Residual: 192.225
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	192.225
+DEAL:Newton:GMRES::Starting value 192.225
+DEAL:Newton:GMRES::Check 1	12.8657
+DEAL:Newton:GMRES::Check 2	0.0506311
+DEAL:Newton:GMRES::Check 3	0.000897017
+DEAL:Newton:GMRES::Check 4	3.55387e-06
+DEAL:Newton:GMRES::Convergence step 5 value 4.53376e-08
+DEAL:Newton::Residual: 22.2368
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	22.2368
+DEAL:Newton:GMRES::Starting value 22.2368
+DEAL:Newton:GMRES::Check 1	1.29789
+DEAL:Newton:GMRES::Check 2	0.00644373
+DEAL:Newton:GMRES::Check 3	9.74592e-05
+DEAL:Newton:GMRES::Check 4	3.91598e-07
+DEAL:Newton:GMRES::Convergence step 5 value 2.85158e-08
+DEAL:Newton::Residual: 1.69964
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	1.69964
+DEAL:Newton:GMRES::Starting value 1.69964
+DEAL:Newton:GMRES::Check 1	0.0984559
+DEAL:Newton:GMRES::Check 2	0.000528080
+DEAL:Newton:GMRES::Check 3	8.26856e-06
+DEAL:Newton:GMRES::Check 4	4.85453e-08
+DEAL:Newton:GMRES::Convergence step 5 value 1.50645e-08
+DEAL:Newton::Residual: 0.0260356
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	0.0260356
+DEAL:Newton:GMRES::Starting value 0.0260356
+DEAL:Newton:GMRES::Check 1	0.00153011
+DEAL:Newton:GMRES::Check 2	8.05504e-06
+DEAL:Newton:GMRES::Check 3	1.92460e-07
+DEAL:Newton:GMRES::Check 4	3.51729e-08
+DEAL:Newton:GMRES::Check 5	1.61269e-08
+DEAL:Newton:GMRES::Check 6	5.00779e-09
+DEAL:Newton:GMRES::Check 7	1.85879e-09
+DEAL:Newton:GMRES::Check 8	5.57580e-10
+DEAL:Newton:GMRES::Convergence step 9 value 2.08508e-10
+DEAL:Newton::Residual: 7.42789e-06
+DEAL:Newton::Convergence step 9 value 7.42789e-06
+
+
++---------------------------------------------+------------+------------+
+| Total wallclock time elapsed since start    |      67.4s |            |
+|                                             |            |            |
+| Section                         | no. calls |  wall time | % of total |
++---------------------------------+-----------+------------+------------+
+| Dofs::setup()                   |         1 |    0.0299s |         0% |
+| GMG::init(...)                  |         9 |      13.5s |        20% |
+| GMG::vmult(...)                 |        67 |      44.6s |        66% |
+| MFO::reinit(...)                |        46 |    0.0695s |       0.1% |
+| MFO::vmult_+(...) @ level 0     |       201 |      18.3s |        27% |
+| MFO::vmult_+(...) @ level 1     |       134 |      7.29s |        11% |
+| MFO::vmult_+(...) @ level 2     |       134 |      3.26s |       4.8% |
+| MFO::vmult_+(...) @ level 3     |       134 |      1.84s |       2.7% |
+| MFO::vmult_+(...) @ level 4     |       201 |      8.69s |        13% |
+| PSC::init(...) @ level          |        54 |      13.1s |        19% |
+| PSC::vmult_+(...) @ level 0     |       201 |      1.32s |         2% |
+| PSC::vmult_+(...) @ level 1     |       134 |     0.897s |       1.3% |
+| PSC::vmult_+(...) @ level 2     |       134 |     0.914s |       1.4% |
+| PSC::vmult_+(...) @ level 3     |       134 |     0.949s |       1.4% |
+| PSC::vmult_+(...) @ level 4     |       134 |       3.9s |       5.8% |
+| RHS::assemble()                 |        10 |     0.436s |      0.65% |
+| Sim::...refine_global(...)      |         1 |   0.00614s |         0% |
+| Sim::setup_system()             |         1 |    0.0327s |         0% |
+| Sim::solve()                    |         9 |      66.8s |        99% |
++---------------------------------+-----------+------------+------------+
+
+DEAL::
+DEAL::eps = 1.00000e-05
+DEAL::abs_rate = 100.000
+DEAL::max_energy = 3000.00
+DEAL::flux_guess = 100.000
+DEAL::temp_guess = 500.000
+DEAL::Nonlinear Simulator run starts.
+DEAL::Refining triangulation... done.
+DEAL::Geometric multigrid preconditioning.
+DEAL::Setup system and storage... done.
+DEAL::Finite element: FESystem<2>[FESystem<2>[FE_DGQ<2>(1)^4]^10-FESystem<2>[FE_DGQ<2>(1)]]
+DEAL::Number of active cells: 256
+DEAL::DoFHandler levels:  164 656 2624 10496 41984
+DEAL:Newton::Residual: 1.35592e+06
+DEAL:Newton::Starting value 1.35592e+06
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	1.35592e+06
+DEAL:Newton:GMRES::Starting value 1.35592e+06
+DEAL:Newton:GMRES::Check 1	1.00112e+06
+DEAL:Newton:GMRES::Check 2	227302.
+DEAL:Newton:GMRES::Check 3	33495.7
+DEAL:Newton:GMRES::Check 4	9905.01
+DEAL:Newton:GMRES::Check 5	4863.07
+DEAL:Newton:GMRES::Check 6	2526.56
+DEAL:Newton:GMRES::Check 7	598.940
+DEAL:Newton:GMRES::Check 8	112.448
+DEAL:Newton:GMRES::Check 9	25.8141
+DEAL:Newton:GMRES::Check 10	3.17082
+DEAL:Newton:GMRES::Check 11	1.10384
+DEAL:Newton:GMRES::Check 12	0.888632
+DEAL:Newton:GMRES::Check 13	0.234897
+DEAL:Newton:GMRES::Check 14	0.0707701
+DEAL:Newton:GMRES::Check 15	0.0365112
+DEAL:Newton:GMRES::Convergence step 16 value 0.00646918
+DEAL:Newton::Residual: 1.17539e+06
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	1.17539e+06
+DEAL:Newton:GMRES::Starting value 1.17539e+06
+DEAL:Newton:GMRES::Check 1	132791.
+DEAL:Newton:GMRES::Check 2	13.2964
+DEAL:Newton:GMRES::Check 3	0.545957
+DEAL:Newton:GMRES::Check 4	0.0175689
+DEAL:Newton:GMRES::Convergence step 5 value 0.00317258
+DEAL:Newton::Residual: 305677.
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	305677.
+DEAL:Newton:GMRES::Starting value 305677.
+DEAL:Newton:GMRES::Check 1	35626.6
+DEAL:Newton:GMRES::Check 2	8.08581
+DEAL:Newton:GMRES::Check 3	0.195439
+DEAL:Newton:GMRES::Convergence step 4 value 0.00177366
+DEAL:Newton::Residual: 67808.9
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	67808.9
+DEAL:Newton:GMRES::Starting value 67808.9
+DEAL:Newton:GMRES::Check 1	6672.21
+DEAL:Newton:GMRES::Check 2	5.73549
+DEAL:Newton:GMRES::Check 3	0.0734289
+DEAL:Newton:GMRES::Check 4	0.000833111
+DEAL:Newton:GMRES::Convergence step 5 value 0.000151541
+DEAL:Newton::Residual: 12900.6
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	12900.6
+DEAL:Newton:GMRES::Starting value 12900.6
+DEAL:Newton:GMRES::Check 1	1022.22
+DEAL:Newton:GMRES::Check 2	2.70257
+DEAL:Newton:GMRES::Check 3	0.0302026
+DEAL:Newton:GMRES::Check 4	0.000252842
+DEAL:Newton:GMRES::Convergence step 5 value 2.31821e-05
+DEAL:Newton::Residual: 1920.49
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	1920.49
+DEAL:Newton:GMRES::Starting value 1920.49
+DEAL:Newton:GMRES::Check 1	128.515
+DEAL:Newton:GMRES::Check 2	0.500263
+DEAL:Newton:GMRES::Check 3	0.00677743
+DEAL:Newton:GMRES::Check 4	6.36658e-05
+DEAL:Newton:GMRES::Convergence step 5 value 1.47018e-05
+DEAL:Newton::Residual: 221.935
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	221.935
+DEAL:Newton:GMRES::Starting value 221.935
+DEAL:Newton:GMRES::Check 1	12.9519
+DEAL:Newton:GMRES::Check 2	0.0640034
+DEAL:Newton:GMRES::Check 3	0.000848708
+DEAL:Newton:GMRES::Check 4	4.77437e-05
+DEAL:Newton:GMRES::Check 5	1.60039e-05
+DEAL:Newton:GMRES::Check 6	4.88246e-06
+DEAL:Newton:GMRES::Convergence step 7 value 2.09880e-06
+DEAL:Newton::Residual: 16.8973
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	16.8973
+DEAL:Newton:GMRES::Starting value 16.8973
+DEAL:Newton:GMRES::Check 1	0.978770
+DEAL:Newton:GMRES::Check 2	0.00527206
+DEAL:Newton:GMRES::Check 3	0.000229970
+DEAL:Newton:GMRES::Check 4	3.78041e-05
+DEAL:Newton:GMRES::Check 5	1.56373e-05
+DEAL:Newton:GMRES::Check 6	5.28109e-06
+DEAL:Newton:GMRES::Check 7	2.07301e-06
+DEAL:Newton:GMRES::Check 8	6.10086e-07
+DEAL:Newton:GMRES::Check 9	2.84641e-07
+DEAL:Newton:GMRES::Convergence step 10 value 1.27617e-07
+DEAL:Newton::Residual: 0.256385
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	0.256385
+DEAL:Newton:GMRES::Starting value 0.256385
+DEAL:Newton:GMRES::Check 1	0.0156221
+DEAL:Newton:GMRES::Check 2	0.00111149
+DEAL:Newton:GMRES::Check 3	7.12910e-05
+DEAL:Newton:GMRES::Check 4	3.77990e-05
+DEAL:Newton:GMRES::Check 5	1.80719e-05
+DEAL:Newton:GMRES::Check 6	6.25530e-06
+DEAL:Newton:GMRES::Check 7	2.19719e-06
+DEAL:Newton:GMRES::Check 8	7.46411e-07
+DEAL:Newton:GMRES::Check 9	2.88900e-07
+DEAL:Newton:GMRES::Check 10	1.03815e-07
+DEAL:Newton:GMRES::Check 11	4.14700e-08
+DEAL:Newton:GMRES::Check 12	1.53441e-08
+DEAL:Newton:GMRES::Check 13	5.94445e-09
+DEAL:Newton:GMRES::Convergence step 14 value 2.07121e-09
+DEAL:Newton::Residual: 7.17572e-05
+DEAL:Newton::Convergence step 9 value 7.17572e-05
+
+
++---------------------------------------------+------------+------------+
+| Total wallclock time elapsed since start    |      70.7s |            |
+|                                             |            |            |
+| Section                         | no. calls |  wall time | % of total |
++---------------------------------+-----------+------------+------------+
+| Dofs::setup()                   |         1 |    0.0299s |         0% |
+| GMG::init(...)                  |         9 |      13.1s |        19% |
+| GMG::vmult(...)                 |        80 |      52.4s |        74% |
+| MFO::reinit(...)                |        46 |    0.0632s |         0% |
+| MFO::vmult_+(...) @ level 0     |       240 |      21.7s |        31% |
+| MFO::vmult_+(...) @ level 1     |       160 |      8.17s |        12% |
+| MFO::vmult_+(...) @ level 2     |       160 |      3.85s |       5.4% |
+| MFO::vmult_+(...) @ level 3     |       160 |      2.16s |       3.1% |
+| MFO::vmult_+(...) @ level 4     |       240 |      10.3s |        15% |
+| PSC::init(...) @ level          |        54 |      12.8s |        18% |
+| PSC::vmult_+(...) @ level 0     |       240 |      1.58s |       2.2% |
+| PSC::vmult_+(...) @ level 1     |       160 |      1.07s |       1.5% |
+| PSC::vmult_+(...) @ level 2     |       160 |      1.09s |       1.5% |
+| PSC::vmult_+(...) @ level 3     |       160 |      1.12s |       1.6% |
+| PSC::vmult_+(...) @ level 4     |       160 |      4.53s |       6.4% |
+| RHS::assemble()                 |        10 |      0.43s |      0.61% |
+| Sim::...refine_global(...)      |         1 |    0.0063s |         0% |
+| Sim::setup_system()             |         1 |    0.0326s |         0% |
+| Sim::solve()                    |         9 |      70.2s |        99% |
++---------------------------------+-----------+------------+------------+
+
+DEAL::
+DEAL::eps = 1.00000
+DEAL::abs_rate = 1.00000e-05
+DEAL::max_energy = 3000.00
+DEAL::flux_guess = 100.000
+DEAL::temp_guess = 500.000
+DEAL::Nonlinear Simulator run starts.
+DEAL::Refining triangulation... done.
+DEAL::Geometric multigrid preconditioning.
+DEAL::Setup system and storage... done.
+DEAL::Finite element: FESystem<2>[FESystem<2>[FE_DGQ<2>(1)^4]^10-FESystem<2>[FE_DGQ<2>(1)]]
+DEAL::Number of active cells: 256
+DEAL::DoFHandler levels:  164 656 2624 10496 41984
+DEAL:Newton::Residual: 89.9014
+DEAL:Newton::Starting value 89.9014
+DEAL:Newton::Preconditioning nonlinear iteration...
+DEAL:Newton::ASPIN Residual: 76.1722
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	76.1722
+DEAL:Newton:GMRES::Starting value 76.1722
+DEAL:Newton:GMRES::Check 1	24.8887
+DEAL:Newton:GMRES::Check 2	6.73073
+DEAL:Newton:GMRES::Check 3	2.13030
+DEAL:Newton:GMRES::Check 4	0.950375
+DEAL:Newton:GMRES::Check 5	0.512977
+DEAL:Newton:GMRES::Check 6	0.309454
+DEAL:Newton:GMRES::Check 7	0.176381
+DEAL:Newton:GMRES::Check 8	0.102286
+DEAL:Newton:GMRES::Check 9	0.0592257
+DEAL:Newton:GMRES::Check 10	0.0319882
+DEAL:Newton:GMRES::Check 11	0.0173874
+DEAL:Newton:GMRES::Check 12	0.0106877
+DEAL:Newton:GMRES::Check 13	0.00624183
+DEAL:Newton:GMRES::Check 14	0.00382134
+DEAL:Newton:GMRES::Check 15	0.00228142
+DEAL:Newton:GMRES::Check 16	0.00127181
+DEAL:Newton:GMRES::Check 17	0.000578645
+DEAL:Newton:GMRES::Check 18	0.000243999
+DEAL:Newton:GMRES::Check 19	7.41563e-05
+DEAL:Newton:GMRES::Check 20	2.80782e-05
+DEAL:Newton:GMRES::Check 21	1.24941e-05
+DEAL:Newton:GMRES::Check 22	6.13292e-06
+DEAL:Newton:GMRES::Check 23	2.44535e-06
+DEAL:Newton:GMRES::Check 24	1.03321e-06
+DEAL:Newton:GMRES::Convergence step 25 value 4.83718e-07
+DEAL:Newton::Residual: 5.62614e-07
+DEAL:Newton::Convergence step 1 value 5.62614e-07
+
+
++---------------------------------------------+------------+------------+
+| Total wallclock time elapsed since start    |      19.3s |            |
+|                                             |            |            |
+| Section                         | no. calls |  wall time | % of total |
++---------------------------------+-----------+------------+------------+
+| Dofs::setup()                   |         1 |    0.0302s |      0.16% |
+| GMG::init(...)                  |         1 |      1.63s |       8.5% |
+| GMG::vmult(...)                 |        26 |      15.7s |        81% |
+| MFO::reinit(...)                |         7 |    0.0112s |         0% |
+| MFO::vmult_+(...) @ level 0     |        52 |      4.91s |        25% |
+| MFO::vmult_+(...) @ level 1     |        52 |      3.37s |        17% |
+| MFO::vmult_+(...) @ level 2     |        52 |      1.51s |       7.9% |
+| MFO::vmult_+(...) @ level 3     |        52 |     0.777s |         4% |
+| MFO::vmult_+(...) @ level 4     |        78 |      3.27s |        17% |
+| NLPSC::vmult_+(...)             |         1 |     0.458s |       2.4% |
+| PSC::init(...) @ level          |         6 |      1.59s |       8.3% |
+| PSC::vmult_+(...) @ level 0     |        52 |     0.338s |       1.8% |
+| PSC::vmult_+(...) @ level 1     |        52 |     0.341s |       1.8% |
+| PSC::vmult_+(...) @ level 2     |        52 |     0.348s |       1.8% |
+| PSC::vmult_+(...) @ level 3     |        52 |     0.361s |       1.9% |
+| PSC::vmult_+(...) @ level 4     |        52 |      1.47s |       7.6% |
+| RHS::assemble()                 |         4 |     0.169s |      0.87% |
+| Sim::...refine_global(...)      |         1 |   0.00606s |         0% |
+| Sim::setup_system()             |         1 |     0.033s |      0.17% |
+| Sim::solve()                    |         1 |      18.6s |        96% |
++---------------------------------+-----------+------------+------------+
+
+DEAL::
+DEAL::eps = 0.100000
+DEAL::abs_rate = 1.00000e-05
+DEAL::max_energy = 3000.00
+DEAL::flux_guess = 100.000
+DEAL::temp_guess = 500.000
+DEAL::Nonlinear Simulator run starts.
+DEAL::Refining triangulation... done.
+DEAL::Geometric multigrid preconditioning.
+DEAL::Setup system and storage... done.
+DEAL::Finite element: FESystem<2>[FESystem<2>[FE_DGQ<2>(1)^4]^10-FESystem<2>[FE_DGQ<2>(1)]]
+DEAL::Number of active cells: 256
+DEAL::DoFHandler levels:  164 656 2624 10496 41984
+DEAL:Newton::Residual: 92.2358
+DEAL:Newton::Starting value 92.2358
+DEAL:Newton::Preconditioning nonlinear iteration...
+DEAL:Newton::ASPIN Residual: 65.3434
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	65.3434
+DEAL:Newton:GMRES::Starting value 65.3434
+DEAL:Newton:GMRES::Check 1	20.2807
+DEAL:Newton:GMRES::Check 2	5.69636
+DEAL:Newton:GMRES::Check 3	1.70317
+DEAL:Newton:GMRES::Check 4	0.455724
+DEAL:Newton:GMRES::Check 5	0.114376
+DEAL:Newton:GMRES::Check 6	0.0335500
+DEAL:Newton:GMRES::Check 7	0.0105781
+DEAL:Newton:GMRES::Check 8	0.00385001
+DEAL:Newton:GMRES::Check 9	0.00133825
+DEAL:Newton:GMRES::Check 10	0.000487841
+DEAL:Newton:GMRES::Check 11	0.000195844
+DEAL:Newton:GMRES::Check 12	7.39837e-05
+DEAL:Newton:GMRES::Check 13	2.48887e-05
+DEAL:Newton:GMRES::Check 14	8.92386e-06
+DEAL:Newton:GMRES::Check 15	3.22105e-06
+DEAL:Newton:GMRES::Check 16	1.14951e-06
+DEAL:Newton:GMRES::Convergence step 17 value 4.04279e-07
+DEAL:Newton::Residual: 8.49629e-06
+DEAL:Newton::Convergence step 1 value 8.49629e-06
+
+
++---------------------------------------------+------------+------------+
+| Total wallclock time elapsed since start    |      14.9s |            |
+|                                             |            |            |
+| Section                         | no. calls |  wall time | % of total |
++---------------------------------+-----------+------------+------------+
+| Dofs::setup()                   |         1 |    0.0398s |      0.27% |
+| GMG::init(...)                  |         1 |      1.64s |        11% |
+| GMG::vmult(...)                 |        18 |      10.9s |        73% |
+| MFO::reinit(...)                |         7 |    0.0118s |         0% |
+| MFO::vmult_+(...) @ level 0     |        36 |       3.4s |        23% |
+| MFO::vmult_+(...) @ level 1     |        36 |      2.32s |        16% |
+| MFO::vmult_+(...) @ level 2     |        36 |      1.07s |       7.2% |
+| MFO::vmult_+(...) @ level 3     |        36 |      0.55s |       3.7% |
+| MFO::vmult_+(...) @ level 4     |        54 |      2.32s |        16% |
+| NLPSC::vmult_+(...)             |         1 |      1.17s |       7.8% |
+| PSC::init(...) @ level          |         6 |       1.6s |        11% |
+| PSC::vmult_+(...) @ level 0     |        36 |     0.227s |       1.5% |
+| PSC::vmult_+(...) @ level 1     |        36 |     0.237s |       1.6% |
+| PSC::vmult_+(...) @ level 2     |        36 |     0.243s |       1.6% |
+| PSC::vmult_+(...) @ level 3     |        36 |     0.251s |       1.7% |
+| PSC::vmult_+(...) @ level 4     |        36 |      1.02s |       6.8% |
+| RHS::assemble()                 |         4 |     0.188s |       1.3% |
+| Sim::...refine_global(...)      |         1 |   0.00652s |         0% |
+| Sim::setup_system()             |         1 |    0.0432s |      0.29% |
+| Sim::solve()                    |         1 |      13.4s |        90% |
++---------------------------------+-----------+------------+------------+
+
+DEAL::
+DEAL::eps = 0.0100000
+DEAL::abs_rate = 1.00000e-05
+DEAL::max_energy = 3000.00
+DEAL::flux_guess = 100.000
+DEAL::temp_guess = 500.000
+DEAL::Nonlinear Simulator run starts.
+DEAL::Refining triangulation... done.
+DEAL::Geometric multigrid preconditioning.
+DEAL::Setup system and storage... done.
+DEAL::Finite element: FESystem<2>[FESystem<2>[FE_DGQ<2>(1)^4]^10-FESystem<2>[FE_DGQ<2>(1)]]
+DEAL::Number of active cells: 256
+DEAL::DoFHandler levels:  164 656 2624 10496 41984
+DEAL:Newton::Residual: 92.6540
+DEAL:Newton::Starting value 92.6540
+DEAL:Newton::Preconditioning nonlinear iteration...
+DEAL:Newton::ASPIN Residual: 38.7726
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	38.7726
+DEAL:Newton:GMRES::Starting value 38.7726
+DEAL:Newton:GMRES::Check 1	14.2246
+DEAL:Newton:GMRES::Check 2	7.37591
+DEAL:Newton:GMRES::Check 3	2.05203
+DEAL:Newton:GMRES::Check 4	0.717339
+DEAL:Newton:GMRES::Check 5	0.202389
+DEAL:Newton:GMRES::Check 6	0.0878928
+DEAL:Newton:GMRES::Check 7	0.0318379
+DEAL:Newton:GMRES::Check 8	0.00958434
+DEAL:Newton:GMRES::Check 9	0.00398629
+DEAL:Newton:GMRES::Check 10	0.00101346
+DEAL:Newton:GMRES::Check 11	0.000263314
+DEAL:Newton:GMRES::Check 12	0.000102616
+DEAL:Newton:GMRES::Check 13	2.93289e-05
+DEAL:Newton:GMRES::Check 14	8.85265e-06
+DEAL:Newton:GMRES::Check 15	2.98720e-06
+DEAL:Newton:GMRES::Check 16	8.13168e-07
+DEAL:Newton:GMRES::Convergence step 17 value 2.43418e-07
+DEAL:Newton::Residual: 9.10228e-05
+DEAL:Newton::Preconditioning nonlinear iteration...
+DEAL:Newton::ASPIN Residual: 8.01315e-06
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	8.01315e-06
+DEAL:Newton:GMRES::Starting value 8.01315e-06
+DEAL:Newton:GMRES::Check 1	9.70040e-07
+DEAL:Newton:GMRES::Check 2	6.41642e-08
+DEAL:Newton:GMRES::Check 3	1.59358e-08
+DEAL:Newton:GMRES::Check 4	5.83468e-09
+DEAL:Newton:GMRES::Check 5	1.97199e-09
+DEAL:Newton:GMRES::Check 6	8.01199e-10
+DEAL:Newton:GMRES::Check 7	2.45870e-10
+DEAL:Newton:GMRES::Check 8	8.79156e-11
+DEAL:Newton:GMRES::Convergence step 8 value 8.79156e-11
+DEAL:Newton::Residual: 8.79283e-11
+DEAL:Newton::Convergence step 2 value 8.79283e-11
+
+
++---------------------------------------------+------------+------------+
+| Total wallclock time elapsed since start    |      30.2s |            |
+|                                             |            |            |
+| Section                         | no. calls |  wall time | % of total |
++---------------------------------+-----------+------------+------------+
+| Dofs::setup()                   |         1 |    0.0298s |         0% |
+| GMG::init(...)                  |         2 |       3.1s |        10% |
+| GMG::vmult(...)                 |        27 |      15.8s |        52% |
+| MFO::reinit(...)                |        13 |    0.0194s |         0% |
+| MFO::vmult_+(...) @ level 0     |        54 |         5s |        17% |
+| MFO::vmult_+(...) @ level 1     |        54 |      3.11s |        10% |
+| MFO::vmult_+(...) @ level 2     |        54 |      1.48s |       4.9% |
+| MFO::vmult_+(...) @ level 3     |        54 |     0.798s |       2.6% |
+| MFO::vmult_+(...) @ level 4     |        81 |       3.5s |        12% |
+| NLPSC::vmult_+(...)             |         2 |      9.13s |        30% |
+| PSC::init(...) @ level          |        12 |      3.02s |        10% |
+| PSC::vmult_+(...) @ level 0     |        54 |     0.346s |       1.1% |
+| PSC::vmult_+(...) @ level 1     |        54 |      0.35s |       1.2% |
+| PSC::vmult_+(...) @ level 2     |        54 |     0.361s |       1.2% |
+| PSC::vmult_+(...) @ level 3     |        54 |     0.374s |       1.2% |
+| PSC::vmult_+(...) @ level 4     |        54 |      1.52s |         5% |
+| RHS::assemble()                 |         7 |     0.289s |      0.96% |
+| Sim::...refine_global(...)      |         1 |   0.00601s |         0% |
+| Sim::setup_system()             |         1 |    0.0325s |      0.11% |
+| Sim::solve()                    |         2 |      20.7s |        69% |
++---------------------------------+-----------+------------+------------+
+
+DEAL::
+DEAL::eps = 0.00100000
+DEAL::abs_rate = 1.00000e-05
+DEAL::max_energy = 3000.00
+DEAL::flux_guess = 100.000
+DEAL::temp_guess = 500.000
+DEAL::Nonlinear Simulator run starts.
+DEAL::Refining triangulation... done.
+DEAL::Geometric multigrid preconditioning.
+DEAL::Setup system and storage... done.
+DEAL::Finite element: FESystem<2>[FESystem<2>[FE_DGQ<2>(1)^4]^10-FESystem<2>[FE_DGQ<2>(1)]]
+DEAL::Number of active cells: 256
+DEAL::DoFHandler levels:  164 656 2624 10496 41984
+DEAL:Newton::Residual: 113.855
+DEAL:Newton::Starting value 113.855
+DEAL:Newton::Preconditioning nonlinear iteration...
+DEAL:Newton::ASPIN Residual: 36.9641
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	36.9641
+DEAL:Newton:GMRES::Starting value 36.9641
+DEAL:Newton:GMRES::Check 1	12.9871
+DEAL:Newton:GMRES::Check 2	7.88071
+DEAL:Newton:GMRES::Check 3	2.20335
+DEAL:Newton:GMRES::Check 4	0.923450
+DEAL:Newton:GMRES::Check 5	0.287620
+DEAL:Newton:GMRES::Check 6	0.120329
+DEAL:Newton:GMRES::Check 7	0.0398683
+DEAL:Newton:GMRES::Check 8	0.0140758
+DEAL:Newton:GMRES::Check 9	0.00628566
+DEAL:Newton:GMRES::Check 10	0.00172854
+DEAL:Newton:GMRES::Check 11	0.000432775
+DEAL:Newton:GMRES::Check 12	0.000167074
+DEAL:Newton:GMRES::Check 13	4.26511e-05
+DEAL:Newton:GMRES::Check 14	1.61687e-05
+DEAL:Newton:GMRES::Check 15	5.09921e-06
+DEAL:Newton:GMRES::Check 16	1.90981e-06
+DEAL:Newton:GMRES::Check 17	7.83125e-07
+DEAL:Newton:GMRES::Convergence step 18 value 2.63412e-07
+DEAL:Newton::Residual: 0.000904731
+DEAL:Newton::Preconditioning nonlinear iteration...
+DEAL:Newton::ASPIN Residual: 6.97672e-06
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	6.97672e-06
+DEAL:Newton:GMRES::Starting value 6.97672e-06
+DEAL:Newton:GMRES::Check 1	4.76956e-07
+DEAL:Newton:GMRES::Check 2	7.55453e-08
+DEAL:Newton:GMRES::Check 3	3.09761e-08
+DEAL:Newton:GMRES::Check 4	1.58828e-08
+DEAL:Newton:GMRES::Check 5	4.07219e-09
+DEAL:Newton:GMRES::Check 6	2.00338e-09
+DEAL:Newton:GMRES::Check 7	7.85412e-10
+DEAL:Newton:GMRES::Check 8	2.58589e-10
+DEAL:Newton:GMRES::Check 9	8.83247e-11
+DEAL:Newton:GMRES::Convergence step 9 value 8.83247e-11
+DEAL:Newton::Residual: 8.83342e-11
+DEAL:Newton::Convergence step 2 value 8.83342e-11
+
+
++---------------------------------------------+------------+------------+
+| Total wallclock time elapsed since start    |      35.9s |            |
+|                                             |            |            |
+| Section                         | no. calls |  wall time | % of total |
++---------------------------------+-----------+------------+------------+
+| Dofs::setup()                   |         1 |    0.0299s |         0% |
+| GMG::init(...)                  |         2 |      3.09s |       8.6% |
+| GMG::vmult(...)                 |        29 |      17.1s |        48% |
+| MFO::reinit(...)                |        13 |    0.0194s |         0% |
+| MFO::vmult_+(...) @ level 0     |        60 |      5.56s |        15% |
+| MFO::vmult_+(...) @ level 1     |        58 |      3.29s |       9.2% |
+| MFO::vmult_+(...) @ level 2     |        58 |      1.54s |       4.3% |
+| MFO::vmult_+(...) @ level 3     |        58 |     0.857s |       2.4% |
+| MFO::vmult_+(...) @ level 4     |        87 |      3.73s |        10% |
+| NLPSC::vmult_+(...)             |         2 |      12.8s |        36% |
+| PSC::init(...) @ level          |        12 |      3.02s |       8.4% |
+| PSC::vmult_+(...) @ level 0     |        60 |     0.386s |       1.1% |
+| PSC::vmult_+(...) @ level 1     |        58 |     0.389s |       1.1% |
+| PSC::vmult_+(...) @ level 2     |        58 |     0.395s |       1.1% |
+| PSC::vmult_+(...) @ level 3     |        58 |      0.41s |       1.1% |
+| PSC::vmult_+(...) @ level 4     |        58 |      1.68s |       4.7% |
+| RHS::assemble()                 |         7 |     0.294s |      0.82% |
+| Sim::...refine_global(...)      |         1 |   0.00632s |         0% |
+| Sim::setup_system()             |         1 |    0.0326s |         0% |
+| Sim::solve()                    |         2 |      22.7s |        63% |
++---------------------------------+-----------+------------+------------+
+
+DEAL::
+DEAL::eps = 0.000100000
+DEAL::abs_rate = 1.00000e-05
+DEAL::max_energy = 3000.00
+DEAL::flux_guess = 100.000
+DEAL::temp_guess = 500.000
+DEAL::Nonlinear Simulator run starts.
+DEAL::Refining triangulation... done.
+DEAL::Geometric multigrid preconditioning.
+DEAL::Setup system and storage... done.
+DEAL::Finite element: FESystem<2>[FESystem<2>[FE_DGQ<2>(1)^4]^10-FESystem<2>[FE_DGQ<2>(1)]]
+DEAL::Number of active cells: 256
+DEAL::DoFHandler levels:  164 656 2624 10496 41984
+DEAL:Newton::Residual: 127.458
+DEAL:Newton::Starting value 127.458
+DEAL:Newton::Preconditioning nonlinear iteration...
+DEAL:Newton::ASPIN Residual: 36.8297
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	36.8297
+DEAL:Newton:GMRES::Starting value 36.8297
+DEAL:Newton:GMRES::Check 1	12.8250
+DEAL:Newton:GMRES::Check 2	7.77381
+DEAL:Newton:GMRES::Check 3	2.21176
+DEAL:Newton:GMRES::Check 4	0.923118
+DEAL:Newton:GMRES::Check 5	0.289207
+DEAL:Newton:GMRES::Check 6	0.120148
+DEAL:Newton:GMRES::Check 7	0.0396289
+DEAL:Newton:GMRES::Check 8	0.0140478
+DEAL:Newton:GMRES::Check 9	0.00629386
+DEAL:Newton:GMRES::Check 10	0.00172497
+DEAL:Newton:GMRES::Check 11	0.000434791
+DEAL:Newton:GMRES::Check 12	0.000167337
+DEAL:Newton:GMRES::Check 13	4.25519e-05
+DEAL:Newton:GMRES::Check 14	1.58021e-05
+DEAL:Newton:GMRES::Check 15	5.00800e-06
+DEAL:Newton:GMRES::Check 16	1.89639e-06
+DEAL:Newton:GMRES::Check 17	7.76543e-07
+DEAL:Newton:GMRES::Convergence step 18 value 2.57717e-07
+DEAL:Newton::Residual: 0.00904895
+DEAL:Newton::Preconditioning nonlinear iteration...
+DEAL:Newton::ASPIN Residual: 6.95443e-06
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	6.95443e-06
+DEAL:Newton:GMRES::Starting value 6.95443e-06
+DEAL:Newton:GMRES::Check 1	4.65801e-07
+DEAL:Newton:GMRES::Check 2	7.50207e-08
+DEAL:Newton:GMRES::Check 3	3.20855e-08
+DEAL:Newton:GMRES::Check 4	1.61429e-08
+DEAL:Newton:GMRES::Check 5	4.26522e-09
+DEAL:Newton:GMRES::Check 6	2.06130e-09
+DEAL:Newton:GMRES::Check 7	7.85105e-10
+DEAL:Newton:GMRES::Check 8	2.61837e-10
+DEAL:Newton:GMRES::Check 9	9.17590e-11
+DEAL:Newton:GMRES::Convergence step 9 value 9.17590e-11
+DEAL:Newton::Residual: 9.27047e-11
+DEAL:Newton::Convergence step 2 value 9.27047e-11
+
+
++---------------------------------------------+------------+------------+
+| Total wallclock time elapsed since start    |      36.6s |            |
+|                                             |            |            |
+| Section                         | no. calls |  wall time | % of total |
++---------------------------------+-----------+------------+------------+
+| Dofs::setup()                   |         1 |    0.0496s |      0.14% |
+| GMG::init(...)                  |         2 |      3.09s |       8.5% |
+| GMG::vmult(...)                 |        29 |      19.6s |        54% |
+| MFO::reinit(...)                |        13 |    0.0205s |         0% |
+| MFO::vmult_+(...) @ level 0     |        87 |      8.09s |        22% |
+| MFO::vmult_+(...) @ level 1     |        58 |      3.33s |       9.1% |
+| MFO::vmult_+(...) @ level 2     |        58 |      1.53s |       4.2% |
+| MFO::vmult_+(...) @ level 3     |        58 |     0.852s |       2.3% |
+| MFO::vmult_+(...) @ level 4     |        87 |       3.6s |       9.8% |
+| NLPSC::vmult_+(...)             |         2 |        12s |        33% |
+| PSC::init(...) @ level          |        12 |      3.02s |       8.3% |
+| PSC::vmult_+(...) @ level 0     |        87 |     0.566s |       1.5% |
+| PSC::vmult_+(...) @ level 1     |        58 |     0.385s |       1.1% |
+| PSC::vmult_+(...) @ level 2     |        58 |     0.391s |       1.1% |
+| PSC::vmult_+(...) @ level 3     |        58 |       0.4s |       1.1% |
+| PSC::vmult_+(...) @ level 4     |        58 |      1.58s |       4.3% |
+| RHS::assemble()                 |         7 |      0.34s |      0.93% |
+| Sim::...refine_global(...)      |         1 |   0.00899s |         0% |
+| Sim::setup_system()             |         1 |    0.0535s |      0.15% |
+| Sim::solve()                    |         2 |      24.1s |        66% |
++---------------------------------+-----------+------------+------------+
+
+DEAL::
+DEAL::eps = 1.00000e-05
+DEAL::abs_rate = 1.00000e-05
+DEAL::max_energy = 3000.00
+DEAL::flux_guess = 100.000
+DEAL::temp_guess = 500.000
+DEAL::Nonlinear Simulator run starts.
+DEAL::Refining triangulation... done.
+DEAL::Geometric multigrid preconditioning.
+DEAL::Setup system and storage... done.
+DEAL::Finite element: FESystem<2>[FESystem<2>[FE_DGQ<2>(1)^4]^10-FESystem<2>[FE_DGQ<2>(1)]]
+DEAL::Number of active cells: 256
+DEAL::DoFHandler levels:  164 656 2624 10496 41984
+DEAL:Newton::Residual: 128.934
+DEAL:Newton::Starting value 128.934
+DEAL:Newton::Preconditioning nonlinear iteration...
+DEAL:Newton::ASPIN Residual: 36.8263
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	36.8263
+DEAL:Newton:GMRES::Starting value 36.8263
+DEAL:Newton:GMRES::Check 1	12.8165
+DEAL:Newton:GMRES::Check 2	7.76264
+DEAL:Newton:GMRES::Check 3	2.21294
+DEAL:Newton:GMRES::Check 4	0.922988
+DEAL:Newton:GMRES::Check 5	0.289409
+DEAL:Newton:GMRES::Check 6	0.120123
+DEAL:Newton:GMRES::Check 7	0.0396277
+DEAL:Newton:GMRES::Check 8	0.0140450
+DEAL:Newton:GMRES::Check 9	0.00629406
+DEAL:Newton:GMRES::Check 10	0.00172425
+DEAL:Newton:GMRES::Check 11	0.000434976
+DEAL:Newton:GMRES::Check 12	0.000167334
+DEAL:Newton:GMRES::Check 13	4.25707e-05
+DEAL:Newton:GMRES::Check 14	1.57694e-05
+DEAL:Newton:GMRES::Check 15	5.00108e-06
+DEAL:Newton:GMRES::Check 16	1.89480e-06
+DEAL:Newton:GMRES::Check 17	7.75751e-07
+DEAL:Newton:GMRES::Convergence step 18 value 2.57079e-07
+DEAL:Newton::Residual: 0.0904884
+DEAL:Newton::Preconditioning nonlinear iteration...
+DEAL:Newton::ASPIN Residual: 7.33051e-06
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	7.33051e-06
+DEAL:Newton:GMRES::Starting value 7.33051e-06
+DEAL:Newton:GMRES::Check 1	1.11380e-06
+DEAL:Newton:GMRES::Check 2	3.71278e-07
+DEAL:Newton:GMRES::Check 3	1.48852e-07
+DEAL:Newton:GMRES::Check 4	5.60905e-08
+DEAL:Newton:GMRES::Check 5	2.30505e-08
+DEAL:Newton:GMRES::Check 6	8.41976e-09
+DEAL:Newton:GMRES::Check 7	3.66178e-09
+DEAL:Newton:GMRES::Check 8	1.30184e-09
+DEAL:Newton:GMRES::Check 9	4.69836e-10
+DEAL:Newton:GMRES::Check 10	1.89030e-10
+DEAL:Newton:GMRES::Check 11	6.03155e-11
+DEAL:Newton:GMRES::Convergence step 11 value 6.03155e-11
+DEAL:Newton::Residual: 1.36011e-10
+DEAL:Newton::Convergence step 2 value 1.36011e-10
+
+
++---------------------------------------------+------------+------------+
+| Total wallclock time elapsed since start    |      38.5s |            |
+|                                             |            |            |
+| Section                         | no. calls |  wall time | % of total |
++---------------------------------+-----------+------------+------------+
+| Dofs::setup()                   |         1 |    0.0299s |         0% |
+| GMG::init(...)                  |         2 |      3.19s |       8.3% |
+| GMG::vmult(...)                 |        31 |        21s |        55% |
+| MFO::reinit(...)                |        13 |    0.0194s |         0% |
+| MFO::vmult_+(...) @ level 0     |        93 |      8.55s |        22% |
+| MFO::vmult_+(...) @ level 1     |        62 |      3.51s |       9.1% |
+| MFO::vmult_+(...) @ level 2     |        62 |      1.61s |       4.2% |
+| MFO::vmult_+(...) @ level 3     |        62 |     0.918s |       2.4% |
+| MFO::vmult_+(...) @ level 4     |        93 |      4.03s |        10% |
+| NLPSC::vmult_+(...)             |         2 |      12.2s |        32% |
+| PSC::init(...) @ level          |        12 |      3.11s |       8.1% |
+| PSC::vmult_+(...) @ level 0     |        93 |     0.612s |       1.6% |
+| PSC::vmult_+(...) @ level 1     |        62 |     0.413s |       1.1% |
+| PSC::vmult_+(...) @ level 2     |        62 |     0.419s |       1.1% |
+| PSC::vmult_+(...) @ level 3     |        62 |     0.429s |       1.1% |
+| PSC::vmult_+(...) @ level 4     |        62 |      1.73s |       4.5% |
+| RHS::assemble()                 |         7 |     0.299s |      0.78% |
+| Sim::...refine_global(...)      |         1 |   0.00636s |         0% |
+| Sim::setup_system()             |         1 |    0.0326s |         0% |
+| Sim::solve()                    |         2 |      25.8s |        67% |
++---------------------------------+-----------+------------+------------+
+
+DEAL::
+DEAL::eps = 1.00000
+DEAL::abs_rate = 100.000
+DEAL::max_energy = 3000.00
+DEAL::flux_guess = 100.000
+DEAL::temp_guess = 500.000
+DEAL::Nonlinear Simulator run starts.
+DEAL::Refining triangulation... done.
+DEAL::Geometric multigrid preconditioning.
+DEAL::Setup system and storage... done.
+DEAL::Finite element: FESystem<2>[FESystem<2>[FE_DGQ<2>(1)^4]^10-FESystem<2>[FE_DGQ<2>(1)]]
+DEAL::Number of active cells: 256
+DEAL::DoFHandler levels:  164 656 2624 10496 41984
+DEAL:Newton::Residual: 90.8330
+DEAL:Newton::Starting value 90.8330
+DEAL:Newton::Preconditioning nonlinear iteration...
+DEAL:Newton::ASPIN Residual: 77.2279
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	77.2279
+DEAL:Newton:GMRES::Starting value 77.2279
+DEAL:Newton:GMRES::Check 1	27.3466
+DEAL:Newton:GMRES::Check 2	10.2805
+DEAL:Newton:GMRES::Check 3	4.24380
+DEAL:Newton:GMRES::Check 4	1.64722
+DEAL:Newton:GMRES::Check 5	0.733768
+DEAL:Newton:GMRES::Check 6	0.389595
+DEAL:Newton:GMRES::Check 7	0.222162
+DEAL:Newton:GMRES::Check 8	0.128703
+DEAL:Newton:GMRES::Check 9	0.0741336
+DEAL:Newton:GMRES::Check 10	0.0419056
+DEAL:Newton:GMRES::Check 11	0.0220667
+DEAL:Newton:GMRES::Check 12	0.0123027
+DEAL:Newton:GMRES::Check 13	0.00741931
+DEAL:Newton:GMRES::Check 14	0.00431948
+DEAL:Newton:GMRES::Check 15	0.00263253
+DEAL:Newton:GMRES::Check 16	0.00151138
+DEAL:Newton:GMRES::Check 17	0.000775858
+DEAL:Newton:GMRES::Check 18	0.000345510
+DEAL:Newton:GMRES::Check 19	0.000135570
+DEAL:Newton:GMRES::Check 20	6.75328e-05
+DEAL:Newton:GMRES::Check 21	3.65802e-05
+DEAL:Newton:GMRES::Check 22	1.94603e-05
+DEAL:Newton:GMRES::Check 23	1.02320e-05
+DEAL:Newton:GMRES::Check 24	4.59390e-06
+DEAL:Newton:GMRES::Check 25	2.27973e-06
+DEAL:Newton:GMRES::Check 26	1.08680e-06
+DEAL:Newton:GMRES::Convergence step 27 value 5.26702e-07
+DEAL:Newton::Residual: 1.72914
+DEAL:Newton::Preconditioning nonlinear iteration...
+DEAL:Newton::ASPIN Residual: 0.770241
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	0.770241
+DEAL:Newton:GMRES::Starting value 0.770241
+DEAL:Newton:GMRES::Check 1	0.290857
+DEAL:Newton:GMRES::Check 2	0.0821378
+DEAL:Newton:GMRES::Check 3	0.0280093
+DEAL:Newton:GMRES::Check 4	0.0147423
+DEAL:Newton:GMRES::Check 5	0.00854558
+DEAL:Newton:GMRES::Check 6	0.00517507
+DEAL:Newton:GMRES::Check 7	0.00315207
+DEAL:Newton:GMRES::Check 8	0.00194295
+DEAL:Newton:GMRES::Check 9	0.000889686
+DEAL:Newton:GMRES::Check 10	0.000347425
+DEAL:Newton:GMRES::Check 11	0.000157780
+DEAL:Newton:GMRES::Check 12	7.99622e-05
+DEAL:Newton:GMRES::Check 13	3.93468e-05
+DEAL:Newton:GMRES::Check 14	1.77809e-05
+DEAL:Newton:GMRES::Check 15	8.77762e-06
+DEAL:Newton:GMRES::Check 16	3.44362e-06
+DEAL:Newton:GMRES::Check 17	1.13937e-06
+DEAL:Newton:GMRES::Check 18	3.67344e-07
+DEAL:Newton:GMRES::Check 19	8.68083e-08
+DEAL:Newton:GMRES::Check 20	2.38054e-08
+DEAL:Newton:GMRES::Convergence step 21 value 7.27744e-09
+DEAL:Newton::Residual: 7.27741e-09
+DEAL:Newton::Convergence step 2 value 7.27741e-09
+
+
++---------------------------------------------+------------+------------+
+| Total wallclock time elapsed since start    |      41.7s |            |
+|                                             |            |            |
+| Section                         | no. calls |  wall time | % of total |
++---------------------------------+-----------+------------+------------+
+| Dofs::setup()                   |         1 |      0.03s |         0% |
+| GMG::init(...)                  |         2 |      3.14s |       7.5% |
+| GMG::vmult(...)                 |        50 |      30.3s |        73% |
+| MFO::reinit(...)                |        13 |    0.0193s |         0% |
+| MFO::vmult_+(...) @ level 0     |       100 |      9.45s |        23% |
+| MFO::vmult_+(...) @ level 1     |       100 |      6.24s |        15% |
+| MFO::vmult_+(...) @ level 2     |       100 |      2.86s |       6.8% |
+| MFO::vmult_+(...) @ level 3     |       100 |      1.51s |       3.6% |
+| MFO::vmult_+(...) @ level 4     |       150 |      6.69s |        16% |
+| NLPSC::vmult_+(...)             |         2 |      4.28s |        10% |
+| PSC::init(...) @ level          |        12 |      3.06s |       7.3% |
+| PSC::vmult_+(...) @ level 0     |       100 |     0.645s |       1.5% |
+| PSC::vmult_+(...) @ level 1     |       100 |     0.657s |       1.6% |
+| PSC::vmult_+(...) @ level 2     |       100 |     0.669s |       1.6% |
+| PSC::vmult_+(...) @ level 3     |       100 |     0.695s |       1.7% |
+| PSC::vmult_+(...) @ level 4     |       100 |      2.85s |       6.8% |
+| RHS::assemble()                 |         7 |     0.305s |      0.73% |
+| Sim::...refine_global(...)      |         1 |   0.00633s |         0% |
+| Sim::setup_system()             |         1 |    0.0327s |         0% |
+| Sim::solve()                    |         2 |      37.1s |        89% |
++---------------------------------+-----------+------------+------------+
+
+DEAL::
+DEAL::eps = 0.100000
+DEAL::abs_rate = 100.000
+DEAL::max_energy = 3000.00
+DEAL::flux_guess = 100.000
+DEAL::temp_guess = 500.000
+DEAL::Nonlinear Simulator run starts.
+DEAL::Refining triangulation... done.
+DEAL::Geometric multigrid preconditioning.
+DEAL::Setup system and storage... done.
+DEAL::Finite element: FESystem<2>[FESystem<2>[FE_DGQ<2>(1)^4]^10-FESystem<2>[FE_DGQ<2>(1)]]
+DEAL::Number of active cells: 256
+DEAL::DoFHandler levels:  164 656 2624 10496 41984
+DEAL:Newton::Residual: 160.739
+DEAL:Newton::Starting value 160.739
+DEAL:Newton::Preconditioning nonlinear iteration...
+DEAL:Newton::ASPIN Residual: 115.732
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	115.732
+DEAL:Newton:GMRES::Starting value 115.732
+DEAL:Newton:GMRES::Check 1	84.9238
+DEAL:Newton:GMRES::Check 2	62.1337
+DEAL:Newton:GMRES::Check 3	17.6126
+DEAL:Newton:GMRES::Check 4	4.21286
+DEAL:Newton:GMRES::Check 5	0.887204
+DEAL:Newton:GMRES::Check 6	0.171878
+DEAL:Newton:GMRES::Check 7	0.0408232
+DEAL:Newton:GMRES::Check 8	0.0111309
+DEAL:Newton:GMRES::Check 9	0.00319924
+DEAL:Newton:GMRES::Check 10	0.00111269
+DEAL:Newton:GMRES::Check 11	0.000405171
+DEAL:Newton:GMRES::Check 12	0.000148380
+DEAL:Newton:GMRES::Check 13	5.29255e-05
+DEAL:Newton:GMRES::Check 14	1.70201e-05
+DEAL:Newton:GMRES::Check 15	5.65889e-06
+DEAL:Newton:GMRES::Check 16	1.98097e-06
+DEAL:Newton:GMRES::Convergence step 17 value 6.78641e-07
+DEAL:Newton::Residual: 83.6689
+DEAL:Newton::Preconditioning nonlinear iteration...
+DEAL:Newton::ASPIN Residual: 38.4375
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	38.4375
+DEAL:Newton:GMRES::Starting value 38.4375
+DEAL:Newton:GMRES::Check 1	8.27064
+DEAL:Newton:GMRES::Check 2	1.11744
+DEAL:Newton:GMRES::Check 3	0.121538
+DEAL:Newton:GMRES::Check 4	0.0229235
+DEAL:Newton:GMRES::Check 5	0.00532034
+DEAL:Newton:GMRES::Check 6	0.00138501
+DEAL:Newton:GMRES::Check 7	0.000387108
+DEAL:Newton:GMRES::Check 8	0.000104934
+DEAL:Newton:GMRES::Check 9	2.80187e-05
+DEAL:Newton:GMRES::Check 10	8.27706e-06
+DEAL:Newton:GMRES::Check 11	2.28275e-06
+DEAL:Newton:GMRES::Check 12	6.32444e-07
+DEAL:Newton:GMRES::Convergence step 13 value 1.83997e-07
+DEAL:Newton::Residual: 1.83994e-07
+DEAL:Newton::Convergence step 2 value 1.83994e-07
+
+
++---------------------------------------------+------------+------------+
+| Total wallclock time elapsed since start    |      30.2s |            |
+|                                             |            |            |
+| Section                         | no. calls |  wall time | % of total |
++---------------------------------+-----------+------------+------------+
+| Dofs::setup()                   |         1 |     0.036s |      0.12% |
+| GMG::init(...)                  |         2 |      3.07s |        10% |
+| GMG::vmult(...)                 |        32 |      18.6s |        61% |
+| MFO::reinit(...)                |        13 |    0.0198s |         0% |
+| MFO::vmult_+(...) @ level 0     |        64 |      5.96s |        20% |
+| MFO::vmult_+(...) @ level 1     |        64 |      3.66s |        12% |
+| MFO::vmult_+(...) @ level 2     |        64 |      1.68s |       5.5% |
+| MFO::vmult_+(...) @ level 3     |        64 |     0.949s |       3.1% |
+| MFO::vmult_+(...) @ level 4     |        96 |      4.12s |        14% |
+| NLPSC::vmult_+(...)             |         2 |      6.35s |        21% |
+| PSC::init(...) @ level          |        12 |      2.99s |       9.9% |
+| PSC::vmult_+(...) @ level 0     |        64 |     0.411s |       1.4% |
+| PSC::vmult_+(...) @ level 1     |        64 |     0.418s |       1.4% |
+| PSC::vmult_+(...) @ level 2     |        64 |     0.427s |       1.4% |
+| PSC::vmult_+(...) @ level 3     |        64 |     0.439s |       1.5% |
+| PSC::vmult_+(...) @ level 4     |        64 |      1.77s |       5.9% |
+| RHS::assemble()                 |         7 |     0.303s |         1% |
+| Sim::...refine_global(...)      |         1 |   0.00696s |         0% |
+| Sim::setup_system()             |         1 |    0.0392s |      0.13% |
+| Sim::solve()                    |         2 |      23.5s |        78% |
++---------------------------------+-----------+------------+------------+
+
+DEAL::
+DEAL::eps = 0.0100000
+DEAL::abs_rate = 100.000
+DEAL::max_energy = 3000.00
+DEAL::flux_guess = 100.000
+DEAL::temp_guess = 500.000
+DEAL::Nonlinear Simulator run starts.
+DEAL::Refining triangulation... done.
+DEAL::Geometric multigrid preconditioning.
+DEAL::Setup system and storage... done.
+DEAL::Finite element: FESystem<2>[FESystem<2>[FE_DGQ<2>(1)^4]^10-FESystem<2>[FE_DGQ<2>(1)]]
+DEAL::Number of active cells: 256
+DEAL::DoFHandler levels:  164 656 2624 10496 41984
+DEAL:Newton::Residual: 1354.86
+DEAL:Newton::Starting value 1354.86
+DEAL:Newton::Preconditioning nonlinear iteration...
+DEAL:Newton::ASPIN Residual: 174.818
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	174.818
+DEAL:Newton:GMRES::Starting value 174.818
+DEAL:Newton:GMRES::Check 1	159.653
+DEAL:Newton:GMRES::Check 2	94.6494
+DEAL:Newton:GMRES::Check 3	22.2167
+DEAL:Newton:GMRES::Check 4	18.1746
+DEAL:Newton:GMRES::Check 5	5.41171
+DEAL:Newton:GMRES::Check 6	2.49281
+DEAL:Newton:GMRES::Check 7	0.381010
+DEAL:Newton:GMRES::Check 8	0.182767
+DEAL:Newton:GMRES::Check 9	0.0895659
+DEAL:Newton:GMRES::Check 10	0.0113522
+DEAL:Newton:GMRES::Check 11	0.00202554
+DEAL:Newton:GMRES::Check 12	0.00138816
+DEAL:Newton:GMRES::Check 13	0.000423219
+DEAL:Newton:GMRES::Check 14	9.91712e-05
+DEAL:Newton:GMRES::Check 15	2.90909e-05
+DEAL:Newton:GMRES::Check 16	8.64476e-06
+DEAL:Newton:GMRES::Convergence step 17 value 1.68936e-06
+DEAL:Newton::Residual: 908.685
+DEAL:Newton::Preconditioning nonlinear iteration...
+DEAL:Newton::ASPIN Residual: 80.0563
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	80.0563
+DEAL:Newton:GMRES::Starting value 80.0563
+DEAL:Newton:GMRES::Check 1	9.65646
+DEAL:Newton:GMRES::Check 2	0.504932
+DEAL:Newton:GMRES::Check 3	0.0296103
+DEAL:Newton:GMRES::Check 4	0.00257931
+DEAL:Newton:GMRES::Check 5	0.000264176
+DEAL:Newton:GMRES::Check 6	2.71166e-05
+DEAL:Newton:GMRES::Check 7	2.03979e-06
+DEAL:Newton:GMRES::Convergence step 8 value 2.39625e-07
+DEAL:Newton::Residual: 2.39623e-07
+DEAL:Newton::Convergence step 2 value 2.39623e-07
+
+
++---------------------------------------------+------------+------------+
+| Total wallclock time elapsed since start    |      28.1s |            |
+|                                             |            |            |
+| Section                         | no. calls |  wall time | % of total |
++---------------------------------+-----------+------------+------------+
+| Dofs::setup()                   |         1 |      0.03s |      0.11% |
+| GMG::init(...)                  |         2 |      3.01s |        11% |
+| GMG::vmult(...)                 |        27 |      15.7s |        56% |
+| MFO::reinit(...)                |        13 |    0.0198s |         0% |
+| MFO::vmult_+(...) @ level 0     |        54 |         5s |        18% |
+| MFO::vmult_+(...) @ level 1     |        54 |       3.2s |        11% |
+| MFO::vmult_+(...) @ level 2     |        54 |      1.42s |       5.1% |
+| MFO::vmult_+(...) @ level 3     |        54 |     0.782s |       2.8% |
+| MFO::vmult_+(...) @ level 4     |        81 |      3.44s |        12% |
+| NLPSC::vmult_+(...)             |         2 |      7.73s |        27% |
+| PSC::init(...) @ level          |        12 |      2.93s |        10% |
+| PSC::vmult_+(...) @ level 0     |        54 |     0.346s |       1.2% |
+| PSC::vmult_+(...) @ level 1     |        54 |     0.353s |       1.3% |
+| PSC::vmult_+(...) @ level 2     |        54 |      0.36s |       1.3% |
+| PSC::vmult_+(...) @ level 3     |        54 |     0.369s |       1.3% |
+| PSC::vmult_+(...) @ level 4     |        54 |      1.47s |       5.2% |
+| RHS::assemble()                 |         7 |     0.298s |       1.1% |
+| Sim::...refine_global(...)      |         1 |   0.00613s |         0% |
+| Sim::setup_system()             |         1 |    0.0327s |      0.12% |
+| Sim::solve()                    |         2 |        20s |        71% |
++---------------------------------+-----------+------------+------------+
+
+DEAL::
+DEAL::eps = 0.00100000
+DEAL::abs_rate = 100.000
+DEAL::max_energy = 3000.00
+DEAL::flux_guess = 100.000
+DEAL::temp_guess = 500.000
+DEAL::Nonlinear Simulator run starts.
+DEAL::Refining triangulation... done.
+DEAL::Geometric multigrid preconditioning.
+DEAL::Setup system and storage... done.
+DEAL::Finite element: FESystem<2>[FESystem<2>[FE_DGQ<2>(1)^4]^10-FESystem<2>[FE_DGQ<2>(1)]]
+DEAL::Number of active cells: 256
+DEAL::DoFHandler levels:  164 656 2624 10496 41984
+DEAL:Newton::Residual: 13558.6
+DEAL:Newton::Starting value 13558.6
+DEAL:Newton::Preconditioning nonlinear iteration...
+DEAL:Newton::ASPIN Residual: 150.955
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	150.955
+DEAL:Newton:GMRES::Starting value 150.955
+DEAL:Newton:GMRES::Check 1	150.752
+DEAL:Newton:GMRES::Check 2	147.737
+DEAL:Newton:GMRES::Check 3	123.422
+DEAL:Newton:GMRES::Check 4	113.335
+DEAL:Newton:GMRES::Check 5	52.3556
+DEAL:Newton:GMRES::Check 6	28.3065
+DEAL:Newton:GMRES::Check 7	4.11925
+DEAL:Newton:GMRES::Check 8	1.95652
+DEAL:Newton:GMRES::Check 9	1.22807
+DEAL:Newton:GMRES::Check 10	0.0891172
+DEAL:Newton:GMRES::Check 11	0.0151930
+DEAL:Newton:GMRES::Check 12	0.00904504
+DEAL:Newton:GMRES::Check 13	0.00442688
+DEAL:Newton:GMRES::Check 14	0.000860366
+DEAL:Newton:GMRES::Check 15	0.000295023
+DEAL:Newton:GMRES::Check 16	0.000107851
+DEAL:Newton:GMRES::Check 17	2.82222e-05
+DEAL:Newton:GMRES::Check 18	1.07210e-05
+DEAL:Newton:GMRES::Check 19	4.14442e-06
+DEAL:Newton:GMRES::Convergence step 20 value 6.49318e-07
+DEAL:Newton::Residual: 9046.68
+DEAL:Newton::Preconditioning nonlinear iteration...
+DEAL:Newton::ASPIN Residual: 69.7090
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	69.7090
+DEAL:Newton:GMRES::Starting value 69.7090
+DEAL:Newton:GMRES::Check 1	4.44495
+DEAL:Newton:GMRES::Check 2	0.0469356
+DEAL:Newton:GMRES::Check 3	0.00156916
+DEAL:Newton:GMRES::Check 4	2.38388e-05
+DEAL:Newton:GMRES::Convergence step 5 value 4.78986e-07
+DEAL:Newton::Residual: 4.78986e-07
+DEAL:Newton::Convergence step 2 value 4.78986e-07
+
+
++---------------------------------------------+------------+------------+
+| Total wallclock time elapsed since start    |        31s |            |
+|                                             |            |            |
+| Section                         | no. calls |  wall time | % of total |
++---------------------------------+-----------+------------+------------+
+| Dofs::setup()                   |         1 |    0.0493s |      0.16% |
+| GMG::init(...)                  |         2 |      3.01s |       9.7% |
+| GMG::vmult(...)                 |        27 |      16.3s |        53% |
+| MFO::reinit(...)                |        13 |    0.0203s |         0% |
+| MFO::vmult_+(...) @ level 0     |        57 |      5.28s |        17% |
+| MFO::vmult_+(...) @ level 1     |        54 |      3.21s |        10% |
+| MFO::vmult_+(...) @ level 2     |        54 |      1.52s |       4.9% |
+| MFO::vmult_+(...) @ level 3     |        54 |     0.798s |       2.6% |
+| MFO::vmult_+(...) @ level 4     |        81 |      3.49s |        11% |
+| NLPSC::vmult_+(...)             |         2 |      9.79s |        32% |
+| PSC::init(...) @ level          |        12 |      2.93s |       9.5% |
+| PSC::vmult_+(...) @ level 0     |        57 |     0.367s |       1.2% |
+| PSC::vmult_+(...) @ level 1     |        54 |     0.368s |       1.2% |
+| PSC::vmult_+(...) @ level 2     |        54 |     0.372s |       1.2% |
+| PSC::vmult_+(...) @ level 3     |        54 |      0.38s |       1.2% |
+| PSC::vmult_+(...) @ level 4     |        54 |      1.56s |         5% |
+| RHS::assemble()                 |         7 |     0.299s |      0.97% |
+| Sim::...refine_global(...)      |         1 |   0.00751s |         0% |
+| Sim::setup_system()             |         1 |    0.0531s |      0.17% |
+| Sim::solve()                    |         2 |      20.8s |        67% |
++---------------------------------+-----------+------------+------------+
+
+DEAL::
+DEAL::eps = 0.000100000
+DEAL::abs_rate = 100.000
+DEAL::max_energy = 3000.00
+DEAL::flux_guess = 100.000
+DEAL::temp_guess = 500.000
+DEAL::Nonlinear Simulator run starts.
+DEAL::Refining triangulation... done.
+DEAL::Geometric multigrid preconditioning.
+DEAL::Setup system and storage... done.
+DEAL::Finite element: FESystem<2>[FESystem<2>[FE_DGQ<2>(1)^4]^10-FESystem<2>[FE_DGQ<2>(1)]]
+DEAL::Number of active cells: 256
+DEAL::DoFHandler levels:  164 656 2624 10496 41984
+DEAL:Newton::Residual: 135592.
+DEAL:Newton::Starting value 135592.
+DEAL:Newton::Preconditioning nonlinear iteration...
+DEAL:Newton::ASPIN Residual: 150.457
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	150.457
+DEAL:Newton:GMRES::Starting value 150.457
+DEAL:Newton:GMRES::Check 1	150.455
+DEAL:Newton:GMRES::Check 2	150.425
+DEAL:Newton:GMRES::Check 3	150.076
+DEAL:Newton:GMRES::Check 4	149.876
+DEAL:Newton:GMRES::Check 5	145.663
+DEAL:Newton:GMRES::Check 6	133.031
+DEAL:Newton:GMRES::Check 7	39.3114
+DEAL:Newton:GMRES::Check 8	19.8131
+DEAL:Newton:GMRES::Check 9	12.0482
+DEAL:Newton:GMRES::Check 10	0.844715
+DEAL:Newton:GMRES::Check 11	0.138775
+DEAL:Newton:GMRES::Check 12	0.0714615
+DEAL:Newton:GMRES::Check 13	0.0351286
+DEAL:Newton:GMRES::Check 14	0.00818797
+DEAL:Newton:GMRES::Check 15	0.00270514
+DEAL:Newton:GMRES::Check 16	0.00102449
+DEAL:Newton:GMRES::Check 17	0.000234990
+DEAL:Newton:GMRES::Check 18	9.48119e-05
+DEAL:Newton:GMRES::Check 19	3.47779e-05
+DEAL:Newton:GMRES::Check 20	6.12568e-06
+DEAL:Newton:GMRES::Check 21	1.89992e-06
+DEAL:Newton:GMRES::Convergence step 22 value 7.00170e-07
+DEAL:Newton::Residual: 90486.3
+DEAL:Newton::Preconditioning nonlinear iteration...
+DEAL:Newton::ASPIN Residual: 69.4788
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	69.4788
+DEAL:Newton:GMRES::Starting value 69.4788
+DEAL:Newton:GMRES::Check 1	4.31830
+DEAL:Newton:GMRES::Check 2	0.0158190
+DEAL:Newton:GMRES::Check 3	0.000366547
+DEAL:Newton:GMRES::Check 4	2.03561e-05
+DEAL:Newton:GMRES::Check 5	8.16670e-06
+DEAL:Newton:GMRES::Check 6	3.51797e-06
+DEAL:Newton:GMRES::Check 7	7.06508e-07
+DEAL:Newton:GMRES::Convergence step 8 value 3.21639e-07
+DEAL:Newton::Residual: 3.22434e-07
+DEAL:Newton::Convergence step 2 value 3.22434e-07
+
+
++---------------------------------------------+------------+------------+
+| Total wallclock time elapsed since start    |      36.4s |            |
+|                                             |            |            |
+| Section                         | no. calls |  wall time | % of total |
++---------------------------------+-----------+------------+------------+
+| Dofs::setup()                   |         1 |    0.0299s |         0% |
+| GMG::init(...)                  |         2 |         3s |       8.2% |
+| GMG::vmult(...)                 |        32 |        22s |        60% |
+| MFO::reinit(...)                |        13 |    0.0203s |         0% |
+| MFO::vmult_+(...) @ level 0     |        96 |      8.91s |        24% |
+| MFO::vmult_+(...) @ level 1     |        64 |      3.71s |        10% |
+| MFO::vmult_+(...) @ level 2     |        64 |      1.71s |       4.7% |
+| MFO::vmult_+(...) @ level 3     |        64 |     0.964s |       2.6% |
+| MFO::vmult_+(...) @ level 4     |        96 |      4.14s |        11% |
+| NLPSC::vmult_+(...)             |         2 |       9.3s |        26% |
+| PSC::init(...) @ level          |        12 |      2.92s |         8% |
+| PSC::vmult_+(...) @ level 0     |        96 |     0.618s |       1.7% |
+| PSC::vmult_+(...) @ level 1     |        64 |     0.429s |       1.2% |
+| PSC::vmult_+(...) @ level 2     |        64 |     0.434s |       1.2% |
+| PSC::vmult_+(...) @ level 3     |        64 |     0.445s |       1.2% |
+| PSC::vmult_+(...) @ level 4     |        64 |      1.81s |         5% |
+| RHS::assemble()                 |         7 |     0.339s |      0.93% |
+| Sim::...refine_global(...)      |         1 |   0.00604s |         0% |
+| Sim::setup_system()             |         1 |    0.0326s |         0% |
+| Sim::solve()                    |         2 |      26.6s |        73% |
++---------------------------------+-----------+------------+------------+
+
+DEAL::
+DEAL::eps = 1.00000e-05
+DEAL::abs_rate = 100.000
+DEAL::max_energy = 3000.00
+DEAL::flux_guess = 100.000
+DEAL::temp_guess = 500.000
+DEAL::Nonlinear Simulator run starts.
+DEAL::Refining triangulation... done.
+DEAL::Geometric multigrid preconditioning.
+DEAL::Setup system and storage... done.
+DEAL::Finite element: FESystem<2>[FESystem<2>[FE_DGQ<2>(1)^4]^10-FESystem<2>[FE_DGQ<2>(1)]]
+DEAL::Number of active cells: 256
+DEAL::DoFHandler levels:  164 656 2624 10496 41984
+DEAL:Newton::Residual: 1.35592e+06
+DEAL:Newton::Starting value 1.35592e+06
+DEAL:Newton::Preconditioning nonlinear iteration...
+DEAL:Newton::ASPIN Residual: 150.442
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	150.442
+DEAL:Newton:GMRES::Starting value 150.442
+DEAL:Newton:GMRES::Check 1	150.442
+DEAL:Newton:GMRES::Check 2	150.441
+DEAL:Newton:GMRES::Check 3	150.438
+DEAL:Newton:GMRES::Check 4	150.436
+DEAL:Newton:GMRES::Check 5	150.392
+DEAL:Newton:GMRES::Check 6	150.232
+DEAL:Newton:GMRES::Check 7	141.115
+DEAL:Newton:GMRES::Check 8	120.296
+DEAL:Newton:GMRES::Check 9	94.1356
+DEAL:Newton:GMRES::Check 10	8.43224
+DEAL:Newton:GMRES::Check 11	1.38770
+DEAL:Newton:GMRES::Check 12	0.709173
+DEAL:Newton:GMRES::Check 13	0.348951
+DEAL:Newton:GMRES::Check 14	0.0815405
+DEAL:Newton:GMRES::Check 15	0.0269405
+DEAL:Newton:GMRES::Check 16	0.0102360
+DEAL:Newton:GMRES::Check 17	0.00233400
+DEAL:Newton:GMRES::Check 18	0.000946313
+DEAL:Newton:GMRES::Check 19	0.000345881
+DEAL:Newton:GMRES::Check 20	6.14279e-05
+DEAL:Newton:GMRES::Check 21	1.90354e-05
+DEAL:Newton:GMRES::Check 22	6.92479e-06
+DEAL:Newton:GMRES::Check 23	4.52163e-06
+DEAL:Newton:GMRES::Check 24	1.65323e-06
+DEAL:Newton:GMRES::Convergence step 25 value 4.32755e-07
+DEAL:Newton::Residual: 904894.
+DEAL:Newton::Preconditioning nonlinear iteration...
+DEAL:Newton::ASPIN Residual: 69.4712
+DEAL:Newton::Initializing linear preconditioner... done.
+DEAL:Newton::Solving linear system... 
+DEAL:Newton:GMRES::Check 0	69.4712
+DEAL:Newton:GMRES::Starting value 69.4712
+DEAL:Newton:GMRES::Check 1	4.34405
+DEAL:Newton:GMRES::Check 2	0.193744
+DEAL:Newton:GMRES::Check 3	0.100656
+DEAL:Newton:GMRES::Check 4	0.0505554
+DEAL:Newton:GMRES::Check 5	0.0137226
+DEAL:Newton:GMRES::Check 6	0.00548881
+DEAL:Newton:GMRES::Check 7	0.00287302
+DEAL:Newton:GMRES::Check 8	0.00146891
+DEAL:Newton:GMRES::Check 9	0.000286924
+DEAL:Newton:GMRES::Check 10	8.80155e-05
+DEAL:Newton:GMRES::Check 11	3.77534e-05
+DEAL:Newton:GMRES::Check 12	9.10170e-06
+DEAL:Newton:GMRES::Check 13	2.88093e-06
+DEAL:Newton:GMRES::Check 14	1.15620e-06
+DEAL:Newton:GMRES::Convergence step 15 value 4.90365e-07
+DEAL:Newton::Residual: 0.000160860
+DEAL:Newton::Convergence step 2 value 0.000160860
+
+
++---------------------------------------------+------------+------------+
+| Total wallclock time elapsed since start    |      41.4s |            |
+|                                             |            |            |
+| Section                         | no. calls |  wall time | % of total |
++---------------------------------+-----------+------------+------------+
+| Dofs::setup()                   |         1 |    0.0299s |         0% |
+| GMG::init(...)                  |         2 |         3s |       7.3% |
+| GMG::vmult(...)                 |        42 |      28.5s |        69% |
+| MFO::reinit(...)                |        13 |    0.0194s |         0% |
+| MFO::vmult_+(...) @ level 0     |       126 |      11.6s |        28% |
+| MFO::vmult_+(...) @ level 1     |        84 |      4.73s |        11% |
+| MFO::vmult_+(...) @ level 2     |        84 |      2.24s |       5.4% |
+| MFO::vmult_+(...) @ level 3     |        84 |      1.22s |       2.9% |
+| MFO::vmult_+(...) @ level 4     |       126 |      5.37s |        13% |
+| NLPSC::vmult_+(...)             |         2 |      7.44s |        18% |
+| PSC::init(...) @ level          |        12 |      2.93s |       7.1% |
+| PSC::vmult_+(...) @ level 0     |       126 |     0.816s |         2% |
+| PSC::vmult_+(...) @ level 1     |        84 |     0.555s |       1.3% |
+| PSC::vmult_+(...) @ level 2     |        84 |     0.569s |       1.4% |
+| PSC::vmult_+(...) @ level 3     |        84 |     0.586s |       1.4% |
+| PSC::vmult_+(...) @ level 4     |        84 |      2.34s |       5.7% |
+| RHS::assemble()                 |         7 |       0.3s |      0.73% |
+| Sim::...refine_global(...)      |         1 |     0.006s |         0% |
+| Sim::setup_system()             |         1 |    0.0326s |         0% |
+| Sim::solve()                    |         2 |      33.5s |        81% |
++---------------------------------+-----------+------------+------------+
+
+DEAL::
+Program finished with exit code 0 at: Thu Mar 15 17:39:04 CET 2018

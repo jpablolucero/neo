@@ -120,7 +120,7 @@ initialize(const SystemMatrixType & system_matrix_,const AdditionalData &data)
       smoother_data[level].level = level;
       smoother_data[level].n_levels = n_global_levels ;
       smoother_data[level].mapping = &(fe.mapping);
-      smoother_data[level].relaxation = 1.;
+      smoother_data[level].relaxation = 0.7;
       // smoother_data[level].mg_constrained_dofs = mg_constrained_dofs;
       smoother_data[level].solution = &mg_solution[level];
       //      uncomment to use the dictionary
@@ -131,6 +131,7 @@ initialize(const SystemMatrixType & system_matrix_,const AdditionalData &data)
       //  }
       smoother_data[level].patch_type = Smoother::AdditionalData::cell_patches;
       smoother_data[level].smoother_type = Smoother::AdditionalData::additive;
+      // smoother_data[level].set_fullsweep();
     }
   mg_smoother.initialize(mg_matrix, smoother_data);
   mg_smoother.set_steps(smoothing_steps);

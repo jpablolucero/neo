@@ -24,7 +24,6 @@
 #include <EquationData.h>
 
 
-
 template <int dim>
 class MatrixIntegrator : public dealii::MeshWorker::LocalIntegrator<dim>
 {
@@ -39,6 +38,7 @@ public:
             typename dealii::MeshWorker::IntegrationInfo<dim> &info1,
             typename dealii::MeshWorker::IntegrationInfo<dim> &info2) const override;
 protected:
+  Angle<dim> angles ;
   Coefficient<dim> diffcoeff;
 };
 
@@ -56,6 +56,7 @@ public:
             typename dealii::MeshWorker::IntegrationInfo<dim> &info1,
             typename dealii::MeshWorker::IntegrationInfo<dim> &info2) const override;
 private:
+  Angle<dim> angles ;
   Coefficient<dim> diffcoeff;
 };
 
@@ -63,19 +64,20 @@ template <int dim>
 class RHSIntegrator final : public dealii::MeshWorker::LocalIntegrator<dim>
 {
 public:
-  RHSIntegrator(unsigned int n_components);
+  RHSIntegrator (unsigned int n_components);
   RHSIntegrator (const RHSIntegrator &) = delete ;
   RHSIntegrator &operator = (const RHSIntegrator &) = delete;
   void cell(dealii::MeshWorker::DoFInfo<dim> &dinfo, typename dealii::MeshWorker::IntegrationInfo<dim> &info) const override;
   void boundary(dealii::MeshWorker::DoFInfo<dim> &dinfo, typename dealii::MeshWorker::IntegrationInfo<dim> &info) const override;
   void face(dealii::MeshWorker::DoFInfo<dim> &dinfo1,
-	    dealii::MeshWorker::DoFInfo<dim> &dinfo2,
-	    typename dealii::MeshWorker::IntegrationInfo<dim> &info1,
-	    typename dealii::MeshWorker::IntegrationInfo<dim> &info2) const override;
+            dealii::MeshWorker::DoFInfo<dim> &dinfo2,
+            typename dealii::MeshWorker::IntegrationInfo<dim> &info1,
+            typename dealii::MeshWorker::IntegrationInfo<dim> &info2) const override;
 private:
+  Angle<dim> angles ;
   Coefficient<dim> diffcoeff;
-  ReferenceFunction<dim> exact_solution;
 };
+
 
 #ifdef HEADER_IMPLEMENTATION
 #include <Integrators.cc>

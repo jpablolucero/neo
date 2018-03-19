@@ -4,6 +4,9 @@ extern std::unique_ptr<dealii::TimerOutput>        timer ;
 extern std::unique_ptr<MPI_Comm>                   mpi_communicator ;
 extern std::unique_ptr<dealii::ConditionalOStream> pcout ;
 
+extern double flux_guess ;
+extern double temp_guess ;
+
 template <typename SystemMatrixType,typename VectorType,typename Preconditioner,int dim,unsigned int degree>
 Simulator<SystemMatrixType,VectorType,Preconditioner,dim,degree>::Simulator ()
   :
@@ -65,7 +68,7 @@ void Simulator<SystemMatrixType,VectorType,Preconditioner,dim,degree>::solve ()
   dealii::deallog << "done." << std::endl;
  
   // Setup Solver
-  dealii::ReductionControl                                 solver_control (dofs.dof_handler.n_dofs(), 1.e-20, 1.E-10,true);
+  dealii::ReductionControl                                 solver_control (100, 1.e-10, 1.E-8,true);
   typename dealii::SolverGMRES<VectorType>::AdditionalData data(100,true);
   dealii::SolverGMRES<VectorType>                          solver (solver_control,data);
 
@@ -284,11 +287,20 @@ void Simulator<SystemMatrixType,VectorType,Preconditioner,dim,degree>::run_non_l
   dealii::deallog << std::endl;
 
   auto sol = solution ;
-  for (auto &elem : sol) elem = 600. ;
+  unsigned int i = 0 ;
+  for (auto &elem : sol)
+    {
+      if (i < 4*4*10) 
+  	elem = flux_guess ;
+      else
+  	elem = temp_guess ;
+      ++i;
+      if (i==4*4*10+4) i=0;
+    }
   dealii::AnyData solution_data;
   solution_data.add(&sol, "solution");
   dealii::AnyData data;
-  newton.control.set_reduction(1.E-8);
+  newton.control.set_reduction(1.E-7);
 
   newton(solution_data, data);
  

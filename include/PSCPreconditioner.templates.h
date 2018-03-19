@@ -81,7 +81,7 @@ namespace
       ddh.reinit(scratch.local_src, subdomain_idx);
       ddh.reinit(copy.local_solution, subdomain_idx);
       ddh.restrict_add(scratch.local_src, *(scratch.src), subdomain_idx);
-      dealii::ReductionControl solver_control (101, 1.e-20, 1.E-5,false,false);
+      dealii::ReductionControl solver_control (101, 1.e-20, 1.E-10,false,false);
       typename dealii::SolverGMRES<dealii::Vector<double> >::AdditionalData data(100,false);
       dealii::SolverGMRES<dealii::Vector<double> >                          solver (solver_control,data);
       dealii::TrilinosWrappers::PreconditionAMG::AdditionalData pdata(false,false,1,false,1e-4,std::vector<std::vector<bool> >{},2,0,

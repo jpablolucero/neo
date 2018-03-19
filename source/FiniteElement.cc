@@ -8,7 +8,8 @@ FiniteElement<dim>::FiniteElement(unsigned int degree):
 #ifdef CG
   fe(dealii::FE_Q<dim>(degree),1)
 #else
-  fe(dealii::FE_DGQ<dim>(degree),1)
+  fe(dealii::FESystem<dim>(dealii::FE_DGQ<dim>(degree),4),10,
+     dealii::FESystem<dim>(dealii::FE_DGQ<dim>(degree),1),1)
 #endif
 {}
 
