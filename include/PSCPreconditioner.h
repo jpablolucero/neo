@@ -21,8 +21,12 @@
 #include <integration_loop.h>
 #include <MGMatrixSimpleMapped.h>
 
-template <int dim,typename SystemMatrixType,typename LocalMatrixType=SystemMatrixType,
-	  typename VectorType=dealii::parallel::distributed::Vector<double>,typename number=double,bool same_diagonal=false>
+template <int dim,
+	  typename SystemMatrixType,
+	  typename LocalMatrixType=SystemMatrixType,
+	  typename VectorType=dealii::parallel::distributed::Vector<double>,
+	  typename number=double,
+	  bool same_diagonal=false>
 class PSCPreconditioner final
 {
 public:
@@ -73,11 +77,11 @@ private:
   void add_cell_ordering(dealii::Tensor<1,dim> dir) ;
   std::vector<std::shared_ptr<LocalMatrixType> > patch_matrices;
   dealii::MeshWorker::IntegrationInfoBox<dim> info_box;
-  std::unique_ptr<dealii::MeshWorker::DoFInfo<dim> >  dof_info;
-  dealii::MGLevelObject<VectorType >                  ghosted_solution;
-  MatrixIntegrator<dim>                               matrix_integrator;
-  mutable VectorType                                  ghosted_src;
-  mutable VectorType                                  ghosted_dst;
+  std::unique_ptr<dealii::MeshWorker::DoFInfo<dim> > dof_info;
+  dealii::MGLevelObject<VectorType > ghosted_solution;
+  MatrixIntegrator<dim>              matrix_integrator;
+  mutable VectorType                 ghosted_src;
+  mutable VectorType                 ghosted_dst;
   unsigned int level;
   std::shared_ptr<DDHandlerBase<dim> > ddh;
   const SystemMatrixType *system_matrix;
@@ -92,7 +96,9 @@ template <int dim,typename SystemMatrixType,typename LocalMatrixType,typename Ve
 class PSCPreconditioner<dim,SystemMatrixType,LocalMatrixType,VectorType,number,same_diagonal>::AdditionalData
 {
 public:
-  AdditionalData() : dof_handler(0),
+  AdditionalData()
+    :
+    dof_handler(0),
     level(-1),
     relaxation(1.0),
     tol(0.),

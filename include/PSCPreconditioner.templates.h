@@ -151,6 +151,7 @@ configure_local_matrices()
         for ( unsigned int j=1; j<patch_matrices.size(); ++j )
           patch_matrices[j] = patch_matrices[0];
       }
+
     // FULL BLOCK JACOBI
     else if (!same_diagonal && !data.use_dictionary && patch_matrices.size()!=0)
       {
@@ -171,6 +172,7 @@ configure_local_matrices()
           }
         tasks.join_all ();
       }
+
     // DICTIONARY
     else if (!same_diagonal && data.use_dictionary && patch_matrices.size()!=0)
       {
@@ -259,6 +261,7 @@ initialize(const SystemMatrixType & system_matrix_,const AdditionalData &data)
   Assert(data.dof_handler != 0, dealii::ExcInternalError());
   Assert(data.level != dealii::numbers::invalid_unsigned_int, dealii::ExcInternalError());
   Assert(data.mapping != 0, dealii::ExcInternalError());
+
   system_matrix = &system_matrix_ ;
   this->data = data;
   level = data.level;
@@ -270,6 +273,7 @@ initialize(const SystemMatrixType & system_matrix_,const AdditionalData &data)
       = dynamic_cast<const dealii::parallel::distributed::Triangulation<dim>* > (&(dof_handler.get_triangulation()));
 #endif
     Assert(distributed_tria, dealii::ExcInternalError());
+
     dealii::IndexSet locally_owned_level_dofs = dof_handler.locally_owned_mg_dofs(level);
     dealii::IndexSet locally_relevant_level_dofs;
     dealii::DoFTools::extract_locally_relevant_level_dofs(dof_handler, level, locally_relevant_level_dofs);
@@ -284,6 +288,7 @@ initialize(const SystemMatrixType & system_matrix_,const AdditionalData &data)
   if (data.patch_type == AdditionalData::PatchType::cell_patches) ddh.reset(new DGDDHandlerCell<dim>());
   else ddh.reset(new DGDDHandlerVertex<dim>());
   ddh->initialize(dof_handler, level);
+
   const unsigned int n_gauss_points = fe.degree+1;
   info_box.initialize_gauss_quadrature(n_gauss_points,n_gauss_points,n_gauss_points);
   info_box.initialize_update_flags();
@@ -300,11 +305,13 @@ initialize(const SystemMatrixType & system_matrix_,const AdditionalData &data)
   info_box.cell_selector.add("Newton iterate", true, true, false);
   info_box.boundary_selector.add("Newton iterate", true, true, false);
   info_box.face_selector.add("Newton iterate", true, true, false);
+
   dealii::AnyData src_data ;
   src_data.add<const dealii::MGLevelObject<VectorType >*>(&ghosted_solution,"src");
   src_data.add<const dealii::MGLevelObject<VectorType >*>(&ghosted_solution,"Newton iterate");
   info_box.initialize(fe, *(data.mapping), src_data, VectorType {},&(dof_handler.block_info()));
   dof_info.reset(new dealii::MeshWorker::DoFInfo<dim> (dof_handler.block_info()));
+
   configure_local_matrices();
   ordered_iterators.clear();
   ordered_gens.clear();

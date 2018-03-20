@@ -47,23 +47,23 @@ public:
   bool aspin = true ;
 private:
   template <typename P=Preconditioner>
-  typename std::enable_if<std::is_same<P,dealii::PreconditionIdentity>::value >::type  setup_system ();
+  typename std::enable_if<std::is_same<P,dealii::PreconditionIdentity>::value >::type setup_system ();
   template <typename P=Preconditioner>
-  typename std::enable_if<!std::is_same<P,dealii::PreconditionIdentity>::value >::type  setup_system ();
+  typename std::enable_if<!std::is_same<P,dealii::PreconditionIdentity>::value >::type setup_system ();
   void solve ();
   void compute_error () const;
   void output_results (const unsigned int cycle) const;
 
-  Mesh<dim>             mesh;
-  FiniteElement<dim>    fe;
-  Dofs<dim>             dofs;
-  RHS<dim>              rhs;
-  Preconditioner        preconditioner;
+  Mesh<dim>          mesh;
+  FiniteElement<dim> fe;
+  Dofs<dim>          dofs;
+  RHS<dim>           rhs;
+  Preconditioner     preconditioner;
   typename Preconditioner::AdditionalData pdata ;
-  SystemMatrixType      system_matrix;
+  SystemMatrixType   system_matrix;
   
-  VectorType       ghosted_solution;
-  VectorType       solution;
+  VectorType ghosted_solution;
+  VectorType solution;
 
 
   friend class Residual;

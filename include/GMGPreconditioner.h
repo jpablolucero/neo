@@ -39,7 +39,7 @@ class GMGPreconditioner final
   GMGPreconditioner () ;
 
  public:
-  void initialize(const SystemMatrixType & system_matrix_,const AdditionalData &data);
+  void initialize(const SystemMatrixType & system_matrix_, const AdditionalData &data);
   
   void vmult(VectorType &dst, const VectorType &src) const;
 
@@ -64,21 +64,21 @@ class GMGPreconditioner final
 
   template <typename M=CoarseMatrixType,typename P=CoarsePreconditionerType>
   typename std::enable_if<std::is_same<M,MFOperator<dim,fe_degree,number> >::value and
-			std::is_same<P,dealii::PreconditionIdentity>::value>::type
+			  std::is_same<P,dealii::PreconditionIdentity>::value>::type
     configure_coarse_solver ();
 
-  dealii::MGLevelObject<SystemMatrixType >            mg_matrix ;
-  dealii::MGLevelObject<VectorType>                   mg_solution ;
-  // dealii::MGConstrainedDoFs                           mg_constrained_dofs;
+  dealii::MGLevelObject<SystemMatrixType > mg_matrix ;
+  dealii::MGLevelObject<VectorType>        mg_solution ;
+  // dealii::MGConstrainedDoFs             mg_constrained_dofs;
 
-  std::unique_ptr<dealii::ReductionControl>              coarse_solver_control;
+  std::unique_ptr<dealii::ReductionControl> coarse_solver_control;
 
   CoarsePreconditionerType coarse_preconditioner ;
-  std::unique_ptr<dealii::SolverGMRES<VectorType> >              coarse_solver;
+  std::unique_ptr<dealii::SolverGMRES<VectorType> > coarse_solver;
   std::unique_ptr<dealii::MGCoarseGridIterativeSolver<VectorType,
 						      dealii::SolverGMRES<VectorType>,
 						      CoarseMatrixType,
-						      CoarsePreconditionerType> >   mg_coarse;
+						      CoarsePreconditionerType> > mg_coarse;
 
   //typedef MFPSCPreconditioner<dim, VectorType, number> Smoother;
   dealii::MGLevelObject<typename Smoother::AdditionalData> smoother_data;
@@ -87,7 +87,7 @@ class GMGPreconditioner final
   // Setup Multigrid-Transfer
   std::unique_ptr<dealii::MGTransferPrebuilt<VectorType> > mg_transfer ;
 
-  dealii::mg::Matrix<VectorType>         mglevel_matrix;
+  dealii::mg::Matrix<VectorType> mglevel_matrix;
   std::unique_ptr<dealii::Multigrid<VectorType> > mg ;
 
   std::unique_ptr<dealii::PreconditionMG<dim, VectorType, dealii::MGTransferPrebuilt<VectorType> > > preconditioner ;
@@ -101,11 +101,11 @@ class GMGPreconditioner<dim,VectorType,number,same_diagonal,fe_degree,Smoother,C
 {
 public:
   AdditionalData(){} ;
-  Mesh<dim> *            mesh ;
-  Dofs<dim> *            dofs ;
-  FiniteElement<dim> *   fe ;
-  VectorType *           solution ;
-  unsigned int           min_level = 0;
+  Mesh<dim> *          mesh ;
+  Dofs<dim> *          dofs ;
+  FiniteElement<dim> * fe ;
+  VectorType *         solution ;
+  unsigned int         min_level = 0;
 };
 
 

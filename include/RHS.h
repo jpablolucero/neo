@@ -22,7 +22,7 @@ class RHS final
   FiniteElement<dim> & fe;
   Dofs<dim> & dofs;
   
-  dealii::parallel::distributed::Vector<double>            right_hand_side;
+  dealii::parallel::distributed::Vector<double> right_hand_side;
 };
 
 #ifdef HEADER_IMPLEMENTATION

@@ -30,7 +30,7 @@ class MFOperator final: public dealii::Subscriptor
 {
 public:
   typedef double value_type ;
-  typedef dealii::TrilinosWrappers::SparseMatrix::size_type               size_type ;
+  typedef dealii::TrilinosWrappers::SparseMatrix::size_type     size_type ;
   typedef typename dealii::DoFHandler<dim>::level_cell_iterator level_cell_iterator ;
   typedef typename dealii::LAPACKFullMatrix<double>             LAPACKMatrix ;
 

@@ -3,16 +3,16 @@
 extern std::unique_ptr<dealii::TimerOutput>        timer ;
 extern std::unique_ptr<MPI_Comm>                   mpi_communicator ;
 
-template <int dim,typename VectorType,typename number,bool same_diagonal,unsigned int fe_degree,typename Smoother,
-	  typename CoarseMatrixType,typename CoarsePreconditionerType>
+template <int dim, typename VectorType, typename number, bool same_diagonal, unsigned int fe_degree,
+	  typename Smoother, typename CoarseMatrixType, typename CoarsePreconditionerType>
 GMGPreconditioner<dim,VectorType,number,same_diagonal,fe_degree,Smoother,CoarseMatrixType,CoarsePreconditionerType>::
 GMGPreconditioner ():
   min_level(0),
   smoothing_steps(1)
 {}
 
-template <int dim,typename VectorType,typename number,bool same_diagonal,unsigned int fe_degree,typename Smoother,
-	  typename CoarseMatrixType,typename CoarsePreconditionerType>
+template <int dim, typename VectorType, typename number, bool same_diagonal, unsigned int fe_degree,
+	  typename Smoother, typename CoarseMatrixType, typename CoarsePreconditionerType>
 template <typename M,typename P>
 typename std::enable_if<std::is_same<M,dealii::TrilinosWrappers::SparseMatrix>::value and
 			std::is_same<P,dealii::TrilinosWrappers::PreconditionAMG>::value>::type
@@ -33,8 +33,8 @@ configure_coarse_solver ()
 		   coarse_preconditioner));
 }
 
-template <int dim,typename VectorType,typename number,bool same_diagonal,unsigned int fe_degree,typename Smoother,
-	  typename CoarseMatrixType,typename CoarsePreconditionerType>
+template <int dim, typename VectorType, typename number, bool same_diagonal, unsigned int fe_degree,
+	  typename Smoother, typename CoarseMatrixType, typename CoarsePreconditionerType>
 template <typename M,typename P>
 typename std::enable_if<std::is_same<M,MFOperator<dim,fe_degree,number> >::value and
 			std::is_same<P,Smoother>::value>::type
@@ -51,8 +51,8 @@ configure_coarse_solver ()
 		   coarse_preconditioner));
 }
 
-template <int dim,typename VectorType,typename number,bool same_diagonal,unsigned int fe_degree,typename Smoother,
-	  typename CoarseMatrixType,typename CoarsePreconditionerType>
+template <int dim, typename VectorType, typename number, bool same_diagonal, unsigned int fe_degree,
+	  typename Smoother, typename CoarseMatrixType, typename CoarsePreconditionerType>
 template <typename M,typename P>
 typename std::enable_if<std::is_same<M,MFOperator<dim,fe_degree,number> >::value and
 			std::is_same<P,dealii::PreconditionIdentity>::value>::type
@@ -68,8 +68,8 @@ configure_coarse_solver ()
 		   coarse_preconditioner));
 }
 
-template <int dim,typename VectorType,typename number,bool same_diagonal,unsigned int fe_degree,typename Smoother,
-	  typename CoarseMatrixType,typename CoarsePreconditionerType>
+template <int dim, typename VectorType, typename number, bool same_diagonal, unsigned int fe_degree,
+	  typename Smoother, typename CoarseMatrixType, typename CoarsePreconditionerType>
 void GMGPreconditioner<dim,VectorType,number,same_diagonal,fe_degree,Smoother,CoarseMatrixType,CoarsePreconditionerType>::
 initialize(const SystemMatrixType & system_matrix_,const AdditionalData &data)
 {
@@ -163,8 +163,8 @@ initialize(const SystemMatrixType & system_matrix_,const AdditionalData &data)
   timer->leave_subsection();
 }
 
-template <int dim,typename VectorType,typename number,bool same_diagonal,unsigned int fe_degree,typename Smoother,
-	  typename CoarseMatrixType,typename CoarsePreconditionerType>
+template <int dim, typename VectorType, typename number, bool same_diagonal, unsigned int fe_degree,
+	  typename Smoother, typename CoarseMatrixType, typename CoarsePreconditionerType>
 void GMGPreconditioner<dim,VectorType,number,same_diagonal,fe_degree,Smoother,CoarseMatrixType,CoarsePreconditionerType>::
 vmult (VectorType &dst,const VectorType &src) const
 {
@@ -173,8 +173,8 @@ vmult (VectorType &dst,const VectorType &src) const
   timer->leave_subsection();
 }
 
-template <int dim,typename VectorType,typename number,bool same_diagonal,unsigned int fe_degree,typename Smoother,
-	  typename CoarseMatrixType,typename CoarsePreconditionerType>
+template <int dim, typename VectorType, typename number, bool same_diagonal, unsigned int fe_degree,
+	  typename Smoother, typename CoarseMatrixType, typename CoarsePreconditionerType>
 void GMGPreconditioner<dim,VectorType,number,same_diagonal,fe_degree,Smoother,CoarseMatrixType,CoarsePreconditionerType>::
 Tvmult (VectorType &/*dst*/,const VectorType &/*src*/) const
 {
@@ -191,8 +191,8 @@ vmult_add (VectorType &dst,const VectorType &src) const
   timer->leave_subsection();
 }
 
-template <int dim,typename VectorType,typename number,bool same_diagonal,unsigned int fe_degree,typename Smoother,
-	  typename CoarseMatrixType,typename CoarsePreconditionerType>
+template <int dim, typename VectorType, typename number, bool same_diagonal, unsigned int fe_degree,
+	  typename Smoother, typename CoarseMatrixType, typename CoarsePreconditionerType>
 void GMGPreconditioner<dim,VectorType,number,same_diagonal,fe_degree,Smoother,CoarseMatrixType,CoarsePreconditionerType>::
 Tvmult_add (VectorType &/*dst*/,const VectorType &/*src*/) const
 {
