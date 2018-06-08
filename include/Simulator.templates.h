@@ -54,6 +54,7 @@ Simulator<SystemMatrixType,VectorType,Preconditioner,dim,degree>::setup_system (
   pdata.dofs = &dofs;
   pdata.fe = &fe;
   pdata.solution = &ghosted_solution;
+  pdata.min_level = min_level;
   timer->leave_subsection();
 }
 

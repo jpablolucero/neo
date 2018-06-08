@@ -96,7 +96,7 @@ initialize(const SystemMatrixType & system_matrix_,const AdditionalData &data)
   mg_solution[n_global_levels-1].reinit(locally_owned_level_dofs,locally_relevant_level_dofs,*mpi_communicator);
   mg_transfer_tmp.copy_to_mg(dofs.dof_handler,mg_solution,solution);
   mg_solution[n_global_levels-1].update_ghost_values();
-  for (auto l = n_global_levels-1 ; l > 0 ; --l)
+  for (unsigned int l = n_global_levels-1 ; l > min_level ; --l)
     {
       dealii::IndexSet locally_owned_level_dofs2 = dofs.dof_handler.locally_owned_mg_dofs(l-1);
       dealii::IndexSet locally_relevant_level_dofs2;

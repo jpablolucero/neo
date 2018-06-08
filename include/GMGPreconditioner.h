@@ -49,8 +49,8 @@ class GMGPreconditioner final
 
   void Tvmult_add(VectorType &dst, const VectorType &src) const;
 
-  int min_level ;
-  int smoothing_steps ;
+  unsigned int min_level ;
+  unsigned int smoothing_steps ;
 
  private:
   template <typename M=CoarseMatrixType,typename P=CoarsePreconditionerType>
