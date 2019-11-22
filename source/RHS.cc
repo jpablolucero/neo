@@ -10,13 +10,13 @@ RHS<dim>::RHS (FiniteElement<dim> & fe_,Dofs<dim> & dofs_):
 {}
 
 template <int dim>
-void RHS<dim>::assemble(const dealii::parallel::distributed::Vector<double> & solution)
+void RHS<dim>::assemble(const dealii::LinearAlgebra::distributed::Vector<double> & solution)
 {
   timer->enter_subsection("RHS::assemble()");
   unsigned int level = dofs.mesh.triangulation.n_levels()-1;
   right_hand_side.reinit (dofs.locally_owned_dofs, dofs.locally_relevant_dofs, *mpi_communicator);
 
-  dealii::MGLevelObject<dealii::parallel::distributed::Vector<double>>  ghosted_solution ;
+  dealii::MGLevelObject<dealii::LinearAlgebra::distributed::Vector<double>>  ghosted_solution ;
   ghosted_solution.resize(level,level);
   ghosted_solution[level] = std::move(solution) ;
   ghosted_solution[level].update_ghost_values();
@@ -48,14 +48,14 @@ void RHS<dim>::assemble(const dealii::parallel::distributed::Vector<double> & so
   info_box.face_selector.add("Newton iterate", true, true, false);
 
   dealii::AnyData src_data;
-  src_data.add<const dealii::MGLevelObject<dealii::parallel::distributed::Vector<double> >*>(&ghosted_solution,"Newton iterate");
-  info_box.initialize(fe.fe,fe.mapping,src_data,dealii::parallel::distributed::Vector<double> {},&(dofs.dof_handler.block_info()));
+  src_data.add<const dealii::MGLevelObject<dealii::LinearAlgebra::distributed::Vector<double> >*>(&ghosted_solution,"Newton iterate");
+  info_box.initialize(fe.fe,fe.mapping,src_data,dealii::LinearAlgebra::distributed::Vector<double> {},&(dofs.dof_handler.block_info()));
   dealii::MeshWorker::DoFInfo<dim> dof_info(dofs.dof_handler.block_info());
 
   dealii::AnyData data;
-  data.add<dealii::parallel::distributed::Vector<double> *>(&right_hand_side, "RHS");
+  data.add<dealii::LinearAlgebra::distributed::Vector<double> *>(&right_hand_side, "RHS");
 
-  dealii::MeshWorker::Assembler::ResidualSimple<dealii::parallel::distributed::Vector<double> > rhs_assembler;
+  dealii::MeshWorker::Assembler::ResidualSimple<dealii::LinearAlgebra::distributed::Vector<double> > rhs_assembler;
   rhs_assembler.initialize(data);
 #ifdef CG
   rhs_assembler.initialize(dofs.constraints);

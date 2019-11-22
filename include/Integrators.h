@@ -9,7 +9,7 @@
 #include <deal.II/integrators/laplace.h>
 
 #include <deal.II/lac/matrix_block.h>
-#include <deal.II/lac/parallel_vector.h>
+#include <deal.II/lac/la_parallel_vector.h>
 #include <deal.II/lac/vector.h>
 
 #include <deal.II/matrix_free/fe_evaluation.h>

@@ -25,7 +25,7 @@
 #include <functional>
 
 
-template <int dim, int fe_degree, typename number=double, typename VectorType=dealii::parallel::distributed::Vector<double> >
+template <int dim, int fe_degree, typename number=double, typename VectorType=dealii::LinearAlgebra::distributed::Vector<double> >
 class MFOperator final: public dealii::Subscriptor
 {
 public:

@@ -24,8 +24,8 @@ int main (int argc, char *argv[])
   timer.reset(new dealii::TimerOutput (*mpi_communicator, *pcout,dealii::TimerOutput::never,dealii::TimerOutput::wall_times));
   const unsigned int d = 2 ;
   const unsigned int fe_degree = 1 ;
-  typedef dealii::parallel::distributed::Vector<double> VectorType;
-  typedef dealii::parallel::distributed::Vector<double> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<double> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<double> VectorType;
   typedef MFOperator<d,fe_degree,double> SystemMatrixType;
   typedef PSCPreconditioner<d,SystemMatrixType,dealii::TrilinosWrappers::SparseMatrix> Smoother;
   typedef GMGPreconditioner<d,VectorType,double,false,fe_degree,Smoother,SystemMatrixType,Smoother>  Precond;

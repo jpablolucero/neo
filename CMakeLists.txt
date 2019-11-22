@@ -93,4 +93,4 @@ ADD_CUSTOM_TARGET(release
 ADD_CUSTOM_TARGET(both)
 ADD_DEPENDENCIES(both debug release)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated-declarations")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated-declarations -Wno-unused")

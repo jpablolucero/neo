@@ -5,23 +5,23 @@ template class DDHandlerBase<2>;
 template void DDHandlerBase<2>::reinit(dealii::Vector<double>& vec,
 				       const unsigned int subdomain_idx) const;
 template void DDHandlerBase<2>::restrict_add(dealii::Vector<double>& dst,
-                                             const dealii::parallel::distributed::Vector<double> & src,
+                                             const dealii::LinearAlgebra::distributed::Vector<double> & src,
                                              const unsigned int subdomain_idx) const;
-template void DDHandlerBase<2>::prolongate_add(dealii::parallel::distributed::Vector<double> & dst,
+template void DDHandlerBase<2>::prolongate_add(dealii::LinearAlgebra::distributed::Vector<double> & dst,
                                                const dealii::Vector<double>& src,
                                                const unsigned int subdomain_idx) const;
-template void DDHandlerBase<2>::prolongate(dealii::parallel::distributed::Vector<double> & dst,
+template void DDHandlerBase<2>::prolongate(dealii::LinearAlgebra::distributed::Vector<double> & dst,
 					   const dealii::Vector<double>& src,
 					   const unsigned int subdomain_idx) const;
 template void DDHandlerBase<2>::reinit(dealii::Vector<float>& vec,
 				       const unsigned int subdomain_idx) const;
 template void DDHandlerBase<2>::restrict_add(dealii::Vector<float>& dst,
-                                             const dealii::parallel::distributed::Vector<double> & src,
+                                             const dealii::LinearAlgebra::distributed::Vector<double> & src,
                                              const unsigned int subdomain_idx) const;
-template void DDHandlerBase<2>::prolongate_add(dealii::parallel::distributed::Vector<double> & dst,
+template void DDHandlerBase<2>::prolongate_add(dealii::LinearAlgebra::distributed::Vector<double> & dst,
                                                const dealii::Vector<float>& src,
                                                const unsigned int subdomain_idx) const;
-template void DDHandlerBase<2>::prolongate(dealii::parallel::distributed::Vector<double> & dst,
+template void DDHandlerBase<2>::prolongate(dealii::LinearAlgebra::distributed::Vector<double> & dst,
 					   const dealii::Vector<float>& src,
 					   const unsigned int subdomain_idx) const;
 
@@ -29,23 +29,23 @@ template class DDHandlerBase<3>;
 template void DDHandlerBase<3>::reinit(dealii::Vector<double>& vec,
 				       const unsigned int subdomain_idx) const;
 template void DDHandlerBase<3>::restrict_add(dealii::Vector<double>& dst,
-                                             const dealii::parallel::distributed::Vector<double> & src,
+                                             const dealii::LinearAlgebra::distributed::Vector<double> & src,
                                              const unsigned int subdomain_idx) const;
-template void DDHandlerBase<3>::prolongate_add(dealii::parallel::distributed::Vector<double> & dst,
+template void DDHandlerBase<3>::prolongate_add(dealii::LinearAlgebra::distributed::Vector<double> & dst,
                                                const dealii::Vector<double>& src,
                                                const unsigned int subdomain_idx) const;
-template void DDHandlerBase<3>::prolongate(dealii::parallel::distributed::Vector<double> & dst,
+template void DDHandlerBase<3>::prolongate(dealii::LinearAlgebra::distributed::Vector<double> & dst,
 					   const dealii::Vector<double>& src,
 					   const unsigned int subdomain_idx) const;
 template void DDHandlerBase<3>::reinit(dealii::Vector<float>& vec,
 				       const unsigned int subdomain_idx) const;
 template void DDHandlerBase<3>::restrict_add(dealii::Vector<float>& dst,
-                                             const dealii::parallel::distributed::Vector<double> & src,
+                                             const dealii::LinearAlgebra::distributed::Vector<double> & src,
                                              const unsigned int subdomain_idx) const;
-template void DDHandlerBase<3>::prolongate_add(dealii::parallel::distributed::Vector<double> & dst,
+template void DDHandlerBase<3>::prolongate_add(dealii::LinearAlgebra::distributed::Vector<double> & dst,
                                                const dealii::Vector<float>& src,
                                                const unsigned int subdomain_idx) const;
-template void DDHandlerBase<3>::prolongate(dealii::parallel::distributed::Vector<double> & dst,
+template void DDHandlerBase<3>::prolongate(dealii::LinearAlgebra::distributed::Vector<double> & dst,
 					   const dealii::Vector<float>& src,
 					   const unsigned int subdomain_idx) const;
 

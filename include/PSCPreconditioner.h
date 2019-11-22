@@ -13,6 +13,7 @@
 #include <deal.II/grid/grid_generator.h>
 #include <deal.II/meshworker/loop.h>
 #include <deal.II/multigrid/mg_transfer_matrix_free.h>
+#include <deal.II/base/subscriptor.h>
 
 #include <functional>
 
@@ -24,14 +25,12 @@
 template <int dim,
 	  typename SystemMatrixType,
 	  typename LocalMatrixType=SystemMatrixType,
-	  typename VectorType=dealii::parallel::distributed::Vector<double>,
+	  typename VectorType=dealii::LinearAlgebra::distributed::Vector<double>,
 	  typename number=double,
 	  bool same_diagonal=false>
-class PSCPreconditioner final
+class PSCPreconditioner : public dealii::Subscriptor
 {
 public:
-  void subscribe (const char *identifier=0) const {};
-  void unsubscribe (const char *identifier=0) const {};
   typedef typename dealii::FullMatrix<double> Matrix;
   class AdditionalData;
 

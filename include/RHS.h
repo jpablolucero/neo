@@ -17,12 +17,12 @@ class RHS final
  public:
   RHS (FiniteElement<dim> & fe_,Dofs<dim> & dofs_) ;
   
-  void assemble(const dealii::parallel::distributed::Vector<double> & solution);
+  void assemble(const dealii::LinearAlgebra::distributed::Vector<double> & solution);
   
   FiniteElement<dim> & fe;
   Dofs<dim> & dofs;
   
-  dealii::parallel::distributed::Vector<double> right_hand_side;
+  dealii::LinearAlgebra::distributed::Vector<double> right_hand_side;
 };
 
 #ifdef HEADER_IMPLEMENTATION

@@ -22,7 +22,7 @@
 #include <memory>
 
 template <int dim,
-	  typename VectorType=dealii::parallel::distributed::Vector<double>,
+	  typename VectorType=dealii::LinearAlgebra::distributed::Vector<double>,
 	  typename number=double,
 	  bool same_diagonal=false,
 	  unsigned int fe_degree = 1,

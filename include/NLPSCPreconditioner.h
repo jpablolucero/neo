@@ -25,7 +25,7 @@
 #include <integration_loop.h>
 #include <MGMatrixSimpleMapped.h>
 
-template <int dim, typename SystemMatrixType, typename VectorType=dealii::parallel::distributed::Vector<double>,
+template <int dim, typename SystemMatrixType, typename VectorType=dealii::LinearAlgebra::distributed::Vector<double>,
 	  typename number=double, bool same_diagonal=false>
 class NLPSCPreconditioner final
 {
